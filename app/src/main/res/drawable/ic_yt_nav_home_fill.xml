@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- YT: home, active navigation -->
+    <path
+        android:pathData="M4,10.6L12,4.2L20,10.6V19A1,1 0,0 1,19 20H15V14.6H9V20H5A1,1 0,0 1,4 19z"
+        android:fillColor="#FFFFFFFF" />
+</vector>

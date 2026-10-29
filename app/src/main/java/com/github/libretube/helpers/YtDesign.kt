@@ -24,7 +24,7 @@ enum class YtDesign(
     /** The wordmark in the toolbar, as HTML; [accentHex] colors the accented part. */
     fun wordmarkHtml(accentHex: String): String = when (this) {
         STANDARD -> "Y<span style='color:$accentHex';>T</span>"
-        YOUTUBE -> "<span style='color:$accentHex';>&#9654;</span> YouTube"
+        YOUTUBE -> "YouTube"
         MOVO -> "movo"
         AFTER -> "after"
         SIDE -> "side<span style='color:$accentHex';>.</span>"

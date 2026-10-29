@@ -118,10 +118,10 @@
     </style>
 
     <style name="TextAppearance.YT.YouTube.Brand" parent="TextAppearance.Material3.TitleLarge">
-        <item name="fontFamily">@font/geist_bold</item>
-        <item name="android:fontFamily">@font/geist_bold</item>
-        <item name="android:textSize">22sp</item>
-        <item name="android:letterSpacing">-0.02</item>
+        <item name="fontFamily">@font/font_roboto_condensed_700</item>
+        <item name="android:fontFamily">@font/font_roboto_condensed_700</item>
+        <item name="android:textSize">19sp</item>
+        <item name="android:letterSpacing">-0.01</item>
     </style>
 
     <style name="TextAppearance.YT.Movo.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
@@ -245,9 +245,9 @@
     </style>
 
     <style name="TextAppearance.YT.Movo.Brand" parent="TextAppearance.Material3.TitleLarge">
-        <item name="fontFamily">@font/geist_black</item>
-        <item name="android:fontFamily">@font/geist_black</item>
-        <item name="android:textSize">26sp</item>
+        <item name="fontFamily">@font/font_geist_800</item>
+        <item name="android:fontFamily">@font/font_geist_800</item>
+        <item name="android:textSize">30sp</item>
         <item name="android:letterSpacing">-0.02</item>
     </style>
 
@@ -366,9 +366,9 @@
     </style>
 
     <style name="TextAppearance.YT.After.Brand" parent="TextAppearance.Material3.TitleLarge">
-        <item name="fontFamily">@font/geist_black</item>
-        <item name="android:fontFamily">@font/geist_black</item>
-        <item name="android:textSize">26sp</item>
+        <item name="fontFamily">@font/font_fraunces_800</item>
+        <item name="android:fontFamily">@font/font_fraunces_800</item>
+        <item name="android:textSize">25sp</item>
         <item name="android:letterSpacing">-0.02</item>
     </style>
 
@@ -487,10 +487,10 @@
     </style>
 
     <style name="TextAppearance.YT.Side.Brand" parent="TextAppearance.Material3.TitleLarge">
-        <item name="fontFamily">@font/figtree_semibold</item>
-        <item name="android:fontFamily">@font/figtree_semibold</item>
-        <item name="android:textSize">24sp</item>
-        <item name="android:letterSpacing">-0.02</item>
+        <item name="fontFamily">@font/font_figtree_600</item>
+        <item name="android:fontFamily">@font/font_figtree_600</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:letterSpacing">0</item>
     </style>
 
 </resources>

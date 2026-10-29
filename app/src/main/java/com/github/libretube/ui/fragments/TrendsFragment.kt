@@ -52,12 +52,15 @@ class TrendsFragment : Fragment(R.layout.fragment_trends) {
             tab.text = getString(category.titleRes)
         }.attach()
 
-        val initialCategory = PreferenceHelper.getString(
+        // YT: in "YouTube neu" this tab is "Live"
+        val initialCategory = if (com.github.libretube.helpers.YtDesign.current() == com.github.libretube.helpers.YtDesign.YOUTUBE) {
+            TrendingCategory.LIVE
+        } else PreferenceHelper.getString(
             PreferenceKeys.TRENDING_CATEGORY,
             TrendingCategory.GAMING.name
         ).let { TrendingCategory.valueOf(it) }
 
-        val initialTabIndex = categories.indexOf(initialCategory)
+        val initialTabIndex = categories.indexOf(initialCategory).coerceAtLeast(0)
         val initialTab = binding.tabLayout.getTabAt(initialTabIndex)
         binding.tabLayout.selectTab(initialTab)
         binding.pager.setCurrentItem(initialTabIndex, false)

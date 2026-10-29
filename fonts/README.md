@@ -17,3 +17,8 @@ Zusätzlich für die Designs (Design-Schalter unter Darstellung):
 | Geist 800/900 | Plakative Überschriften in „YouTube neu“ und „Movo“ | SIL OFL 1.1, `Geist-OFL.txt` |
 | Anton | Schmale Plakat-Titel in „After“ | SIL OFL 1.1, `Anton-OFL.txt` |
 | Figtree (400–700) | Weiche, ruhige Schrift in „Side“ | SIL OFL 1.1, `Figtree-OFL.txt` |
+| Fraunces ExtraBold (800) | Wortmarke „after“ | SIL OFL 1.1, `Fraunces-OFL.txt` |
+| Archivo Narrow Bold (700) | Raumtitel in „After“ (Live-Räume) | SIL OFL 1.1, `ArchivoNarrow-OFL.txt` |
+| Roboto Condensed Bold (700) | Wortmarke in „YouTube neu“ | Apache 2.0, `RobotoCondensed-Apache-2.0.txt` |
+
+Fraunces, Archivo Narrow und Roboto Condensed sind statische Schnitte von Google Fonts (fonts.gstatic.com).

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: profile circle of the design header; opens the menu (YT has no account) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <size
+                android:width="32dp"
+                android:height="32dp" />
+            <solid android:color="#FF3C1B24" />
+            <stroke
+                android:width="2dp"
+                android:color="#FFFFF4DF" />
+        </shape>
+    </item>
+    <item
+        android:drawable="@drawable/ic_yt_person"
+        android:bottom="7dp"
+        android:left="7dp"
+        android:right="7dp"
+        android:top="7dp" />
+</layer-list>

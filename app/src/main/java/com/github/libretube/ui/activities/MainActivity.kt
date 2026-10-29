@@ -72,6 +72,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 class MainActivity : AbstractPlayerHostActivity() {
     private lateinit var binding: ActivityMainBinding
+    private var ytNavState: com.github.libretube.ui.yt.YtNavState? = null
 
     lateinit var navController: NavController
     private var startFragmentId = R.id.homeFragment
@@ -228,6 +229,7 @@ class MainActivity : AbstractPlayerHostActivity() {
         // YT: wordmark type and navigation labels follow the selected design
         val ytDesign = com.github.libretube.helpers.YtDesign.current()
         binding.toolbar.setTitleTextAppearance(this, ytDesign.brandTextAppearance)
+        com.github.libretube.ui.yt.YtHeader.apply(binding.toolbar)
         if (ytDesign.labeledNavigation) {
             binding.bottomNav.labelVisibilityMode =
                 com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY_LABELED
@@ -235,6 +237,9 @@ class MainActivity : AbstractPlayerHostActivity() {
         for (item in binding.bottomNav.menu.children) {
             ytDesign.navigationLabel(item.itemId)?.let { item.title = getString(it) }
         }
+        // YT: the design draws its own floating navigation bar and header
+        ytNavState = com.github.libretube.ui.yt.YtNav.attach(this, binding.bottomNav, navController)
+        com.github.libretube.ui.yt.YtHeader.overlayAfterHome(binding.appBarLayout, binding.fragment, navController)
 
         // handle error logs
         PreferenceHelper.getErrorLog().ifBlank { null }?.let {
@@ -315,6 +320,7 @@ class MainActivity : AbstractPlayerHostActivity() {
                 .indexOfFirst { it.uploaded <= lastCheckedFeedTime }
             if (lastSeenVideoIndex < 1) return@observe
 
+            ytNavState?.badges?.set(R.id.subscriptionsFragment, lastSeenVideoIndex)
             binding.bottomNav.getOrCreateBadge(R.id.subscriptionsFragment).apply {
                 number = lastSeenVideoIndex
                 backgroundColor = ThemeHelper.getThemeColor(
@@ -385,7 +391,7 @@ class MainActivity : AbstractPlayerHostActivity() {
             val searchIconResource = when (currentSearchType) {
                 SearchType.DOWNLOADS -> R.drawable.ic_download_search
                 SearchType.PLAYLIST -> R.drawable.ic_playlist_search
-                SearchType.ONLINE -> R.drawable.ic_search
+                SearchType.ONLINE -> com.github.libretube.ui.yt.YtHeader.searchIcon() ?: R.drawable.ic_search
             }
 
             searchItem.setIcon(searchIconResource)
@@ -640,6 +646,7 @@ class MainActivity : AbstractPlayerHostActivity() {
     private fun navigateToBottomSelectedItem(item: MenuItem): Boolean {
         if (item.itemId == R.id.subscriptionsFragment) {
             binding.bottomNav.removeBadge(R.id.subscriptionsFragment)
+            ytNavState?.badges?.remove(R.id.subscriptionsFragment)
         }
 
         // Remove focus from search view when navigating to bottom view.

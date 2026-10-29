@@ -48,6 +48,7 @@
     <string name="yt_nav_home">Home</string>
     <string name="yt_nav_subscriptions">Subscriptions</string>
     <string name="yt_nav_you">You</string>
+    <string name="yt_nav_live">Live</string>
     <string name="yt_nav_discover">Discover</string>
     <string name="yt_nav_channels">Channels</string>
     <string name="yt_nav_watchlist">Watchlist</string>

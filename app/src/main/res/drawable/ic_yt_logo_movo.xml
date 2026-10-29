@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: Movo mark, two overlapping rounded squares -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30dp"
+    android:height="30dp"
+    android:viewportWidth="30"
+    android:viewportHeight="30">
+    <path
+        android:fillColor="#FF4E5BF0"
+        android:pathData="M5,0H15A5,5 0,0 1,20 5V15A5,5 0,0 1,15 20H5A5,5 0,0 1,0 15V5A5,5 0,0 1,5 0z" />
+    <path
+        android:fillColor="#F2E557D6"
+        android:pathData="M15,10H25A5,5 0,0 1,30 15V25A5,5 0,0 1,25 30H15A5,5 0,0 1,10 25V15A5,5 0,0 1,15 10z" />
+</vector>

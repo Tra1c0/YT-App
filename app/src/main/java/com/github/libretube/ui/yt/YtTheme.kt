@@ -1,12 +1,17 @@
 package com.github.libretube.ui.yt
 
+import android.content.res.Configuration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import com.github.libretube.R
 import com.github.libretube.helpers.YtDesign
 
@@ -31,6 +36,15 @@ object YtFonts {
         Font(R.font.font_figtree_600, FontWeight.SemiBold),
         Font(R.font.font_figtree_700, FontWeight.Bold),
     )
+
+    /** Wordmark "after". */
+    val fraunces = FontFamily(Font(R.font.font_fraunces_800, FontWeight.ExtraBold))
+
+    /** Room titles in "After". */
+    val archivoNarrow = FontFamily(Font(R.font.font_archivo_narrow_700, FontWeight.Bold))
+
+    /** Wordmark of "YouTube, neu gedacht". */
+    val robotoCondensed = FontFamily(Font(R.font.font_roboto_condensed_700, FontWeight.Bold))
 }
 
 /** The color roles of one design, named after the design briefs. */
@@ -127,19 +141,44 @@ val YtDesign.palette: YtPalette?
         else -> null
     }
 
+/**
+ * Width of the phone in the design references. All design screens are measured against it
+ * (see docs/DESIGN-MASSE.md) and scaled to the real screen width, so every phone shows the
+ * same proportions as the reference.
+ */
+const val YT_REFERENCE_WIDTH_DP = 393f
+
+/** Factor from reference dp to the dp of this screen. */
+fun ytScale(configuration: Configuration): Float {
+    val width = minOf(configuration.screenWidthDp, configuration.screenHeightDp).toFloat()
+    return (width / YT_REFERENCE_WIDTH_DP).coerceIn(0.8f, 1.3f)
+}
+
+/**
+ * Density for the design screens: dp and sp grow with the screen width. The text keeps the
+ * size of the reference; only an accessibility font size above "large" still enlarges it.
+ */
+fun ytDensity(base: Density, configuration: Configuration): Density = Density(
+    density = base.density * ytScale(configuration),
+    fontScale = (base.fontScale / 1.15f).coerceAtLeast(1f),
+)
+
 @Composable
 fun YtTheme(palette: YtPalette, content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(
-            primary = palette.accent,
-            onPrimary = palette.onAccent,
-            background = palette.background,
-            onBackground = palette.text,
-            surface = palette.background,
-            onSurface = palette.text,
-            surfaceVariant = palette.raised,
-            onSurfaceVariant = palette.textSecondary,
-        ),
-        content = content,
-    )
+    val density = ytDensity(LocalDensity.current, LocalConfiguration.current)
+    CompositionLocalProvider(LocalDensity provides density) {
+        MaterialTheme(
+            colorScheme = darkColorScheme(
+                primary = palette.accent,
+                onPrimary = palette.onAccent,
+                background = palette.background,
+                onBackground = palette.text,
+                surface = palette.background,
+                onSurface = palette.text,
+                surfaceVariant = palette.raised,
+                onSurfaceVariant = palette.textSecondary,
+            ),
+            content = content,
+        )
+    }
 }
