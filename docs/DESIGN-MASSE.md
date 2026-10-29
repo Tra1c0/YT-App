@@ -63,9 +63,40 @@ Schriftgrößen sind gegen die echten Schriftdateien geeicht: Textbreite im Bild
 | Beitrag-Knopf | 50 dp, Apricot |
 | Gesprächsfläche | Ecken oben 24 dp, Griff 41 × 4 dp; Kommentare: Avatar 43 dp, Name 14 sp, Text 13 sp; Eingabe 42 dp hoch, Senden 38 dp |
 
+## Runde 3: Clay, Editorial, Glas, Pop
+
+Die vier Referenzen sind Vollbild-Screens ohne Gerät, 880 px breit (2,24 px je dp).
+
+| Design | Element | Wert |
+| --- | --- | --- |
+| Clay | Kopfzeile | Logo 48 × 33 dp, Wortmarke 26 sp, Knöpfe 48 dp (Creme, Schatten) |
+| Clay | Karussell | Karte 275 × 316 dp, Ecken 28 dp, Nachbarn 88 % groß, 3° geneigt; Pfeile 44 dp; Play 72 dp; Titel Nunito 900 20,5 sp |
+| Clay | Als Nächstes | 360 × 111 dp, Ecken 22 dp, Vorschau 152 × 89 dp, Titel 13 sp |
+| Clay | Navigation | 2 × 2 Blobs, 357 × 215 dp, untere Reihe liegt 27 dp auf der oberen, Icons 38 dp, Nunito 900 15,5 sp |
+| Editorial | Reiter | Inter 16 sp (aktiv fett), blaue Linie 3 dp auf schwarzer 1-dp-Linie; Filter 12,5 sp |
+| Editorial | Liste | Nummer Inter 900 29 sp, Bild 317 × 103 dp schwarz-weiß ohne Ecken, Titel 14 sp, Linie 1 dp schwarz |
+| Editorial | Shorts | Karten 174 × 83 dp; Laufzeit IBM Plex Mono 11 sp auf Schwarz, LIVE auf Blau |
+| Editorial | Navigation | angedockt, 44 dp, Inter 14 sp, blauer Balken 3 dp über dem aktiven Reiter |
+| Glas | Suche und Reiter | Suchfeld 38 dp, Segmente 31 dp (124/101/117 dp breit), Google Sans 13–14 sp |
+| Glas | Video | 355 × 175 dp, Ecken 12 dp, Glas-Play 56 dp, Avatar 42 dp, Titel 15,5 sp |
+| Glas | Shorts | Karten 173 × 132 dp, Aufruf-Chip mit Auge |
+| Glas | Navigation | schwebend 59 dp, Ecken 30 dp; aktiver Reiter wächst von 49 dp Kreis auf 107 dp Pille |
+| Pop | Reiter | Blobs 99/78/74 × 50 dp, Nunito 900 14,5 sp |
+| Pop | Feature-Karte | Gelb, Ecken 22 dp, oben rechts 60 dp; Bild 165 dp hoch; Titel Nunito 900 23 sp; Stern im Cookie 46 dp |
+| Pop | Listenkarte | 99 dp hoch, Ecken 22 dp, Vorschau 180 × 84 dp |
+| Pop | Shorts | Karten 148 × 158 dp, rosa Aufruf-Pille, LIVE-Karte |
+| Pop | Navigation | Wellenband 58 dp, Pflaumen-Blob 100 × 68 dp gleitet zum aktiven Reiter |
+
+Formen und Frost sind aus den Inspirationsbildern abgeleitet, nicht vermessen: Formen übernimmt
+Formen und Farben aus Bild 5 und die Wellen-Zeitleiste aus Bild 6, Frost das Salbei-Glas und die
+dunkle Pillen-Leiste aus Bild 7.
+
 ## Nicht übernommen
 
 - Status- und Geräteleisten der Mockups (Uhrzeit, Notch) gehören zum System.
 - Eigene Player-Steuerung je Design (Play-Kreis, Zeitleiste in der Videofläche): der Player bleibt
   der klassische, nur die Farbe der Zeitleiste folgt dem Design.
-- Shorts-Reiter in „YouTube neu“: YT hat keinen Shorts-Feed.
+- Shorts-Reiter in „YouTube neu“: YT hat keinen Shorts-Feed. In den Designs der dritten Runde zeigt
+  der Shorts-Reiter die Shorts aus den Abos.
+- Cast-Knopf (Clay, Editorial, Glas, Pop): YT kann nicht auf Fernseher streamen, der Knopf entfällt.
+- „Für dich“: YT hat ohne Konto keine Empfehlungen; „Für dich“ mischt Abos und Trends.

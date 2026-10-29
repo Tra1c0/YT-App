@@ -36,6 +36,20 @@ YT hat kein Google-Konto. Daraus folgen feste Grenzen:
   statt „24 Antworten“ im Feed steht „Zum Gespräch“, weil die Kommentarzahl erst auf der Videoseite geladen wird.
 - YouTube neu: das echte YouTube-Logo nur, solange das Repo privat bleibt (Markenrecht).
 
+## Dritte Runde
+
+| Design | Hell/dunkel | Startseite | Navigation |
+| --- | --- | --- | --- |
+| Clay | hell | Karussell „Heute für dich“, Als Nächstes | 2 × 2 Ton-Blobs |
+| Editorial | hell | Reiter, Filter, nummerierte Schwarz-Weiß-Liste, Shorts | angedockt, blauer Balken |
+| Glas | hell | Suchfeld, Segmente, große Videos, Shorts | schwebendes Glas, wachsende Pille |
+| Pop | hell | Blob-Reiter, gelbe Feature-Karte, Listenkarten, Shorts mit LIVE | Wellenband, gleitender Blob |
+| Formen | dunkel | Widgets in Material-Formen, Weiterschauen mit Wellen-Fortschritt | Formen je Reiter |
+| Frost | dunkel (Salbei) | Begrüßung, Zahlen des Tages, große Karte, Liste | dunkle Pille |
+
+Videoseite und „Dein YouTube.“ nutzen bei allen sechs den Aufbau von „YouTube neu“ in den Farben
+und der Schrift des Designs. Der Shorts-Reiter ersetzt die Trends.
+
 ## Maße und Skalierung
 
 Alle Design-Bildschirme folgen den vermessenen Referenzen und skalieren mit der Bildschirmbreite,
