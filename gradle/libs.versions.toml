@@ -1,5 +1,5 @@
 [versions]
-composeBom = "2026.08.00"
+composeBom = "2025.08.00" # Compose 1.9; 2026 BOMs need compileSdk 37
 appcompat = "1.7.1"
 core = "1.18.0"
 documentfile = "1.1.0"
