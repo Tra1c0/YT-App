@@ -16,3 +16,6 @@ YT ist ein veränderter Fork von LibreTube (GPLv3). Basis: LibreTube `master`, C
 | 2026-10-29 | Untere Navigation ohne Beschriftung, App-Name „YT“ im Titel | `res/layout/activity_main.xml`, `helpers/ThemeHelper.kt` |
 | 2026-10-29 | Wischgesten: Lautstärke links, Helligkeit rechts | `ui/views/CustomExoPlayerView.kt`, `res/layout/player_gesture_controls_view.xml` |
 | 2026-10-29 | Farben aus dem Video: Player-Seite übernimmt per Verlauf die Hauptfarbe des Thumbnails (abschaltbar unter Darstellung) | `helpers/YtVideoColors.kt`, `ui/fragments/PlayerFragment.kt`, `res/xml/appearance_settings.xml`, `res/values*/yt_strings.xml` |
+| 2026-10-29 | Player-Icons (Play, Pause, Vor/Zurück, Vollbild, Schließen, Warteschlange, Einstellungen, Sperre, Neustart) durch Phosphor-Icons ersetzt (MIT, `licenses/Phosphor-Icons-MIT.txt`) | `res/drawable/ic_*.xml` |
+| 2026-10-29 | Player-Zeiten und Vorschauzeit in Geist Mono | `res/values/style.xml`, `res/layout/exo_styled_player_control_view.xml` |
+| 2026-10-29 | Feed-Karten: abgesetzte Fläche mit 22dp-Ecken, Thumbnails 16dp bzw. 12dp | `res/drawable/yt_feed_card.xml`, `res/layout/trending_row.xml`, `res/layout/video_row.xml` |
