@@ -227,7 +227,8 @@ fun Modifier.ytPressScale(interaction: MutableInteractionSource): Modifier {
 /** A number that counts up to [value] when it first appears or changes. */
 @Composable
 fun ytCountUp(value: Int): Int {
-    var target by remember { mutableIntStateOf(if (LocalYtMotion.current) 0 else value) }
+    val motion = LocalYtMotion.current
+    var target by remember { mutableIntStateOf(if (motion) 0 else value) }
     LaunchedEffect(value) { target = value }
     val shown by animateIntAsState(target, ytSpec(tween(900, easing = FastOutSlowInEasing)), label = "countUp")
     return shown
