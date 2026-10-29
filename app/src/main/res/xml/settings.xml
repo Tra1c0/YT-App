@@ -1,54 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- YT: settings grouped into everyday settings and settings for tinkering. -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <Preference
-        android:icon="@drawable/ic_settings"
-        android:summary="@string/general_summary"
-        app:key="general"
-        app:title="@string/general" />
+    <PreferenceCategory app:title="@string/yt_settings_everyday">
 
-    <Preference
-        android:icon="@drawable/ic_server"
-        app:key="account"
-        app:summary="@string/instance_summary"
-        app:title="@string/account" />
+        <Preference
+            android:icon="@drawable/ic_color"
+            app:key="appearance"
+            app:summary="@string/appearance_summary"
+            app:title="@string/appearance" />
 
-    <Preference
-        android:icon="@drawable/ic_color"
-        app:key="appearance"
-        app:summary="@string/appearance_summary"
-        app:title="@string/appearance" />
+        <Preference
+            android:icon="@drawable/ic_play_filled"
+            app:key="player"
+            app:summary="@string/player_summary"
+            app:title="@string/player" />
 
-    <Preference
-        android:icon="@drawable/ic_block"
-        app:key="sponsorblock"
-        app:summary="@string/sponsorblock_summary"
-        app:title="@string/sponsorblock" />
+        <Preference
+            android:icon="@drawable/ic_block"
+            app:key="sponsorblock"
+            app:summary="@string/sponsorblock_summary"
+            app:title="@string/sponsorblock" />
 
-    <Preference
-        android:icon="@drawable/ic_play_filled"
-        app:key="player"
-        app:summary="@string/player_summary"
-        app:title="@string/player" />
+        <Preference
+            android:icon="@drawable/ic_backup"
+            app:key="backup_restore"
+            app:summary="@string/backup_restore_summary"
+            app:title="@string/backup_restore" />
 
-    <Preference
-        android:icon="@drawable/ic_movie"
-        app:key="audio_video"
-        app:summary="@string/audio_video_summary"
-        app:title="@string/audio_video" />
+    </PreferenceCategory>
 
-    <Preference
-        android:icon="@drawable/ic_notification"
-        android:summary="@string/notify_new_streams"
-        app:key="notifications"
-        app:title="@string/notifications" />
+    <PreferenceCategory app:title="@string/yt_settings_geeks">
 
-    <Preference
-        android:icon="@drawable/ic_backup"
-        app:key="backup_restore"
-        app:summary="@string/backup_restore_summary"
-        app:title="@string/backup_restore" />
+        <Preference
+            android:icon="@drawable/ic_settings"
+            android:summary="@string/general_summary"
+            app:key="general"
+            app:title="@string/general" />
+
+        <Preference
+            android:icon="@drawable/ic_movie"
+            app:key="audio_video"
+            app:summary="@string/audio_video_summary"
+            app:title="@string/audio_video" />
+
+        <Preference
+            android:icon="@drawable/ic_notification"
+            android:summary="@string/notify_new_streams"
+            app:key="notifications"
+            app:title="@string/notifications" />
+
+        <Preference
+            android:icon="@drawable/ic_server"
+            app:key="account"
+            app:summary="@string/instance_summary"
+            app:title="@string/account" />
+
+    </PreferenceCategory>
 
     <PreferenceCategory>
 

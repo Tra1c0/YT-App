@@ -3,4 +3,6 @@
     <string name="yt_color_pink">Pink (YT)</string>
     <string name="yt_dynamic_player_colors">Farben aus dem Video</string>
     <string name="yt_dynamic_player_colors_summary">Färbt die Player-Seite dezent in der Hauptfarbe des Thumbnails</string>
+    <string name="yt_settings_everyday">Alltag</string>
+    <string name="yt_settings_geeks">Für Geeks</string>
 </resources>

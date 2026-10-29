@@ -19,3 +19,4 @@ YT ist ein veränderter Fork von LibreTube (GPLv3). Basis: LibreTube `master`, C
 | 2026-10-29 | Player-Icons (Play, Pause, Vor/Zurück, Vollbild, Schließen, Warteschlange, Einstellungen, Sperre, Neustart) durch Phosphor-Icons ersetzt (MIT, `licenses/Phosphor-Icons-MIT.txt`) | `res/drawable/ic_*.xml` |
 | 2026-10-29 | Player-Zeiten und Vorschauzeit in Geist Mono | `res/values/style.xml`, `res/layout/exo_styled_player_control_view.xml` |
 | 2026-10-29 | Feed-Karten: abgesetzte Fläche mit 22dp-Ecken, Thumbnails 16dp bzw. 12dp | `res/drawable/yt_feed_card.xml`, `res/layout/trending_row.xml`, `res/layout/video_row.xml` |
+| 2026-10-29 | Einstellungen gruppiert in „Alltag“ (Design, Player, SponsorBlock, Sichern) und „Für Geeks“ (Allgemein, Audio und Video, Benachrichtigungen, Konto) | `res/xml/settings.xml`, `res/values*/yt_strings.xml` |
