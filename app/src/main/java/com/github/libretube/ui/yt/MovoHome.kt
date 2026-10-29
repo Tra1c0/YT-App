@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,61 +69,68 @@ fun MovoHomeScreen(
     val source = if (tab == MOVO_TAB_FOLLOWING) following else discover ?: following
     val videos = source.orEmpty().filter { !it.isShort && !it.isUpcoming && it.url != null }
     val blocks = videos.chunked(4)
+    val opening = rememberYtOpening()
+    val open: (StreamItem) -> Unit = { video ->
+        opening.value = video.url
+        onOpenVideo(video)
+    }
 
-    PullToRefreshBox(
-        isRefreshing = isLoading && source != null,
-        onRefresh = onRefresh,
-        modifier = Modifier
-            .fillMaxSize()
-            .background(palette.background),
-    ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+    CompositionLocalProvider(LocalYtOpening provides opening.value) {
+        PullToRefreshBox(
+            isRefreshing = isLoading && source != null,
+            onRefresh = onRefresh,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(palette.background),
         ) {
-            item {
-                Text(
-                    text = stringResource(R.string.yt_movo_headline),
-                    color = palette.text,
-                    style = TextStyle(
-                        fontFamily = YtFonts.geist,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 40.sp,
-                        lineHeight = 40.sp,
-                        letterSpacing = (-1.2).sp,
-                    ),
-                    modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 12.dp),
-                )
-            }
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(bottom = 12.dp),
-                ) {
-                    MovoTab(palette, stringResource(R.string.yt_movo_discover), tab == MOVO_TAB_DISCOVER) {
-                        onSelectTab(MOVO_TAB_DISCOVER)
-                    }
-                    MovoTab(palette, stringResource(R.string.yt_movo_following), tab == MOVO_TAB_FOLLOWING) {
-                        onSelectTab(MOVO_TAB_FOLLOWING)
-                    }
-                }
-            }
-            if (source == null) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 item {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(240.dp),
-                        contentAlignment = Alignment.Center,
+                    Text(
+                        text = stringResource(R.string.yt_movo_headline),
+                        color = palette.text,
+                        style = TextStyle(
+                            fontFamily = YtFonts.geist,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 40.sp,
+                            lineHeight = 40.sp,
+                            letterSpacing = (-1.2).sp,
+                        ),
+                        modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 12.dp),
+                    )
+                }
+                item {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(bottom = 12.dp),
                     ) {
-                        if (isLoading) CircularProgressIndicator(color = palette.accent)
-                        else Text(stringResource(R.string.yt_home_empty), color = palette.textSecondary)
+                        MovoTab(palette, stringResource(R.string.yt_movo_discover), tab == MOVO_TAB_DISCOVER) {
+                            onSelectTab(MOVO_TAB_DISCOVER)
+                        }
+                        MovoTab(palette, stringResource(R.string.yt_movo_following), tab == MOVO_TAB_FOLLOWING) {
+                            onSelectTab(MOVO_TAB_FOLLOWING)
+                        }
                     }
                 }
-            }
-            items(blocks) { block ->
-                MovoBlock(palette, imageLoader, block, onOpenVideo)
+                if (source == null) {
+                    item {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(240.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (isLoading) CircularProgressIndicator(color = palette.accent)
+                            else Text(stringResource(R.string.yt_home_empty), color = palette.textSecondary)
+                        }
+                    }
+                }
+                items(blocks) { block ->
+                    MovoBlock(palette, imageLoader, block, open)
+                }
             }
         }
     }
@@ -228,9 +236,9 @@ private fun MovoCard(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(26.dp))
-            .background(color)
-            .clickable { onOpenVideo(video) },
+            .ytRecede(video.url)
+            .ytPressable(RoundedCornerShape(26.dp)) { onOpenVideo(video) }
+            .background(color),
     ) {
         AsyncImage(
             model = video.thumbnail,

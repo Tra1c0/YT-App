@@ -1,7 +1,15 @@
 package com.github.libretube.ui.yt
 
 import android.text.format.DateUtils
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -183,113 +191,126 @@ fun SideWatchDetails(
             )
         }
 
-        Column(
-            Modifier
-                .padding(top = 18.dp)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                .background(palette.surface)
-                .animateContentSize(),
+        // the conversation sheet slides up below the video
+        val appear = remember(videoId) { MutableTransitionState(false).apply { targetState = true } }
+        AnimatedVisibility(
+            visibleState = appear,
+            enter = slideInVertically(tween(380)) { it / 4 } + fadeIn(tween(380)),
         ) {
-            // drag handle: opens and closes the sheet
-            Box(
+            Column(
                 Modifier
+                    .padding(top = 18.dp)
                     .fillMaxWidth()
-                    .clickable { open = !open }
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center,
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .background(palette.surface)
+                    .animateContentSize(),
             ) {
+                // drag handle: opens and closes the sheet
                 Box(
                     Modifier
-                        .size(44.dp, 4.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(palette.textSecondary.copy(alpha = 0.45f)),
-                )
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(horizontal = 20.dp),
-            ) {
-                SideTab(palette, stringResource(R.string.yt_side_conversation), tab == SideSheetTab.CONVERSATION) {
-                    tab = SideSheetTab.CONVERSATION
-                    open = true
-                }
-                SideTab(palette, stringResource(R.string.yt_side_notes), tab == SideSheetTab.NOTES) {
-                    tab = SideSheetTab.NOTES
-                    open = true
-                }
-            }
-            SideDivider(palette.copy(surface = palette.raised), Modifier.padding(top = 12.dp))
-
-            if (open) {
-                when (tab) {
-                    SideSheetTab.CONVERSATION -> Conversation(palette, imageLoader, comments, actions)
-                    SideSheetTab.NOTES -> Notes(
-                        palette = palette,
-                        notes = notes,
-                        savedAsNote = savedAsNote,
-                        onSeek = actions.onSeek,
-                        onDelete = { note -> videoId?.let { notes = YtNotes.remove(it, note) } },
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+                        .fillMaxWidth()
+                        .clickable { open = !open }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Box(
                         Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(palette.raised),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.ic_yt_person),
-                            contentDescription = null,
-                            tint = palette.textSecondary,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                    BasicTextField(
-                        value = draft,
-                        onValueChange = { draft = it },
-                        textStyle = TextStyle(color = palette.text, fontFamily = YtFonts.figtree, fontSize = 15.sp),
-                        cursorBrush = SolidColor(palette.accent),
-                        maxLines = 4,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 10.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(palette.raised)
-                            .padding(horizontal = 18.dp, vertical = 14.dp),
-                        decorationBox = { inner ->
-                            Box {
-                                if (draft.isEmpty()) {
-                                    Text(
-                                        text = stringResource(R.string.yt_side_input_hint),
-                                        color = palette.textSecondary,
-                                        style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 15.sp),
-                                    )
-                                }
-                                inner()
-                            }
-                        },
+                            .size(44.dp, 4.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(palette.textSecondary.copy(alpha = 0.45f)),
                     )
-                    Box(
-                        Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(if (draft.isBlank()) palette.raised else palette.accent)
-                            .clickable(enabled = draft.isNotBlank()) { saveDraft() },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.ic_yt_send),
-                            contentDescription = stringResource(R.string.yt_side_save_note),
-                            tint = if (draft.isBlank()) palette.textSecondary else palette.onAccent,
-                            modifier = Modifier.size(22.dp),
-                        )
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                ) {
+                    SideTab(palette, stringResource(R.string.yt_side_conversation), tab == SideSheetTab.CONVERSATION) {
+                        tab = SideSheetTab.CONVERSATION
+                        open = true
+                    }
+                    SideTab(palette, stringResource(R.string.yt_side_notes), tab == SideSheetTab.NOTES) {
+                        tab = SideSheetTab.NOTES
+                        open = true
+                    }
+                }
+                SideDivider(palette.copy(surface = palette.raised), Modifier.padding(top = 12.dp))
+
+                AnimatedVisibility(
+                    visible = open,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
+                ) {
+                    Column {
+                        when (tab) {
+                            SideSheetTab.CONVERSATION -> Conversation(palette, imageLoader, comments, actions)
+                            SideSheetTab.NOTES -> Notes(
+                                palette = palette,
+                                notes = notes,
+                                savedAsNote = savedAsNote,
+                                onSeek = actions.onSeek,
+                                onDelete = { note -> videoId?.let { notes = YtNotes.remove(it, note) } },
+                            )
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(palette.raised),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_yt_person),
+                                    contentDescription = null,
+                                    tint = palette.textSecondary,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                            BasicTextField(
+                                value = draft,
+                                onValueChange = { draft = it },
+                                textStyle = TextStyle(color = palette.text, fontFamily = YtFonts.figtree, fontSize = 15.sp),
+                                cursorBrush = SolidColor(palette.accent),
+                                maxLines = 4,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = 10.dp)
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .background(palette.raised)
+                                    .padding(horizontal = 18.dp, vertical = 14.dp),
+                                decorationBox = { inner ->
+                                    Box {
+                                        if (draft.isEmpty()) {
+                                            Text(
+                                                text = stringResource(R.string.yt_side_input_hint),
+                                                color = palette.textSecondary,
+                                                style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 15.sp),
+                                            )
+                                        }
+                                        inner()
+                                    }
+                                },
+                            )
+                            Box(
+                                Modifier
+                                    .size(46.dp)
+                                    .clip(CircleShape)
+                                    .background(if (draft.isBlank()) palette.raised else palette.accent)
+                                    .clickable(enabled = draft.isNotBlank()) { saveDraft() },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_yt_send),
+                                    contentDescription = stringResource(R.string.yt_side_save_note),
+                                    tint = if (draft.isBlank()) palette.textSecondary else palette.onAccent,
+                                    modifier = Modifier.size(22.dp),
+                                )
+                            }
+                        }
                     }
                 }
             }

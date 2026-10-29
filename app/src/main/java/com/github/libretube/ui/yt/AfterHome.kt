@@ -1,6 +1,9 @@
 package com.github.libretube.ui.yt
 
 import android.text.format.DateUtils
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,11 +30,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -76,6 +81,11 @@ fun AfterHomeScreen(
     val later = continueWatching.orEmpty().filter { it.url != null }.distinctBy { it.url }
         .ifEmpty { playable.drop(1).take(6) }
     val more = playable.drop(1).filter { candidate -> later.none { it.url == candidate.url } }
+    val opening = rememberYtOpening()
+    val open: (StreamItem) -> Unit = { video ->
+        opening.value = video.url
+        onOpenVideo(video)
+    }
 
     PullToRefreshBox(
         isRefreshing = isLoading && videos != null,
@@ -90,7 +100,7 @@ fun AfterHomeScreen(
         ) {
             item {
                 AfterHero(
-                    palette, imageLoader, hero, tab, isLoading || videos == null, onSelectTab, onOpenVideo,
+                    palette, imageLoader, hero, opening.value, tab, isLoading || videos == null, onSelectTab, open,
                     Modifier.fillParentMaxHeight(0.82f),
                 )
             }
@@ -130,7 +140,7 @@ fun AfterHomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         items(later, key = { "later-" + it.url }) { video ->
-                            AfterPoster(palette, imageLoader, video, onOpenVideo, Modifier.width(220.dp))
+                            AfterPoster(palette, imageLoader, video, open, Modifier.width(220.dp))
                         }
                     }
                 }
@@ -150,7 +160,7 @@ fun AfterHomeScreen(
                         modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 10.dp),
                     ) {
                         pair.forEach { video ->
-                            AfterPoster(palette, imageLoader, video, onOpenVideo, Modifier.weight(1f))
+                            AfterPoster(palette, imageLoader, video, open, Modifier.weight(1f))
                         }
                         if (pair.size == 1) Spacer(Modifier.weight(1f))
                     }
@@ -165,6 +175,7 @@ private fun AfterHero(
     palette: YtPalette,
     imageLoader: ImageLoader,
     hero: StreamItem?,
+    openingUrl: String?,
     tab: String,
     isLoading: Boolean,
     onSelectTab: (String) -> Unit,
@@ -177,14 +188,29 @@ private fun AfterHero(
             .heightIn(min = 520.dp)
             .background(palette.surface),
     ) {
-        if (hero != null) {
-            AsyncImage(
-                model = hero.thumbnail,
-                contentDescription = null,
-                imageLoader = imageLoader,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
+        // a calm crossfade between posters, and into playback when the film starts
+        val heroAlpha by animateFloatAsState(
+            targetValue = if (hero != null && openingUrl == hero.url) 0.3f else 1f,
+            animationSpec = tween(350),
+            label = "heroFade",
+        )
+        Crossfade(
+            targetState = hero?.thumbnail,
+            animationSpec = tween(450),
+            label = "heroPoster",
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { alpha = heroAlpha },
+        ) { thumbnail ->
+            if (thumbnail != null) {
+                AsyncImage(
+                    model = thumbnail,
+                    contentDescription = null,
+                    imageLoader = imageLoader,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
         Box(
             Modifier
@@ -333,9 +359,8 @@ private fun AfterPoster(
     Box(
         modifier = modifier
             .aspectRatio(16f / 11f)
-            .clip(RoundedCornerShape(18.dp))
-            .background(palette.surface)
-            .clickable { onOpenVideo(video) },
+            .ytPressable(RoundedCornerShape(18.dp)) { onOpenVideo(video) }
+            .background(palette.surface),
     ) {
         AsyncImage(
             model = video.thumbnail,

@@ -238,7 +238,7 @@ private fun LargeVideo(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onOpenVideo(video) }
+            .ytPressable(RoundedCornerShape(20.dp)) { onOpenVideo(video) }
             .padding(horizontal = 20.dp, vertical = 10.dp),
     ) {
         Box {

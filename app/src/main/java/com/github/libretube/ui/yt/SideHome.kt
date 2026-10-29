@@ -287,9 +287,8 @@ private fun SidePost(
                 .padding(top = 12.dp)
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(14.dp))
-                .background(palette.surface)
-                .clickable { actions.onOpenVideo(post) },
+                .ytPressable(RoundedCornerShape(14.dp)) { actions.onOpenVideo(post) }
+                .background(palette.surface),
         ) {
             AsyncImage(
                 model = post.thumbnail,

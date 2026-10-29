@@ -43,5 +43,9 @@ YT hat kein Google-Konto. Daraus folgen feste Grenzen:
 3. Movo: Mosaik-Startseite, Videoseite mit Kapitel-Fläche. **Erledigt.**
 4. After: Plakat-Startseite, Live-Räume, Sammlung, Videoseite in After-Farben. **Erledigt.**
 5. Side: Beitrags-Feed, Videoseite mit Gesprächsfläche und Notizen, „Meine.“ **Erledigt.**
-6. Übergänge: Cover wächst in den Player (Movo, YouTube neu), Überblendung (After), Sheet von unten (Side);
-   bei reduzierter Bewegung direkte Wechsel.
+6. Bewegung: Movo-Cover wächst leicht, die übrigen Karten treten zurück; After blendet Plakate ineinander
+   und beim Start in die Wiedergabe über; die Side-Gesprächsfläche zieht unter dem Video hoch und lässt
+   sich am Griff schließen; Cover geben beim Tippen leicht nach. Compose übernimmt die
+   System-Animationsskala, „Animationen entfernen“ macht daraus direkte Wechsel. **Erledigt.**
+   Ein echter Übergang des Covers in den Player (Shared Element) ist mit dem klassischen
+   Player-Layout (MotionLayout) nicht möglich und wäre ein eigener Umbau.
