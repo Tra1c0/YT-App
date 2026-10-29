@@ -225,6 +225,13 @@ class MainActivity : AbstractPlayerHostActivity() {
         if (binding.bottomNav.menu.children.none { it.itemId == startFragmentId }) deselectBottomBarItems()
 
         binding.toolbar.title = ThemeHelper.getStyledAppName(this)
+        // YT: wordmark type and navigation labels follow the selected design
+        val ytDesign = com.github.libretube.helpers.YtDesign.current()
+        binding.toolbar.setTitleTextAppearance(this, ytDesign.brandTextAppearance)
+        if (ytDesign.labeledNavigation) {
+            binding.bottomNav.labelVisibilityMode =
+                com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY_LABELED
+        }
 
         // handle error logs
         PreferenceHelper.getErrorLog().ifBlank { null }?.let {

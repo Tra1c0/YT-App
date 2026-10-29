@@ -5,4 +5,10 @@
     <string name="yt_dynamic_player_colors_summary">Tints the player page with the main color of the thumbnail</string>
     <string name="yt_settings_everyday">Everyday</string>
     <string name="yt_settings_geeks">For geeks</string>
+    <string name="yt_design">Design</string>
+    <string name="yt_design_standard">Standard (YT)</string>
+    <string name="yt_design_youtube">YouTube reimagined</string>
+    <string name="yt_design_movo">Movo: playful, modular</string>
+    <string name="yt_design_after">After: cinematic, warm</string>
+    <string name="yt_design_side">Side: calm, social</string>
 </resources>

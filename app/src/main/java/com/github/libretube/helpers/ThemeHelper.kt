@@ -37,6 +37,9 @@ object ThemeHelper {
             false
         )
         if (pureThemeEnabled) activity.theme.applyStyle(R.style.Pure, true)
+
+        // YT: a selected design overrides accent and pure theme with its own palette and type
+        YtDesign.current().overlay?.let { activity.theme.applyStyle(it, true) }
     }
 
     /**
@@ -110,9 +113,9 @@ object ThemeHelper {
      * Get the styled app name
      */
     fun getStyledAppName(context: Context): Spanned {
-        val colorPrimary = getThemeColor(context, androidx.appcompat.R.attr.colorPrimaryDark)
+        val colorPrimary = getThemeColor(context, androidx.appcompat.R.attr.colorPrimary)
         val hexColor = "#%06X".format(0xFFFFFF and colorPrimary)
-        return "Y<span  style='color:$hexColor';>T</span>"
+        return YtDesign.current().wordmarkHtml(hexColor)
             .parseAsHtml(HtmlCompat.FROM_HTML_MODE_COMPACT)
     }
 

@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: design overlays for the design switch. Colors and type follow the design briefs
+     "YouTube neu gedacht", "Movo", "After" and "Side" (see docs/DESIGNS.md). -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="TextAppearance.YT.YouTube.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="fontFamily">@font/geist_bold</item>
+        <item name="android:fontFamily">@font/geist_bold</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="fontFamily">@font/geist_bold</item>
+        <item name="android:fontFamily">@font/geist_bold</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/geist_bold</item>
+        <item name="android:fontFamily">@font/geist_bold</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/geist_bold</item>
+        <item name="android:fontFamily">@font/geist_bold</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/geist_bold</item>
+        <item name="android:fontFamily">@font/geist_bold</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/geist_bold</item>
+        <item name="android:fontFamily">@font/geist_bold</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+
+    <style name="YtDesign.YouTube">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.YouTube.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.YT.YouTube.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.YT.YouTube.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.YT.YouTube.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.YT.YouTube.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.YT.YouTube.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.YT.YouTube.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.YT.YouTube.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.YT.YouTube.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.YT.YouTube.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.YT.YouTube.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.YT.YouTube.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.YT.YouTube.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.YT.YouTube.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.YT.YouTube.LabelSmall</item>
+        <item name="colorPrimary">#FF334B</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#4A1320</item>
+        <item name="colorOnPrimaryContainer">#FFD9DC</item>
+        <item name="colorSecondary">#F6F4F2</item>
+        <item name="colorOnSecondary">#101014</item>
+        <item name="colorSecondaryContainer">#F6F4F2</item>
+        <item name="colorOnSecondaryContainer">#101014</item>
+        <item name="colorTertiary">#B4AEFF</item>
+        <item name="colorOnTertiary">#101014</item>
+        <item name="colorTertiaryContainer">#C9F26F</item>
+        <item name="colorOnTertiaryContainer">#101014</item>
+        <item name="android:colorBackground">#101014</item>
+        <item name="colorOnBackground">#F6F4F2</item>
+        <item name="colorSurface">#101014</item>
+        <item name="colorOnSurface">#F6F4F2</item>
+        <item name="colorSurfaceVariant">#282830</item>
+        <item name="colorOnSurfaceVariant">#B8B8C5</item>
+        <item name="colorOutline">#4A4A55</item>
+        <item name="colorOutlineVariant">#2E2E37</item>
+        <item name="colorSurfaceDim">#101014</item>
+        <item name="colorSurfaceBright">#282830</item>
+        <item name="colorSurfaceContainerLowest">#0B0B0F</item>
+        <item name="colorSurfaceContainerLow">#16161C</item>
+        <item name="colorSurfaceContainer">#1C1C23</item>
+        <item name="colorSurfaceContainerHigh">#23232B</item>
+        <item name="colorSurfaceContainerHighest">#282830</item>
+        <item name="colorSurfaceInverse">#F6F4F2</item>
+        <item name="colorOnSurfaceInverse">#101014</item>
+        <item name="colorPrimaryInverse">#FF334B</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+    </style>
+
+    <style name="TextAppearance.YT.YouTube.Brand" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/geist_bold</item>
+        <item name="android:fontFamily">@font/geist_bold</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextAppearance.YT.Movo.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="fontFamily">@font/geist_black</item>
+        <item name="android:fontFamily">@font/geist_black</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="fontFamily">@font/geist_black</item>
+        <item name="android:fontFamily">@font/geist_black</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/geist_black</item>
+        <item name="android:fontFamily">@font/geist_black</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/geist_black</item>
+        <item name="android:fontFamily">@font/geist_black</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/geist_black</item>
+        <item name="android:fontFamily">@font/geist_black</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/geist_black</item>
+        <item name="android:fontFamily">@font/geist_black</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+
+    <style name="YtDesign.Movo">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Movo.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.YT.Movo.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.YT.Movo.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.YT.Movo.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.YT.Movo.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.YT.Movo.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.YT.Movo.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.YT.Movo.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.YT.Movo.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.YT.Movo.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.YT.Movo.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.YT.Movo.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.YT.Movo.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.YT.Movo.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.YT.Movo.LabelSmall</item>
+        <item name="colorPrimary">#5260ED</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#2A2F7A</item>
+        <item name="colorOnPrimaryContainer">#DDE0FF</item>
+        <item name="colorSecondary">#E557D6</item>
+        <item name="colorOnSecondary">#101112</item>
+        <item name="colorSecondaryContainer">#5260ED</item>
+        <item name="colorOnSecondaryContainer">#FFFFFF</item>
+        <item name="colorTertiary">#C9F26F</item>
+        <item name="colorOnTertiary">#101112</item>
+        <item name="colorTertiaryContainer">#C9F26F</item>
+        <item name="colorOnTertiaryContainer">#101112</item>
+        <item name="android:colorBackground">#101112</item>
+        <item name="colorOnBackground">#F7F6F2</item>
+        <item name="colorSurface">#101112</item>
+        <item name="colorOnSurface">#F7F6F2</item>
+        <item name="colorSurfaceVariant">#2B2C30</item>
+        <item name="colorOnSurfaceVariant">#B5B6BC</item>
+        <item name="colorOutline">#4B4C52</item>
+        <item name="colorOutlineVariant">#2F3034</item>
+        <item name="colorSurfaceDim">#101112</item>
+        <item name="colorSurfaceBright">#2B2C30</item>
+        <item name="colorSurfaceContainerLowest">#0A0A0B</item>
+        <item name="colorSurfaceContainerLow">#17181A</item>
+        <item name="colorSurfaceContainer">#1D1E21</item>
+        <item name="colorSurfaceContainerHigh">#242528</item>
+        <item name="colorSurfaceContainerHighest">#2B2C30</item>
+        <item name="colorSurfaceInverse">#F7F6F2</item>
+        <item name="colorOnSurfaceInverse">#101112</item>
+        <item name="colorPrimaryInverse">#5260ED</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+    </style>
+
+    <style name="TextAppearance.YT.Movo.Brand" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/geist_black</item>
+        <item name="android:fontFamily">@font/geist_black</item>
+        <item name="android:textSize">26sp</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextAppearance.YT.After.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="fontFamily">@font/geist_black</item>
+        <item name="android:fontFamily">@font/geist_black</item>
+    </style>
+    <style name="TextAppearance.YT.After.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="fontFamily">@font/geist_black</item>
+        <item name="android:fontFamily">@font/geist_black</item>
+    </style>
+    <style name="TextAppearance.YT.After.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/geist_black</item>
+        <item name="android:fontFamily">@font/geist_black</item>
+    </style>
+    <style name="TextAppearance.YT.After.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/anton</item>
+        <item name="android:fontFamily">@font/anton</item>
+    </style>
+    <style name="TextAppearance.YT.After.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/anton</item>
+        <item name="android:fontFamily">@font/anton</item>
+    </style>
+    <style name="TextAppearance.YT.After.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/anton</item>
+        <item name="android:fontFamily">@font/anton</item>
+    </style>
+    <style name="TextAppearance.YT.After.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+    <style name="TextAppearance.YT.After.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+    <style name="TextAppearance.YT.After.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+    <style name="TextAppearance.YT.After.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+    <style name="TextAppearance.YT.After.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+    <style name="TextAppearance.YT.After.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+    <style name="TextAppearance.YT.After.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+    <style name="TextAppearance.YT.After.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+    <style name="TextAppearance.YT.After.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+
+    <style name="YtDesign.After">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.After.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.YT.After.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.YT.After.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.YT.After.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.YT.After.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.YT.After.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.YT.After.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.YT.After.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.YT.After.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.YT.After.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.YT.After.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.YT.After.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.YT.After.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.YT.After.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.YT.After.LabelSmall</item>
+        <item name="colorPrimary">#FF8B4B</item>
+        <item name="colorOnPrimary">#2B1219</item>
+        <item name="colorPrimaryContainer">#5A2A1A</item>
+        <item name="colorOnPrimaryContainer">#FFDCC8</item>
+        <item name="colorSecondary">#FFF4DF</item>
+        <item name="colorOnSecondary">#2B1219</item>
+        <item name="colorSecondaryContainer">#FFF4DF</item>
+        <item name="colorOnSecondaryContainer">#2B1219</item>
+        <item name="colorTertiary">#FFB37A</item>
+        <item name="colorOnTertiary">#2B1219</item>
+        <item name="colorTertiaryContainer">#FF8B4B</item>
+        <item name="colorOnTertiaryContainer">#2B1219</item>
+        <item name="android:colorBackground">#1A0B0F</item>
+        <item name="colorOnBackground">#FFF4DF</item>
+        <item name="colorSurface">#1A0B0F</item>
+        <item name="colorOnSurface">#FFF4DF</item>
+        <item name="colorSurfaceVariant">#3C1B24</item>
+        <item name="colorOnSurfaceVariant">#D8C6B6</item>
+        <item name="colorOutline">#6E4E4E</item>
+        <item name="colorOutlineVariant">#43262C</item>
+        <item name="colorSurfaceDim">#1A0B0F</item>
+        <item name="colorSurfaceBright">#3C1B24</item>
+        <item name="colorSurfaceContainerLowest">#12070A</item>
+        <item name="colorSurfaceContainerLow">#22100F</item>
+        <item name="colorSurfaceContainer">#2B1219</item>
+        <item name="colorSurfaceContainerHigh">#33161E</item>
+        <item name="colorSurfaceContainerHighest">#3C1B24</item>
+        <item name="colorSurfaceInverse">#FFF4DF</item>
+        <item name="colorOnSurfaceInverse">#1A0B0F</item>
+        <item name="colorPrimaryInverse">#FF8B4B</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+    </style>
+
+    <style name="TextAppearance.YT.After.Brand" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/geist_black</item>
+        <item name="android:fontFamily">@font/geist_black</item>
+        <item name="android:textSize">26sp</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextAppearance.YT.Side.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="fontFamily">@font/figtree_semibold</item>
+        <item name="android:fontFamily">@font/figtree_semibold</item>
+    </style>
+    <style name="TextAppearance.YT.Side.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="fontFamily">@font/figtree_semibold</item>
+        <item name="android:fontFamily">@font/figtree_semibold</item>
+    </style>
+    <style name="TextAppearance.YT.Side.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/figtree_semibold</item>
+        <item name="android:fontFamily">@font/figtree_semibold</item>
+    </style>
+    <style name="TextAppearance.YT.Side.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/figtree_semibold</item>
+        <item name="android:fontFamily">@font/figtree_semibold</item>
+    </style>
+    <style name="TextAppearance.YT.Side.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/figtree_semibold</item>
+        <item name="android:fontFamily">@font/figtree_semibold</item>
+    </style>
+    <style name="TextAppearance.YT.Side.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/figtree_semibold</item>
+        <item name="android:fontFamily">@font/figtree_semibold</item>
+    </style>
+    <style name="TextAppearance.YT.Side.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/figtree_medium</item>
+        <item name="android:fontFamily">@font/figtree_medium</item>
+    </style>
+    <style name="TextAppearance.YT.Side.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/figtree_medium</item>
+        <item name="android:fontFamily">@font/figtree_medium</item>
+    </style>
+    <style name="TextAppearance.YT.Side.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/figtree_medium</item>
+        <item name="android:fontFamily">@font/figtree_medium</item>
+    </style>
+    <style name="TextAppearance.YT.Side.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/figtree</item>
+        <item name="android:fontFamily">@font/figtree</item>
+    </style>
+    <style name="TextAppearance.YT.Side.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/figtree</item>
+        <item name="android:fontFamily">@font/figtree</item>
+    </style>
+    <style name="TextAppearance.YT.Side.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/figtree</item>
+        <item name="android:fontFamily">@font/figtree</item>
+    </style>
+    <style name="TextAppearance.YT.Side.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/figtree_medium</item>
+        <item name="android:fontFamily">@font/figtree_medium</item>
+    </style>
+    <style name="TextAppearance.YT.Side.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/figtree_medium</item>
+        <item name="android:fontFamily">@font/figtree_medium</item>
+    </style>
+    <style name="TextAppearance.YT.Side.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/figtree_medium</item>
+        <item name="android:fontFamily">@font/figtree_medium</item>
+    </style>
+
+    <style name="YtDesign.Side">
+        <item name="fontFamily">@font/figtree</item>
+        <item name="android:fontFamily">@font/figtree</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Side.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.YT.Side.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.YT.Side.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.YT.Side.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.YT.Side.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.YT.Side.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.YT.Side.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.YT.Side.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.YT.Side.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.YT.Side.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.YT.Side.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.YT.Side.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.YT.Side.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.YT.Side.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.YT.Side.LabelSmall</item>
+        <item name="colorPrimary">#FFC68D</item>
+        <item name="colorOnPrimary">#2A1C0F</item>
+        <item name="colorPrimaryContainer">#5A4127</item>
+        <item name="colorOnPrimaryContainer">#FFE1C4</item>
+        <item name="colorSecondary">#FFC68D</item>
+        <item name="colorOnSecondary">#2A1C0F</item>
+        <item name="colorSecondaryContainer">#FFC68D</item>
+        <item name="colorOnSecondaryContainer">#2A1C0F</item>
+        <item name="colorTertiary">#FFC68D</item>
+        <item name="colorOnTertiary">#2A1C0F</item>
+        <item name="colorTertiaryContainer">#5A4127</item>
+        <item name="colorOnTertiaryContainer">#FFE1C4</item>
+        <item name="android:colorBackground">#292A2C</item>
+        <item name="colorOnBackground">#F5F1EB</item>
+        <item name="colorSurface">#292A2C</item>
+        <item name="colorOnSurface">#F5F1EB</item>
+        <item name="colorSurfaceVariant">#3C3D40</item>
+        <item name="colorOnSurfaceVariant">#C4C2BD</item>
+        <item name="colorOutline">#5C5B58</item>
+        <item name="colorOutlineVariant">#434345</item>
+        <item name="colorSurfaceDim">#292A2C</item>
+        <item name="colorSurfaceBright">#3C3D40</item>
+        <item name="colorSurfaceContainerLowest">#222325</item>
+        <item name="colorSurfaceContainerLow">#2E2F31</item>
+        <item name="colorSurfaceContainer">#323335</item>
+        <item name="colorSurfaceContainerHigh">#353638</item>
+        <item name="colorSurfaceContainerHighest">#3C3D40</item>
+        <item name="colorSurfaceInverse">#F5F1EB</item>
+        <item name="colorOnSurfaceInverse">#292A2C</item>
+        <item name="colorPrimaryInverse">#FFC68D</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+    </style>
+
+    <style name="TextAppearance.YT.Side.Brand" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/figtree_semibold</item>
+        <item name="android:fontFamily">@font/figtree_semibold</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+</resources>

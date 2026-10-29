@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT font family (SIL Open Font License 1.1, see fonts/) -->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <font android:font="@font/font_geist_900" android:fontStyle="normal" android:fontWeight="900"
+        app:font="@font/font_geist_900" app:fontStyle="normal" app:fontWeight="900" />
+    <font android:font="@font/font_geist_900" android:fontStyle="normal" android:fontWeight="950"
+        app:font="@font/font_geist_900" app:fontStyle="normal" app:fontWeight="950" />
+</font-family>

@@ -5,4 +5,10 @@
     <string name="yt_dynamic_player_colors_summary">Färbt die Player-Seite dezent in der Hauptfarbe des Thumbnails</string>
     <string name="yt_settings_everyday">Alltag</string>
     <string name="yt_settings_geeks">Für Geeks</string>
+    <string name="yt_design">Design</string>
+    <string name="yt_design_standard">Standard (YT)</string>
+    <string name="yt_design_youtube">YouTube neu gedacht</string>
+    <string name="yt_design_movo">Movo: spielerisch, modular</string>
+    <string name="yt_design_after">After: filmisch, warm</string>
+    <string name="yt_design_side">Side: ruhig, sozial</string>
 </resources>

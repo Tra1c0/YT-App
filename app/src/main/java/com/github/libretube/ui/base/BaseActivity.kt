@@ -71,7 +71,12 @@ open class BaseActivity : AppCompatActivity() {
                 setLocale(locale)
             }
 
-            val uiPref = PreferenceHelper.getString(PreferenceKeys.THEME_MODE, "D") // YT: dark by default
+            // YT: dark by default; the designs are dark only
+            val uiPref = if (com.github.libretube.helpers.YtDesign.current() != com.github.libretube.helpers.YtDesign.STANDARD) {
+                "D"
+            } else {
+                PreferenceHelper.getString(PreferenceKeys.THEME_MODE, "D")
+            }
             AppCompatDelegate.setDefaultNightMode(getThemeMode(uiPref))
         }
 

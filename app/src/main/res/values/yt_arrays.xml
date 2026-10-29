@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="yt_designs">
+        <item>@string/yt_design_standard</item>
+        <item>@string/yt_design_youtube</item>
+        <item>@string/yt_design_movo</item>
+        <item>@string/yt_design_after</item>
+        <item>@string/yt_design_side</item>
+    </string-array>
+    <string-array name="yt_designs_values" translatable="false">
+        <item>standard</item>
+        <item>youtube</item>
+        <item>movo</item>
+        <item>after</item>
+        <item>side</item>
+    </string-array>
+</resources>

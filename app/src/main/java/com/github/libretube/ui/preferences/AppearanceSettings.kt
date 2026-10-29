@@ -18,6 +18,13 @@ class AppearanceSettings : BasePreferenceFragment() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.appearance_settings, rootKey)
 
+        // YT: switching the design needs a restart, like the theme
+        findPreference<ListPreference>(com.github.libretube.helpers.YtDesign.PREF_KEY)
+            ?.setOnPreferenceChangeListener { _, _ ->
+                RequireRestartDialog().show(childFragmentManager, RequireRestartDialog::class.java.name)
+                true
+            }
+
         val themeToggle = findPreference<ListPreference>(PreferenceKeys.THEME_MODE)
         themeToggle?.setOnPreferenceChangeListener { _, _ ->
             RequireRestartDialog().show(childFragmentManager, RequireRestartDialog::class.java.name)

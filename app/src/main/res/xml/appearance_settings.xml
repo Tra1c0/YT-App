@@ -4,6 +4,16 @@
 
     <PreferenceCategory app:title="@string/appearance">
 
+        <!-- YT: design switch -->
+        <ListPreference
+            android:icon="@drawable/ic_color"
+            app:defaultValue="standard"
+            app:entries="@array/yt_designs"
+            app:entryValues="@array/yt_designs_values"
+            app:key="yt_design"
+            app:title="@string/yt_design"
+            app:useSimpleSummaryProvider="true" />
+
         <ListPreference
             android:icon="@drawable/ic_theme"
             app:defaultValue="D"
