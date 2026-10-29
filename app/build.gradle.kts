@@ -22,22 +22,41 @@ keyPassword=my_key_password
  */
 
 val keystoreProperties = Properties()
-val keystoreFileExists = rootProject.file("keystore.properties").exists();
-if (keystoreFileExists) {
-    keystoreProperties.load(rootProject.file("keystore.properties").inputStream())
+// YT: without keystore.properties, CI signs with the personal key from the repository secrets
+// (YT_KEYSTORE_PATH and YT_KEYSTORE_PASSWORD), so every build updates the installed app.
+val ytKeystorePath: String? = System.getenv("YT_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }
+val keystoreFileExists = when {
+    rootProject.file("keystore.properties").exists() -> {
+        keystoreProperties.load(rootProject.file("keystore.properties").inputStream())
+        true
+    }
+    ytKeystorePath != null -> {
+        val password = System.getenv("YT_KEYSTORE_PASSWORD").orEmpty()
+        keystoreProperties["storeFile"] = ytKeystorePath
+        keystoreProperties["storePassword"] = password
+        keystoreProperties["keyAlias"] = System.getenv("YT_KEY_ALIAS")?.takeIf { it.isNotBlank() } ?: "yt"
+        keystoreProperties["keyPassword"] = System.getenv("YT_KEY_PASSWORD")?.takeIf { it.isNotBlank() } ?: password
+        true
+    }
+    else -> false
 }
+
+// YT: CI passes its run number so that every build has a higher version code than the last.
+val ytBuildNumber = (System.getenv("YT_BUILD_NUMBER") ?: "0").toInt()
 
 android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.github.libretube"
+        // YT: own package name, so YT installs next to YouTube and LibreTube.
+        applicationId = "app.tra1c0.yt"
         minSdk = 26
         targetSdk = 36
-        versionCode = 72
-        versionName = "32.1"
+        // Upstream LibreTube version code 72, times 100000, plus the CI run number.
+        versionCode = 72 * 100000 + ytBuildNumber
+        versionName = "32.1-yt.$ytBuildNumber"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        resValue("string", "app_name", "LibreTube")
+        resValue("string", "app_name", "YT")
     }
 
     ksp {
@@ -64,7 +83,10 @@ android {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
+            // YT: without a personal key, fall back to the debug key so the APK still installs.
+            // Builds signed that way cannot update a build signed with the personal key.
             signingConfig = signingConfigs.findByName("release")?.takeIf { it.storeFile != null }
+                ?: signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -74,7 +96,7 @@ android {
         getByName("debug") {
             isDebuggable = true
             applicationIdSuffix = ".debug"
-            resValue("string", "app_name", "LibreTube Debug")
+            resValue("string", "app_name", "YT Debug")
         }
     }
 
