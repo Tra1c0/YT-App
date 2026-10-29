@@ -36,4 +36,29 @@
     <string name="yt_watch_comments">Kommentare</string>
     <string name="yt_watch_description">Beschreibung</string>
     <string name="yt_watch_up_next">Als Nächstes</string>
+    <string name="yt_movo_headline">Was zieht dich rein?</string>
+    <string name="yt_movo_discover">Entdecken</string>
+    <string name="yt_movo_following">Folge ich</string>
+    <string name="yt_movo_followers">%1$s Follower</string>
+    <string name="yt_movo_follow">Folgen</string>
+    <string name="yt_movo_following_state">Folge ich</string>
+    <string name="yt_movo_save">Merken</string>
+    <string name="yt_movo_in_video">Im Video</string>
+    <string name="yt_movo_discussion">Diskussion</string>
+    <string name="yt_nav_home">Home</string>
+    <string name="yt_nav_subscriptions">Abos</string>
+    <string name="yt_nav_you">Du</string>
+    <string name="yt_nav_discover">Entdecken</string>
+    <string name="yt_nav_channels">Kanäle</string>
+    <string name="yt_nav_watchlist">Merkliste</string>
+    <string name="yt_nav_today">Heute</string>
+    <string name="yt_nav_rooms">Räume</string>
+    <string name="yt_nav_collection">Sammlung</string>
+    <string name="yt_nav_start">Start</string>
+    <string name="yt_nav_inbox">Postfach</string>
+    <string name="yt_nav_mine">Meine</string>
+    <plurals name="yt_chapters_count">
+        <item quantity="one">%d Kapitel</item>
+        <item quantity="other">%d Kapitel</item>
+    </plurals>
 </resources>

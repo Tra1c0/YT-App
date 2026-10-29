@@ -19,19 +19,31 @@ object YtWatch {
         container: LinearLayout,
         actions: YtWatchActions,
     ): YtWatchController? {
-        if (YtDesign.current() != YtDesign.YOUTUBE) return null
+        val design = YtDesign.current()
+        if (design != YtDesign.YOUTUBE && design != YtDesign.MOVO) return null
 
         val controller = YtWatchController()
         val composeView = ComposeView(fragment.requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                YtTheme(YtPalettes.YouTube) {
-                    YouTubeWatchDetails(
-                        palette = YtPalettes.YouTube,
-                        imageLoader = ImageHelper.loader(),
-                        controller = controller,
-                        actions = actions,
-                    )
+                if (design == YtDesign.MOVO) {
+                    YtTheme(YtPalettes.Movo) {
+                        MovoWatchDetails(
+                            palette = YtPalettes.Movo,
+                            imageLoader = ImageHelper.loader(),
+                            controller = controller,
+                            actions = actions,
+                        )
+                    }
+                } else {
+                    YtTheme(YtPalettes.YouTube) {
+                        YouTubeWatchDetails(
+                            palette = YtPalettes.YouTube,
+                            imageLoader = ImageHelper.loader(),
+                            controller = controller,
+                            actions = actions,
+                        )
+                    }
                 }
             }
         }

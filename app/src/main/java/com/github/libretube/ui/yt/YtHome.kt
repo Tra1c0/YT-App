@@ -31,7 +31,8 @@ object YtHome {
         viewModel: HomeViewModel,
         refresh: () -> Unit,
     ): Boolean {
-        if (YtDesign.current() != YtDesign.YOUTUBE) return false
+        val design = YtDesign.current()
+        if (design != YtDesign.YOUTUBE && design != YtDesign.MOVO) return false
 
         val composeView = ComposeView(fragment.requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -40,8 +41,25 @@ object YtHome {
                 val trending by viewModel.trending.observeAsState()
                 val isLoading by viewModel.isLoading.observeAsState(true)
                 var filter by remember { mutableStateOf(YT_FILTER_ALL) }
+                var movoTab by remember { mutableStateOf(MOVO_TAB_DISCOVER) }
 
-                YtTheme(YtPalettes.YouTube) {
+                if (design == YtDesign.MOVO) {
+                    YtTheme(YtPalettes.Movo) {
+                        MovoHomeScreen(
+                            palette = YtPalettes.Movo,
+                            imageLoader = ImageHelper.loader(),
+                            discover = trending?.second?.streams,
+                            following = feed,
+                            tab = movoTab,
+                            isLoading = isLoading,
+                            onSelectTab = { movoTab = it },
+                            onRefresh = refresh,
+                            onOpenVideo = { video ->
+                                NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
+                            },
+                        )
+                    }
+                } else YtTheme(YtPalettes.YouTube) {
                     YouTubeHomeScreen(
                         palette = YtPalettes.YouTube,
                         imageLoader = ImageHelper.loader(),

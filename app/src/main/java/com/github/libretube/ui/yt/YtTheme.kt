@@ -45,6 +45,7 @@ data class YtPalette(
     val lime: Color,
     val lavender: Color,
     val ink: Color,
+    val pink: Color = Color(0xFFE557D6),
 )
 
 object YtPalettes {
@@ -63,6 +64,23 @@ object YtPalettes {
         ink = Color(0xFF101014),
     )
 }
+
+/** "Movo": near-black, cobalt, candy pink, acid lime and a light lavender chapter surface. */
+val YtPalettes.Movo: YtPalette
+    get() = YtPalette(
+        background = Color(0xFF101112),
+        surface = Color(0xFF1D1E21),
+        raised = Color(0xFF2B2C30),
+        text = Color(0xFFF7F6F2),
+        textSecondary = Color(0xFFB5B6BC),
+        accent = Color(0xFF5260ED),
+        onAccent = Color(0xFFFFFFFF),
+        live = Color(0xFFE557D6),
+        lime = Color(0xFFC9F26F),
+        lavender = Color(0xFFC9C3FF),
+        ink = Color(0xFF101112),
+        pink = Color(0xFFE557D6),
+    )
 
 @Composable
 fun YtTheme(palette: YtPalette, content: @Composable () -> Unit) {

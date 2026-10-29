@@ -737,6 +737,12 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
             false
         )
 
+        // YT: timeline color of the selected design (e.g. lime in Movo)
+        com.github.libretube.helpers.YtDesign.current().timelineColor?.let { color ->
+            playerControlsBinding.exoProgress.setPlayedColor(color)
+            playerControlsBinding.exoProgress.setScrubberColor(color)
+        }
+
         // YT: the selected design shows its own video page details, reusing the classic buttons
         ytWatch = com.github.libretube.ui.yt.YtWatch.attach(
             this,

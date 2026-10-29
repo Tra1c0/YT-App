@@ -1,5 +1,7 @@
 package com.github.libretube.helpers
 
+import androidx.annotation.IdRes
+import androidx.annotation.StringRes
 import androidx.annotation.StyleRes
 import com.github.libretube.R
 
@@ -26,6 +28,46 @@ enum class YtDesign(
         MOVO -> "movo"
         AFTER -> "after"
         SIDE -> "side<span style='color:$accentHex';>.</span>"
+    }
+
+    /** Color of the played part of the player timeline, or null for the theme color. */
+    val timelineColor: Int?
+        get() = when (this) {
+            STANDARD -> null
+            YOUTUBE -> 0xFFFF334B.toInt()
+            MOVO -> 0xFFC9F26F.toInt()
+            AFTER -> 0xFFFF8B4B.toInt()
+            SIDE -> 0xFFFFC68D.toInt()
+        }
+
+    /** The label of a bottom navigation destination in this design, or null to keep the default. */
+    @StringRes
+    fun navigationLabel(@IdRes itemId: Int): Int? = when (this) {
+        STANDARD -> null
+        YOUTUBE -> when (itemId) {
+            R.id.homeFragment -> R.string.yt_nav_home
+            R.id.subscriptionsFragment -> R.string.yt_nav_subscriptions
+            R.id.libraryFragment -> R.string.yt_nav_you
+            else -> null
+        }
+        MOVO -> when (itemId) {
+            R.id.homeFragment -> R.string.yt_nav_discover
+            R.id.subscriptionsFragment -> R.string.yt_nav_channels
+            R.id.libraryFragment -> R.string.yt_nav_watchlist
+            else -> null
+        }
+        AFTER -> when (itemId) {
+            R.id.homeFragment -> R.string.yt_nav_today
+            R.id.trendsFragment -> R.string.yt_nav_rooms
+            R.id.libraryFragment -> R.string.yt_nav_collection
+            else -> null
+        }
+        SIDE -> when (itemId) {
+            R.id.homeFragment -> R.string.yt_nav_start
+            R.id.subscriptionsFragment -> R.string.yt_nav_inbox
+            R.id.libraryFragment -> R.string.yt_nav_mine
+            else -> null
+        }
     }
 
     companion object {

@@ -232,6 +232,9 @@ class MainActivity : AbstractPlayerHostActivity() {
             binding.bottomNav.labelVisibilityMode =
                 com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY_LABELED
         }
+        for (item in binding.bottomNav.menu.children) {
+            ytDesign.navigationLabel(item.itemId)?.let { item.title = getString(it) }
+        }
 
         // handle error logs
         PreferenceHelper.getErrorLog().ifBlank { null }?.let {
