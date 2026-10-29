@@ -100,12 +100,30 @@ val YtPalettes.After: YtPalette
         ink = Color(0xFF2B1219),
     )
 
+/** "Side": matte graphite, raised surfaces and warm pale apricot. */
+val YtPalettes.Side: YtPalette
+    get() = YtPalette(
+        background = Color(0xFF292A2C),
+        surface = Color(0xFF353638),
+        raised = Color(0xFF414245),
+        text = Color(0xFFF5F1EB),
+        textSecondary = Color(0xFFC4C2BD),
+        accent = Color(0xFFFFC68D),
+        onAccent = Color(0xFF2A1E12),
+        live = Color(0xFFFFC68D),
+        // collection cards: apricot and warm white
+        lime = Color(0xFFFFC68D),
+        lavender = Color(0xFFE9E2D8),
+        ink = Color(0xFF292A2C),
+    )
+
 /** The Compose palette of a design, or null for the classic look. */
 val YtDesign.palette: YtPalette?
     get() = when (this) {
         YtDesign.YOUTUBE -> YtPalettes.YouTube
         YtDesign.MOVO -> YtPalettes.Movo
         YtDesign.AFTER -> YtPalettes.After
+        YtDesign.SIDE -> YtPalettes.Side
         else -> null
     }
 

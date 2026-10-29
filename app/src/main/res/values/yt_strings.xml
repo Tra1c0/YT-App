@@ -83,4 +83,39 @@
     <string name="yt_movo_library_subline">Everything that pulled you in.</string>
     <string name="yt_after_library_headline">Your collection.</string>
     <string name="yt_after_library_subline">Kept for later, for tonight.</string>
+
+    <!-- Design "Side" -->
+    <string name="yt_side_headline">Good pictures.\nGood conversations.</string>
+    <string name="yt_side_for_you">For you</string>
+    <string name="yt_side_people">Your people</string>
+    <string name="yt_side_people_empty">Nobody here yet. Channels you subscribe to appear under \"Your people\".</string>
+    <string name="yt_side_post">Post</string>
+    <string name="yt_side_minutes">%1$d min</string>
+    <string name="yt_side_open_channel">Open channel</string>
+    <string name="yt_side_heart">Heart</string>
+    <string name="yt_side_prompt">What moved you about it?</string>
+    <string name="yt_side_join">Join the conversation</string>
+    <string name="yt_side_post_message">Paste a YouTube link. The video opens with its conversation and your notes.</string>
+    <string name="yt_side_post_hint">YouTube link</string>
+    <string name="yt_side_post_open">Open</string>
+    <string name="yt_side_post_invalid">That is not a link to a YouTube video.</string>
+    <string name="yt_side_description">Description</string>
+    <string name="yt_side_conversation">Conversation</string>
+    <string name="yt_side_notes">Notes</string>
+    <string name="yt_side_input_hint">Your thought …</string>
+    <string name="yt_side_save_note">Save as note</string>
+    <string name="yt_side_comments_off">Comments are turned off.</string>
+    <string name="yt_side_comments_none">No comments yet.</string>
+    <plurals name="yt_side_answers">
+        <item quantity="one">%1$s reply</item>
+        <item quantity="other">%1$s replies</item>
+    </plurals>
+    <string name="yt_side_all_comments">All comments</string>
+    <string name="yt_side_creator">Creator</string>
+    <string name="yt_side_saved_as_note">Without an account your thought becomes a note, kept on this device.</string>
+    <string name="yt_side_notes_caption">Only on this device. Tap a time to jump there.</string>
+    <string name="yt_side_notes_empty">No notes yet. Write a thought below, it is saved with the current video time.</string>
+    <string name="yt_side_delete_note">Delete note</string>
+    <string name="yt_side_library_headline">Mine.</string>
+    <string name="yt_side_library_subline">What you want to keep.</string>
 </resources>

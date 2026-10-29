@@ -1,6 +1,10 @@
 package com.github.libretube.ui.yt
 
+import android.content.Intent
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -10,20 +14,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.core.net.toUri
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import com.github.libretube.R
 import com.github.libretube.api.MediaServiceRepository
 import com.github.libretube.api.TrendingCategory
 import com.github.libretube.api.obj.StreamItem
+import com.github.libretube.constants.IntentData
 import com.github.libretube.constants.PreferenceKeys
 import com.github.libretube.extensions.toID
 import com.github.libretube.helpers.ImageHelper
 import com.github.libretube.helpers.NavigationHelper
 import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.helpers.YtDesign
+import com.github.libretube.helpers.YtHearts
 import com.github.libretube.parcelable.PlayerData
+import com.github.libretube.ui.dialogs.AddToPlaylistDialog
 import com.github.libretube.ui.models.HomeViewModel
+import com.github.libretube.util.TextUtils
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -40,7 +51,7 @@ object YtHome {
         refresh: () -> Unit,
     ): Boolean {
         val design = YtDesign.current()
-        if (design != YtDesign.YOUTUBE && design != YtDesign.MOVO && design != YtDesign.AFTER) return false
+        if (design == YtDesign.STANDARD) return false
 
         val composeView = ComposeView(fragment.requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -51,7 +62,39 @@ object YtHome {
                 var filter by remember { mutableStateOf(YT_FILTER_ALL) }
                 var movoTab by remember { mutableStateOf(MOVO_TAB_DISCOVER) }
 
-                if (design == YtDesign.AFTER) {
+                if (design == YtDesign.SIDE) {
+                    var sideTab by remember { mutableStateOf(SIDE_TAB_FOR_YOU) }
+                    var hearts by remember { mutableStateOf(YtHearts.all()) }
+                    YtTheme(YtPalettes.Side) {
+                        SideHomeScreen(
+                            palette = YtPalettes.Side,
+                            imageLoader = ImageHelper.loader(),
+                            forYou = trending?.second?.streams ?: feed,
+                            people = feed,
+                            tab = sideTab,
+                            hearts = hearts,
+                            isLoading = isLoading,
+                            onSelectTab = { sideTab = it },
+                            onRefresh = refresh,
+                            actions = SideFeedActions(
+                                onOpenVideo = { video ->
+                                    NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
+                                },
+                                onOpenChannel = { video ->
+                                    NavigationHelper.navigateChannel(context, video.uploaderUrl)
+                                },
+                                onBookmark = { video ->
+                                    AddToPlaylistDialog().apply {
+                                        arguments = bundleOf(IntentData.videoInfo to video)
+                                    }.show(fragment.childFragmentManager, AddToPlaylistDialog::class.java.name)
+                                },
+                                onShare = { video -> shareVideo(fragment, video) },
+                                onToggleHeart = { video -> hearts = YtHearts.toggle(video.url!!.toID()) },
+                                onPost = { showPostDialog(fragment) },
+                            ),
+                        )
+                    }
+                } else if (design == YtDesign.AFTER) {
                     val continueWatching by viewModel.continueWatching.observeAsState()
                     var afterTab by remember { mutableStateOf(AFTER_TAB_SELECTION) }
                     var reload by remember { mutableIntStateOf(0) }
@@ -139,4 +182,52 @@ object YtHome {
         )
         return true
     }
+
+    private fun shareVideo(fragment: Fragment, video: StreamItem) {
+        val link = "https://youtu.be/" + (video.url ?: return).toID()
+        val intent = Intent(Intent.ACTION_SEND)
+            .setType("text/plain")
+            .putExtra(Intent.EXTRA_SUBJECT, video.title)
+            .putExtra(Intent.EXTRA_TEXT, link)
+        fragment.startActivity(Intent.createChooser(intent, video.title))
+    }
+
+    /** "Beitrag" in the design Side: open a pasted YouTube link with its conversation. */
+    private fun showPostDialog(fragment: Fragment) {
+        val context = fragment.requireContext()
+        val input = EditText(context).apply {
+            setHint(R.string.yt_side_post_hint)
+            setSingleLine()
+        }
+        val container = FrameLayout(context).apply {
+            val gutter = (20 * resources.displayMetrics.density).toInt()
+            setPadding(gutter, gutter / 2, gutter, 0)
+            addView(input)
+        }
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.yt_side_post)
+            .setMessage(R.string.yt_side_post_message)
+            .setView(container)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.yt_side_post_open) { _, _ ->
+                val videoId = videoIdFromLink(input.text.toString().trim())
+                if (videoId == null) {
+                    Toast.makeText(context, R.string.yt_side_post_invalid, Toast.LENGTH_SHORT).show()
+                } else {
+                    NavigationHelper.navigateVideo(context, PlayerData(videoId))
+                }
+            }
+            .show()
+    }
+
+    private fun videoIdFromLink(text: String): String? {
+        if (VIDEO_ID.matches(text)) return text
+        val uri = runCatching { text.toUri() }.getOrNull() ?: return null
+        TextUtils.getVideoIdFromUri(uri)?.let { return it }
+        val segments = uri.pathSegments
+        val shorts = segments.indexOf("shorts")
+        return segments.getOrNull(shorts + 1)?.takeIf { shorts >= 0 && VIDEO_ID.matches(it) }
+    }
+
+    private val VIDEO_ID = Regex("[A-Za-z0-9_-]{11}")
 }

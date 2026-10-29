@@ -83,4 +83,39 @@
     <string name="yt_movo_library_subline">Alles, was dich reingezogen hat.</string>
     <string name="yt_after_library_headline">Deine Sammlung.</string>
     <string name="yt_after_library_subline">Für später. Für heute Nacht.</string>
+
+    <!-- Design "Side" -->
+    <string name="yt_side_headline">Gute Bilder.\nGute Gespräche.</string>
+    <string name="yt_side_for_you">Für dich</string>
+    <string name="yt_side_people">Deine Leute</string>
+    <string name="yt_side_people_empty">Noch niemand hier. Abonnierte Kanäle erscheinen unter „Deine Leute“.</string>
+    <string name="yt_side_post">Beitrag</string>
+    <string name="yt_side_minutes">%1$d Min.</string>
+    <string name="yt_side_open_channel">Kanal öffnen</string>
+    <string name="yt_side_heart">Herz</string>
+    <string name="yt_side_prompt">Was hat euch daran berührt?</string>
+    <string name="yt_side_join">Zum Gespräch</string>
+    <string name="yt_side_post_message">Füge einen YouTube-Link ein. Das Video öffnet sich mit Gespräch und deinen Notizen.</string>
+    <string name="yt_side_post_hint">YouTube-Link</string>
+    <string name="yt_side_post_open">Öffnen</string>
+    <string name="yt_side_post_invalid">Das ist kein Link zu einem YouTube-Video.</string>
+    <string name="yt_side_description">Beschreibung</string>
+    <string name="yt_side_conversation">Gespräch</string>
+    <string name="yt_side_notes">Notizen</string>
+    <string name="yt_side_input_hint">Dein Gedanke …</string>
+    <string name="yt_side_save_note">Als Notiz speichern</string>
+    <string name="yt_side_comments_off">Kommentare sind ausgeschaltet.</string>
+    <string name="yt_side_comments_none">Noch keine Kommentare.</string>
+    <plurals name="yt_side_answers">
+        <item quantity="one">%1$s Antwort</item>
+        <item quantity="other">%1$s Antworten</item>
+    </plurals>
+    <string name="yt_side_all_comments">Alle Kommentare</string>
+    <string name="yt_side_creator">Creator</string>
+    <string name="yt_side_saved_as_note">Ohne Konto wird dein Gedanke eine Notiz, nur auf diesem Gerät.</string>
+    <string name="yt_side_notes_caption">Nur auf diesem Gerät. Tippe auf die Zeit, um hinzuspringen.</string>
+    <string name="yt_side_notes_empty">Noch keine Notizen. Schreib unten einen Gedanken, er wird mit der aktuellen Videozeit gespeichert.</string>
+    <string name="yt_side_delete_note">Notiz löschen</string>
+    <string name="yt_side_library_headline">Meine.</string>
+    <string name="yt_side_library_subline">Was du behalten willst.</string>
 </resources>

@@ -34,6 +34,13 @@ object YtWatch {
                             controller = controller,
                             actions = actions,
                         )
+                    } else if (design == YtDesign.SIDE) {
+                        SideWatchDetails(
+                            palette = palette,
+                            imageLoader = ImageHelper.loader(),
+                            controller = controller,
+                            actions = actions,
+                        )
                     } else {
                         // "After" shares the structure of view B in its own colors
                         YouTubeWatchDetails(

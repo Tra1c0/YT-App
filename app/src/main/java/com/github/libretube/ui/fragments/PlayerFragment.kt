@@ -759,6 +759,9 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
                     ytShowDescription = show
                     _binding?.descriptionLayout?.isVisible = show
                 },
+                currentPosition = {
+                    if (::playerController.isInitialized) playerController.currentPosition else 0L
+                },
             ),
         )
         if (ytWatch != null) {
@@ -1198,6 +1201,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
         binding.descriptionLayout.setStreams(streams)
 
         // YT: video page details of the selected design
+        ytWatch?.videoId = videoId
         ytWatch?.streams = streams
 
         // YT: tint the area below the video with the main color of the thumbnail

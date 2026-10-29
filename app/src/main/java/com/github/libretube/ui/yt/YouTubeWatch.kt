@@ -57,6 +57,7 @@ import kotlinx.coroutines.withContext
 
 /** State of the video page that the player fragment updates. */
 class YtWatchController {
+    var videoId by mutableStateOf<String?>(null)
     var streams by mutableStateOf<Streams?>(null)
     var chapterIndex by mutableIntStateOf(-1)
 }
@@ -71,6 +72,7 @@ class YtWatchActions(
     val onComments: () -> Unit,
     val onOpenChannel: () -> Unit,
     val onShowDescription: (Boolean) -> Unit,
+    val currentPosition: () -> Long = { 0L },
 )
 
 private enum class WatchTab { CHAPTERS, COMMENTS, DESCRIPTION }

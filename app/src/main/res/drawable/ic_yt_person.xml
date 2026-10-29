@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- YT: person placeholder -->
+    <path
+        android:pathData="M12,4A4,4 0,1 1,12 12A4,4 0,1 1,12 4zM4.5,20C5.5,16.6 8.5,14.5 12,14.5S18.5,16.6 19.5,20"
+        android:strokeWidth="1.8"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
