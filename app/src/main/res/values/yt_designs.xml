@@ -64,7 +64,7 @@
         <item name="android:fontFamily">@font/geist_medium</item>
     </style>
 
-    <style name="YtDesign.YouTube">
+    <style name="YtDesign.YouTube" parent="">
         <item name="fontFamily">@font/geist</item>
         <item name="android:fontFamily">@font/geist</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.YouTube.DisplayLarge</item>
@@ -191,7 +191,7 @@
         <item name="android:fontFamily">@font/geist_semibold</item>
     </style>
 
-    <style name="YtDesign.Movo">
+    <style name="YtDesign.Movo" parent="">
         <item name="fontFamily">@font/geist</item>
         <item name="android:fontFamily">@font/geist</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Movo.DisplayLarge</item>
@@ -312,7 +312,7 @@
         <item name="android:fontFamily">@font/geist_medium</item>
     </style>
 
-    <style name="YtDesign.After">
+    <style name="YtDesign.After" parent="">
         <item name="fontFamily">@font/geist</item>
         <item name="android:fontFamily">@font/geist</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.After.DisplayLarge</item>
@@ -433,7 +433,7 @@
         <item name="android:fontFamily">@font/figtree_medium</item>
     </style>
 
-    <style name="YtDesign.Side">
+    <style name="YtDesign.Side" parent="">
         <item name="fontFamily">@font/figtree</item>
         <item name="android:fontFamily">@font/figtree</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Side.DisplayLarge</item>
