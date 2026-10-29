@@ -132,6 +132,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
     private val viewModel: PlayerViewModel by viewModels()
     private val commentsViewModel: CommentsViewModel by activityViewModels()
     private val chaptersViewModel: ChaptersViewModel by activityViewModels()
+
+    /** YT: video page details of the selected design, null for the classic layout. */
+    private var ytWatch: com.github.libretube.ui.yt.YtWatchController? = null
+    private var ytShowDescription = false
     private lateinit var playerController: MediaController
 
     // Video information passed by the intent
@@ -733,6 +737,33 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
             false
         )
 
+        // YT: the selected design shows its own video page details, reusing the classic buttons
+        ytWatch = com.github.libretube.ui.yt.YtWatch.attach(
+            this,
+            binding.linLayout,
+            com.github.libretube.ui.yt.YtWatchActions(
+                onSeek = { millis -> if (::playerController.isInitialized) playerController.seekTo(millis) },
+                onSave = { binding.relPlayerSave.performClick() },
+                onShare = { binding.relPlayerShare.performClick() },
+                onDownload = { binding.relPlayerDownload.performClick() },
+                onAudioOnly = { binding.relPlayerBackground.performClick() },
+                onComments = { binding.commentsToggle.performClick() },
+                onOpenChannel = { binding.playerChannel.performClick() },
+                onShowDescription = { show ->
+                    ytShowDescription = show
+                    _binding?.descriptionLayout?.isVisible = show
+                },
+            ),
+        )
+        if (ytWatch != null) {
+            (binding.optionsLL.parent as? View)?.isVisible = false
+            binding.playerChannel.isVisible = false
+            binding.commentsToggle.isVisible = false
+            chaptersViewModel.currentChapterIndex.observe(viewLifecycleOwner) { index ->
+                ytWatch?.chapterIndex = index ?: -1
+            }
+        }
+
         binding.relPlayerSave.setOnClickListener {
             if (!::streams.isInitialized) return@setOnClickListener
 
@@ -1120,6 +1151,12 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
         binding.relatedRecView.isInvisible = !show
         binding.playerChannel.isInvisible = !show
         playerBackgroundBinding.videoTransitionProgress.isVisible = !show
+
+        // YT: the design shows its own creator row and decides when the description is visible
+        if (ytWatch != null) {
+            binding.playerChannel.isVisible = false
+            if (show) binding.descriptionLayout.isVisible = ytShowDescription
+        }
     }
 
     private fun connectToPlayerView(player: Player) {
@@ -1153,6 +1190,9 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
         viewModel.isOrientationChangeInProgress = false
 
         binding.descriptionLayout.setStreams(streams)
+
+        // YT: video page details of the selected design
+        ytWatch?.streams = streams
 
         // YT: tint the area below the video with the main color of the thumbnail
         val ytColorTarget = binding.playerScrollView

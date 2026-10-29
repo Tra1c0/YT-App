@@ -26,4 +26,14 @@
         <item quantity="one">%d Video</item>
         <item quantity="other">%d Videos</item>
     </plurals>
+    <string name="yt_watch_subscribe">Abonnieren</string>
+    <string name="yt_watch_subscribed">Abonniert</string>
+    <string name="yt_watch_like">Gefällt mir</string>
+    <string name="yt_watch_save">Speichern</string>
+    <string name="yt_watch_download">Herunterladen</string>
+    <string name="yt_watch_audio">Nur Audio</string>
+    <string name="yt_watch_chapters">Kapitel</string>
+    <string name="yt_watch_comments">Kommentare</string>
+    <string name="yt_watch_description">Beschreibung</string>
+    <string name="yt_watch_up_next">Als Nächstes</string>
 </resources>
