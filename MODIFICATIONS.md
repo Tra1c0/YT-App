@@ -15,3 +15,4 @@ YT ist ein veränderter Fork von LibreTube (GPLv3). Basis: LibreTube `master`, C
 | 2026-10-29 | Schriften: Geist für Text, Geist Mono für Laufzeiten, Doto (Punktmatrix) für den Titel oben | `res/font/`, `res/values/yt_type.xml`, `res/values*/themes.xml`, `res/layout/activity_main.xml`, `res/layout/video_row.xml`, `res/layout/trending_row.xml`, `fonts/` |
 | 2026-10-29 | Untere Navigation ohne Beschriftung, App-Name „YT“ im Titel | `res/layout/activity_main.xml`, `helpers/ThemeHelper.kt` |
 | 2026-10-29 | Wischgesten: Lautstärke links, Helligkeit rechts | `ui/views/CustomExoPlayerView.kt`, `res/layout/player_gesture_controls_view.xml` |
+| 2026-10-29 | Farben aus dem Video: Player-Seite übernimmt per Verlauf die Hauptfarbe des Thumbnails (abschaltbar unter Darstellung) | `helpers/YtVideoColors.kt`, `ui/fragments/PlayerFragment.kt`, `res/xml/appearance_settings.xml`, `res/values*/yt_strings.xml` |

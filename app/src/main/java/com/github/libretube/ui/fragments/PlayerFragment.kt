@@ -1154,6 +1154,14 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
 
         binding.descriptionLayout.setStreams(streams)
 
+        // YT: tint the area below the video with the main color of the thumbnail
+        val ytColorTarget = binding.playerScrollView
+        val ytContext = requireContext()
+        val ytThumbnailUrl = streams.thumbnailUrl
+        viewLifecycleOwner.lifecycleScope.launch {
+            com.github.libretube.helpers.YtVideoColors.apply(ytContext, ytColorTarget, ytThumbnailUrl)
+        }
+
         toggleVideoInfoVisibility(true)
 
         binding.apply {

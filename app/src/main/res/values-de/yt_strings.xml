@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="yt_color_pink">Pink (YT)</string>
+    <string name="yt_dynamic_player_colors">Farben aus dem Video</string>
+    <string name="yt_dynamic_player_colors_summary">Färbt die Player-Seite dezent in der Hauptfarbe des Thumbnails</string>
 </resources>

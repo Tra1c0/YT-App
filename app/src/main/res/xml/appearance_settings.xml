@@ -20,6 +20,14 @@
             app:key="pure_theme"
             app:title="@string/pure_theme" />
 
+        <!-- YT -->
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_color"
+            android:summary="@string/yt_dynamic_player_colors_summary"
+            app:defaultValue="true"
+            app:key="yt_dynamic_player_colors"
+            app:title="@string/yt_dynamic_player_colors" />
+
         <ListPreference
             android:icon="@drawable/ic_color"
             app:defaultValue="pink"
