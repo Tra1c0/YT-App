@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -124,12 +125,12 @@ fun SideWatchDetails(
             color = palette.text,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 22.sp, lineHeight = 27.sp),
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp),
+            style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 18.sp, lineHeight = 23.sp),
+            modifier = Modifier.padding(start = 21.dp, end = 20.dp, top = 10.dp),
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 20.dp, end = 12.dp, top = 10.dp),
+            modifier = Modifier.padding(start = 21.dp, end = 12.dp, top = 8.dp),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -144,7 +145,7 @@ fun SideWatchDetails(
                     imageLoader = imageLoader,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(29.dp)
                         .clip(CircleShape)
                         .background(palette.surface),
                 )
@@ -153,14 +154,14 @@ fun SideWatchDetails(
                     color = palette.text,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 16.sp),
+                    style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 14.sp),
                     modifier = Modifier.padding(start = 12.dp),
                 )
             }
             Text(
                 text = stringResource(R.string.yt_side_description),
                 color = if (showDescription) palette.accent else palette.textSecondary,
-                style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 14.sp),
+                style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 13.sp),
                 modifier = Modifier
                     .clip(RoundedCornerShape(50))
                     .clickable {
@@ -199,7 +200,7 @@ fun SideWatchDetails(
         ) {
             Column(
                 Modifier
-                    .padding(top = 18.dp)
+                    .padding(top = 10.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     .background(palette.surface)
@@ -215,14 +216,14 @@ fun SideWatchDetails(
                 ) {
                     Box(
                         Modifier
-                            .size(44.dp, 4.dp)
+                            .size(41.dp, 4.dp)
                             .clip(RoundedCornerShape(50))
                             .background(palette.textSecondary.copy(alpha = 0.45f)),
                     )
                 }
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(horizontal = 22.dp),
                 ) {
                     SideTab(palette, stringResource(R.string.yt_side_conversation), tab == SideSheetTab.CONVERSATION) {
                         tab = SideSheetTab.CONVERSATION
@@ -233,7 +234,7 @@ fun SideWatchDetails(
                         open = true
                     }
                 }
-                SideDivider(palette.copy(surface = palette.raised), Modifier.padding(top = 12.dp))
+                SideDivider(palette.copy(surface = palette.raised), Modifier.padding(top = 5.dp))
 
                 AnimatedVisibility(
                     visible = open,
@@ -258,7 +259,7 @@ fun SideWatchDetails(
                         ) {
                             Box(
                                 Modifier
-                                    .size(36.dp)
+                                    .size(28.dp)
                                     .clip(CircleShape)
                                     .background(palette.raised),
                                 contentAlignment = Alignment.Center,
@@ -267,28 +268,28 @@ fun SideWatchDetails(
                                     painterResource(R.drawable.ic_yt_person),
                                     contentDescription = null,
                                     tint = palette.textSecondary,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(16.dp),
                                 )
                             }
                             BasicTextField(
                                 value = draft,
                                 onValueChange = { draft = it },
-                                textStyle = TextStyle(color = palette.text, fontFamily = YtFonts.figtree, fontSize = 15.sp),
+                                textStyle = TextStyle(color = palette.text, fontFamily = YtFonts.figtree, fontSize = 13.5.sp),
                                 cursorBrush = SolidColor(palette.accent),
                                 maxLines = 4,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .padding(horizontal = 10.dp)
-                                    .clip(RoundedCornerShape(24.dp))
-                                    .background(palette.raised)
-                                    .padding(horizontal = 18.dp, vertical = 14.dp),
+                                    .padding(start = 8.dp, end = 6.dp)
+                                    .clip(RoundedCornerShape(21.dp))
+                                    .background(Color(0xFF3A3B3D))
+                                    .padding(horizontal = 17.dp, vertical = 12.dp),
                                 decorationBox = { inner ->
                                     Box {
                                         if (draft.isEmpty()) {
                                             Text(
                                                 text = stringResource(R.string.yt_side_input_hint),
                                                 color = palette.textSecondary,
-                                                style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 15.sp),
+                                                style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 13.5.sp),
                                             )
                                         }
                                         inner()
@@ -297,7 +298,7 @@ fun SideWatchDetails(
                             )
                             Box(
                                 Modifier
-                                    .size(46.dp)
+                                    .size(38.dp)
                                     .clip(CircleShape)
                                     .background(if (draft.isBlank()) palette.raised else palette.accent)
                                     .clickable(enabled = draft.isNotBlank()) { saveDraft() },
@@ -307,7 +308,7 @@ fun SideWatchDetails(
                                     painterResource(R.drawable.ic_yt_send),
                                     contentDescription = stringResource(R.string.yt_side_save_note),
                                     tint = if (draft.isBlank()) palette.textSecondary else palette.onAccent,
-                                    modifier = Modifier.size(22.dp),
+                                    modifier = Modifier.size(18.dp),
                                 )
                             }
                         }
@@ -371,8 +372,8 @@ private fun SheetCaption(palette: YtPalette, text: String) {
     Text(
         text = text,
         color = palette.textSecondary,
-        style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 15.sp),
-        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 6.dp),
+        style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 12.sp),
+        modifier = Modifier.padding(start = 21.dp, end = 20.dp, top = 10.dp, bottom = 2.dp),
     )
 }
 
@@ -388,21 +389,21 @@ private fun CommentRow(
     }
     val timestamp = remember(comment.commentId) { TIMESTAMP.find(text)?.value }
 
-    Row(Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+    Row(Modifier.padding(start = 19.dp, end = 12.dp, top = 12.dp, bottom = 11.dp)) {
         AsyncImage(
             model = comment.thumbnail,
             contentDescription = null,
             imageLoader = imageLoader,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(44.dp)
+                .size(43.dp)
                 .clip(CircleShape)
                 .background(palette.raised),
         )
         Column(
             Modifier
                 .weight(1f)
-                .padding(start = 14.dp),
+                .padding(start = 16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -410,7 +411,7 @@ private fun CommentRow(
                     color = palette.text,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
+                    style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 if (comment.channelOwner) {
@@ -463,8 +464,8 @@ private fun CommentRow(
                 color = palette.text,
                 maxLines = 6,
                 overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 15.sp, lineHeight = 21.sp),
-                modifier = Modifier.padding(top = 4.dp),
+                style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 13.sp, lineHeight = 18.sp),
+                modifier = Modifier.padding(top = 3.dp),
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,

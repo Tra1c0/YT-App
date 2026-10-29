@@ -172,6 +172,10 @@ object YtHome {
                         onOpenChannel = { video ->
                             NavigationHelper.navigateChannel(context, video.uploaderUrl)
                         },
+                        onShowAllLive = {
+                            fragment.activity?.findViewById<BottomNavigationView>(R.id.bottomNav)
+                                ?.selectedItemId = R.id.trendsFragment
+                        },
                     )
                 }
             }

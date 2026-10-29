@@ -2,6 +2,7 @@ package com.github.libretube.ui.yt
 
 import android.text.format.DateUtils
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -31,6 +32,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +42,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -101,19 +106,19 @@ fun AfterHomeScreen(
             item {
                 AfterHero(
                     palette, imageLoader, hero, opening.value, tab, isLoading || videos == null, onSelectTab, open,
-                    Modifier.fillParentMaxHeight(0.82f),
+                    Modifier.fillParentMaxHeight(0.78f),
                 )
             }
             if (later.isNotEmpty()) {
                 item {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 12.dp),
+                        modifier = Modifier.padding(start = 23.dp, end = 18.dp, top = 14.dp, bottom = 9.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.yt_after_for_later),
                             color = palette.text,
-                            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 22.sp),
+                            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                             modifier = Modifier.weight(1f),
                         )
                         Row(
@@ -123,24 +128,26 @@ fun AfterHomeScreen(
                             Text(
                                 text = stringResource(R.string.yt_after_show_all),
                                 color = palette.textSecondary,
-                                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 14.sp),
+                                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
                             )
                             Icon(
                                 painterResource(R.drawable.ic_arrow_right),
                                 contentDescription = null,
                                 tint = palette.textSecondary,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier
+                                    .padding(start = 4.dp)
+                                    .size(13.dp),
                             )
                         }
                     }
                 }
                 item {
                     LazyRow(
-                        contentPadding = PaddingValues(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         items(later, key = { "later-" + it.url }) { video ->
-                            AfterPoster(palette, imageLoader, video, open, Modifier.width(220.dp))
+                            AfterPoster(palette, imageLoader, video, open, Modifier.width(177.dp))
                         }
                     }
                 }
@@ -150,14 +157,14 @@ fun AfterHomeScreen(
                     Text(
                         text = stringResource(R.string.yt_after_more),
                         color = palette.text,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 22.sp),
-                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 12.dp),
+                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
+                        modifier = Modifier.padding(start = 23.dp, end = 18.dp, top = 20.dp, bottom = 9.dp),
                     )
                 }
                 items(more.chunked(2)) { pair ->
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
                     ) {
                         pair.forEach { video ->
                             AfterPoster(palette, imageLoader, video, open, Modifier.weight(1f))
@@ -195,22 +202,14 @@ private fun AfterHero(
             label = "heroFade",
         )
         Crossfade(
-            targetState = hero?.thumbnail,
+            targetState = hero,
             animationSpec = tween(450),
             label = "heroPoster",
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { alpha = heroAlpha },
-        ) { thumbnail ->
-            if (thumbnail != null) {
-                AsyncImage(
-                    model = thumbnail,
-                    contentDescription = null,
-                    imageLoader = imageLoader,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+        ) { video ->
+            if (video != null) YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
         }
         Box(
             Modifier
@@ -225,9 +224,10 @@ private fun AfterHero(
                     )
                 ),
         )
+        val headerOverlap = with(LocalDensity.current) { YtChrome.headerOverlapPx.toDp() }
         Row(
-            horizontalArrangement = Arrangement.spacedBy(28.dp),
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(25.dp),
+            modifier = Modifier.padding(start = 27.dp, end = 20.dp, top = headerOverlap + 4.dp),
         ) {
             val tabs = listOf(
                 AFTER_TAB_SELECTION to stringResource(R.string.yt_after_selection),
@@ -246,14 +246,15 @@ private fun AfterHero(
                         style = TextStyle(
                             fontFamily = YtFonts.geist,
                             fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
-                            fontSize = 17.sp,
+                            fontSize = 13.sp,
                         ),
-                        modifier = Modifier.padding(vertical = 8.dp),
+                        modifier = Modifier.padding(top = 6.dp, bottom = 7.dp),
                     )
+                    val underline by animateDpAsState(if (active) 47.dp else 0.dp, label = "afterTab")
                     Box(
                         Modifier
-                            .width(if (active) 60.dp else 0.dp)
-                            .height(2.dp)
+                            .width(underline)
+                            .height(2.5.dp)
                             .background(palette.text),
                     )
                 }
@@ -267,16 +268,12 @@ private fun AfterHero(
         } else Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
+                .padding(start = 27.dp, end = 25.dp, bottom = 17.dp),
         ) {
-            // Poster type: the title in condensed caps, set as a narrow column on the left.
+            // Poster type: the title in condensed caps as a narrow column on the left. Real titles
+            // are longer than the reference's three words, so the size steps down until it fits.
             val title = hero.title.orEmpty().uppercase()
-            val size = when {
-                title.length <= 20 -> 72.sp
-                title.length <= 36 -> 56.sp
-                title.length <= 60 -> 44.sp
-                else -> 36.sp
-            }
+            var size by remember(hero.url) { mutableStateOf(63.sp) }
             Text(
                 text = title,
                 color = palette.text,
@@ -285,13 +282,16 @@ private fun AfterHero(
                 style = TextStyle(
                     fontFamily = YtFonts.anton,
                     fontSize = size,
-                    lineHeight = size * 0.96f,
+                    lineHeight = size * 0.98f,
                 ),
-                modifier = Modifier.fillMaxWidth(0.78f),
+                onTextLayout = { layout ->
+                    if (layout.hasVisualOverflow && size > 34.sp) size = (size.value - 3f).sp
+                },
+                modifier = Modifier.fillMaxWidth(0.66f),
             )
             Row(
                 verticalAlignment = Alignment.Bottom,
-                modifier = Modifier.padding(top = 12.dp),
+                modifier = Modifier.padding(top = 10.dp),
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -299,7 +299,7 @@ private fun AfterHero(
                         color = palette.text,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 21.sp),
+                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 18.sp),
                     )
                     Text(
                         text = listOfNotNull(
@@ -309,7 +309,7 @@ private fun AfterHero(
                         color = palette.textSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontSize = 14.sp),
+                        style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
                     )
                 }
                 if (hero.isLive) {
@@ -318,30 +318,33 @@ private fun AfterHero(
                     Text(
                         text = DateUtils.formatElapsedTime(it),
                         color = palette.text,
-                        style = TextStyle(fontFamily = YtFonts.geistMono, fontSize = 15.sp),
+                        style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
                     )
                 }
             }
+            // one short ivory button, 166 x 35 dp
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
-                    .padding(top = 16.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(palette.text)
+                    .padding(top = 10.dp)
+                    .width(166.dp)
+                    .height(35.dp)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(Color(0xFFF7EBD8))
                     .clickable { onOpenVideo(hero) }
-                    .padding(horizontal = 28.dp, vertical = 14.dp),
+                    .padding(start = 26.dp, end = 18.dp),
             ) {
                 Text(
                     text = stringResource(if (hero.isLive) R.string.yt_after_enter_room else R.string.yt_after_watch),
                     color = palette.ink,
-                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 17.sp),
+                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp),
                 )
-                Spacer(Modifier.width(14.dp))
                 Icon(
                     painterResource(R.drawable.ic_arrow_right),
                     contentDescription = null,
                     tint = palette.ink,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(16.dp),
                 )
             }
         }
@@ -358,8 +361,8 @@ private fun AfterPoster(
 ) {
     Box(
         modifier = modifier
-            .aspectRatio(16f / 11f)
-            .ytPressable(RoundedCornerShape(18.dp)) { onOpenVideo(video) }
+            .aspectRatio(177f / 105f)
+            .ytPressable(RoundedCornerShape(10.dp)) { onOpenVideo(video) }
             .background(palette.surface),
     ) {
         AsyncImage(
@@ -383,7 +386,7 @@ private fun AfterPoster(
             verticalAlignment = Alignment.Bottom,
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(12.dp),
+                .padding(horizontal = 8.dp, vertical = 7.dp),
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
@@ -391,14 +394,14 @@ private fun AfterPoster(
                     color = palette.text,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 17.sp),
+                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 11.5.sp, lineHeight = 14.sp),
                 )
                 Text(
                     text = video.uploaderName.orEmpty(),
                     color = palette.textSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.sp),
+                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 11.sp),
                 )
             }
             if (video.isLive) {
@@ -407,7 +410,7 @@ private fun AfterPoster(
                 Text(
                     text = DateUtils.formatElapsedTime(it),
                     color = palette.text,
-                    style = TextStyle(fontFamily = YtFonts.geistMono, fontSize = 12.sp),
+                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 11.sp),
                     modifier = Modifier.padding(start = 6.dp),
                 )
             }

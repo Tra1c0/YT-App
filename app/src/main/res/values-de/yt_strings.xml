@@ -16,6 +16,8 @@
     <string name="yt_home_live_now">Gerade live</string>
     <string name="yt_home_more">Weitere Videos</string>
     <string name="yt_live_badge">LIVE</string>
+    <string name="yt_home_show_all">Alle anzeigen</string>
+    <string name="yt_home_viewers">%1$s Zuschauer</string>
     <string name="yt_library_headline">Dein YouTube.</string>
     <string name="yt_library_subline">Gespeichert, nicht vergessen.</string>
     <string name="yt_library_continue">Weiterschauen</string>

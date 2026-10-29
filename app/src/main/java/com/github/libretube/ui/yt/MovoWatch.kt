@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,10 +39,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.text.HtmlCompat
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.github.libretube.R
+import com.github.libretube.api.MediaServiceRepository
 import com.github.libretube.api.SubscriptionHelper
+import com.github.libretube.api.obj.Comment
 import com.github.libretube.extensions.formatShort
 import com.github.libretube.extensions.toID
 import kotlinx.coroutines.Dispatchers
@@ -70,6 +74,17 @@ fun MovoWatchDetails(
         }
     }
     var showDescription by remember(streams.title) { mutableStateOf(false) }
+    // first comment for the discussion preview
+    var firstComment by remember(controller.videoId) { mutableStateOf<Comment?>(null) }
+    var commentCount by remember(controller.videoId) { mutableStateOf(0L) }
+    LaunchedEffect(controller.videoId) {
+        val id = controller.videoId ?: return@LaunchedEffect
+        val page = withContext(Dispatchers.IO) {
+            runCatching { MediaServiceRepository.instance.getComments(id) }.getOrNull()
+        }
+        firstComment = page?.comments?.firstOrNull()
+        commentCount = page?.commentCount ?: 0L
+    }
     LaunchedEffect(showDescription, streams.title) { actions.onShowDescription(showDescription) }
 
     Column(Modifier.fillMaxWidth()) {
@@ -79,16 +94,16 @@ fun MovoWatchDetails(
             style = TextStyle(
                 fontFamily = YtFonts.geist,
                 fontWeight = FontWeight.Black,
-                fontSize = 30.sp,
-                lineHeight = 32.sp,
-                letterSpacing = (-0.8).sp,
+                fontSize = 36.sp,
+                lineHeight = 38.sp,
+                letterSpacing = (-0.7).sp,
             ),
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp),
+            modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 14.dp),
         )
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp),
+            modifier = Modifier.padding(start = 15.dp, end = 12.dp, top = 12.dp),
         ) {
             AsyncImage(
                 model = streams.uploaderAvatar,
@@ -96,12 +111,12 @@ fun MovoWatchDetails(
                 imageLoader = imageLoader,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
                     .background(palette.surface)
                     .clickable(onClick = actions.onOpenChannel),
             )
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(16.dp))
             Column(
                 Modifier
                     .weight(1f)
@@ -112,14 +127,14 @@ fun MovoWatchDetails(
                     color = palette.text,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                 )
                 if (streams.uploaderSubscriberCount >= 0) {
                     Text(
                         text = stringResource(R.string.yt_movo_followers, streams.uploaderSubscriberCount.formatShort()),
                         color = palette.textSecondary,
                         maxLines = 1,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
+                        style = TextStyle(fontFamily = YtFonts.geist, fontSize = 14.sp),
                     )
                 }
             }
@@ -145,40 +160,44 @@ fun MovoWatchDetails(
                                 }
                             }
                         }
-                        .padding(horizontal = 20.dp, vertical = 11.dp),
+                        .height(30.dp)
+                        .padding(horizontal = 18.dp),
                 ) {
                     Text(
                         text = stringResource(if (isSubscribed) R.string.yt_movo_following_state else R.string.yt_movo_follow),
                         color = if (isSubscribed) palette.text else palette.onAccent,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 15.sp),
+                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                     )
                 }
             }
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(18.dp))
             RoundAction(palette, R.drawable.ic_bookmark_outlined, stringResource(R.string.yt_movo_save), actions.onSave)
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(16.dp))
             RoundAction(palette, R.drawable.ic_share, stringResource(R.string.share), actions.onShare)
         }
 
         if (streams.chapters.isNotEmpty()) {
             Column(
                 modifier = Modifier
-                    .padding(start = 12.dp, end = 12.dp, top = 22.dp)
+                    .padding(start = 9.dp, end = 9.dp, top = 18.dp)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(26.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(palette.lavender)
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(9.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 5.dp, end = 5.dp, top = 2.dp, bottom = 2.dp),
+                ) {
                     Text(
                         text = stringResource(R.string.yt_movo_in_video),
                         color = palette.ink,
                         style = TextStyle(
                             fontFamily = YtFonts.geist,
                             fontWeight = FontWeight.Black,
-                            fontSize = 28.sp,
-                            letterSpacing = (-0.6).sp,
+                            fontSize = 25.sp,
+                            letterSpacing = (-0.5).sp,
                         ),
                         modifier = Modifier.weight(1f),
                     )
@@ -194,10 +213,10 @@ fun MovoWatchDetails(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .background(if (active) Color.White else Color.White.copy(alpha = 0.35f))
                             .clickable { actions.onSeek(chapter.start * 1000) }
-                            .padding(8.dp),
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
                     ) {
                         Box(Modifier.width(18.dp), contentAlignment = Alignment.Center) {
                             if (active) {
@@ -216,23 +235,23 @@ fun MovoWatchDetails(
                             imageLoader = imageLoader,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .width(96.dp)
-                                .aspectRatio(16f / 9f)
-                                .clip(RoundedCornerShape(10.dp)),
+                                .width(75.dp)
+                                .aspectRatio(2f)
+                                .clip(RoundedCornerShape(8.dp)),
                         )
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(9.dp))
                         Column(Modifier.weight(1f)) {
                             Text(
                                 text = chapter.title,
                                 color = palette.ink,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
-                                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp),
+                                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.ExtraBold, fontSize = 13.5.sp),
                             )
                             Text(
                                 text = DateUtils.formatElapsedTime(chapter.start),
                                 color = palette.ink.copy(alpha = 0.6f),
-                                style = TextStyle(fontFamily = YtFonts.geistMono, fontSize = 12.sp),
+                                style = TextStyle(fontFamily = YtFonts.geistMono, fontSize = 11.sp),
                             )
                         }
                     }
@@ -244,18 +263,19 @@ fun MovoWatchDetails(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .padding(start = 20.dp, end = 20.dp, top = 24.dp)
+                .padding(start = 20.dp, end = 14.dp, top = 20.dp)
                 .fillMaxWidth()
                 .clickable(onClick = actions.onComments),
         ) {
             Text(
                 text = stringResource(R.string.yt_movo_discussion),
                 color = palette.text,
-                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Black, fontSize = 24.sp),
+                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Black, fontSize = 18.5.sp),
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = stringResource(R.string.yt_watch_comments),
+                text = stringResource(R.string.yt_watch_comments) +
+                    if (commentCount > 0) "  " + commentCount.formatShort() else "",
                 color = palette.textSecondary,
                 style = TextStyle(fontFamily = YtFonts.geist, fontSize = 14.sp),
             )
@@ -268,6 +288,7 @@ fun MovoWatchDetails(
                     .size(18.dp),
             )
         }
+        firstComment?.let { comment -> MovoCommentCard(palette, imageLoader, comment, actions.onComments) }
         Box(
             modifier = Modifier
                 .padding(start = 20.dp, top = 14.dp, bottom = 8.dp)
@@ -294,7 +315,7 @@ private fun RoundAction(palette: YtPalette, @DrawableRes icon: Int, label: Strin
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(44.dp)
+                .size(40.dp)
                 .clip(CircleShape)
                 .background(palette.raised),
         ) {
@@ -303,8 +324,80 @@ private fun RoundAction(palette: YtPalette, @DrawableRes icon: Int, label: Strin
         Text(
             text = label,
             color = palette.text,
-            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.sp),
-            modifier = Modifier.padding(top = 4.dp),
+            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 14.sp),
+            modifier = Modifier.padding(top = 3.dp),
         )
+    }
+}
+
+/** One comment as in the reference: avatar, name, time, likes and the text on a dark card. */
+@Composable
+private fun MovoCommentCard(palette: YtPalette, imageLoader: ImageLoader, comment: Comment, onClick: () -> Unit) {
+    val text = remember(comment.commentId) {
+        HtmlCompat.fromHtml(comment.commentText.orEmpty(), HtmlCompat.FROM_HTML_MODE_LEGACY).toString().trim()
+    }
+    Row(
+        modifier = Modifier
+            .padding(start = 9.dp, end = 9.dp, top = 10.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF151518))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 9.dp, vertical = 9.dp),
+    ) {
+        AsyncImage(
+            model = comment.thumbnail,
+            contentDescription = null,
+            imageLoader = imageLoader,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(palette.raised),
+        )
+        Column(
+            Modifier
+                .weight(1f)
+                .padding(start = 12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = comment.author.removePrefix("@"),
+                    color = palette.text,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Text(
+                    text = comment.commentedTime,
+                    color = palette.textSecondary,
+                    maxLines = 1,
+                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 14.sp),
+                    modifier = Modifier.padding(start = 10.dp),
+                )
+                Spacer(Modifier.weight(1f))
+                Icon(
+                    painterResource(R.drawable.ic_yt_heart),
+                    contentDescription = null,
+                    tint = palette.textSecondary,
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    text = comment.likeCount.formatShort(),
+                    color = palette.textSecondary,
+                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 14.sp),
+                    modifier = Modifier.padding(start = 5.dp),
+                )
+            }
+            Text(
+                text = text,
+                color = palette.text,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 15.sp, lineHeight = 20.sp),
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
     }
 }

@@ -92,10 +92,10 @@ fun AfterRoomsScreen(
                         text = stringResource(R.string.yt_after_rooms_title),
                         color = palette.text,
                         textAlign = TextAlign.Center,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontSize = 17.sp),
+                        style = TextStyle(fontFamily = YtFonts.geist, fontSize = 15.sp, letterSpacing = 0.3.sp),
                         modifier = Modifier
                             .align(Alignment.Center)
-                            .padding(vertical = 12.dp),
+                            .padding(vertical = 8.dp),
                     )
                     Icon(
                         painterResource(R.drawable.ic_region),
@@ -117,11 +117,11 @@ fun AfterRoomsScreen(
                     style = TextStyle(
                         fontFamily = YtFonts.geist,
                         fontWeight = FontWeight.Black,
-                        fontSize = 46.sp,
-                        lineHeight = 44.sp,
-                        letterSpacing = (-1.2).sp,
+                        fontSize = 51.sp,
+                        lineHeight = 40.sp,
+                        letterSpacing = (-1.5).sp,
                     ),
-                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 14.dp),
+                    modifier = Modifier.padding(start = 27.dp, end = 16.dp, top = 6.dp, bottom = 12.dp),
                 )
             }
             if (live.isEmpty()) {
@@ -140,8 +140,8 @@ fun AfterRoomsScreen(
             }
             item {
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(start = 18.dp, end = 15.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     itemsIndexed(live, key = { _, item -> "rail-" + item.url }) { index, creator ->
                         CreatorPortrait(palette, imageLoader, creator, index == selected) { selected = index }
@@ -159,12 +159,8 @@ fun AfterRoomsScreen(
                     item {
                         Column(
                             modifier = Modifier
-                                .padding(horizontal = 20.dp)
-                                .padding(top = 12.dp)
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(palette.surface)
-                                .padding(vertical = 6.dp),
+                                .padding(start = 15.dp, end = 11.dp, top = 6.dp)
+                                .fillMaxWidth(),
                         ) {
                             next.forEach { other ->
                                 NextRoomLine(palette, imageLoader, other) {
@@ -179,25 +175,25 @@ fun AfterRoomsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
                         modifier = Modifier
-                            .padding(horizontal = 20.dp)
-                            .padding(top = 14.dp)
+                            .padding(start = 27.dp, end = 23.dp)
+                            .padding(top = 10.dp)
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(palette.accent)
-                            .clickable { onEnterRoom(current) }
-                            .padding(vertical = 16.dp),
+                            .height(39.dp)
+                            .clip(RoundedCornerShape(11.dp))
+                            .background(Color(0xFFFF7A3D))
+                            .clickable { onEnterRoom(current) },
                     ) {
                         Text(
                             text = stringResource(R.string.yt_after_enter_room),
                             color = palette.onAccent,
-                            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 18.sp),
+                            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 14.sp),
                         )
                         Spacer(Modifier.width(14.dp))
                         Icon(
                             painterResource(R.drawable.ic_arrow_right),
                             contentDescription = null,
                             tint = palette.onAccent,
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(16.dp),
                         )
                     }
                 }
@@ -216,16 +212,16 @@ private fun CreatorPortrait(
 ) {
     Column(
         modifier = Modifier
-            .width(84.dp)
+            .width(85.dp)
             .clickable(onClick = onClick),
     ) {
         Box(
             modifier = Modifier
-                .size(84.dp, 92.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(85.dp, 71.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .border(
                     if (active) BorderStroke(2.dp, palette.text) else BorderStroke(0.dp, Color.Transparent),
-                    RoundedCornerShape(12.dp),
+                    RoundedCornerShape(8.dp),
                 )
                 .background(palette.surface),
         ) {
@@ -241,7 +237,7 @@ private fun CreatorPortrait(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(6.dp),
+                        .padding(start = 7.dp, bottom = 6.dp),
                 ) {
                     Box(
                         Modifier
@@ -263,8 +259,8 @@ private fun CreatorPortrait(
             color = if (active) palette.text else palette.textSecondary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.sp),
-            modifier = Modifier.padding(top = 6.dp, start = 2.dp),
+            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
+            modifier = Modifier.padding(top = 5.dp, start = 3.dp),
         )
     }
 }
@@ -280,20 +276,14 @@ private fun RoomCover(
     Box(
         modifier = Modifier
             .padding(horizontal = 12.dp)
-            .padding(top = 14.dp)
+            .padding(top = 10.dp)
             .fillMaxWidth()
-            .height(470.dp)
-            .clip(RoundedCornerShape(22.dp))
+            .height(338.dp)
+            .clip(RoundedCornerShape(16.dp))
             .background(palette.surface)
             .clickable { onEnterRoom(room) },
     ) {
-        AsyncImage(
-            model = room.thumbnail,
-            contentDescription = null,
-            imageLoader = imageLoader,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-        )
+        YtLargeThumbnail(room, imageLoader, Modifier.fillMaxSize())
         Box(
             Modifier
                 .fillMaxSize()
@@ -308,12 +298,13 @@ private fun RoomCover(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 22.dp, end = 22.dp, bottom = 20.dp),
+                .padding(start = 20.dp, end = 18.dp, bottom = 19.dp),
         ) {
             Text(
                 text = stringResource(R.string.yt_after_room_label, index + 1),
                 color = palette.text,
-                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 15.sp, letterSpacing = 6.sp),
+                style = TextStyle(fontFamily = YtFonts.geistMono, fontSize = 13.sp, letterSpacing = 4.5.sp),
+                modifier = Modifier.padding(start = 6.dp),
             )
             Text(
                 text = room.title.orEmpty(),
@@ -321,17 +312,16 @@ private fun RoomCover(
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(
-                    fontFamily = YtFonts.geist,
+                    fontFamily = YtFonts.archivoNarrow,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp,
-                    lineHeight = 33.sp,
-                    letterSpacing = (-0.6).sp,
+                    fontSize = 34.sp,
+                    lineHeight = 30.sp,
                 ),
                 modifier = Modifier.padding(top = 4.dp),
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 10.dp),
+                modifier = Modifier.padding(top = 8.dp),
             ) {
                 if (room.isLive) AfterLiveBadge(palette, Modifier.padding(end = 12.dp))
                 room.views?.takeIf { it > 0 }?.let { viewers ->
@@ -339,7 +329,7 @@ private fun RoomCover(
                         painterResource(R.drawable.ic_yt_users),
                         contentDescription = null,
                         tint = palette.text,
-                        modifier = Modifier.size(15.dp),
+                        modifier = Modifier.size(13.dp),
                     )
                     Text(
                         text = stringResource(R.string.yt_after_watching_now, viewers.formatShort()),
@@ -359,9 +349,9 @@ private fun RoomCover(
                     imageLoader = imageLoader,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(34.dp)
                         .clip(CircleShape)
-                        .border(1.5.dp, palette.text, CircleShape)
+                        .border(2.dp, palette.text, CircleShape)
                         .background(palette.raised),
                 )
                 Text(
@@ -370,8 +360,8 @@ private fun RoomCover(
                     color = palette.text.copy(alpha = 0.86f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp, lineHeight = 18.sp),
-                    modifier = Modifier.padding(start = 14.dp),
+                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.5.sp, lineHeight = 19.sp),
+                    modifier = Modifier.padding(start = 18.dp),
                 )
             }
         }
@@ -390,7 +380,7 @@ private fun NextRoomLine(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 2.dp),
     ) {
         AsyncImage(
             model = room.uploaderAvatar ?: room.thumbnail,
@@ -398,7 +388,7 @@ private fun NextRoomLine(
             imageLoader = imageLoader,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(26.dp)
+                .size(22.dp)
                 .clip(CircleShape)
                 .background(palette.raised),
         )
@@ -407,10 +397,10 @@ private fun NextRoomLine(
             color = palette.text,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 13.sp),
             modifier = Modifier
-                .padding(start = 12.dp)
-                .width(86.dp),
+                .padding(start = 14.dp)
+                .width(53.dp),
         )
         Text(
             text = room.title.orEmpty(),

@@ -85,7 +85,7 @@ fun MovoHomeScreen(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item {
@@ -95,17 +95,17 @@ fun MovoHomeScreen(
                         style = TextStyle(
                             fontFamily = YtFonts.geist,
                             fontWeight = FontWeight.Black,
-                            fontSize = 40.sp,
-                            lineHeight = 40.sp,
-                            letterSpacing = (-1.2).sp,
+                            fontSize = 49.sp,
+                            lineHeight = 45.sp,
+                            letterSpacing = (-1.5).sp,
                         ),
-                        modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 12.dp),
+                        modifier = Modifier.padding(start = 10.dp, top = 6.dp, bottom = 10.dp),
                     )
                 }
                 item {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(bottom = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(9.dp),
+                        modifier = Modifier.padding(start = 3.dp, bottom = 1.dp),
                     ) {
                         MovoTab(palette, stringResource(R.string.yt_movo_discover), tab == MOVO_TAB_DISCOVER) {
                             onSelectTab(MOVO_TAB_DISCOVER)
@@ -143,12 +143,18 @@ private fun MovoTab(palette: YtPalette, label: String, active: Boolean, onClick:
             .clip(RoundedCornerShape(50))
             .background(if (active) palette.accent else palette.surface)
             .clickable(onClick = onClick)
-            .padding(horizontal = 26.dp, vertical = 11.dp),
+            .height(32.dp)
+            .padding(horizontal = 24.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
             color = if (active) palette.onAccent else palette.text,
-            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
+            style = TextStyle(
+                fontFamily = YtFonts.geist,
+                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+                fontSize = 14.sp,
+            ),
         )
     }
 }
@@ -170,13 +176,13 @@ private fun MovoBlock(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(440.dp),
+                    .height(325.dp),
             ) {
                 MovoCard(
-                    palette, imageLoader, tall, palette.accent, Color.White, titleSize = 30.sp,
+                    palette, imageLoader, tall, palette.accent, Color.White, titleSize = 25.sp,
                     uppercase = true, onOpenVideo = onOpenVideo,
                     modifier = Modifier
-                        .weight(1.25f)
+                        .weight(1.24f)
                         .fillMaxHeight(),
                 )
                 if (upper != null) {
@@ -187,7 +193,7 @@ private fun MovoBlock(
                             .fillMaxHeight(),
                     ) {
                         MovoCard(
-                            palette, imageLoader, upper, palette.pink, palette.ink, titleSize = 24.sp,
+                            palette, imageLoader, upper, palette.pink, palette.ink, titleSize = 21.sp,
                             uppercase = false, onOpenVideo = onOpenVideo,
                             modifier = Modifier
                                 .weight(1f)
@@ -195,7 +201,7 @@ private fun MovoBlock(
                         )
                         if (lower != null) {
                             MovoCard(
-                                palette, imageLoader, lower, palette.lime, palette.ink, titleSize = 24.sp,
+                                palette, imageLoader, lower, palette.lime, palette.ink, titleSize = 21.sp,
                                 uppercase = false, onOpenVideo = onOpenVideo,
                                 modifier = Modifier
                                     .weight(1f)
@@ -208,11 +214,11 @@ private fun MovoBlock(
         }
         if (wide != null) {
             MovoCard(
-                palette, imageLoader, wide, palette.surface, Color.White, titleSize = 28.sp,
+                palette, imageLoader, wide, palette.surface, Color.White, titleSize = 23.sp,
                 uppercase = false, onOpenVideo = onOpenVideo,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(190.dp),
+                    .height(143.dp),
             )
         }
     }
@@ -237,7 +243,7 @@ private fun MovoCard(
     Box(
         modifier = modifier
             .ytRecede(video.url)
-            .ytPressable(RoundedCornerShape(26.dp)) { onOpenVideo(video) }
+            .ytPressable(RoundedCornerShape(16.dp)) { onOpenVideo(video) }
             .background(color),
     ) {
         AsyncImage(
@@ -262,7 +268,7 @@ private fun MovoCard(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 14.dp, end = 58.dp, bottom = 14.dp),
+                .padding(start = 11.dp, end = 48.dp, bottom = 9.dp),
         ) {
             val title = video.title.orEmpty()
             Text(
@@ -274,8 +280,8 @@ private fun MovoCard(
                     fontFamily = YtFonts.geist,
                     fontWeight = FontWeight.Black,
                     fontSize = titleSize,
-                    lineHeight = titleSize,
-                    letterSpacing = (-0.6).sp,
+                    lineHeight = titleSize * 0.98f,
+                    letterSpacing = (titleSize.value * -0.015f).sp,
                 ),
             )
             Text(
@@ -283,19 +289,19 @@ private fun MovoCard(
                 color = onColor.copy(alpha = 0.85f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 14.sp),
-                modifier = Modifier.padding(top = 4.dp),
+                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 14.sp),
+                modifier = Modifier.padding(top = 2.dp),
             )
             video.duration?.takeIf { it > 0 }?.let {
                 Text(
                     text = DateUtils.formatElapsedTime(it),
                     color = Color.White,
-                    style = TextStyle(fontFamily = YtFonts.geistMono, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.5.sp),
                     modifier = Modifier
-                        .padding(top = 8.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0x99101112))
-                        .padding(horizontal = 9.dp, vertical = 4.dp),
+                        .padding(top = 6.dp)
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(Color(0x8C0E1030))
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
                 )
             }
         }
@@ -303,16 +309,16 @@ private fun MovoCard(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(12.dp)
-                .size(40.dp)
+                .padding(8.dp)
+                .size(if (titleSize > 22.sp) 36.dp else 32.dp)
                 .clip(CircleShape)
                 .background(Color.White),
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_play),
                 contentDescription = null,
-                tint = palette.ink,
-                modifier = Modifier.size(18.dp),
+                tint = Color(0xFF0B0B0D),
+                modifier = Modifier.size(16.dp),
             )
         }
     }

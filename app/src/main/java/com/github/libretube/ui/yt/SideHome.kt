@@ -108,16 +108,16 @@ fun SideHomeScreen(
                         style = TextStyle(
                             fontFamily = YtFonts.figtree,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 34.sp,
-                            lineHeight = 38.sp,
+                            fontSize = 32.sp,
+                            lineHeight = 33.sp,
                         ),
-                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
+                        modifier = Modifier.padding(start = 22.dp, end = 20.dp, top = 8.dp),
                     )
                 }
                 item {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        modifier = Modifier.padding(start = 22.dp, end = 20.dp, top = 16.dp, bottom = 11.dp),
                     ) {
                         SideTab(palette, stringResource(R.string.yt_side_for_you), tab == SIDE_TAB_FOR_YOU) {
                             onSelectTab(SIDE_TAB_FOR_YOU)
@@ -158,12 +158,12 @@ fun SideHomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = 16.dp)
+                .padding(end = 17.dp, bottom = 12.dp)
                 .clickable(onClick = actions.onPost),
         ) {
             Box(
                 Modifier
-                    .size(60.dp)
+                    .size(50.dp)
                     .clip(CircleShape)
                     .background(palette.accent),
                 contentAlignment = Alignment.Center,
@@ -172,13 +172,13 @@ fun SideHomeScreen(
                     painterResource(R.drawable.ic_yt_pen),
                     contentDescription = null,
                     tint = palette.onAccent,
-                    modifier = Modifier.size(26.dp),
+                    modifier = Modifier.size(22.dp),
                 )
             }
             Text(
                 text = stringResource(R.string.yt_side_post),
                 color = palette.text,
-                style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 14.sp),
+                style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 13.sp),
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
@@ -190,12 +190,16 @@ internal fun SideTab(palette: YtPalette, label: String, active: Boolean, onClick
     Text(
         text = label,
         color = if (active) palette.onAccent else palette.textSecondary,
-        style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 17.sp),
+        style = TextStyle(
+            fontFamily = YtFonts.figtree,
+            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+            fontSize = 14.sp,
+        ),
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(if (active) palette.accent else Color.Transparent)
             .clickable(onClick = onClick)
-            .padding(horizontal = 26.dp, vertical = 10.dp),
+            .padding(horizontal = 23.dp, vertical = 6.dp),
     )
 }
 
@@ -203,7 +207,7 @@ internal fun SideTab(palette: YtPalette, label: String, active: Boolean, onClick
 fun SideDivider(palette: YtPalette, modifier: Modifier = Modifier) {
     Box(
         modifier
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = 22.dp)
             .fillMaxWidth()
             .height(1.dp)
             .background(palette.surface),
@@ -219,7 +223,7 @@ private fun SidePost(
     actions: SideFeedActions,
 ) {
     var menu by remember { mutableStateOf(false) }
-    Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 20.dp)) {
+    Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -233,17 +237,17 @@ private fun SidePost(
                     imageLoader = imageLoader,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(42.dp)
                         .clip(CircleShape)
                         .background(palette.surface),
                 )
-                Column(Modifier.padding(start = 14.dp)) {
+                Column(Modifier.padding(start = 16.dp)) {
                     Text(
                         text = post.uploaderName.orEmpty(),
                         color = palette.text,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 17.sp),
+                        style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 14.sp),
                     )
                     Text(
                         text = listOfNotNull(
@@ -255,7 +259,7 @@ private fun SidePost(
                         color = palette.textSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 14.sp),
+                        style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 12.5.sp),
                     )
                 }
             }
@@ -284,23 +288,17 @@ private fun SidePost(
         }
         Box(
             modifier = Modifier
-                .padding(top = 12.dp)
+                .padding(top = 8.dp)
                 .fillMaxWidth()
-                .aspectRatio(16f / 9f)
-                .ytPressable(RoundedCornerShape(14.dp)) { actions.onOpenVideo(post) }
+                .aspectRatio(365f / 184f)
+                .ytPressable(RoundedCornerShape(12.dp)) { actions.onOpenVideo(post) }
                 .background(palette.surface),
         ) {
-            AsyncImage(
-                model = post.thumbnail,
-                contentDescription = null,
-                imageLoader = imageLoader,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
+            YtLargeThumbnail(post, imageLoader, Modifier.fillMaxSize())
             Box(
                 Modifier
                     .align(Alignment.Center)
-                    .size(64.dp)
+                    .size(50.dp)
                     .clip(CircleShape)
                     .background(Color.Black.copy(alpha = 0.45f)),
                 contentAlignment = Alignment.Center,
@@ -309,7 +307,7 @@ private fun SidePost(
                     painterResource(R.drawable.ic_play),
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(22.dp),
                 )
             }
             val badge = if (post.isLive) stringResource(R.string.yt_live_badge)
@@ -318,13 +316,13 @@ private fun SidePost(
                 Text(
                     text = it,
                     color = Color.White,
-                    style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                    style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 12.5.sp),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(10.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.Black.copy(alpha = 0.6f))
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                        .padding(9.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xB3222224))
+                        .padding(horizontal = 7.dp, vertical = 1.dp),
                 )
             }
         }
@@ -333,14 +331,14 @@ private fun SidePost(
             color = palette.text,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 22.sp, lineHeight = 27.sp),
+            style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 19.sp, lineHeight = 24.sp),
             modifier = Modifier
-                .padding(top = 12.dp)
+                .padding(start = 8.dp, top = 9.dp)
                 .clickable { actions.onOpenVideo(post) },
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 12.dp),
+            modifier = Modifier.padding(start = 6.dp, top = 10.dp),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -353,7 +351,7 @@ private fun SidePost(
                     painterResource(if (hearted) R.drawable.ic_yt_heart_fill else R.drawable.ic_yt_heart),
                     contentDescription = stringResource(R.string.yt_side_heart),
                     tint = if (hearted) palette.accent else palette.text,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(21.dp),
                 )
             }
             SideVerticalRule(palette)
@@ -365,7 +363,7 @@ private fun SidePost(
                     .clip(CircleShape)
                     .clickable { actions.onBookmark(post) }
                     .padding(6.dp)
-                    .size(22.dp),
+                    .size(19.dp),
             )
             SideVerticalRule(palette)
             Row(
@@ -382,7 +380,7 @@ private fun SidePost(
                     imageLoader = imageLoader,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(26.dp)
                         .clip(CircleShape)
                         .background(palette.surface),
                 )
@@ -396,12 +394,12 @@ private fun SidePost(
                         color = palette.text,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 13.sp),
+                        style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 11.sp),
                     )
                     Text(
                         text = stringResource(R.string.yt_side_join),
                         color = palette.accent,
-                        style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                        style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
                     )
                 }
                 Icon(
@@ -419,9 +417,9 @@ private fun SidePost(
 private fun SideVerticalRule(palette: YtPalette) {
     Box(
         Modifier
-            .padding(horizontal = 10.dp)
+            .padding(horizontal = 12.dp)
             .width(1.dp)
-            .height(22.dp)
+            .height(18.dp)
             .background(palette.raised),
     )
 }
