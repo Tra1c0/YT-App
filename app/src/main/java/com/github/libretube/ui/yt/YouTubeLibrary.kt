@@ -84,33 +84,32 @@ fun YouTubeLibraryScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(palette.background),
-        contentPadding = PaddingValues(bottom = 32.dp),
+        contentPadding = PaddingValues(bottom = 24.dp),
     ) {
         item {
-            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp)) {
+            Column(Modifier.padding(start = 15.dp, end = 15.dp, top = 4.dp, bottom = 16.dp)) {
                 Text(
                     text = headline,
                     color = palette.text,
                     style = TextStyle(
                         fontFamily = YtFonts.geist,
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 34.sp,
-                        lineHeight = 36.sp,
-                        letterSpacing = (-0.6).sp,
+                        fontSize = 41.sp,
+                        lineHeight = 42.sp,
+                        letterSpacing = (-0.8).sp,
                     ),
                 )
                 Text(
                     text = subline,
                     color = palette.textSecondary,
-                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 17.sp),
-                    modifier = Modifier.padding(top = 4.dp),
+                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 20.sp),
                 )
             }
         }
         item {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(horizontal = 10.dp),
             ) {
                 if (showHistory) {
                     QuickAccess(palette, R.drawable.ic_history, stringResource(R.string.watch_history), onOpenHistory, Modifier.weight(1f))
@@ -119,15 +118,15 @@ fun YouTubeLibraryScreen(
             }
         }
         continueWatching.firstOrNull()?.let { first ->
-            item { LibrarySection(palette, stringResource(R.string.yt_library_continue)) }
+            item { LibrarySection(palette, stringResource(R.string.yt_library_continue), onOpenHistory) }
             item { ContinueCard(palette, imageLoader, first, onOpenVideo) }
             val more = continueWatching.drop(1)
             if (more.isNotEmpty()) {
                 item {
                     LazyRow(
-                        contentPadding = PaddingValues(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(top = 12.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.padding(top = 10.dp),
                     ) {
                         items(more, key = { it.video.url.orEmpty() }) { item ->
                             SmallContinueCard(palette, imageLoader, item, onOpenVideo)
@@ -139,18 +138,18 @@ fun YouTubeLibraryScreen(
         item {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 12.dp),
+                modifier = Modifier.padding(start = 15.dp, end = 10.dp, top = 20.dp, bottom = 10.dp),
             ) {
                 Text(
                     text = stringResource(R.string.yt_library_collections),
                     color = palette.text,
-                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 21.sp),
+                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 17.5.sp),
                     modifier = Modifier.weight(1f),
                 )
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(32.dp)
                         .clip(CircleShape)
                         .background(palette.raised)
                         .clickable(onClick = onNewCollection),
@@ -170,17 +169,17 @@ fun YouTubeLibraryScreen(
                     text = stringResource(R.string.yt_library_no_collections),
                     color = palette.textSecondary,
                     style = TextStyle(fontFamily = YtFonts.geist, fontSize = 15.sp),
-                    modifier = Modifier.padding(horizontal = 20.dp),
+                    modifier = Modifier.padding(horizontal = 15.dp),
                 )
             }
         }
         // Two equally sized cards per row, alternating lime and lavender as in the brief.
         items(playlists.chunked(2)) { pair ->
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
                 modifier = Modifier
-                    .padding(horizontal = 20.dp, vertical = 6.dp)
-                    .height(176.dp),
+                    .padding(horizontal = 9.dp, vertical = 4.dp)
+                    .height(146.dp),
             ) {
                 pair.forEachIndexed { index, collection ->
                     CollectionCard(
@@ -214,34 +213,48 @@ private fun QuickAccess(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .heightIn(min = 56.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .heightIn(min = 50.dp)
+            .clip(RoundedCornerShape(12.dp))
             .background(palette.surface)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp),
+            .padding(start = 15.dp, end = 12.dp),
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = palette.text, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.width(12.dp))
+        Icon(painterResource(icon), contentDescription = null, tint = palette.text, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.width(14.dp))
         Text(
             text = label,
             color = palette.text,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 16.sp),
+            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 15.sp),
             modifier = Modifier.weight(1f),
         )
-        Icon(painterResource(R.drawable.ic_arrow_right), contentDescription = null, tint = palette.textSecondary, modifier = Modifier.size(18.dp))
+        Icon(painterResource(R.drawable.ic_yt_chevron_right), contentDescription = null, tint = palette.text, modifier = Modifier.size(16.dp))
     }
 }
 
 @Composable
-private fun LibrarySection(palette: YtPalette, title: String) {
-    Text(
-        text = title,
-        color = palette.text,
-        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 21.sp),
-        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 12.dp),
-    )
+private fun LibrarySection(palette: YtPalette, title: String, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(start = 15.dp, end = 15.dp, top = 22.dp, bottom = 10.dp)
+            .clickable(onClick = onClick),
+    ) {
+        Text(
+            text = title,
+            color = palette.text,
+            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 17.5.sp),
+        )
+        Icon(
+            painterResource(R.drawable.ic_yt_chevron_right),
+            contentDescription = null,
+            tint = palette.text,
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .size(15.dp),
+        )
+    }
 }
 
 private fun remainingLabel(item: YtContinueItem): String? {
@@ -261,7 +274,8 @@ private fun ProgressBar(palette: YtPalette, fraction: Float, modifier: Modifier 
     Box(
         modifier
             .fillMaxWidth()
-            .height(4.dp)
+            .height(6.dp)
+            .clip(RoundedCornerShape(3.dp))
             .background(Color(0x66FFFFFF)),
     ) {
         Box(
@@ -282,14 +296,14 @@ private fun ContinueCard(
 ) {
     Column(
         Modifier
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = 12.dp)
             .clickable { onOpen(item) },
     ) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(20.dp)),
+                .aspectRatio(3f)
+                .clip(RoundedCornerShape(12.dp)),
         ) {
             AsyncImage(
                 model = item.video.thumbnail,
@@ -301,41 +315,44 @@ private fun ContinueCard(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(56.dp)
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 12.dp, bottom = 24.dp)
+                    .size(37.dp)
                     .clip(CircleShape)
-                    .background(Color(0xB3000000)),
+                    .background(Color(0xCC111114)),
             ) {
-                Icon(painterResource(R.drawable.ic_play), contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
+                Icon(painterResource(R.drawable.ic_play), contentDescription = null, tint = Color.White, modifier = Modifier.size(17.dp))
             }
-            remainingLabel(item)?.let {
-                Text(
-                    text = stringResource(R.string.yt_library_remaining, it),
-                    color = Color.White,
-                    style = TextStyle(fontFamily = YtFonts.geistMono, fontWeight = FontWeight.Medium, fontSize = 13.sp),
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(start = 10.dp, end = 10.dp, bottom = 14.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xCC000000))
-                        .padding(horizontal = 7.dp, vertical = 3.dp),
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 12.dp, end = 10.dp, bottom = 5.dp),
+            ) {
+                ProgressBar(palette, progress(item), Modifier.weight(1f))
+                remainingLabel(item)?.let {
+                    Text(
+                        text = stringResource(R.string.yt_library_remaining, it),
+                        color = Color.White,
+                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                        modifier = Modifier.padding(start = 30.dp),
+                    )
+                }
             }
-            ProgressBar(palette, progress(item), Modifier.align(Alignment.BottomStart))
         }
         Text(
             text = item.video.title.orEmpty(),
             color = palette.text,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 22.sp),
-            modifier = Modifier.padding(top = 12.dp),
+            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, lineHeight = 19.sp),
+            modifier = Modifier.padding(start = 3.dp, top = 8.dp),
         )
         Text(
             text = item.video.uploaderName.orEmpty(),
             color = palette.textSecondary,
-            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
-            modifier = Modifier.padding(top = 2.dp),
+            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
+            modifier = Modifier.padding(start = 3.dp, top = 1.dp),
         )
     }
 }
@@ -389,12 +406,12 @@ private fun CollectionCard(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(color)
             .clickable(onClick = onClick)
-            .padding(16.dp),
+            .padding(start = 9.dp, end = 9.dp, top = 12.dp, bottom = 9.dp),
     ) {
-        Row(verticalAlignment = Alignment.Top) {
+        Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(start = 5.dp)) {
             Text(
                 text = collection.name,
                 color = palette.ink,
@@ -402,10 +419,10 @@ private fun CollectionCard(
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(
                     fontFamily = YtFonts.geist,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 24.sp,
-                    lineHeight = 26.sp,
-                    letterSpacing = (-0.4).sp,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 28.sp,
+                    lineHeight = 30.sp,
+                    letterSpacing = (-0.5).sp,
                 ),
                 modifier = Modifier.weight(1f),
             )
@@ -414,11 +431,11 @@ private fun CollectionCard(
         Text(
             text = pluralStringResource(R.plurals.yt_videos_count, collection.videoCount.toInt(), collection.videoCount.toInt()),
             color = palette.ink,
-            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 14.sp),
-            modifier = Modifier.padding(top = 2.dp),
+            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.5.sp),
+            modifier = Modifier.padding(start = 5.dp, top = 2.dp),
         )
         Spacer(Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             collection.previews.take(3).forEach { url ->
                 AsyncImage(
                     model = url,
@@ -428,7 +445,7 @@ private fun CollectionCard(
                     modifier = Modifier
                         .weight(1f)
                         .aspectRatio(1f)
-                        .clip(RoundedCornerShape(10.dp)),
+                        .clip(RoundedCornerShape(6.dp)),
                 )
             }
             repeat((3 - collection.previews.size).coerceAtLeast(0)) {
@@ -436,7 +453,7 @@ private fun CollectionCard(
                     Modifier
                         .weight(1f)
                         .aspectRatio(1f)
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(6.dp))
                         .background(Color(0x1F000000)),
                 )
             }
@@ -449,29 +466,29 @@ private fun BookmarkRow(palette: YtPalette, bookmark: YtCollection, onClick: () 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .padding(horizontal = 20.dp, vertical = 6.dp)
+            .padding(start = 10.dp, end = 9.dp, top = 6.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(palette.surface)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(start = 20.dp, end = 14.dp, top = 9.dp, bottom = 9.dp),
     ) {
-        Icon(painterResource(R.drawable.ic_bookmark_outlined), contentDescription = null, tint = palette.text, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.width(14.dp))
+        Icon(painterResource(R.drawable.ic_yt_nav_bookmark), contentDescription = null, tint = palette.text, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.width(24.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 text = bookmark.name,
                 color = palette.text,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 16.sp),
+                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 15.sp),
             )
             Text(
                 text = pluralStringResource(R.plurals.yt_videos_count, bookmark.videoCount.toInt(), bookmark.videoCount.toInt()),
                 color = palette.textSecondary,
-                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
+                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
             )
         }
-        Icon(painterResource(R.drawable.ic_arrow_right), contentDescription = null, tint = palette.textSecondary, modifier = Modifier.size(18.dp))
+        Icon(painterResource(R.drawable.ic_yt_chevron_right), contentDescription = null, tint = palette.text, modifier = Modifier.size(16.dp))
     }
 }

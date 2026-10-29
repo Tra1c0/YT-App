@@ -113,23 +113,23 @@ fun YouTubeWatchDetails(
             style = TextStyle(
                 fontFamily = YtFonts.geist,
                 fontWeight = FontWeight.Bold,
-                fontSize = 21.sp,
-                lineHeight = 26.sp,
+                fontSize = 18.5.sp,
+                lineHeight = 23.sp,
                 letterSpacing = (-0.2).sp,
             ),
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp),
+            modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 8.dp),
         )
         Text(
             text = TextUtils.formatViewsString(context, streams.views, streams.uploaded ?: 0L),
             color = palette.textSecondary,
-            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp),
+            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
+            modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 3.dp),
         )
 
         // Creator row
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp),
+            modifier = Modifier.padding(start = 13.dp, end = 12.dp, top = 14.dp),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -148,20 +148,20 @@ fun YouTubeWatchDetails(
                         .clip(CircleShape)
                         .background(palette.surface),
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(15.dp))
                 Column {
                     Text(
                         text = streams.uploader,
                         color = palette.text,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
+                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 14.5.sp),
                     )
                     if (streams.uploaderSubscriberCount >= 0) {
                         Text(
                             text = stringResource(R.string.subscribers, streams.uploaderSubscriberCount.formatShort()),
                             color = palette.textSecondary,
-                            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
+                            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
                         )
                     }
                 }
@@ -191,12 +191,13 @@ fun YouTubeWatchDetails(
                                 }
                             }
                         }
-                        .padding(horizontal = 18.dp, vertical = 10.dp),
+                        .height(32.dp)
+                        .padding(horizontal = 22.dp),
                 ) {
                     Text(
                         text = stringResource(if (isSubscribed) R.string.yt_watch_subscribed else R.string.yt_watch_subscribe),
                         color = if (isSubscribed) palette.text else palette.ink,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
+                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.sp),
                     )
                 }
             }
@@ -204,9 +205,9 @@ fun YouTubeWatchDetails(
 
         // Compact actions
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(top = 16.dp),
+            contentPadding = PaddingValues(horizontal = 13.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(top = 18.dp),
         ) {
             item {
                 ActionPill(
@@ -225,18 +226,19 @@ fun YouTubeWatchDetails(
 
         // Tabs
         Row(
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
         ) {
             if (hasChapters) {
-                WatchTabLabel(palette, stringResource(R.string.yt_watch_chapters), tab == WatchTab.CHAPTERS) { tab = WatchTab.CHAPTERS }
+                WatchTabLabel(palette, stringResource(R.string.yt_watch_chapters), tab == WatchTab.CHAPTERS, Modifier.weight(1f)) { tab = WatchTab.CHAPTERS }
             }
-            WatchTabLabel(palette, stringResource(R.string.yt_watch_description), tab == WatchTab.DESCRIPTION) { tab = WatchTab.DESCRIPTION }
-            WatchTabLabel(palette, stringResource(R.string.yt_watch_comments), false) { actions.onComments() }
+            WatchTabLabel(palette, stringResource(R.string.yt_watch_description), tab == WatchTab.DESCRIPTION, Modifier.weight(1f)) { tab = WatchTab.DESCRIPTION }
+            WatchTabLabel(palette, stringResource(R.string.yt_watch_comments), false, Modifier.weight(1f)) { actions.onComments() }
         }
         Box(
             Modifier
-                .padding(horizontal = 20.dp)
+                .padding(horizontal = 13.dp)
                 .fillMaxWidth()
                 .height(1.dp)
                 .background(palette.raised),
@@ -244,8 +246,8 @@ fun YouTubeWatchDetails(
 
         if (tab == WatchTab.CHAPTERS && hasChapters) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.padding(start = 3.dp, end = 3.dp, top = 8.dp, bottom = 4.dp),
             ) {
                 streams.chapters.forEachIndexed { index, chapter ->
                     val next = streams.chapters.getOrNull(index + 1)
@@ -266,8 +268,8 @@ fun YouTubeWatchDetails(
             Text(
                 text = stringResource(R.string.yt_watch_up_next),
                 color = palette.text,
-                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 19.sp),
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 4.dp),
+                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 18.dp, bottom = 2.dp),
             )
         }
     }
@@ -281,37 +283,44 @@ private fun ActionPill(palette: YtPalette, @DrawableRes icon: Int, label: String
             .clip(RoundedCornerShape(50))
             .background(palette.surface)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .height(36.dp)
+            .padding(horizontal = 18.dp),
     ) {
         Icon(painterResource(icon), contentDescription = null, tint = palette.text, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(10.dp))
         Text(
             text = label,
             color = palette.text,
-            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 14.sp),
+            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.sp),
         )
     }
 }
 
 @Composable
-private fun WatchTabLabel(palette: YtPalette, label: String, active: Boolean, onClick: () -> Unit) {
+private fun WatchTabLabel(
+    palette: YtPalette,
+    label: String,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = modifier.clickable(onClick = onClick),
     ) {
         Text(
             text = label,
             color = if (active) palette.text else palette.textSecondary,
             style = TextStyle(
                 fontFamily = YtFonts.geist,
-                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
-                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
             ),
             modifier = Modifier.padding(vertical = 10.dp),
         )
         Box(
             Modifier
-                .width(56.dp)
+                .fillMaxWidth(0.81f)
                 .height(3.dp)
                 .clip(RoundedCornerShape(2.dp))
                 .background(if (active) palette.accent else Color.Transparent),
@@ -333,12 +342,20 @@ private fun ChapterRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (active) palette.surface else Color.Transparent)
-            .then(if (active) Modifier.border(1.5.dp, palette.accent, RoundedCornerShape(16.dp)) else Modifier)
+            .clip(RoundedCornerShape(10.dp))
+            .then(if (active) Modifier.border(1.5.dp, palette.accent, RoundedCornerShape(10.dp)) else Modifier)
             .clickable(onClick = onClick)
-            .padding(8.dp),
+            .padding(start = if (active) 16.dp else 10.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
     ) {
+        if (active) {
+            Icon(
+                painterResource(R.drawable.ic_pause),
+                contentDescription = null,
+                tint = palette.accent,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(9.dp))
+        }
         Box {
             AsyncImage(
                 model = chapter.image.ifBlank { fallbackImage },
@@ -346,43 +363,31 @@ private fun ChapterRow(
                 imageLoader = imageLoader,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .width(112.dp)
-                    .aspectRatio(16f / 9f)
-                    .clip(RoundedCornerShape(10.dp)),
+                    .width(if (active) 76.dp else 111.dp)
+                    .height(62.dp)
+                    .clip(RoundedCornerShape(8.dp)),
             )
-            if (active) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(palette.accent),
-                ) {
-                    Icon(painterResource(R.drawable.ic_play), contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                }
-            }
         }
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(19.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 text = DateUtils.formatElapsedTime(chapter.start),
-                color = if (active) palette.accent else palette.textSecondary,
-                style = TextStyle(fontFamily = YtFonts.geistMono, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                color = palette.textSecondary,
+                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
             )
             Text(
                 text = chapter.title,
                 color = palette.text,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
+                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
             )
         }
         if (lengthSeconds > 0) {
             Text(
                 text = DateUtils.formatElapsedTime(lengthSeconds),
                 color = palette.textSecondary,
-                style = TextStyle(fontFamily = YtFonts.geistMono, fontSize = 12.sp),
+                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
                 modifier = Modifier.padding(start = 8.dp),
             )
         }

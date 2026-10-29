@@ -36,6 +36,13 @@ YT hat kein Google-Konto. Daraus folgen feste Grenzen:
   statt „24 Antworten“ im Feed steht „Zum Gespräch“, weil die Kommentarzahl erst auf der Videoseite geladen wird.
 - YouTube neu: das echte YouTube-Logo nur, solange das Repo privat bleibt (Markenrecht).
 
+## Maße und Skalierung
+
+Alle Design-Bildschirme folgen den vermessenen Referenzen und skalieren mit der Bildschirmbreite,
+Details in [DESIGN-MASSE.md](DESIGN-MASSE.md). Jedes Design hat eine eigene schwebende
+Navigationsleiste und eine eigene Kopfzeile. Die Leiste ist so gebaut, dass weitere Animationen
+(z. B. ein wandernder Indikator) direkt auf ihrem Zustand aufsetzen können.
+
 ## Etappen
 
 1. Design-Schalter, Paletten, Schriften, Wortmarken, beschriftete Navigation. **Erledigt.**
