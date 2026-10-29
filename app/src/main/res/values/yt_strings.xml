@@ -16,4 +16,14 @@
     <string name="yt_home_live_now">Live now</string>
     <string name="yt_home_more">More videos</string>
     <string name="yt_live_badge">LIVE</string>
+    <string name="yt_library_headline">Your YouTube.</string>
+    <string name="yt_library_subline">Saved, not forgotten.</string>
+    <string name="yt_library_continue">Continue watching</string>
+    <string name="yt_library_collections">Your collections</string>
+    <string name="yt_library_no_collections">No collections yet. Create the first one with +.</string>
+    <string name="yt_library_remaining">%1$s left</string>
+    <plurals name="yt_videos_count">
+        <item quantity="one">%d video</item>
+        <item quantity="other">%d videos</item>
+    </plurals>
 </resources>

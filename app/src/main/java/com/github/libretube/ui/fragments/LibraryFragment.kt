@@ -127,6 +127,12 @@ class LibraryFragment : DynamicLayoutManagerFragment(R.layout.fragment_library) 
         val orderIndex = sortOptionValues.indexOf(order)
         binding.sortTV.text = sortOptions.getOrNull(orderIndex)
 
+        // YT: the selected design shows its own personal area on top of the classic layout
+        com.github.libretube.ui.yt.YtLibrary.attach(this, binding.root) {
+            CreatePlaylistDialog()
+                .show(childFragmentManager, CreatePlaylistDialog::class.java.name)
+        }
+
         binding.sortTV.setOnClickListener {
             BaseBottomSheet().apply {
                 setSimpleItems(sortOptions.toList()) { index ->
@@ -172,6 +178,7 @@ class LibraryFragment : DynamicLayoutManagerFragment(R.layout.fragment_library) 
     }
 
     private fun fetchPlaylists() {
+        com.github.libretube.ui.yt.YtLibrary.requestReload()
         _binding?.playlistRefresh?.isRefreshing = true
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED) {
