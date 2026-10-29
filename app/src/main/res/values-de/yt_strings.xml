@@ -61,4 +61,26 @@
         <item quantity="one">%d Kapitel</item>
         <item quantity="other">%d Kapitel</item>
     </plurals>
+
+    <!-- Design "After" -->
+    <string name="yt_after_selection">Auswahl</string>
+    <string name="yt_after_films">Filme</string>
+    <string name="yt_after_live">Live</string>
+    <string name="yt_after_watch">Film ansehen</string>
+    <string name="yt_after_views">%1$s Aufrufe</string>
+    <string name="yt_after_for_later">Für später</string>
+    <string name="yt_after_show_all">Alle ansehen</string>
+    <string name="yt_after_more">Mehr zum Schauen</string>
+    <string name="yt_after_rooms_title">Live-Räume</string>
+    <string name="yt_after_rooms_headline">Nicht allein schauen.</string>
+    <string name="yt_after_rooms_empty">Gerade ist kein Raum offen.</string>
+    <string name="yt_after_room_label">ROOM %1$02d</string>
+    <string name="yt_after_watching_now">%1$s dabei</string>
+    <string name="yt_after_room_host">Ein Raum von %1$s</string>
+    <string name="yt_after_enter_room">Raum betreten</string>
+
+    <string name="yt_movo_library_headline">Deine Merkliste.</string>
+    <string name="yt_movo_library_subline">Alles, was dich reingezogen hat.</string>
+    <string name="yt_after_library_headline">Deine Sammlung.</string>
+    <string name="yt_after_library_subline">Für später. Für heute Nacht.</string>
 </resources>

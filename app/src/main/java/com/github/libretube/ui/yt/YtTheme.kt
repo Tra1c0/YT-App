@@ -8,6 +8,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.github.libretube.R
+import com.github.libretube.helpers.YtDesign
 
 /** YT: fonts bundled in res/font, for the Compose design screens. */
 object YtFonts {
@@ -81,6 +82,32 @@ val YtPalettes.Movo: YtPalette
         ink = Color(0xFF101112),
         pink = Color(0xFFE557D6),
     )
+
+/** "After": deep burgundy, bone white and a small tangerine accent. */
+val YtPalettes.After: YtPalette
+    get() = YtPalette(
+        background = Color(0xFF1A0B0F),
+        surface = Color(0xFF2B1219),
+        raised = Color(0xFF3C1B24),
+        text = Color(0xFFFFF4DF),
+        textSecondary = Color(0xFFD8C6B6),
+        accent = Color(0xFFFF8B4B),
+        onAccent = Color(0xFF2B1219),
+        live = Color(0xFFFF8B4B),
+        // collection cards: tangerine and bone instead of lime and lavender
+        lime = Color(0xFFFF8B4B),
+        lavender = Color(0xFFF2E3CF),
+        ink = Color(0xFF2B1219),
+    )
+
+/** The Compose palette of a design, or null for the classic look. */
+val YtDesign.palette: YtPalette?
+    get() = when (this) {
+        YtDesign.YOUTUBE -> YtPalettes.YouTube
+        YtDesign.MOVO -> YtPalettes.Movo
+        YtDesign.AFTER -> YtPalettes.After
+        else -> null
+    }
 
 @Composable
 fun YtTheme(palette: YtPalette, content: @Composable () -> Unit) {

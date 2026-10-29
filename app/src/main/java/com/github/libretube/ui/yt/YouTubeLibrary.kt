@@ -74,6 +74,8 @@ fun YouTubeLibraryScreen(
     onOpenVideo: (YtContinueItem) -> Unit,
     onOpenCollection: (YtCollection) -> Unit,
     onNewCollection: () -> Unit,
+    headline: String = stringResource(R.string.yt_library_headline),
+    subline: String = stringResource(R.string.yt_library_subline),
 ) {
     val playlists = collections.filter { !it.isBookmark }
     val bookmarks = collections.filter { it.isBookmark }
@@ -87,7 +89,7 @@ fun YouTubeLibraryScreen(
         item {
             Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp)) {
                 Text(
-                    text = stringResource(R.string.yt_library_headline),
+                    text = headline,
                     color = palette.text,
                     style = TextStyle(
                         fontFamily = YtFonts.geist,
@@ -98,7 +100,7 @@ fun YouTubeLibraryScreen(
                     ),
                 )
                 Text(
-                    text = stringResource(R.string.yt_library_subline),
+                    text = subline,
                     color = palette.textSecondary,
                     style = TextStyle(fontFamily = YtFonts.geist, fontSize = 17.sp),
                     modifier = Modifier.padding(top = 4.dp),

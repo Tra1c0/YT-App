@@ -20,25 +20,24 @@ object YtWatch {
         actions: YtWatchActions,
     ): YtWatchController? {
         val design = YtDesign.current()
-        if (design != YtDesign.YOUTUBE && design != YtDesign.MOVO) return null
+        val palette = design.palette ?: return null
 
         val controller = YtWatchController()
         val composeView = ComposeView(fragment.requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                if (design == YtDesign.MOVO) {
-                    YtTheme(YtPalettes.Movo) {
+                YtTheme(palette) {
+                    if (design == YtDesign.MOVO) {
                         MovoWatchDetails(
-                            palette = YtPalettes.Movo,
+                            palette = palette,
                             imageLoader = ImageHelper.loader(),
                             controller = controller,
                             actions = actions,
                         )
-                    }
-                } else {
-                    YtTheme(YtPalettes.YouTube) {
+                    } else {
+                        // "After" shares the structure of view B in its own colors
                         YouTubeWatchDetails(
-                            palette = YtPalettes.YouTube,
+                            palette = palette,
                             imageLoader = ImageHelper.loader(),
                             controller = controller,
                             actions = actions,

@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.stringResource
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.github.libretube.R
@@ -43,7 +44,13 @@ object YtLibrary {
 
     /** @return true if a design screen was attached. */
     fun attach(fragment: Fragment, root: ViewGroup, onNewCollection: () -> Unit): Boolean {
-        if (YtDesign.current() != YtDesign.YOUTUBE) return false
+        val design = YtDesign.current()
+        val palette = design.palette ?: return false
+        val (headline, subline) = when (design) {
+            YtDesign.MOVO -> R.string.yt_movo_library_headline to R.string.yt_movo_library_subline
+            YtDesign.AFTER -> R.string.yt_after_library_headline to R.string.yt_after_library_subline
+            else -> R.string.yt_library_headline to R.string.yt_library_subline
+        }
 
         val composeView = ComposeView(fragment.requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -57,9 +64,9 @@ object YtLibrary {
                     collections = loadCollections()
                 }
 
-                YtTheme(YtPalettes.YouTube) {
+                YtTheme(palette) {
                     YouTubeLibraryScreen(
-                        palette = YtPalettes.YouTube,
+                        palette = palette,
                         imageLoader = ImageHelper.loader(),
                         continueWatching = continueWatching,
                         collections = collections,
@@ -85,6 +92,8 @@ object YtLibrary {
                             )
                         },
                         onNewCollection = onNewCollection,
+                        headline = stringResource(headline),
+                        subline = stringResource(subline),
                     )
                 }
             }

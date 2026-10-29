@@ -68,7 +68,9 @@ fun YouTubeHomeScreen(
     onOpenChannel: (StreamItem) -> Unit,
 ) {
     val source = if (selectedFilter == YT_FILTER_ALL) feed ?: trending else trending
-    val videos = source.orEmpty().filter { !it.isShort && !it.isUpcoming && it.url != null }
+    val videos = source.orEmpty()
+        .filter { !it.isShort && !it.isUpcoming && it.url != null }
+        .distinctBy { it.url }
     val live = if (selectedFilter == YT_FILTER_ALL) videos.filter { it.isLive }.take(6) else emptyList()
     val regular = videos.filter { !it.isLive || selectedFilter != YT_FILTER_ALL }
     val hero = regular.firstOrNull()
