@@ -156,6 +156,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.changeInstance.setOnClickListener {
             redirectToIntentSettings()
         }
+
+        // YT: the selected design shows its own home screen on top of the classic layout
+        com.github.libretube.ui.yt.YtHome.attach(this, binding.root, homeViewModel, ::fetchHomeFeed)
     }
 
     override fun onResume() {

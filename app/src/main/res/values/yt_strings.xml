@@ -11,4 +11,9 @@
     <string name="yt_design_movo">Movo: playful, modular</string>
     <string name="yt_design_after">After: cinematic, warm</string>
     <string name="yt_design_side">Side: calm, social</string>
+    <string name="yt_home_headline">Good stuff for your feed.</string>
+    <string name="yt_home_empty">Nothing here yet. Subscribe to channels or pick a topic above.</string>
+    <string name="yt_home_live_now">Live now</string>
+    <string name="yt_home_more">More videos</string>
+    <string name="yt_live_badge">LIVE</string>
 </resources>

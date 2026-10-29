@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.androidx.navigation.safeargs)
     alias(libs.plugins.baselineprofile)
     alias(libs.plugins.ksp)
@@ -127,6 +128,7 @@ android {
     buildFeatures {
         buildConfig = true
         resValues = true
+        compose = true // YT: design screens
     }
 
     dependenciesInfo {
@@ -145,6 +147,14 @@ android {
 }
 
 dependencies {
+    /* YT: Jetpack Compose for the design screens */
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.runtime.livedata)
+    implementation(libs.coil.compose)
+
     /* Android Core */
     implementation(libs.androidx.activity)
     implementation(libs.androidx.appcompat)

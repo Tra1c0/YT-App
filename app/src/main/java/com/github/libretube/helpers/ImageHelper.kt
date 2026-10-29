@@ -32,6 +32,9 @@ import java.nio.file.Path
 object ImageHelper {
     private lateinit var imageLoader: ImageLoader
 
+    /** YT: the shared image loader, for Compose screens. */
+    fun loader(): ImageLoader = imageLoader
+
     private val Context.coilFile get() = cacheDir.resolve("coil")
     private const val HTTP_SCHEME = "http"
 
