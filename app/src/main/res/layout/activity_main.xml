@@ -22,6 +22,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            app:titleTextAppearance="@style/TextAppearance.YT.Brand"
             app:menu="@menu/action_bar"
             app:title="@string/app_name" />
 
@@ -35,7 +36,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:menu="@menu/bottom_menu"
-        app:labelVisibilityMode="selected" />
+        app:labelVisibilityMode="unlabeled" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment"

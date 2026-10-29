@@ -110,12 +110,10 @@ class MainActivity : AbstractPlayerHostActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        // show welcome activity on first app startup (or after the update to prospectively v32)
+        // YT: no welcome screen. YT always works locally without an account, so the sync server
+        // choice of the welcome screen is skipped; it stays available in the settings.
         if (!PreferenceHelper.getBoolean(PreferenceKeys.WELCOME_ACTIVITY_FINISHED, false)) {
-            val welcomeIntent = Intent(this, WelcomeActivity::class.java)
-            startActivity(welcomeIntent)
-            finish()
-            return
+            PreferenceHelper.putBoolean(PreferenceKeys.WELCOME_ACTIVITY_FINISHED, true)
         }
 
         // show noInternet Activity if no internet available on app startup

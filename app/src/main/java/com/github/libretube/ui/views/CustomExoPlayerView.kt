@@ -1267,7 +1267,8 @@ class CustomExoPlayerView(
         }
 
         if (isControllerFullyVisible) hideController()
-        updateBrightness(distanceY)
+        // YT: volume on the left half, brightness on the right half
+        updateVolume(distanceY)
     }
 
     override fun onSwipeRightScreen(distanceY: Float, positionY: Float) {
@@ -1277,7 +1278,7 @@ class CustomExoPlayerView(
         }
 
         if (isControllerFullyVisible) hideController()
-        updateVolume(distanceY)
+        updateBrightness(distanceY)
     }
 
     override fun onSwipeCenterScreen(distanceY: Float, positionY: Float) {

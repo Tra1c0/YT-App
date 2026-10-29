@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT typography: Geist for text, Geist Mono for numbers, Doto for the brand. -->
+<resources>
+
+    <style name="TextAppearance.YT.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+
+    <style name="TextAppearance.YT.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+
+    <style name="TextAppearance.YT.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+
+    <style name="TextAppearance.YT.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+
+    <style name="TextAppearance.YT.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+
+    <style name="TextAppearance.YT.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+    </style>
+
+    <style name="TextAppearance.YT.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+
+    <style name="TextAppearance.YT.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+
+    <style name="TextAppearance.YT.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+
+    <style name="TextAppearance.YT.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+
+    <style name="TextAppearance.YT.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+
+    <style name="TextAppearance.YT.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+    </style>
+
+    <style name="TextAppearance.YT.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+
+    <style name="TextAppearance.YT.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+
+    <style name="TextAppearance.YT.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+    </style>
+
+    <!-- Dot-matrix brand face for the toolbar title, a nod to Nothing OS. -->
+    <style name="TextAppearance.YT.Brand" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/font_doto_700</item>
+        <item name="android:fontFamily">@font/font_doto_700</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:letterSpacing">0.04</item>
+    </style>
+
+    <style name="TextAppearance.YT.Numeric" parent="">
+        <item name="fontFamily">@font/geist_mono</item>
+        <item name="android:fontFamily">@font/geist_mono</item>
+    </style>
+
+</resources>

@@ -71,7 +71,7 @@ open class BaseActivity : AppCompatActivity() {
                 setLocale(locale)
             }
 
-            val uiPref = PreferenceHelper.getString(PreferenceKeys.THEME_MODE, "A")
+            val uiPref = PreferenceHelper.getString(PreferenceKeys.THEME_MODE, "D") // YT: dark by default
             AppCompatDelegate.setDefaultNightMode(getThemeMode(uiPref))
         }
 

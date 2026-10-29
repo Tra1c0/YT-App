@@ -17,8 +17,67 @@
 
         <item name="materialAlertDialogTheme">@style/AlertDialogTheme</item>
 
+        <!-- YT: Geist everywhere, see values/yt_type.xml -->
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.YT.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.YT.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.YT.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.YT.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.YT.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.YT.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.YT.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.YT.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.YT.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.YT.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.YT.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.YT.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.YT.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.YT.LabelSmall</item>
+
         <!-- needed for ButtonGroupPreference.kt -->
         <item name="tonalButtonStyleCustomAttr">@style/Widget.Material3Expressive.Button.TonalButton</item>
+    </style>
+
+    <!-- YT: pink accent theme, the default -->
+    <style name="Theme.Pink" parent="BaseTheme">
+
+        <item name="colorPrimary">@color/pink_md_theme_dark_primary</item>
+        <item name="colorOnPrimary">@color/pink_md_theme_dark_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/pink_md_theme_dark_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/pink_md_theme_dark_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/pink_md_theme_dark_secondary</item>
+        <item name="colorOnSecondary">@color/pink_md_theme_dark_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/pink_md_theme_dark_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/pink_md_theme_dark_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/pink_md_theme_dark_tertiary</item>
+        <item name="colorOnTertiary">@color/pink_md_theme_dark_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/pink_md_theme_dark_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/pink_md_theme_dark_onTertiaryContainer</item>
+        <item name="colorError">@color/pink_md_theme_dark_error</item>
+        <item name="colorErrorContainer">@color/pink_md_theme_dark_errorContainer</item>
+        <item name="colorOnError">@color/pink_md_theme_dark_onError</item>
+        <item name="colorOnErrorContainer">@color/pink_md_theme_dark_onErrorContainer</item>
+        <item name="android:colorBackground">@color/pink_md_theme_dark_background</item>
+        <item name="colorOnBackground">@color/pink_md_theme_dark_onBackground</item>
+        <item name="colorSurface">@color/pink_md_theme_dark_surface</item>
+        <item name="colorOnSurface">@color/pink_md_theme_dark_onSurface</item>
+        <item name="colorSurfaceVariant">@color/pink_md_theme_dark_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/pink_md_theme_dark_onSurfaceVariant</item>
+        <item name="colorOutline">@color/pink_md_theme_dark_outline</item>
+        <item name="colorOutlineVariant">@color/pink_md_theme_dark_outlineVariant</item>
+        <item name="colorOnSurfaceInverse">@color/pink_md_theme_dark_inverseOnSurface</item>
+        <item name="colorSurfaceInverse">@color/pink_md_theme_dark_inverseSurface</item>
+        <item name="colorPrimaryInverse">@color/pink_md_theme_dark_inversePrimary</item>
+        <item name="colorSurfaceDim">@color/pink_md_theme_dark_surfaceDim</item>
+        <item name="colorSurfaceBright">@color/pink_md_theme_dark_surfaceBright</item>
+        <item name="colorSurfaceContainerLowest">@color/pink_md_theme_dark_surfaceContainerLowest</item>
+        <item name="colorSurfaceContainerLow">@color/pink_md_theme_dark_surfaceContainerLow</item>
+        <item name="colorSurfaceContainer">@color/pink_md_theme_dark_surfaceContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/pink_md_theme_dark_surfaceContainerHigh</item>
+        <item name="colorSurfaceContainerHighest">@color/pink_md_theme_dark_surfaceContainerHighest</item>
+
     </style>
 
     <style name="Theme.Red" parent="BaseTheme">

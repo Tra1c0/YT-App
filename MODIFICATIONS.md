@@ -10,3 +10,8 @@ YT ist ein veränderter Fork von LibreTube (GPLv3). Basis: LibreTube `master`, C
 | 2026-10-29 | Update-Prüfung zeigt auf das YT-Repo | `app/src/main/java/com/github/libretube/api/ExternalApi.kt` |
 | 2026-10-29 | Eigener Build-Workflow statt der LibreTube-Workflows | `.github/workflows/` |
 | 2026-10-29 | Eigenes README, LibreTube-README umbenannt | `README.md`, `README.LibreTube.md` |
+| 2026-10-29 | Kein Willkommensbildschirm: YT startet direkt, lokal ohne Konto | `ui/activities/MainActivity.kt` |
+| 2026-10-29 | Neues Akzent-Theme „Pink (YT)“ (Material 3 Fidelity aus #FF5C8A) als Standard, dunkles Theme als Standard | `res/values/yt_colors.xml`, `res/values*/themes.xml`, `helpers/ThemeHelper.kt`, `res/values/array.xml`, `res/xml/appearance_settings.xml`, `ui/base/BaseActivity.kt` |
+| 2026-10-29 | Schriften: Geist für Text, Geist Mono für Laufzeiten, Doto (Punktmatrix) für den Titel oben | `res/font/`, `res/values/yt_type.xml`, `res/values*/themes.xml`, `res/layout/activity_main.xml`, `res/layout/video_row.xml`, `res/layout/trending_row.xml`, `fonts/` |
+| 2026-10-29 | Untere Navigation ohne Beschriftung, App-Name „YT“ im Titel | `res/layout/activity_main.xml`, `helpers/ThemeHelper.kt` |
+| 2026-10-29 | Wischgesten: Lautstärke links, Helligkeit rechts | `ui/views/CustomExoPlayerView.kt`, `res/layout/player_gesture_controls_view.xml` |
