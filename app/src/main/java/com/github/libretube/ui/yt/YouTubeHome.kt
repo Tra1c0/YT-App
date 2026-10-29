@@ -71,7 +71,8 @@ fun YouTubeHomeScreen(
     onOpenChannel: (StreamItem) -> Unit,
     onShowAllLive: () -> Unit = {},
 ) {
-    val source = if (selectedFilter == YT_FILTER_ALL) feed ?: trending else trending
+    // subscriptions first; without any (or with Shorts only) the charts
+    val source = if (selectedFilter == YT_FILTER_ALL) feed?.takeIf { videos -> videos.any { !it.isShort } } ?: trending else trending
     val videos = source.orEmpty()
         .filter { !it.isShort && !it.isUpcoming && it.url != null }
         .distinctBy { it.url }

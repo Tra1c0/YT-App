@@ -61,9 +61,16 @@ object YtHome {
                 val isLoading by viewModel.isLoading.observeAsState(true)
                 var filter by remember { mutableStateOf(YT_FILTER_ALL) }
                 var movoTab by remember { mutableStateOf(MOVO_TAB_DISCOVER) }
+                // charts to discover: without subscriptions the home would otherwise be nearly empty
+                val discovery = YtDiscovery.rememberVideos()
+                val charts = discovery?.takeIf { it.isNotEmpty() } ?: trending?.second?.streams
+                val refreshAll = {
+                    refresh()
+                    YtDiscovery.refresh(context)
+                }
 
                 if (design.hasShortsTab) {
-                    YtRound2Home(fragment, design, viewModel, refresh)
+                    YtRound2Home(fragment, design, viewModel, refreshAll, charts)
                 } else if (design == YtDesign.SIDE) {
                     var sideTab by remember { mutableStateOf(SIDE_TAB_FOR_YOU) }
                     var hearts by remember { mutableStateOf(YtHearts.all()) }
@@ -71,13 +78,13 @@ object YtHome {
                         SideHomeScreen(
                             palette = YtPalettes.Side,
                             imageLoader = ImageHelper.loader(),
-                            forYou = trending?.second?.streams ?: feed,
+                            forYou = charts ?: feed,
                             people = feed,
                             tab = sideTab,
                             hearts = hearts,
                             isLoading = isLoading,
                             onSelectTab = { sideTab = it },
-                            onRefresh = refresh,
+                            onRefresh = refreshAll,
                             actions = SideFeedActions(
                                 onOpenVideo = { video ->
                                     NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
@@ -119,13 +126,13 @@ object YtHome {
                             palette = YtPalettes.After,
                             imageLoader = ImageHelper.loader(),
                             videos = if (selection) {
-                                feed?.takeIf { it.isNotEmpty() } ?: trending?.second?.streams
+                                feed?.takeIf { videos -> videos.any { !it.isShort } } ?: charts
                             } else tabVideos,
                             continueWatching = continueWatching,
                             tab = afterTab,
                             isLoading = if (selection) isLoading else tabVideos == null,
                             onSelectTab = { afterTab = it },
-                            onRefresh = { if (selection) refresh() else reload++ },
+                            onRefresh = { if (selection) refreshAll() else reload++ },
                             onOpenVideo = { video ->
                                 NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
                             },
@@ -140,12 +147,12 @@ object YtHome {
                         MovoHomeScreen(
                             palette = YtPalettes.Movo,
                             imageLoader = ImageHelper.loader(),
-                            discover = trending?.second?.streams,
+                            discover = charts,
                             following = feed,
                             tab = movoTab,
                             isLoading = isLoading,
                             onSelectTab = { movoTab = it },
-                            onRefresh = refresh,
+                            onRefresh = refreshAll,
                             onOpenVideo = { video ->
                                 NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
                             },
@@ -156,7 +163,8 @@ object YtHome {
                         palette = YtPalettes.YouTube,
                         imageLoader = ImageHelper.loader(),
                         feed = feed,
-                        trending = trending?.second?.streams,
+                        // "Alle": subscriptions, or the mixed charts; a topic: its chart
+                        trending = if (filter == YT_FILTER_ALL) charts else trending?.second?.streams,
                         categories = MediaServiceRepository.instance.getTrendingCategories(),
                         selectedFilter = filter,
                         isLoading = isLoading,
@@ -167,7 +175,7 @@ object YtHome {
                                 refresh()
                             }
                         },
-                        onRefresh = refresh,
+                        onRefresh = refreshAll,
                         onOpenVideo = { video ->
                             NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
                         },

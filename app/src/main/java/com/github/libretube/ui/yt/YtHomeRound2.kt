@@ -40,6 +40,7 @@ internal fun YtRound2Home(
     design: YtDesign,
     viewModel: HomeViewModel,
     refresh: () -> Unit,
+    charts: List<StreamItem>?,
 ) {
     val palette = design.palette ?: return
     val context = LocalContext.current
@@ -68,7 +69,7 @@ internal fun YtRound2Home(
     }
 
     val subscriptions = ytPlayable(feed)
-    val trends = ytPlayable(trending?.second?.streams)
+    val trends = ytPlayable(charts ?: trending?.second?.streams)
     val forYou = if (subscriptions == null && trends == null) null
     else ytInterleave(subscriptions.orEmpty(), trends.orEmpty())
     val data = YtHomeData(

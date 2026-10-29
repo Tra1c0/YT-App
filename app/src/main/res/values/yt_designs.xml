@@ -1150,9 +1150,9 @@
         <item name="colorOnTertiary">#1F2A26</item>
         <item name="colorTertiaryContainer">#5E746B</item>
         <item name="colorOnTertiaryContainer">#F3F6F4</item>
-        <item name="android:colorBackground">#5F7A70</item>
+        <item name="android:colorBackground">#6F8A80</item>
         <item name="colorOnBackground">#F3F6F4</item>
-        <item name="colorSurface">#5F7A70</item>
+        <item name="colorSurface">#6F8A80</item>
         <item name="colorOnSurface">#F3F6F4</item>
         <item name="colorSurfaceVariant">#6E887E</item>
         <item name="colorOnSurfaceVariant">#D0DCD6</item>

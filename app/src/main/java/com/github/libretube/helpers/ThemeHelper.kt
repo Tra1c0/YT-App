@@ -19,6 +19,12 @@ import com.google.android.material.color.MaterialColors
 
 object ThemeHelper {
     /**
+     * YT: package of the launcher activity aliases (".Default" etc. in the manifest). They resolve
+     * against the namespace, which differs from the application id app.tra1c0.yt.
+     */
+    private val ALIAS_PACKAGE = com.github.libretube.BuildConfig::class.java.name.substringBeforeLast('.')
+
+    /**
      * Set the theme, including accent color and night mode
      */
     fun updateTheme(activity: AppCompatActivity) {
@@ -32,6 +38,11 @@ object ThemeHelper {
         activity.setTheme(getTheme(accentColor))
         if (accentColor == "my") DynamicColors.applyToActivityIfAvailable(activity)
 
+        applyOverlays(activity)
+    }
+
+    /** Pure theme and the selected design on top of the base theme. */
+    fun applyOverlays(activity: AppCompatActivity) {
         val pureThemeEnabled = PreferenceHelper.getBoolean(
             PreferenceKeys.PURE_THEME,
             false
@@ -83,7 +94,7 @@ object ThemeHelper {
     fun changeIcon(context: Context, newLogoActivityAlias: String) {
         // Disable Old Icon(s)
         for (appIcon in IconsSheetAdapter.availableIcons) {
-            val activityClass = context.packageName.removeSuffix(".debug") + "." + appIcon.activityAlias
+            val activityClass = ALIAS_PACKAGE + "." + appIcon.activityAlias
 
             // remove old icons
             context.packageManager.setComponentEnabledSetting(
@@ -94,7 +105,7 @@ object ThemeHelper {
         }
 
         // set the class name for the activity alias
-        val newLogoActivityClass = context.packageName.removeSuffix(".debug") + "." + newLogoActivityAlias
+        val newLogoActivityClass = ALIAS_PACKAGE + "." + newLogoActivityAlias
         // Enable New Icon
         context.packageManager.setComponentEnabledSetting(
             ComponentName(context.packageName, newLogoActivityClass),

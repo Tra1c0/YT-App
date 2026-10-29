@@ -77,7 +77,7 @@ fun FrostHomeScreen(
         onRefresh = actions.onRefresh,
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF9CB3A8), Color(0xFF7D978C), Color(0xFF5E786E)))),
+            .background(Brush.verticalGradient(listOf(Color(0xFF6F8A80), Color(0xFF627B71), Color(0xFF536A61)))),
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -183,7 +183,7 @@ private fun FrostStat(palette: YtPalette, label: String, value: Int?, tag: Strin
             style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 17.sp),
         )
         Text(
-            text = value?.toString() ?: "–",
+            text = (value ?: 0).toString(),
             color = palette.text,
             style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp),
             modifier = Modifier.padding(top = 4.dp),

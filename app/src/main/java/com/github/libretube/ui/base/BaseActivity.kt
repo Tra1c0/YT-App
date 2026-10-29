@@ -57,6 +57,15 @@ open class BaseActivity : AppCompatActivity() {
         enableEdgeToEdge()
 
         super.onCreate(savedInstanceState)
+
+        // YT: switching day/night, AppCompat applies the base theme again on top of everything;
+        // put the design back on top (this was why light designs showed the base colors)
+        ThemeHelper.applyOverlays(this)
+    }
+
+    override fun onNightModeChanged(mode: Int) {
+        super.onNightModeChanged(mode)
+        ThemeHelper.applyOverlays(this)
     }
 
     override fun attachBaseContext(newBase: Context?) {

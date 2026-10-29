@@ -80,7 +80,7 @@ fun ShapesHomeScreen(
         onRefresh = actions.onRefresh,
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF0E0E24), Color(0xFF1C1A45), Color(0xFF3F3489), Color(0xFF6656C4)))),
+            .background(Brush.verticalGradient(listOf(Color(0xFF12122A), Color(0xFF1C1A45), Color(0xFF3F3489), Color(0xFF6656C4)))),
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -197,7 +197,8 @@ fun ShapesHomeScreen(
                         }
                     }
                     // first short in a lime drop
-                    val short = data.shorts?.firstOrNull()
+                    // a Short, or else something live, in the lime drop
+                    val short = data.shorts?.firstOrNull() ?: data.live?.firstOrNull { it.url != null }
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier

@@ -216,16 +216,17 @@ private fun ClayCard(
                 .fillMaxSize()
                 .background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0xE65A4034))),
         )
-        ClayPlayButton(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 14.dp, bottom = 70.dp),
-        ) { onOpen(video) }
         Column(
             Modifier
                 .align(Alignment.BottomStart)
                 .padding(start = 18.dp, end = 14.dp, bottom = 10.dp),
         ) {
+            // the play button sits right above the title, as in the reference
+            ClayPlayButton(
+                Modifier
+                    .align(Alignment.End)
+                    .padding(bottom = 4.dp),
+            ) { onOpen(video) }
             Text(
                 text = video.title.orEmpty(),
                 color = Color.White,
