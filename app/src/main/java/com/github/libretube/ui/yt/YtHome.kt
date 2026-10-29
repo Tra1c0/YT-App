@@ -62,7 +62,9 @@ object YtHome {
                 var filter by remember { mutableStateOf(YT_FILTER_ALL) }
                 var movoTab by remember { mutableStateOf(MOVO_TAB_DISCOVER) }
 
-                if (design == YtDesign.SIDE) {
+                if (design.hasShortsTab) {
+                    YtRound2Home(fragment, design, viewModel, refresh)
+                } else if (design == YtDesign.SIDE) {
                     var sideTab by remember { mutableStateOf(SIDE_TAB_FOR_YOU) }
                     var hearts by remember { mutableStateOf(YtHearts.all()) }
                     YtTheme(YtPalettes.Side) {

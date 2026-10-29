@@ -6,6 +6,12 @@
         <item>@string/yt_design_movo</item>
         <item>@string/yt_design_after</item>
         <item>@string/yt_design_side</item>
+        <item>@string/yt_design_clay</item>
+        <item>@string/yt_design_editorial</item>
+        <item>@string/yt_design_glass</item>
+        <item>@string/yt_design_pop</item>
+        <item>@string/yt_design_shapes</item>
+        <item>@string/yt_design_frost</item>
     </string-array>
     <string-array name="yt_designs_values" translatable="false">
         <item>standard</item>
@@ -13,5 +19,11 @@
         <item>movo</item>
         <item>after</item>
         <item>side</item>
+        <item>clay</item>
+        <item>editorial</item>
+        <item>glass</item>
+        <item>pop</item>
+        <item>shapes</item>
+        <item>frost</item>
     </string-array>
 </resources>

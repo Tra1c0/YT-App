@@ -22,3 +22,15 @@ Zusätzlich für die Designs (Design-Schalter unter Darstellung):
 | Roboto Condensed Bold (700) | Wortmarke in „YouTube neu“ | Apache 2.0, `RobotoCondensed-Apache-2.0.txt` |
 
 Fraunces, Archivo Narrow und Roboto Condensed sind statische Schnitte von Google Fonts (fonts.gstatic.com).
+
+Dritte Runde (Clay, Editorial, Glas, Pop, Formen, Frost):
+
+| Schrift | Einsatz | Lizenz |
+| --- | --- | --- |
+| Nunito (400–900) | „Clay“ und „Pop“ | SIL OFL 1.1, `Nunito-OFL.txt` |
+| Inter (400–900) | „Editorial“ | SIL OFL 1.1, `Inter-OFL.txt` |
+| IBM Plex Mono Medium | Laufzeiten und LIVE in „Editorial“ | SIL OFL 1.1, `IBMPlexMono-OFL.txt` |
+| Google Sans (400, 500, 700) | „Glas“ und „Formen“ | SIL OFL 1.1, `GoogleSans-OFL.txt` |
+| Plus Jakarta Sans (400–800) | „Frost“ | SIL OFL 1.1, `PlusJakartaSans-OFL.txt` |
+
+Google Sans und Inter sind auf lateinische Zeichen reduziert (fontTools subset), um die APK klein zu halten.

@@ -111,7 +111,7 @@ fun YouTubeWatchDetails(
             text = streams.title,
             color = palette.text,
             style = TextStyle(
-                fontFamily = YtFonts.geist,
+                fontFamily = palette.font,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.5.sp,
                 lineHeight = 23.sp,
@@ -122,7 +122,7 @@ fun YouTubeWatchDetails(
         Text(
             text = TextUtils.formatViewsString(context, streams.views, streams.uploaded ?: 0L),
             color = palette.textSecondary,
-            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
+            style = TextStyle(fontFamily = palette.font, fontSize = 12.5.sp),
             modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 3.dp),
         )
 
@@ -155,13 +155,13 @@ fun YouTubeWatchDetails(
                         color = palette.text,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 14.5.sp),
+                        style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 14.5.sp),
                     )
                     if (streams.uploaderSubscriberCount >= 0) {
                         Text(
                             text = stringResource(R.string.subscribers, streams.uploaderSubscriberCount.formatShort()),
                             color = palette.textSecondary,
-                            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
+                            style = TextStyle(fontFamily = palette.font, fontSize = 12.5.sp),
                         )
                     }
                 }
@@ -196,8 +196,8 @@ fun YouTubeWatchDetails(
                 ) {
                     Text(
                         text = stringResource(if (isSubscribed) R.string.yt_watch_subscribed else R.string.yt_watch_subscribe),
-                        color = if (isSubscribed) palette.text else palette.ink,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                        color = if (isSubscribed) palette.text else palette.background,
+                        style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 13.sp),
                     )
                 }
             }
@@ -268,7 +268,7 @@ fun YouTubeWatchDetails(
             Text(
                 text = stringResource(R.string.yt_watch_up_next),
                 color = palette.text,
-                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 16.sp),
                 modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 18.dp, bottom = 2.dp),
             )
         }
@@ -291,7 +291,7 @@ private fun ActionPill(palette: YtPalette, @DrawableRes icon: Int, label: String
         Text(
             text = label,
             color = palette.text,
-            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 13.sp),
         )
     }
 }
@@ -312,7 +312,7 @@ private fun WatchTabLabel(
             text = label,
             color = if (active) palette.text else palette.textSecondary,
             style = TextStyle(
-                fontFamily = YtFonts.geist,
+                fontFamily = palette.font,
                 fontWeight = FontWeight.Medium,
                 fontSize = 14.sp,
             ),
@@ -373,21 +373,21 @@ private fun ChapterRow(
             Text(
                 text = DateUtils.formatElapsedTime(chapter.start),
                 color = palette.textSecondary,
-                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
+                style = TextStyle(fontFamily = palette.font, fontSize = 12.5.sp),
             )
             Text(
                 text = chapter.title,
                 color = palette.text,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
             )
         }
         if (lengthSeconds > 0) {
             Text(
                 text = DateUtils.formatElapsedTime(lengthSeconds),
                 color = palette.textSecondary,
-                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
+                style = TextStyle(fontFamily = palette.font, fontSize = 13.sp),
                 modifier = Modifier.padding(start = 8.dp),
             )
         }

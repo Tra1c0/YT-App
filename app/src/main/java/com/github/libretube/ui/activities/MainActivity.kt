@@ -229,7 +229,17 @@ class MainActivity : AbstractPlayerHostActivity() {
         // YT: wordmark type and navigation labels follow the selected design
         val ytDesign = com.github.libretube.helpers.YtDesign.current()
         binding.toolbar.setTitleTextAppearance(this, ytDesign.brandTextAppearance)
-        com.github.libretube.ui.yt.YtHeader.apply(binding.toolbar)
+        com.github.libretube.ui.yt.YtHeader.apply(
+            binding.toolbar,
+            onSearch = {
+                if (::searchItem.isInitialized) {
+                    searchItem.isVisible = true
+                    searchItem.expandActionView()
+                }
+            },
+            onMenuItem = { item -> onOptionsItemSelected(item) },
+        )
+        if (com.github.libretube.ui.yt.YtHeader.active) supportActionBar?.setDisplayShowTitleEnabled(false)
         if (ytDesign.labeledNavigation) {
             binding.bottomNav.labelVisibilityMode =
                 com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY_LABELED
@@ -485,12 +495,18 @@ class MainActivity : AbstractPlayerHostActivity() {
                 }
 
                 // Suppress collapsing of search when search in progress.
-                return !isSearchInProgress()
+                val collapse = !isSearchInProgress()
+                if (collapse) com.github.libretube.ui.yt.YtHeader.onSearchCollapsed(binding.toolbar, item)
+                return collapse
             }
         })
 
+        // YT: a design header shows search and the app menu itself
+        com.github.libretube.ui.yt.YtHeader.onMenuCreated(searchItem, menu)
+
         // handle search queries passed by the intent
         if (savedSearchQuery != null) {
+            searchItem.isVisible = true
             searchItem.expandActionView()
             searchView.setQuery(savedSearchQuery, true)
             savedSearchQuery = null

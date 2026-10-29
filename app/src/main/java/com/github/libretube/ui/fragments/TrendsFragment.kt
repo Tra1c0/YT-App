@@ -40,6 +40,8 @@ class TrendsFragment : Fragment(R.layout.fragment_trends) {
         _binding = FragmentTrendsBinding.bind(view)
         // YT: the design "After" shows live rooms here instead of the trending tabs
         if (com.github.libretube.ui.yt.YtRooms.attach(this, binding.root)) return
+        // YT: designs with a Shorts tab show the Shorts from the subscriptions here
+        if (com.github.libretube.ui.yt.YtShorts.attach(this, binding.root)) return
 
         val categories = MediaServiceRepository.instance.getTrendingCategories()
 

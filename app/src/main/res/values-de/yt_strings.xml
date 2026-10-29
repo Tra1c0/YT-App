@@ -121,4 +121,35 @@
     <string name="yt_side_delete_note">Notiz löschen</string>
     <string name="yt_side_library_headline">Meine.</string>
     <string name="yt_side_library_subline">Was du behalten willst.</string>
+
+    <!-- Zweite Runde Designs -->
+    <string name="yt_design_clay">Clay: weich, verspielt</string>
+    <string name="yt_design_editorial">Editorial: Schwarz-Weiß, nummeriert</string>
+    <string name="yt_design_glass">Glas: Mint, klar</string>
+    <string name="yt_design_pop">Pop: Lavendel, Formen</string>
+    <string name="yt_design_shapes">Formen: dunkel, bunt (Inspiration)</string>
+    <string name="yt_design_frost">Frost: Salbei, Glas (Inspiration)</string>
+    <string name="yt_nav_shorts">Shorts</string>
+    <string name="yt_shorts_empty">Noch keine Shorts. Shorts aus deinen Abos erscheinen hier.</string>
+    <string name="yt_tab_for_you">Für dich</string>
+    <string name="yt_tab_subscriptions">Abos</string>
+    <string name="yt_tab_live">Live</string>
+    <string name="yt_clay_today">Heute für dich</string>
+    <string name="yt_up_next">Als Nächstes</string>
+    <string name="yt_search_youtube">YouTube durchsuchen</string>
+    <string name="yt_live_now">Jetzt live</string>
+    <string name="yt_previous">Zurück</string>
+    <string name="yt_next">Weiter</string>
+    <string name="yt_home_nothing">Noch nichts hier. Abonniere Kanäle, dann füllt sich deine Startseite.</string>
+    <string name="yt_shapes_continue">Weiterschauen</string>
+    <string name="yt_shapes_new">neu</string>
+    <string name="yt_shapes_new_in_subs">in deinen Abos</string>
+    <string name="yt_shapes_live_rooms">gerade live</string>
+    <string name="yt_frost_greeting">Hallo! Hier ist dein Video-Überblick für heute.</string>
+    <string name="yt_frost_today">Heute</string>
+    <string name="yt_frost_new">Neue Videos</string>
+    <string name="yt_frost_live">Gerade live</string>
+    <string name="yt_frost_shorts">Shorts</string>
+    <string name="yt_frost_for_you">Für dich</string>
+    <string name="yt_frost_see_all">Alle ansehen</string>
 </resources>

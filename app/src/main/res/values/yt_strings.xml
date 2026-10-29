@@ -121,4 +121,35 @@
     <string name="yt_side_delete_note">Delete note</string>
     <string name="yt_side_library_headline">Mine.</string>
     <string name="yt_side_library_subline">What you want to keep.</string>
+
+    <!-- Second round of designs -->
+    <string name="yt_design_clay">Clay: soft, playful</string>
+    <string name="yt_design_editorial">Editorial: black and white, numbered</string>
+    <string name="yt_design_glass">Glass: mint, clear</string>
+    <string name="yt_design_pop">Pop: lavender, shapes</string>
+    <string name="yt_design_shapes">Shapes: dark, colorful (inspiration)</string>
+    <string name="yt_design_frost">Frost: sage, glass (inspiration)</string>
+    <string name="yt_nav_shorts">Shorts</string>
+    <string name="yt_shorts_empty">No Shorts yet. Shorts from your subscriptions appear here.</string>
+    <string name="yt_tab_for_you">For you</string>
+    <string name="yt_tab_subscriptions">Subscriptions</string>
+    <string name="yt_tab_live">Live</string>
+    <string name="yt_clay_today">For you today</string>
+    <string name="yt_up_next">Up next</string>
+    <string name="yt_search_youtube">Search YouTube</string>
+    <string name="yt_live_now">Live now</string>
+    <string name="yt_previous">Previous</string>
+    <string name="yt_next">Next</string>
+    <string name="yt_home_nothing">Nothing here yet. Subscribe to channels to fill your home.</string>
+    <string name="yt_shapes_continue">Continue watching</string>
+    <string name="yt_shapes_new">new</string>
+    <string name="yt_shapes_new_in_subs">in your subscriptions</string>
+    <string name="yt_shapes_live_rooms">live now</string>
+    <string name="yt_frost_greeting">Hello! Here is your video overview for today.</string>
+    <string name="yt_frost_today">Today</string>
+    <string name="yt_frost_new">New videos</string>
+    <string name="yt_frost_live">Live now</string>
+    <string name="yt_frost_shorts">Shorts</string>
+    <string name="yt_frost_for_you">For you</string>
+    <string name="yt_frost_see_all">See all</string>
 </resources>

@@ -92,7 +92,7 @@ fun YouTubeLibraryScreen(
                     text = headline,
                     color = palette.text,
                     style = TextStyle(
-                        fontFamily = YtFonts.geist,
+                        fontFamily = palette.font,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 41.sp,
                         lineHeight = 42.sp,
@@ -102,7 +102,7 @@ fun YouTubeLibraryScreen(
                 Text(
                     text = subline,
                     color = palette.textSecondary,
-                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 20.sp),
+                    style = TextStyle(fontFamily = palette.font, fontSize = 20.sp),
                 )
             }
         }
@@ -143,7 +143,7 @@ fun YouTubeLibraryScreen(
                 Text(
                     text = stringResource(R.string.yt_library_collections),
                     color = palette.text,
-                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 17.5.sp),
+                    style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 17.5.sp),
                     modifier = Modifier.weight(1f),
                 )
                 Box(
@@ -168,7 +168,7 @@ fun YouTubeLibraryScreen(
                 Text(
                     text = stringResource(R.string.yt_library_no_collections),
                     color = palette.textSecondary,
-                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 15.sp),
+                    style = TextStyle(fontFamily = palette.font, fontSize = 15.sp),
                     modifier = Modifier.padding(horizontal = 15.dp),
                 )
             }
@@ -226,7 +226,7 @@ private fun QuickAccess(
             color = palette.text,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 15.sp),
+            style = TextStyle(fontFamily = palette.font, fontSize = 15.sp),
             modifier = Modifier.weight(1f),
         )
         Icon(painterResource(R.drawable.ic_yt_chevron_right), contentDescription = null, tint = palette.text, modifier = Modifier.size(16.dp))
@@ -244,7 +244,7 @@ private fun LibrarySection(palette: YtPalette, title: String, onClick: () -> Uni
         Text(
             text = title,
             color = palette.text,
-            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 17.5.sp),
+            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 17.5.sp),
         )
         Icon(
             painterResource(R.drawable.ic_yt_chevron_right),
@@ -334,7 +334,7 @@ private fun ContinueCard(
                     Text(
                         text = stringResource(R.string.yt_library_remaining, it),
                         color = Color.White,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                        style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 13.sp),
                         modifier = Modifier.padding(start = 30.dp),
                     )
                 }
@@ -345,13 +345,13 @@ private fun ContinueCard(
             color = palette.text,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, lineHeight = 19.sp),
+            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, lineHeight = 19.sp),
             modifier = Modifier.padding(start = 3.dp, top = 8.dp),
         )
         Text(
             text = item.video.uploaderName.orEmpty(),
             color = palette.textSecondary,
-            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
+            style = TextStyle(fontFamily = palette.font, fontSize = 12.5.sp),
             modifier = Modifier.padding(start = 3.dp, top = 1.dp),
         )
     }
@@ -389,7 +389,7 @@ private fun SmallContinueCard(
             color = palette.text,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 18.sp),
+            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 18.sp),
             modifier = Modifier.padding(top = 8.dp),
         )
     }
@@ -418,7 +418,7 @@ private fun CollectionCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(
-                    fontFamily = YtFonts.geist,
+                    fontFamily = palette.font,
                     fontWeight = FontWeight.Black,
                     fontSize = 28.sp,
                     lineHeight = 30.sp,
@@ -431,7 +431,7 @@ private fun CollectionCard(
         Text(
             text = pluralStringResource(R.plurals.yt_videos_count, collection.videoCount.toInt(), collection.videoCount.toInt()),
             color = palette.ink,
-            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.5.sp),
+            style = TextStyle(fontFamily = palette.font, fontSize = 13.5.sp),
             modifier = Modifier.padding(start = 5.dp, top = 2.dp),
         )
         Spacer(Modifier.weight(1f))
@@ -481,12 +481,12 @@ private fun BookmarkRow(palette: YtPalette, bookmark: YtCollection, onClick: () 
                 color = palette.text,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 15.sp),
+                style = TextStyle(fontFamily = palette.font, fontSize = 15.sp),
             )
             Text(
                 text = pluralStringResource(R.plurals.yt_videos_count, bookmark.videoCount.toInt(), bookmark.videoCount.toInt()),
                 color = palette.textSecondary,
-                style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
+                style = TextStyle(fontFamily = palette.font, fontSize = 12.5.sp),
             )
         }
         Icon(painterResource(R.drawable.ic_yt_chevron_right), contentDescription = null, tint = palette.text, modifier = Modifier.size(16.dp))

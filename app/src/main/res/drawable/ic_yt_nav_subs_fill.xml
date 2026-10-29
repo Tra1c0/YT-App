@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- YT: subscriptions, active navigation (play mark cut out) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M5.5,8H18.5A1.5,1.5 0,0 1,20 9.5V18.5A1.5,1.5 0,0 1,18.5 20H5.5A1.5,1.5 0,0 1,4 18.5V9.5A1.5,1.5 0,0 1,5.5 8zM10.4,11.2V16.8L15,14z" />
+    <path
+        android:pathData="M7,4.8H17"
+        android:strokeWidth="1.8"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round" />
+</vector>

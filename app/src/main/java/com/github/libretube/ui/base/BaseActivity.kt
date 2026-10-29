@@ -72,8 +72,10 @@ open class BaseActivity : AppCompatActivity() {
             }
 
             // YT: dark by default; the designs are dark only
-            val uiPref = if (com.github.libretube.helpers.YtDesign.current() != com.github.libretube.helpers.YtDesign.STANDARD) {
-                "D"
+            // YT: each design fixes the theme mode, light or dark
+            val ytDesign = com.github.libretube.helpers.YtDesign.current()
+            val uiPref = if (ytDesign != com.github.libretube.helpers.YtDesign.STANDARD) {
+                if (ytDesign.light) "L" else "D"
             } else {
                 PreferenceHelper.getString(PreferenceKeys.THEME_MODE, "D")
             }
