@@ -6,6 +6,8 @@
     <string name="yt_settings_everyday">Everyday</string>
     <string name="yt_settings_geeks">For geeks</string>
     <string name="yt_design">Design</string>
+    <string name="yt_design_motion">Design animations</string>
+    <string name="yt_design_motion_summary">Motion and transitions of the designs. Off: direct changes.</string>
     <string name="yt_design_standard">Standard (YT)</string>
     <string name="yt_design_youtube">YouTube reimagined</string>
     <string name="yt_design_movo">Movo: playful, modular</string>

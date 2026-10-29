@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,6 +28,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.animateDpAsState
@@ -34,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -70,6 +74,7 @@ fun EditorialHomeScreen(
     val source = if (tab == YT_TAB_FOR_YOU && category != YT_FILTER_ALL) categoryVideos else data.forTab(tab)
     val videos = (if (tab == YT_TAB_LIVE) source?.filter { it.url != null }?.distinctBy { it.url } else ytPlayable(source)).orEmpty()
     val shorts = data.shorts.orEmpty()
+    val enter = rememberYtEnterState()
 
     PullToRefreshBox(
         isRefreshing = data.isLoading && source != null,
@@ -83,7 +88,7 @@ fun EditorialHomeScreen(
             contentPadding = PaddingValues(bottom = 16.dp),
         ) {
             item {
-                EditorialTabs(
+                EditorialMainTabs(
                     palette = palette,
                     tabs = listOf(
                         YT_TAB_FOR_YOU to stringResource(R.string.yt_tab_for_you),
@@ -92,7 +97,6 @@ fun EditorialHomeScreen(
                     ),
                     selected = tab,
                     onSelect = onSelectTab,
-                    large = true,
                 )
                 Box(
                     Modifier
@@ -123,15 +127,60 @@ fun EditorialHomeScreen(
                 }
             }
             itemsIndexed(videos.take(3), key = { _, v -> "top-" + v.url }) { index, video ->
-                EditorialItem(palette, imageLoader, index + 1, video, actions)
+                EditorialItem(palette, imageLoader, index + 1, video, actions, Modifier.ytEnter(enter, tab + video.url, index))
             }
             if (shorts.isNotEmpty() && tab != YT_TAB_LIVE) {
                 item { EditorialShorts(palette, imageLoader, shorts, actions) }
             }
             itemsIndexed(videos.drop(3), key = { _, v -> "more-" + v.url }) { index, video ->
-                EditorialItem(palette, imageLoader, index + 4, video, actions)
+                EditorialItem(palette, imageLoader, index + 4, video, actions, Modifier.ytEnter(enter, tab + video.url, index + 3))
             }
         }
+    }
+}
+
+/** The main tabs: one blue bar that slides from tab to tab, sitting on the black rule. */
+@Composable
+private fun EditorialMainTabs(
+    palette: YtPalette,
+    tabs: List<Pair<String, String>>,
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
+    val bounds = remember { mutableStateMapOf<String, Pair<Int, Int>>() }
+    val density = LocalDensity.current
+    val target = bounds[selected]
+    val barX by animateDpAsState(with(density) { (target?.first ?: 0).toDp() }, ytStateSpec(), label = "editorialBarX")
+    val barWidth by animateDpAsState(with(density) { (target?.second ?: 0).toDp() }, ytStateSpec(), label = "editorialBarWidth")
+    Box(Modifier.padding(start = 17.dp, end = 16.dp, top = 6.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(34.dp)) {
+            tabs.forEach { (key, label) ->
+                val active = key == selected
+                Text(
+                    text = label,
+                    color = palette.text,
+                    maxLines = 1,
+                    style = TextStyle(
+                        fontFamily = YtFonts.inter,
+                        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = 16.sp,
+                        letterSpacing = (-0.2).sp,
+                    ),
+                    modifier = Modifier
+                        .onGloballyPositioned { bounds[key] = it.positionInParent().x.toInt() to it.size.width }
+                        .clickable { onSelect(key) }
+                        .padding(bottom = 9.dp),
+                )
+            }
+        }
+        Box(
+            Modifier
+                .align(Alignment.BottomStart)
+                .offset(x = barX)
+                .width(barWidth)
+                .height(3.dp)
+                .background(palette.accent),
+        )
     }
 }
 
@@ -153,6 +202,7 @@ private fun EditorialTabs(
             var width by remember { mutableIntStateOf(0) }
             val bar by animateDpAsState(
                 if (active) with(LocalDensity.current) { width.toDp() } else 0.dp,
+                ytStateSpec(),
                 label = "editorialTab",
             )
             Column(Modifier.clickable { onSelect(key) }) {
@@ -187,8 +237,9 @@ private fun EditorialItem(
     number: Int,
     video: StreamItem,
     actions: YtHomeActions,
+    modifier: Modifier = Modifier,
 ) {
-    Column(Modifier.padding(start = 17.dp, end = 16.dp, top = 10.dp)) {
+    Column(modifier.padding(start = 17.dp, end = 16.dp, top = 10.dp)) {
         Row(Modifier.clickable { actions.onOpenVideo(video) }) {
             Text(
                 text = "%02d".format(number),

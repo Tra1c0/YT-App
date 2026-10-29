@@ -1,17 +1,21 @@
 package com.github.libretube.ui.yt
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +29,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -76,6 +81,7 @@ fun GlassHomeScreen(
     val source = data.forTab(tab)
     val videos = (if (tab == YT_TAB_LIVE) source?.filter { it.url != null }?.distinctBy { it.url } else ytPlayable(source)).orEmpty()
     val shorts = data.shorts.orEmpty()
+    val enter = rememberYtEnterState()
 
     PullToRefreshBox(
         isRefreshing = data.isLoading && source != null,
@@ -113,39 +119,7 @@ fun GlassHomeScreen(
                     )
                 }
             }
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                    modifier = Modifier.padding(start = 21.dp, end = 20.dp, top = 6.dp, bottom = 10.dp),
-                ) {
-                    listOf(
-                        Triple(YT_TAB_FOR_YOU, R.string.yt_tab_for_you, 1.23f),
-                        Triple(YT_TAB_SUBS, R.string.yt_tab_subscriptions, 1f),
-                        Triple(YT_TAB_LIVE, R.string.yt_tab_live, 1.16f),
-                    ).forEach { (key, label, weight) ->
-                        val active = key == tab
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .weight(weight)
-                                .height(31.dp)
-                                .ytGlass(RoundedCornerShape(16.dp), strong = active, shadow = active)
-                                .clickable { onSelectTab(key) },
-                        ) {
-                            Text(
-                                text = stringResource(label),
-                                color = palette.text,
-                                maxLines = 1,
-                                style = TextStyle(
-                                    fontFamily = YtFonts.googleSans,
-                                    fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = if (active) 14.sp else 13.5.sp,
-                                ),
-                            )
-                        }
-                    }
-                }
-            }
+            item { GlassSegments(palette, tab, onSelectTab) }
             if (source == null || videos.isEmpty()) {
                 item {
                     Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
@@ -154,18 +128,28 @@ fun GlassHomeScreen(
                     }
                 }
             }
-            items(videos.take(2), key = { "top-" + it.url }) { GlassVideo(palette, imageLoader, it, actions) }
+            items(videos.take(2), key = { "top-" + it.url }) {
+                GlassVideo(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)))
+            }
             if (shorts.isNotEmpty() && tab != YT_TAB_LIVE) {
                 item { GlassShorts(palette, imageLoader, shorts, actions) }
             }
-            items(videos.drop(2), key = { "more-" + it.url }) { GlassVideo(palette, imageLoader, it, actions) }
+            items(videos.drop(2), key = { "more-" + it.url }) {
+                GlassVideo(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)))
+            }
         }
     }
 }
 
 @Composable
-private fun GlassVideo(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, actions: YtHomeActions) {
-    Column(Modifier.padding(start = 20.dp, end = 18.dp, bottom = 11.dp)) {
+private fun GlassVideo(
+    palette: YtPalette,
+    imageLoader: ImageLoader,
+    video: StreamItem,
+    actions: YtHomeActions,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.padding(start = 20.dp, end = 18.dp, bottom = 11.dp)) {
         Box(
             Modifier
                 .fillMaxWidth()
@@ -342,6 +326,72 @@ private fun GlassShorts(palette: YtPalette, imageLoader: ImageLoader, shorts: Li
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+/** Segmented tabs: three glass segments, a bright pill glides to the selected one. */
+@Composable
+private fun GlassSegments(palette: YtPalette, tab: String, onSelectTab: (String) -> Unit) {
+    val segments = listOf(
+        Triple(YT_TAB_FOR_YOU, R.string.yt_tab_for_you, 1.23f),
+        Triple(YT_TAB_SUBS, R.string.yt_tab_subscriptions, 1f),
+        Triple(YT_TAB_LIVE, R.string.yt_tab_live, 1.16f),
+    )
+    val gap = 5.dp
+    BoxWithConstraints(
+        Modifier
+            .padding(start = 21.dp, end = 20.dp, top = 6.dp, bottom = 10.dp)
+            .fillMaxWidth()
+            .height(31.dp),
+    ) {
+        val total = segments.sumOf { it.third.toDouble() }.toFloat()
+        val free = maxWidth - gap * (segments.size - 1)
+        val widths = segments.map { free * (it.third / total) }
+        val starts = widths.runningFold(0.dp) { x, w -> x + w + gap }
+        val index = segments.indexOfFirst { it.first == tab }.coerceAtLeast(0)
+        val pillX by animateDpAsState(starts[index], ytStateSpec(), label = "glassPillX")
+        val pillWidth by animateDpAsState(widths[index], ytStateSpec(), label = "glassPillWidth")
+        Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+            segments.forEachIndexed { i, _ ->
+                Box(
+                    Modifier
+                        .width(widths[i])
+                        .fillMaxHeight()
+                        .ytGlass(RoundedCornerShape(16.dp), shadow = false),
+                )
+            }
+        }
+        Box(
+            Modifier
+                .offset(x = pillX)
+                .width(pillWidth)
+                .fillMaxHeight()
+                .ytGlass(RoundedCornerShape(16.dp), strong = true),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+            segments.forEachIndexed { i, (key, label, _) ->
+                val active = key == tab
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .width(widths[i])
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable { onSelectTab(key) },
+                ) {
+                    Text(
+                        text = stringResource(label),
+                        color = palette.text,
+                        maxLines = 1,
+                        style = TextStyle(
+                            fontFamily = YtFonts.googleSans,
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = if (active) 14.sp else 13.5.sp,
+                        ),
+                    )
                 }
             }
         }

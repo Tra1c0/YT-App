@@ -2,6 +2,8 @@ package com.github.libretube.ui.yt
 
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
@@ -27,6 +29,8 @@ object YtWatch {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 YtTheme(palette) {
+                    val enter = rememberYtEnterState()
+                    Box(Modifier.ytEnter(enter, controller.videoId ?: "", 0)) {
                     if (design == YtDesign.MOVO) {
                         MovoWatchDetails(
                             palette = palette,
@@ -49,6 +53,7 @@ object YtWatch {
                             controller = controller,
                             actions = actions,
                         )
+                    }
                     }
                 }
             }

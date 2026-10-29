@@ -38,6 +38,13 @@
             app:key="yt_dynamic_player_colors"
             app:title="@string/yt_dynamic_player_colors" />
 
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_speed"
+            android:summary="@string/yt_design_motion_summary"
+            app:defaultValue="true"
+            app:key="yt_design_motion"
+            app:title="@string/yt_design_motion" />
+
         <ListPreference
             android:icon="@drawable/ic_color"
             app:defaultValue="pink"

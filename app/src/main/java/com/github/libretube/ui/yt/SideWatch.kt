@@ -4,6 +4,7 @@ import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -196,7 +197,7 @@ fun SideWatchDetails(
         val appear = remember(videoId) { MutableTransitionState(false).apply { targetState = true } }
         AnimatedVisibility(
             visibleState = appear,
-            enter = slideInVertically(tween(380)) { it / 4 } + fadeIn(tween(380)),
+            enter = ytEnterTransition(slideInVertically(tween(380)) { it / 4 } + fadeIn(tween(380))),
         ) {
             Column(
                 Modifier
@@ -204,7 +205,7 @@ fun SideWatchDetails(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     .background(palette.surface)
-                    .animateContentSize(),
+                    .animateContentSize(ytFinite(spring())),
             ) {
                 // drag handle: opens and closes the sheet
                 Box(
@@ -238,8 +239,8 @@ fun SideWatchDetails(
 
                 AnimatedVisibility(
                     visible = open,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut(),
+                    enter = ytEnterTransition(expandVertically() + fadeIn()),
+                    exit = ytExitTransition(shrinkVertically() + fadeOut()),
                 ) {
                     Column {
                         when (tab) {

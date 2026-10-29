@@ -1,5 +1,7 @@
 package com.github.libretube.ui.yt
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -150,7 +153,10 @@ fun AfterRoomsScreen(
             }
             room?.let { current ->
                 item {
-                    RoomCover(palette, imageLoader, current, selected, onEnterRoom)
+                    // rooms keep their color world and change with a slow crossfade
+                    Crossfade(targetState = selected, animationSpec = ytFinite(tween(650)), label = "room") { index ->
+                        live.getOrNull(index)?.let { RoomCover(palette, imageLoader, it, index, onEnterRoom) }
+                    }
                 }
                 val next = (1..2).mapNotNull { live.getOrNull((selected + it) % live.size) }
                     .filter { it.url != current.url }
@@ -239,9 +245,11 @@ private fun CreatorPortrait(
                         .align(Alignment.BottomStart)
                         .padding(start = 7.dp, bottom = 6.dp),
                 ) {
+                    val pulse = rememberPulse()
                     Box(
                         Modifier
                             .size(7.dp)
+                            .graphicsLayer { alpha = pulse }
                             .clip(CircleShape)
                             .background(palette.accent),
                     )
@@ -283,7 +291,17 @@ private fun RoomCover(
             .background(palette.surface)
             .clickable { onEnterRoom(room) },
     ) {
-        YtLargeThumbnail(room, imageLoader, Modifier.fillMaxSize())
+        val zoom = rememberKenBurns(durationMillis = 22000)
+        YtLargeThumbnail(
+            room,
+            imageLoader,
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = zoom
+                    scaleY = zoom
+                },
+        )
         Box(
             Modifier
                 .fillMaxSize()

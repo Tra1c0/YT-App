@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -79,6 +80,7 @@ fun YouTubeLibraryScreen(
 ) {
     val playlists = collections.filter { !it.isBookmark }
     val bookmarks = collections.filter { it.isBookmark }
+    val enter = rememberYtEnterState()
 
     LazyColumn(
         modifier = Modifier
@@ -119,7 +121,11 @@ fun YouTubeLibraryScreen(
         }
         continueWatching.firstOrNull()?.let { first ->
             item { LibrarySection(palette, stringResource(R.string.yt_library_continue), onOpenHistory) }
-            item { ContinueCard(palette, imageLoader, first, onOpenVideo) }
+            item {
+                Box(Modifier.ytEnter(enter, "continue" + first.video.url, 0)) {
+                    ContinueCard(palette, imageLoader, first, onOpenVideo)
+                }
+            }
             val more = continueWatching.drop(1)
             if (more.isNotEmpty()) {
                 item {
@@ -174,12 +180,13 @@ fun YouTubeLibraryScreen(
             }
         }
         // Two equally sized cards per row, alternating lime and lavender as in the brief.
-        items(playlists.chunked(2)) { pair ->
+        itemsIndexed(playlists.chunked(2)) { row, pair ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy(7.dp),
                 modifier = Modifier
                     .padding(horizontal = 9.dp, vertical = 4.dp)
-                    .height(146.dp),
+                    .height(146.dp)
+                    .ytEnter(enter, "collections" + pair.first().id, row + 1),
             ) {
                 pair.forEachIndexed { index, collection ->
                     CollectionCard(
@@ -197,7 +204,9 @@ fun YouTubeLibraryScreen(
             }
         }
         items(bookmarks, key = { "bookmark-" + it.id }) { bookmark ->
-            BookmarkRow(palette, bookmark) { onOpenCollection(bookmark) }
+            Box(Modifier.ytEnter(enter, "bookmark" + bookmark.id, 2 + bookmarks.indexOf(bookmark))) {
+                BookmarkRow(palette, bookmark) { onOpenCollection(bookmark) }
+            }
         }
     }
 }
@@ -214,8 +223,7 @@ private fun QuickAccess(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .heightIn(min = 50.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(palette.surface)
+            .ytSurface(palette, ytCardShape(palette, 12))
             .clickable(onClick = onClick)
             .padding(start = 15.dp, end = 12.dp),
     ) {
@@ -468,8 +476,7 @@ private fun BookmarkRow(palette: YtPalette, bookmark: YtCollection, onClick: () 
         modifier = Modifier
             .padding(start = 10.dp, end = 9.dp, top = 6.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(palette.surface)
+            .ytSurface(palette, ytCardShape(palette, 14))
             .clickable(onClick = onClick)
             .padding(start = 20.dp, end = 14.dp, top = 9.dp, bottom = 9.dp),
     ) {

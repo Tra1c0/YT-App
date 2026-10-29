@@ -1,11 +1,20 @@
 package com.github.libretube.ui.yt
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -30,6 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +59,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -79,6 +91,7 @@ fun ClayHomeScreen(
     val videos = ytPlayable(data.forYou).orEmpty().take(8)
     val pager = rememberPagerState { videos.size }
     val scope = rememberCoroutineScope()
+    val motion = LocalYtMotion.current
 
     Column(
         Modifier
@@ -150,7 +163,7 @@ fun ClayHomeScreen(
                         .align(Alignment.CenterStart)
                         .offset(x = 21.dp)
                         .zIndex(3f),
-                ) { scope.launch { pager.animateScrollToPage((pager.currentPage - 1).coerceAtLeast(0)) } }
+                ) { scope.launch { pager.ytScrollTo((pager.currentPage - 1).coerceAtLeast(0), motion) } }
                 ClayRoundButton(
                     icon = R.drawable.ic_yt_chevron_right,
                     description = R.string.yt_next,
@@ -159,7 +172,7 @@ fun ClayHomeScreen(
                         .align(Alignment.CenterEnd)
                         .offset(x = (-22).dp)
                         .zIndex(3f),
-                ) { scope.launch { pager.animateScrollToPage((pager.currentPage + 1).coerceAtMost(videos.lastIndex)) } }
+                ) { scope.launch { pager.ytScrollTo((pager.currentPage + 1).coerceAtMost(videos.lastIndex), motion) } }
             }
         }
 
@@ -172,8 +185,8 @@ fun ClayHomeScreen(
             ) {
                 repeat(videos.size.coerceAtMost(6)) { i ->
                     val active = pager.currentPage == i
-                    val color by animateColorAsState(if (active) ClayMauve else ClayDot, label = "clayDot")
-                    val width by animateDpAsState(if (active) 12.dp else 10.dp, label = "clayDotSize")
+                    val color by animateColorAsState(if (active) ClayMauve else ClayDot, ytStateSpec(), label = "clayDot")
+                    val width by animateDpAsState(if (active) 12.dp else 10.dp, ytStateSpec(), label = "clayDotSize")
                     Box(
                         Modifier
                             .size(width)
@@ -186,7 +199,16 @@ fun ClayHomeScreen(
         }
 
         videos.getOrNull(pager.currentPage + 1)?.let { next ->
-            ClayNextCard(palette, imageLoader, next, actions)
+            val fadeInSpec = ytFinite(tween<Float>(260))
+            val slideSpec = ytFinite(spring<IntOffset>(dampingRatio = 0.7f))
+            val fadeOutSpec = ytFinite(tween<Float>(160))
+            AnimatedContent(
+                targetState = next,
+                transitionSpec = {
+                    (fadeIn(fadeInSpec) + slideInHorizontally(slideSpec) { it / 6 }) togetherWith fadeOut(fadeOutSpec)
+                },
+                label = "clayNext",
+            ) { video -> ClayNextCard(palette, imageLoader, video, actions) }
         }
         Spacer(Modifier.height(16.dp))
     }
@@ -201,14 +223,16 @@ private fun ClayCard(
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(28.dp)
+    val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
             .padding(vertical = 5.dp)
             .fillMaxSize()
+            .ytSquish(interaction)
             .shadow(14.dp, shape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(shape)
             .background(Color(0xFF7A5A4C))
-            .clickable { onOpen(video) },
+            .clickable(interactionSource = interaction, indication = LocalIndication.current) { onOpen(video) },
     ) {
         YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
         Box(
@@ -286,15 +310,22 @@ private fun ClayCard(
 
 @Composable
 private fun ClayPlayButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val breath = rememberBreath()
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .size(72.dp)
+            .graphicsLayer {
+                scaleX = breath
+                scaleY = breath
+            }
+            .ytSquish(interaction)
             .shadow(10.dp, CircleShape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(CircleShape)
             .background(Brush.verticalGradient(listOf(Color(0xFFFFF5EC), Color(0xFFF1D9C6))))
             .border(1.dp, Color(0x99FFFFFF), CircleShape)
-            .clickable(onClick = onClick),
+            .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick),
     ) {
         Icon(
             painterResource(R.drawable.ic_yt_play_round),
@@ -315,15 +346,17 @@ private fun ClayRoundButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    val interaction = remember { MutableInteractionSource() }
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .size(size.dp)
+            .ytSquish(interaction)
             .shadow(8.dp, CircleShape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(CircleShape)
             .background(Brush.verticalGradient(listOf(Color(0xFFFFF3E9), Color(0xFFF2D9C6))))
             .border(1.dp, Color(0x99FFFFFF), CircleShape)
-            .clickable(onClick = onClick),
+            .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick),
     ) {
         Icon(
             painterResource(icon),
@@ -342,16 +375,18 @@ private fun ClayNextCard(
     actions: YtHomeActions,
 ) {
     val shape = RoundedCornerShape(22.dp)
+    val interaction = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .padding(start = 15.dp, end = 18.dp, top = 15.dp)
             .fillMaxWidth()
             .height(111.dp)
+            .ytSquish(interaction)
             .shadow(10.dp, shape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(shape)
             .background(Brush.verticalGradient(listOf(Color(0xFFFAEEE3), ClayCream)))
             .border(1.dp, Color(0x80FFFFFF), shape)
-            .clickable { actions.onOpenVideo(video) }
+            .clickable(interactionSource = interaction, indication = LocalIndication.current) { actions.onOpenVideo(video) }
             .padding(start = 15.dp, top = 11.dp, bottom = 11.dp, end = 8.dp),
     ) {
         Box(
@@ -441,4 +476,9 @@ private fun ClayNextCard(
             }
         }
     }
+}
+
+/** Scrolls the pager with its spring, or jumps when motion is off. */
+private suspend fun PagerState.ytScrollTo(page: Int, motion: Boolean) {
+    if (motion) animateScrollToPage(page, animationSpec = spring(dampingRatio = 0.7f, stiffness = 300f)) else scrollToPage(page)
 }

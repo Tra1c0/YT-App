@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
@@ -111,6 +112,7 @@ private fun YtShortsScreen(
     shorts: List<StreamItem>?,
     onOpen: (StreamItem) -> Unit,
 ) {
+    val enter = rememberYtEnterState()
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
@@ -149,11 +151,16 @@ private fun YtShortsScreen(
                 )
             }
             else -> items(shorts, key = { it.url!! }) { short ->
-                Column(Modifier.ytPressable(RoundedCornerShape(14.dp)) { onOpen(short) }) {
+                Column(
+                    Modifier
+                        .ytEnter(enter, short.url!!, shorts.indexOf(short))
+                        .ytPressable(ytCardShape(palette, 14), squish = palette.surfaceStyle == YtSurfaceStyle.CLAY) { onOpen(short) },
+                ) {
                     Box(
                         Modifier
                             .fillMaxWidth()
-                            .aspectRatio(9f / 16f),
+                            .aspectRatio(9f / 16f)
+                            .clip(ytCardShape(palette, 14)),
                     ) {
                         YtLargeThumbnail(short, imageLoader, Modifier.fillMaxSize())
                         Box(

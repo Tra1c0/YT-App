@@ -1,6 +1,7 @@
 package com.github.libretube.ui.yt
 
 import android.text.format.DateUtils
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -70,6 +72,7 @@ fun MovoHomeScreen(
     val videos = source.orEmpty().filter { !it.isShort && !it.isUpcoming && it.url != null }
     val blocks = videos.chunked(4)
     val opening = rememberYtOpening()
+    val enter = rememberYtEnterState()
     val open: (StreamItem) -> Unit = { video ->
         opening.value = video.url
         onOpenVideo(video)
@@ -128,8 +131,10 @@ fun MovoHomeScreen(
                         }
                     }
                 }
-                items(blocks) { block ->
-                    MovoBlock(palette, imageLoader, block, open)
+                itemsIndexed(blocks) { index, block ->
+                    Box(Modifier.ytEnter(enter, "block" + block.first().url, index)) {
+                        MovoBlock(palette, imageLoader, block, open)
+                    }
                 }
             }
         }
@@ -141,7 +146,7 @@ private fun MovoTab(palette: YtPalette, label: String, active: Boolean, onClick:
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
-            .background(if (active) palette.accent else palette.surface)
+            .background(animateColorAsState(if (active) palette.accent else palette.surface, ytStateSpec(), label = "movoTab").value)
             .clickable(onClick = onClick)
             .height(32.dp)
             .padding(horizontal = 24.dp),

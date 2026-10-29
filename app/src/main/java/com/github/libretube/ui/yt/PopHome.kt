@@ -1,6 +1,8 @@
 package com.github.libretube.ui.yt
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,12 +30,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -75,6 +81,7 @@ fun PopHomeScreen(
     val videos = (if (tab == YT_TAB_LIVE) source?.filter { it.url != null }?.distinctBy { it.url } else ytPlayable(source)).orEmpty()
     val shorts = data.shorts.orEmpty()
     val liveCard = data.live?.firstOrNull { it.url != null && it.isLive }
+    val enter = rememberYtEnterState()
 
     PullToRefreshBox(
         isRefreshing = data.isLoading && source != null,
@@ -106,26 +113,29 @@ fun PopHomeScreen(
                 }
             }
             videos.firstOrNull()?.let { first ->
-                item(key = "feature-" + first.url) { PopFeature(palette, imageLoader, first, actions) }
+                item(key = "feature-" + first.url) { PopFeature(palette, imageLoader, first, actions, Modifier.ytEnter(enter, tab + first.url, 0)) }
             }
-            items(videos.drop(1).take(1), key = { "list-" + it.url }) { PopListCard(palette, imageLoader, it, actions) }
+            items(videos.drop(1).take(1), key = { "list-" + it.url }) { PopListCard(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, 1)) }
             if ((shorts.isNotEmpty() || liveCard != null) && tab != YT_TAB_LIVE) {
                 item { PopShorts(palette, imageLoader, shorts, liveCard, actions) }
             }
-            items(videos.drop(2), key = { "more-" + it.url }) { PopListCard(palette, imageLoader, it, actions) }
+            items(videos.drop(2), key = { "more-" + it.url }) {
+                PopListCard(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)))
+            }
         }
     }
 }
 
 @Composable
 private fun PopTab(palette: YtPalette, label: String, icon: Int?, active: Boolean, width: Int, onClick: () -> Unit) {
-    val background by animateColorAsState(if (active) palette.accent else PopLilac, label = "popTab")
-    val content by animateColorAsState(if (active) Color.White else palette.text, label = "popTabContent")
+    val background by animateColorAsState(if (active) palette.accent else PopLilac, ytStateSpec(), label = "popTab")
+    val content by animateColorAsState(if (active) Color.White else palette.text, ytStateSpec(), label = "popTabContent")
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .width(width.dp)
             .height(50.dp)
+            .ytSelectBounce(active)
             .clip(BlobShape(0.62f, 0.5f, 0.56f, 0.64f))
             .background(background)
             .clickable(onClick = onClick),
@@ -152,10 +162,16 @@ private fun PopTab(palette: YtPalette, label: String, icon: Int?, active: Boolea
 }
 
 @Composable
-private fun PopFeature(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, actions: YtHomeActions) {
+private fun PopFeature(
+    palette: YtPalette,
+    imageLoader: ImageLoader,
+    video: StreamItem,
+    actions: YtHomeActions,
+    modifier: Modifier = Modifier,
+) {
     val card = FeatureShape(smallFraction = 0.06f, largeFraction = 0.165f)
     Column(
-        Modifier
+        modifier
             .padding(horizontal = 14.dp)
             .fillMaxWidth()
             .shadow(6.dp, card, clip = false, ambientColor = PopShadow, spotColor = PopShadow)
@@ -246,14 +262,21 @@ private fun PopFeature(palette: YtPalette, imageLoader: ImageLoader, video: Stre
                     style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp),
                 )
             }
+            // saving spins the cookie a fifth of a turn with a springy overshoot
+            var turns by remember { mutableIntStateOf(0) }
+            val rotation by animateFloatAsState(turns * 72f, ytSpec(spring(dampingRatio = 0.45f, stiffness = 260f)), label = "popStar")
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(46.dp)
+                    .graphicsLayer { rotationZ = rotation }
                     .shadow(3.dp, CookieShape(9), clip = false, ambientColor = PopShadow, spotColor = PopShadow)
                     .clip(CookieShape(9))
                     .background(Color.White)
-                    .clickable { actions.onSave(video) },
+                    .clickable {
+                        turns++
+                        actions.onSave(video)
+                    },
             ) {
                 Icon(painterResource(R.drawable.ic_yt_star), contentDescription = null, tint = palette.text, modifier = Modifier.size(22.dp))
             }
@@ -262,10 +285,16 @@ private fun PopFeature(palette: YtPalette, imageLoader: ImageLoader, video: Stre
 }
 
 @Composable
-private fun PopListCard(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, actions: YtHomeActions) {
+private fun PopListCard(
+    palette: YtPalette,
+    imageLoader: ImageLoader,
+    video: StreamItem,
+    actions: YtHomeActions,
+    modifier: Modifier = Modifier,
+) {
     val shape = RoundedCornerShape(22.dp)
     Row(
-        modifier = Modifier
+        modifier = modifier
             .padding(start = 14.dp, end = 14.dp, top = 12.dp)
             .fillMaxWidth()
             .height(99.dp)

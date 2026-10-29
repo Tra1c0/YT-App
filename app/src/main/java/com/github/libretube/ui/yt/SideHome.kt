@@ -1,6 +1,7 @@
 package com.github.libretube.ui.yt
 
 import android.text.format.DateUtils
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -83,6 +84,7 @@ fun SideHomeScreen(
     actions: SideFeedActions,
 ) {
     val source = if (tab == SIDE_TAB_PEOPLE) people else forYou
+    val enter = rememberYtEnterState()
     val posts = source.orEmpty()
         .filter { !it.isShort && !it.isUpcoming && it.url != null }
         .distinctBy { it.url }
@@ -148,8 +150,10 @@ fun SideHomeScreen(
                     }
                 }
                 items(posts, key = { it.url!! }) { post ->
-                    SidePost(palette, imageLoader, post, post.url!!.toID() in hearts, actions)
-                    SideDivider(palette)
+                    Column(Modifier.ytEnter(enter, post.url!!, posts.indexOf(post))) {
+                        SidePost(palette, imageLoader, post, post.url.toID() in hearts, actions)
+                        SideDivider(palette)
+                    }
                 }
             }
         }
@@ -197,7 +201,7 @@ internal fun SideTab(palette: YtPalette, label: String, active: Boolean, onClick
         ),
         modifier = Modifier
             .clip(RoundedCornerShape(50))
-            .background(if (active) palette.accent else Color.Transparent)
+            .background(animateColorAsState(if (active) palette.accent else Color.Transparent, ytStateSpec(), label = "sideTab").value)
             .clickable(onClick = onClick)
             .padding(horizontal = 23.dp, vertical = 6.dp),
     )
@@ -350,8 +354,10 @@ private fun SidePost(
                 Icon(
                     painterResource(if (hearted) R.drawable.ic_yt_heart_fill else R.drawable.ic_yt_heart),
                     contentDescription = stringResource(R.string.yt_side_heart),
-                    tint = if (hearted) palette.accent else palette.text,
-                    modifier = Modifier.size(21.dp),
+                    tint = animateColorAsState(if (hearted) palette.accent else palette.text, ytStateSpec(), label = "heart").value,
+                    modifier = Modifier
+                        .size(21.dp)
+                        .ytSelectBounce(hearted),
                 )
             }
             SideVerticalRule(palette)

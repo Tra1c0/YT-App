@@ -10,6 +10,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +36,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -305,16 +308,25 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
                 null, 0.dp, 0.dp, 18.dp, palette.text)
         }
     }
+    val interaction = remember { MutableInteractionSource() }
+    // Formen: the scalloped search button turns slowly
+    val spin = if (design == YtDesign.SHAPES && kind == HeaderButton.SEARCH) rememberSpin(24000) else 0f
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(look.size)
-            .then(if (look.shadow > 0.dp) Modifier.shadow(look.shadow, look.shape, clip = false) else Modifier)
-            .clip(look.shape)
-            .then(if (look.fill != null) Modifier.background(look.fill) else Modifier)
-            .then(if (look.outline != null) Modifier.border(look.outlineWidth, look.outline, look.shape) else Modifier)
-            .clickable(onClick = onClick),
+            .ytPressScale(interaction)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
     ) {
+        Box(
+            Modifier
+                .matchParentSize()
+                .graphicsLayer { rotationZ = spin }
+                .then(if (look.shadow > 0.dp) Modifier.shadow(look.shadow, look.shape, clip = false) else Modifier)
+                .clip(look.shape)
+                .then(if (look.fill != null) Modifier.background(look.fill) else Modifier)
+                .then(if (look.outline != null) Modifier.border(look.outlineWidth, look.outline, look.shape) else Modifier),
+        )
         Icon(
             painterResource(if (look.filled) activeIcon else icon),
             contentDescription = null,

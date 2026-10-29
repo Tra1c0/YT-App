@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,8 +39,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -87,6 +90,7 @@ fun AfterHomeScreen(
         .ifEmpty { playable.drop(1).take(6) }
     val more = playable.drop(1).filter { candidate -> later.none { it.url == candidate.url } }
     val opening = rememberYtOpening()
+    val enter = rememberYtEnterState()
     val open: (StreamItem) -> Unit = { video ->
         opening.value = video.url
         onOpenVideo(video)
@@ -147,7 +151,12 @@ fun AfterHomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         items(later, key = { "later-" + it.url }) { video ->
-                            AfterPoster(palette, imageLoader, video, open, Modifier.width(177.dp))
+                            AfterPoster(
+                                palette, imageLoader, video, open,
+                                Modifier
+                                    .width(177.dp)
+                                    .ytEnter(enter, "later" + video.url, later.indexOf(video)),
+                            )
                         }
                     }
                 }
@@ -161,10 +170,12 @@ fun AfterHomeScreen(
                         modifier = Modifier.padding(start = 23.dp, end = 18.dp, top = 20.dp, bottom = 9.dp),
                     )
                 }
-                items(more.chunked(2)) { pair ->
+                itemsIndexed(more.chunked(2)) { row, pair ->
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
+                        modifier = Modifier
+                            .padding(start = 16.dp, end = 16.dp, bottom = 6.dp)
+                            .ytEnter(enter, "more" + pair.first().url, row),
                     ) {
                         pair.forEach { video ->
                             AfterPoster(palette, imageLoader, video, open, Modifier.weight(1f))
@@ -198,26 +209,39 @@ private fun AfterHero(
         // a calm crossfade between posters, and into playback when the film starts
         val heroAlpha by animateFloatAsState(
             targetValue = if (hero != null && openingUrl == hero.url) 0.3f else 1f,
-            animationSpec = tween(350),
+            animationSpec = ytSpec(tween(450)),
             label = "heroFade",
         )
         Crossfade(
             targetState = hero,
-            animationSpec = tween(450),
+            animationSpec = ytFinite(tween(700)),
             label = "heroPoster",
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { alpha = heroAlpha },
         ) { video ->
-            if (video != null) YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+            if (video != null) {
+                val zoom = rememberKenBurns()
+                YtLargeThumbnail(
+                    video,
+                    imageLoader,
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = zoom
+                            scaleY = zoom
+                        },
+                )
+            }
         }
         Box(
             Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        0f to palette.background.copy(alpha = 0.70f),
-                        0.18f to Color.Transparent,
+                        0f to palette.background.copy(alpha = 0.88f),
+                        0.2f to palette.background.copy(alpha = 0.45f),
+                        0.32f to Color.Transparent,
                         0.45f to palette.background.copy(alpha = 0.15f),
                         0.78f to palette.background.copy(alpha = 0.88f),
                         1f to palette.background,
@@ -242,15 +266,16 @@ private fun AfterHero(
                 ) {
                     Text(
                         text = label,
-                        color = if (active) palette.text else palette.text.copy(alpha = 0.72f),
+                        color = if (active) palette.text else palette.text.copy(alpha = 0.86f),
                         style = TextStyle(
                             fontFamily = YtFonts.geist,
                             fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                             fontSize = 13.sp,
+                            shadow = Shadow(Color(0xCC000000), Offset(0f, 1f), 8f),
                         ),
                         modifier = Modifier.padding(top = 6.dp, bottom = 7.dp),
                     )
-                    val underline by animateDpAsState(if (active) 47.dp else 0.dp, label = "afterTab")
+                    val underline by animateDpAsState(if (active) 47.dp else 0.dp, ytStateSpec(), label = "afterTab")
                     Box(
                         Modifier
                             .width(underline)
@@ -421,11 +446,13 @@ private fun AfterPoster(
 /** Small tangerine LIVE label. */
 @Composable
 fun AfterLiveBadge(palette: YtPalette, modifier: Modifier = Modifier) {
+    val pulse = rememberPulse(min = 0.6f, durationMillis = 1200)
     Text(
         text = stringResource(R.string.yt_live_badge),
         color = palette.onAccent,
         style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 12.sp),
         modifier = modifier
+            .graphicsLayer { alpha = pulse }
             .clip(RoundedCornerShape(50))
             .background(palette.accent)
             .padding(horizontal = 9.dp, vertical = 2.dp),

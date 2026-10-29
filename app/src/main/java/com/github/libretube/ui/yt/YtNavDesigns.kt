@@ -1,12 +1,15 @@
 package com.github.libretube.ui.yt
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -87,14 +90,18 @@ fun YtShortsGlyph(color: Color, filled: Boolean, modifier: Modifier = Modifier) 
 /** The icon of a tab: the item's drawable or, for Shorts, the Shorts mark. */
 @Composable
 private fun NavIcon(item: YtNavItem, active: Boolean, tint: Color, size: Dp) {
+    // a newly selected tab pops its icon, in the motion character of the design
+    val modifier = Modifier
+        .size(size)
+        .ytSelectBounce(active)
     if (item.icon == null) {
-        YtShortsGlyph(tint, filled = active, modifier = Modifier.size(size))
+        YtShortsGlyph(tint, filled = active, modifier = modifier)
     } else {
         Icon(
             painterResource(if (active) item.activeIcon ?: item.icon else item.icon),
             contentDescription = null,
             tint = tint,
-            modifier = Modifier.size(size),
+            modifier = modifier,
         )
     }
 }
@@ -141,18 +148,20 @@ fun ClayNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSel
         items.take(4).forEachIndexed { index, item ->
             val tile = tiles[index]
             val active = state.selected == item.id
-            val color by animateColorAsState(if (active) mauve else tile.base, label = "clayTile")
-            val content by animateColorAsState(if (active) Color.White else Color(0xFF5C5260), label = "clayContent")
+            val color by animateColorAsState(if (active) mauve else tile.base, ytStateSpec(), label = "clayTile")
+            val content by animateColorAsState(if (active) Color.White else Color(0xFF5C5260), ytStateSpec(), label = "clayContent")
+            val interaction = remember { MutableInteractionSource() }
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .offset(tile.x, tile.y)
                     .size(tile.w, tile.h)
+                    .ytSquish(interaction)
                     .shadow(10.dp, tile.shape, clip = false, ambientColor = Color(0x66B07A66), spotColor = Color(0x80B07A66))
                     .clip(tile.shape)
                     .background(Brush.verticalGradient(listOf(lighten(color, 0.16f), color, darken(color, 0.06f))))
                     .border(1.5.dp, Color.White.copy(alpha = 0.35f), tile.shape)
-                    .noRippleClick { onSelect(item.id) },
+                    .clickable(interactionSource = interaction, indication = null) { onSelect(item.id) },
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -192,7 +201,7 @@ fun EditorialNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
             .background(palette.background),
     ) {
         val itemWidth = maxWidth / items.size
-        val barX by animateDpAsState(itemWidth * index, springDp, label = "editorialBar")
+        val barX by animateDpAsState(itemWidth * index, ytSpec(tween(200, easing = LinearOutSlowInEasing)), label = "editorialBar")
         Box(
             Modifier
                 .fillMaxWidth()
@@ -262,7 +271,7 @@ fun GlassNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
         ) {
             items.forEach { item ->
                 val active = item.id == state.selected
-                val width by animateDpAsState(if (active) 107.dp else 49.dp, springDp, label = "glassPill")
+                val width by animateDpAsState(if (active) 107.dp else 49.dp, ytSpec(springDp), label = "glassPill")
                 val pill = RoundedCornerShape(25.dp)
                 Box(
                     contentAlignment = Alignment.Center,
@@ -319,15 +328,38 @@ fun PopNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSele
             .height(70.dp),
     ) {
         val itemWidth = maxWidth / items.size
-        val blobX by animateDpAsState(itemWidth * index, springDp, label = "popBlob")
+        val blobX by animateDpAsState(itemWidth * index, ytSpec(spring(dampingRatio = 0.55f, stiffness = 320f)), label = "popBlob")
+        // the band: one bubble per tab on a rounded bar, so it bulges around each tab and has
+        // round ends, as in the reference
+        val band = Color(0xFFD9D1F6)
         Box(
             Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .height(58.dp)
-                .clip(WavyBarShape(items.size, 0.12f))
-                .background(Color(0xFFD9D1F6)),
-        )
+                .height(58.dp),
+        ) {
+            Box(
+                Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(band),
+            )
+            Row(Modifier.fillMaxSize()) {
+                items.forEach { _ ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .padding(horizontal = 1.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(band),
+                    )
+                }
+            }
+        }
         Box(
             Modifier
                 .offset(x = blobX + (itemWidth - 100.dp) / 2)
@@ -339,7 +371,7 @@ fun PopNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSele
         Row(Modifier.fillMaxSize()) {
             items.forEachIndexed { i, item ->
                 val active = i == index
-                val tint by animateColorAsState(if (active) Color.White else palette.text, label = "popTint")
+                val tint by animateColorAsState(if (active) Color.White else palette.text, ytStateSpec(), label = "popTint")
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
@@ -386,7 +418,7 @@ fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
     ) {
         items.forEachIndexed { i, item ->
             val active = item.id == state.selected
-            val width by animateDpAsState(if (active) (if (i == 1) 72.dp else 50.dp) else 40.dp, springDp, label = "shapeSize")
+            val width by animateDpAsState(if (active) (if (i == 1) 72.dp else 50.dp) else 40.dp, ytSpec(springDp), label = "shapeSize")
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
@@ -395,14 +427,21 @@ fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
                     .fillMaxHeight()
                     .noRippleClick { onSelect(item.id) },
             ) {
+                // the scalloped shapes of the active tab turn slowly
+                val spin = if (active && (i == 0 || i == 3)) rememberSpin(16000) else 0f
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .width(width)
-                        .height(if (active) 44.dp else 36.dp)
-                        .clip(shapes[i % shapes.size])
-                        .background(if (active) colors[i % colors.size] else Color.Transparent),
+                        .height(if (active) 44.dp else 36.dp),
                 ) {
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .graphicsLayer { rotationZ = spin }
+                            .clip(shapes[i % shapes.size])
+                            .background(if (active) colors[i % colors.size] else Color.Transparent),
+                    )
                     NavIcon(item, active, if (active) palette.ink else palette.text.copy(alpha = 0.75f), 22.dp)
                     Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopEnd))
                 }
@@ -440,7 +479,7 @@ fun FrostNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
         ) {
             items.forEach { item ->
                 val active = item.id == state.selected
-                val width by animateDpAsState(if (active) 118.dp else 48.dp, springDp, label = "frostPill")
+                val width by animateDpAsState(if (active) 118.dp else 48.dp, ytSpec(springDp), label = "frostPill")
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier

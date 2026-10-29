@@ -50,6 +50,24 @@ YT hat kein Google-Konto. Daraus folgen feste Grenzen:
 Videoseite und „Dein YouTube.“ nutzen bei allen sechs den Aufbau von „YouTube neu“ in den Farben
 und der Schrift des Designs. Der Shorts-Reiter ersetzt die Trends.
 
+## Bewegung
+
+Alle Animationen der Designs lassen sich unter Darstellung → „Animationen der Designs“ abschalten;
+dann wechseln Zustände direkt. „Animationen entfernen“ in den Android-Bedienungshilfen wirkt zusätzlich.
+
+| Design | Charakter | Was sich bewegt |
+| --- | --- | --- |
+| YouTube neu | ruhig | Videos blenden mit kurzem Anstieg ein, Filter wechseln weich die Farbe, Tab-Icons ploppen leicht |
+| Movo | federnd | Mosaik-Blöcke wachsen herein, gewähltes Cover wächst, die anderen treten zurück, Unterstrich federt |
+| After | filmisch | langsamer Zoom auf Plakat und Raumkarte, Plakate und Räume blenden langsam über, LIVE atmet |
+| Side | sanft | Beiträge gleiten herein, Herz ploppt, Gesprächsfläche zieht hoch und klappt am Griff |
+| Clay | knetig | Karten, Knöpfe und Blobs geben beim Drücken breit und flach nach, Play-Knopf atmet, „Als Nächstes“ gleitet nach |
+| Editorial | knapp | blauer Balken gleitet zwischen Reitern und in der Leiste, Einträge erscheinen schnell ohne Federn |
+| Glas | weich | helle Pille gleitet zwischen den Segmenten, aktiver Reiter wächst vom Kreis zur Pille |
+| Pop | verspielt | Blob gleitet federnd zum Reiter, Reiter-Blobs ploppen, Stern dreht sich beim Merken, Karten springen herein |
+| Formen | lebendig | Welle läuft über den Fortschritt, Zahlen zählen hoch, Cookie-Formen drehen sich langsam |
+| Frost | sanft | Zahlen zählen hoch, Karten gleiten herein, aktive Pille wächst |
+
 ## Maße und Skalierung
 
 Alle Design-Bildschirme folgen den vermessenen Referenzen und skalieren mit der Bildschirmbreite,

@@ -171,7 +171,7 @@ fun YouTubeWatchDetails(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(50))
+                        .clip(ytPillShape(palette))
                         .background(if (isSubscribed) palette.raised else palette.text)
                         .clickable {
                             val newState = !isSubscribed
@@ -241,7 +241,7 @@ fun YouTubeWatchDetails(
                 .padding(horizontal = 13.dp)
                 .fillMaxWidth()
                 .height(1.dp)
-                .background(palette.raised),
+                .background(if (palette.surfaceStyle == YtSurfaceStyle.EDITORIAL) palette.text else palette.raised),
         )
 
         if (tab == WatchTab.CHAPTERS && hasChapters) {
@@ -280,8 +280,7 @@ private fun ActionPill(palette: YtPalette, @DrawableRes icon: Int, label: String
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(palette.surface)
+            .ytSurface(palette, ytPillShape(palette))
             .clickable(onClick = onClick)
             .height(36.dp)
             .padding(horizontal = 18.dp),

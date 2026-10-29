@@ -1,6 +1,7 @@
 package com.github.libretube.ui.yt
 
 import android.text.format.DateUtils
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -81,6 +83,7 @@ fun YouTubeHomeScreen(
     val hero = regular.firstOrNull()
     val rest = regular.drop(1)
 
+    val enter = rememberYtEnterState()
     PullToRefreshBox(
         isRefreshing = isLoading && source != null,
         onRefresh = onRefresh,
@@ -124,7 +127,7 @@ fun YouTubeHomeScreen(
             }
             hero?.let { video ->
                 item {
-                    LargeVideo(palette, imageLoader, video, onOpenVideo, onOpenChannel)
+                    LargeVideo(palette, imageLoader, video, onOpenVideo, onOpenChannel, Modifier.ytEnter(enter, "hero" + video.url, 0))
                 }
             }
             if (live.isNotEmpty()) {
@@ -135,7 +138,7 @@ fun YouTubeHomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(13.dp),
                     ) {
                         items(live, key = { it.url!! }) { video ->
-                            LiveCard(palette, imageLoader, video, onOpenVideo)
+                            LiveCard(palette, imageLoader, video, onOpenVideo, Modifier.ytEnter(enter, "live" + video.url, 1 + live.indexOf(video)))
                         }
                     }
                 }
@@ -143,7 +146,7 @@ fun YouTubeHomeScreen(
             if (rest.isNotEmpty()) {
                 item { SectionTitle(palette, stringResource(R.string.yt_home_more)) }
                 items(rest, key = { it.url!! }) { video ->
-                    LargeVideo(palette, imageLoader, video, onOpenVideo, onOpenChannel)
+                    LargeVideo(palette, imageLoader, video, onOpenVideo, onOpenChannel, Modifier.ytEnter(enter, "rest" + video.url, 2 + rest.indexOf(video)))
                 }
             }
         }
@@ -166,10 +169,11 @@ private fun FilterRow(
     ) {
         items(filters, key = { it.first }) { (key, label) ->
             val active = key == selected
+            val pill by animateColorAsState(if (active) palette.text else palette.surface, ytStateSpec(), label = "ytFilter")
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (active) palette.text else palette.surface)
+                    .background(pill)
                     .clickable { onSelect(key) }
                     .height(34.dp)
                     .padding(horizontal = 19.dp),
@@ -266,10 +270,11 @@ private fun LargeVideo(
     video: StreamItem,
     onOpenVideo: (StreamItem) -> Unit,
     onOpenChannel: (StreamItem) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .ytPressable(RoundedCornerShape(14.dp)) { onOpenVideo(video) }
             .padding(start = 4.dp, end = 4.dp, bottom = 16.dp),
@@ -338,9 +343,10 @@ private fun LiveCard(
     imageLoader: ImageLoader,
     video: StreamItem,
     onOpenVideo: (StreamItem) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .width(204.dp)
             .ytPressable(RoundedCornerShape(10.dp)) { onOpenVideo(video) },
     ) {

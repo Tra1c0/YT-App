@@ -280,7 +280,7 @@ private fun NavTab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val color by animateColorAsState(if (active) style.active else style.inactive, label = "navColor")
+    val color by animateColorAsState(if (active) style.active else style.inactive, ytStateSpec(), label = "navColor")
     var labelWidth by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
     val underlineTarget = when {
@@ -290,7 +290,7 @@ private fun NavTab(
     }
     val underlineWidth by animateDpAsState(
         underlineTarget,
-        animationSpec = spring(dampingRatio = 0.75f, stiffness = 500f),
+        animationSpec = ytSpec(spring(dampingRatio = if (design == YtDesign.MOVO) 0.5f else 0.75f, stiffness = 500f)),
         label = "navUnderline",
     )
 
@@ -306,13 +306,15 @@ private fun NavTab(
         if (style.iconSize > 0.dp) {
             Box(contentAlignment = Alignment.Center) {
                 if (item.icon == null && design == YtDesign.MOVO) {
-                    MovoMark(active, palette, Modifier.size(style.iconSize))
+                    MovoMark(active, palette, Modifier.size(style.iconSize).ytSelectBounce(active))
                 } else if (item.icon != null) {
                     Icon(
                         painterResource(if (active) item.activeIcon ?: item.icon else item.icon),
                         contentDescription = null,
                         tint = color,
-                        modifier = Modifier.size(style.iconSize),
+                        modifier = Modifier
+                            .size(style.iconSize)
+                            .ytSelectBounce(active),
                     )
                 }
                 if (badge != null && badge > 0) {
@@ -364,9 +366,10 @@ private fun NavTab(
 /** Movo's mark: two overlapping rounded squares, cobalt and pink when active. */
 @Composable
 fun MovoMark(active: Boolean, palette: YtPalette, modifier: Modifier = Modifier) {
-    val back by animateColorAsState(if (active) palette.accent else Color(0xFF6E6E78), label = "markBack")
+    val back by animateColorAsState(if (active) palette.accent else Color(0xFF6E6E78), ytStateSpec(), label = "markBack")
     val front by animateColorAsState(
         if (active) Color(0xFFB4AEFF) else Color(0xFF8E8E97),
+        ytStateSpec(),
         label = "markFront",
     )
     Canvas(modifier) {

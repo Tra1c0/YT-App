@@ -25,6 +25,13 @@ class AppearanceSettings : BasePreferenceFragment() {
                 true
             }
 
+        // YT: the animation switch applies to all open screens after a restart
+        findPreference<SwitchPreferenceCompat>(com.github.libretube.ui.yt.YtMotionPrefs.KEY)
+            ?.setOnPreferenceChangeListener { _, _ ->
+                RequireRestartDialog().show(childFragmentManager, RequireRestartDialog::class.java.name)
+                true
+            }
+
         val themeToggle = findPreference<ListPreference>(PreferenceKeys.THEME_MODE)
         themeToggle?.setOnPreferenceChangeListener { _, _ ->
             RequireRestartDialog().show(childFragmentManager, RequireRestartDialog::class.java.name)

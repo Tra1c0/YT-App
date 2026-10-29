@@ -71,6 +71,7 @@ fun FrostHomeScreen(
     val newVideos = data.subscriptions?.count { System.currentTimeMillis() - it.uploaded < 24L * 60 * 60 * 1000 }
     val live = data.live?.count { it.isLive }
     val shorts = data.shorts?.size
+    val enter = rememberYtEnterState()
 
     PullToRefreshBox(
         isRefreshing = data.isLoading && data.forYou != null,
@@ -140,8 +141,14 @@ fun FrostHomeScreen(
                     }
                 }
             }
-            videos.firstOrNull()?.let { first -> item(key = "big-" + first.url) { FrostBig(palette, imageLoader, first, actions) } }
-            items(videos.drop(1), key = { "row-" + it.url }) { FrostRow(palette, imageLoader, it, actions) }
+            videos.firstOrNull()?.let { first ->
+                item(key = "big-" + first.url) {
+                    Box(Modifier.ytEnter(enter, "big" + first.url, 0)) { FrostBig(palette, imageLoader, first, actions) }
+                }
+            }
+            items(videos.drop(1), key = { "row-" + it.url }) {
+                Box(Modifier.ytEnter(enter, "row" + it.url, videos.indexOf(it))) { FrostRow(palette, imageLoader, it, actions) }
+            }
         }
     }
 }
@@ -183,7 +190,7 @@ private fun FrostStat(palette: YtPalette, label: String, value: Int?, tag: Strin
             style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 17.sp),
         )
         Text(
-            text = (value ?: 0).toString(),
+            text = ytCountUp(value ?: 0).toString(),
             color = palette.text,
             style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp),
             modifier = Modifier.padding(top = 4.dp),

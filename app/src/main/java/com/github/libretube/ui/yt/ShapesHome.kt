@@ -74,6 +74,7 @@ fun ShapesHomeScreen(
     val continueItem = data.continueWatching?.firstOrNull { it.url != null } ?: videos.firstOrNull()
     val newCount = data.subscriptions?.count { System.currentTimeMillis() - it.uploaded < DAY_MILLIS } ?: 0
     val liveCount = data.live?.count { it.isLive } ?: 0
+    val enter = rememberYtEnterState()
 
     PullToRefreshBox(
         isRefreshing = data.isLoading && data.forYou != null,
@@ -88,7 +89,12 @@ fun ShapesHomeScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.height(170.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .height(170.dp)
+                        .ytEnter(enter, "widgets", 0),
+                ) {
                     // new videos: a tilted yellow pill with big numbers
                     Box(
                         contentAlignment = Alignment.Center,
@@ -101,7 +107,7 @@ fun ShapesHomeScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "%02d".format(newCount.coerceAtMost(99)),
+                                text = "%02d".format(ytCountUp(newCount.coerceAtMost(99))),
                                 color = palette.ink,
                                 style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Bold, fontSize = 54.sp, lineHeight = 54.sp),
                             )
@@ -163,10 +169,19 @@ fun ShapesHomeScreen(
                 }
             }
             continueItem?.let { video ->
-                item { ShapesContinue(palette, imageLoader, video, progress(video), actions) }
+                item {
+                    Box(Modifier.ytEnter(enter, "continue", 1)) {
+                        ShapesContinue(palette, imageLoader, video, progress(video), actions)
+                    }
+                }
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.height(150.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .height(150.dp)
+                        .ytEnter(enter, "tiles", 2),
+                ) {
                     // live now: big condensed numbers on salmon
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -179,7 +194,7 @@ fun ShapesHomeScreen(
                             .padding(horizontal = 16.dp),
                     ) {
                         Text(
-                            text = "%02d".format(liveCount.coerceAtMost(99)),
+                            text = "%02d".format(ytCountUp(liveCount.coerceAtMost(99))),
                             color = Color(0xFF4A1C1A),
                             style = TextStyle(fontFamily = YtFonts.anton, fontSize = 78.sp, lineHeight = 78.sp),
                         )
@@ -227,7 +242,9 @@ fun ShapesHomeScreen(
                 }
             }
             itemsIndexed(videos.drop(1), key = { _, v -> "v-" + v.url }) { index, video ->
-                ShapesVideo(palette, imageLoader, video, index, actions)
+                Box(Modifier.ytEnter(enter, "v" + video.url, index + 3)) {
+                    ShapesVideo(palette, imageLoader, video, index, actions)
+                }
             }
         }
     }
@@ -279,7 +296,13 @@ private fun ShapesContinue(palette: YtPalette, imageLoader: ImageLoader, video: 
                 maxLines = 1,
                 style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 12.sp),
             )
-            WavyProgress(progress, palette.accent, Color(0xFFD9D4EE), Modifier.padding(top = 12.dp).fillMaxWidth().height(18.dp))
+            WavyProgress(
+                progress,
+                palette.accent,
+                Color(0xFFD9D4EE),
+                Modifier.padding(top = 12.dp).fillMaxWidth().height(18.dp),
+                phase = rememberWavePhase(),
+            )
         }
         Box(
             contentAlignment = Alignment.Center,
@@ -304,7 +327,7 @@ private fun ShapesContinue(palette: YtPalette, imageLoader: ImageLoader, video: 
 
 /** Material 3 Expressive style progress: wavy where played, straight where not, with a thumb. */
 @Composable
-fun WavyProgress(progress: Float, played: Color, rest: Color, modifier: Modifier = Modifier) {
+fun WavyProgress(progress: Float, played: Color, rest: Color, modifier: Modifier = Modifier, phase: Float = 0f) {
     Canvas(modifier) {
         val stroke = size.height * 0.22f
         val mid = size.height / 2f
@@ -315,7 +338,8 @@ fun WavyProgress(progress: Float, played: Color, rest: Color, modifier: Modifier
         var x = 0f
         wave.moveTo(0f, mid)
         while (x <= end) {
-            wave.lineTo(x, mid + amplitude * sin(2 * PI * x / wavelength).toFloat())
+            // the wave travels along the played part while [phase] runs from 0 to 1
+            wave.lineTo(x, mid + amplitude * sin(2 * PI * (x / wavelength - phase)).toFloat())
             x += 2f
         }
         drawPath(wave, played, style = Stroke(width = stroke, cap = StrokeCap.Round))

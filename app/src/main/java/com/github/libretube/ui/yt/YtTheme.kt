@@ -103,6 +103,10 @@ data class YtPalette(
     val font: FontFamily = YtFonts.geist,
     /** Light designs draw dark text on light surfaces. */
     val light: Boolean = false,
+    /** Character of the design's motion. */
+    val motion: YtMotionStyle = YtMotionStyle.CALM,
+    /** How pills and cards of the shared screens are drawn (video page, personal area, Shorts). */
+    val surfaceStyle: YtSurfaceStyle = YtSurfaceStyle.FLAT,
 )
 
 object YtPalettes {
@@ -137,6 +141,7 @@ val YtPalettes.Movo: YtPalette
         lavender = Color(0xFFC9C3FF),
         ink = Color(0xFF101112),
         pink = Color(0xFFE557D6),
+        motion = YtMotionStyle.SPRINGY,
     )
 
 /** "After": deep burgundy, bone white and a small tangerine accent. */
@@ -154,6 +159,7 @@ val YtPalettes.After: YtPalette
         lime = Color(0xFFFF8B4B),
         lavender = Color(0xFFF2E3CF),
         ink = Color(0xFF2B1219),
+        motion = YtMotionStyle.CINEMATIC,
     )
 
 /** "Side": matte graphite, raised surfaces and warm pale apricot. */
@@ -171,6 +177,7 @@ val YtPalettes.Side: YtPalette
         lime = Color(0xFFFFC68D),
         lavender = Color(0xFFE9E2D8),
         ink = Color(0xFF292A2C),
+        motion = YtMotionStyle.SOFT,
     )
 
 /** "Clay": peach, cream and mauve, puffy surfaces. */
@@ -190,6 +197,8 @@ val YtPalettes.Clay: YtPalette
         pink = Color(0xFFB37A7B),
         font = YtFonts.nunito,
         light = true,
+        motion = YtMotionStyle.SPRINGY,
+        surfaceStyle = YtSurfaceStyle.CLAY,
     )
 
 /** "Editorial": white paper, black type, one signal blue. */
@@ -208,6 +217,8 @@ val YtPalettes.Editorial: YtPalette
         ink = Color(0xFF0A0A0A),
         font = YtFonts.inter,
         light = true,
+        motion = YtMotionStyle.CRISP,
+        surfaceStyle = YtSurfaceStyle.EDITORIAL,
     )
 
 /** "Glas": mint with frosted glass surfaces. */
@@ -227,6 +238,8 @@ val YtPalettes.Glass: YtPalette
         pink = Color(0xFFF03A3A),
         font = YtFonts.googleSans,
         light = true,
+        motion = YtMotionStyle.SOFT,
+        surfaceStyle = YtSurfaceStyle.GLASS,
     )
 
 /** "Pop": lavender, plum, butter yellow and pink, expressive shapes. */
@@ -246,6 +259,8 @@ val YtPalettes.Pop: YtPalette
         pink = Color(0xFFE0457F),
         font = YtFonts.nunito,
         light = true,
+        motion = YtMotionStyle.SPRINGY,
+        surfaceStyle = YtSurfaceStyle.POP,
     )
 
 /** "Formen": night blue to violet with bright Material shapes (inspiration images 5 and 6). */
@@ -264,6 +279,8 @@ val YtPalettes.Shapes: YtPalette
         ink = Color(0xFF17132B),
         pink = Color(0xFFF4A9B8),
         font = YtFonts.googleSans,
+        motion = YtMotionStyle.SPRINGY,
+        surfaceStyle = YtSurfaceStyle.SHAPES,
     )
 
 /** "Frost": sage with frosted glass and a dark pill (inspiration image 7). */
@@ -281,6 +298,8 @@ val YtPalettes.Frost: YtPalette
         lavender = Color(0xFFCFDCD5),
         ink = Color(0xFF1F2A26),
         font = YtFonts.jakarta,
+        motion = YtMotionStyle.SOFT,
+        surfaceStyle = YtSurfaceStyle.FROST,
     )
 
 /** The Compose palette of a design, or null for the classic look. */
@@ -324,7 +343,11 @@ fun ytDensity(base: Density, configuration: Configuration): Density = Density(
 @Composable
 fun YtTheme(palette: YtPalette, content: @Composable () -> Unit) {
     val density = ytDensity(LocalDensity.current, LocalConfiguration.current)
-    CompositionLocalProvider(LocalDensity provides density) {
+    CompositionLocalProvider(
+        LocalDensity provides density,
+        LocalYtMotion provides YtMotionPrefs.enabled,
+        LocalYtMotionStyle provides palette.motion,
+    ) {
         val scheme = if (palette.light) {
             lightColorScheme(
                 primary = palette.accent,
