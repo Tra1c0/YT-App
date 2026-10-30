@@ -264,7 +264,9 @@ class MainActivity : AbstractPlayerHostActivity() {
         showUserInfoDialogIfNeeded()
 
         // YT: an emulator run opens the sign-in window and logs what Google shows (crash-check.sh)
-        if (intent?.getBooleanExtra(YtSignInActivity.EXTRA_PROBE, false) == true) {
+        if (com.github.libretube.helpers.YtGuard.isEmulator &&
+            intent?.getBooleanExtra(YtSignInActivity.EXTRA_PROBE, false) == true
+        ) {
             startActivity(Intent(this, YtSignInActivity::class.java).putExtra(YtSignInActivity.EXTRA_PROBE, true))
         }
 

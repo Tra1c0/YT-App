@@ -17,7 +17,8 @@ class AddToQueueActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
 
         val videoId = intent.getStringExtra(Intent.EXTRA_TEXT)
-            ?.let { IntentHelper.resolveType(it.toUri()) }
+            ?.let { com.github.libretube.helpers.YtGuard.firstUrl(it) }
+            ?.let { IntentHelper.resolveType(it) }
             ?.getStringExtra(IntentData.videoId)
 
         if (videoId != null) {

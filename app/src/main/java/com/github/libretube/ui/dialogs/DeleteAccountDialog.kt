@@ -39,6 +39,7 @@ class DeleteAccountDialog : DialogFragment() {
 
             binding.oidcLogin.isVisible = true
             binding.oidcLogin.setOnClickListener {
+                com.github.libretube.helpers.YtGuard.expectOidc("delete")
                 val intent = Intent().apply {
                     action = Intent.ACTION_VIEW
                     data = oidcDeleteUrl.toUri()

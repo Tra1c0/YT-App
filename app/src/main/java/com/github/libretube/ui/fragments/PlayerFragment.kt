@@ -1325,12 +1325,14 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
         val videoId = TextUtils.getVideoIdFromUri(uri)
 
         if (videoId.isNullOrEmpty()) {
+            // YT: only web links leave the app; other schemes in someone else's text are ignored
+            if (!com.github.libretube.helpers.YtGuard.isWebLink(uri)) return
             // not a YouTube video link, thus handle normally
-            val intent = Intent(Intent.ACTION_VIEW, uri)
+            val intent = Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)
 
             // start PiP mode if enabled
             onUserLeaveHint()
-            startActivity(intent)
+            runCatching { startActivity(intent) }
 
             return
         }

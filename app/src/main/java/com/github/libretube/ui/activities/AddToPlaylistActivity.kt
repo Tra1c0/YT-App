@@ -24,9 +24,10 @@ class AddToPlaylistActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val videoId = intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
-            IntentHelper.resolveType(it.toUri())
-        }?.getStringExtra(IntentData.videoId)
+        val videoId = intent.getStringExtra(Intent.EXTRA_TEXT)
+            ?.let { com.github.libretube.helpers.YtGuard.firstUrl(it) }
+            ?.let { IntentHelper.resolveType(it) }
+            ?.getStringExtra(IntentData.videoId)
 
         if (videoId == null) {
             finish()

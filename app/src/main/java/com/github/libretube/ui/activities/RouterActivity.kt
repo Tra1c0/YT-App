@@ -13,14 +13,15 @@ import com.github.libretube.ui.base.BaseActivity
 class RouterActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val uri = intent.getStringExtra(Intent.EXTRA_TEXT)?.toUri() ?: intent.data
+        // YT: only a web address is taken from shared text or a link; anything else just opens
+        // the app (before, any app could end the app's process this way, or crash it)
+        val uri = com.github.libretube.helpers.YtGuard.firstUrl(intent.getStringExtra(Intent.EXTRA_TEXT))
+            ?: intent.data?.takeIf { com.github.libretube.helpers.YtGuard.isWebLink(it) }
         if (uri != null) {
-            // Start processing the given text, if available. Otherwise use the link shared as text
-            // to the app.
             handleSendText(uri)
         } else {
-            // start app as normal if unknown action, shouldn't be reachable
-            NavigationHelper.restartMainActivity(this)
+            packageManager.getLaunchIntentForPackage(packageName)?.let { startActivity(it) }
+            finish()
         }
     }
 

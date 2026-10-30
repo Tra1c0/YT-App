@@ -35,12 +35,13 @@ class LoginDialog : DialogFragment() {
             @Suppress("DEPRECATION")
             val oidcAuthUrl = runCatching {
                 withContext(Dispatchers.IO) {
-                    UserDataRepositoryHelper.userDataRepository.getOidcDeleteAccountUrl("${BuildConfig.APPLICATION_ID}://delete_callback")
+                    UserDataRepositoryHelper.userDataRepository.getOidcLoginUrl("${BuildConfig.APPLICATION_ID}://login_callback")
                 }
             }.getOrNull() ?: return@launch
 
             binding.oidcLogin.isVisible = true
             binding.oidcLogin.setOnClickListener {
+                com.github.libretube.helpers.YtGuard.expectOidc("login")
                 val intent = Intent().apply {
                     action = Intent.ACTION_VIEW
                     data = oidcAuthUrl.toUri()

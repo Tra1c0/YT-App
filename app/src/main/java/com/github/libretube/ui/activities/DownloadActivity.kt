@@ -17,9 +17,9 @@ class DownloadActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val intentData = intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
-            IntentHelper.resolveType(it.toUri())
-        }
+        val intentData = intent.getStringExtra(Intent.EXTRA_TEXT)
+            ?.let { com.github.libretube.helpers.YtGuard.firstUrl(it) }
+            ?.let { IntentHelper.resolveType(it) }
 
         val videoId = intentData?.getStringExtra(IntentData.videoId)
         val playlistId = intentData?.getStringExtra(IntentData.playlistId)

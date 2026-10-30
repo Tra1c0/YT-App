@@ -40,15 +40,25 @@ class SettingsActivity : BaseActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
 
-        if (intent.data!!.host == "login_callback") {
-            val token = intent.data?.getQueryParameter("token")
-            if (token == null) {
-                toastFromMainThread(R.string.error)
-                return
+        // YT: a callback counts only if the user just started that sign-in or deletion here;
+        // links from other apps or web pages cannot set or clear the account
+        val data = intent.data ?: return
+        when (data.host) {
+            "login_callback" -> {
+                val token = runCatching { data.getQueryParameter("token") }.getOrNull()
+                if (!com.github.libretube.helpers.YtGuard.consumeOidc("login") ||
+                    !com.github.libretube.helpers.YtGuard.isValidToken(token)
+                ) {
+                    toastFromMainThread(R.string.error)
+                    return
+                }
+                PreferenceHelper.setToken(token!!)
             }
-            PreferenceHelper.setToken(token)
-        } else if (intent.data!!.path == "delete_callback") {
-            PreferenceHelper.setToken("")
+            "delete_callback" -> {
+                if (!com.github.libretube.helpers.YtGuard.consumeOidc("delete")) return
+                PreferenceHelper.setToken("")
+            }
+            else -> return
         }
 
         // update visible login/logout settings

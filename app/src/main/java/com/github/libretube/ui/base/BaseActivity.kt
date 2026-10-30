@@ -43,8 +43,10 @@ open class BaseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // YT: a start may choose the design, e.g. an emulator run: am start ... --es yt_design pop
-        // only the key of a real design is taken; anything else from outside is ignored
-        intent?.getStringExtra(com.github.libretube.helpers.YtDesign.PREF_KEY)
+        // only in the emulator and only the key of a real design; on a phone no other app can
+        // change the design this way
+        intent?.takeIf { com.github.libretube.helpers.YtGuard.isEmulator }
+            ?.getStringExtra(com.github.libretube.helpers.YtDesign.PREF_KEY)
             ?.takeIf { key -> com.github.libretube.helpers.YtDesign.entries.any { it.key == key } }
             ?.let { PreferenceHelper.putString(com.github.libretube.helpers.YtDesign.PREF_KEY, it) }
         // set the app theme (e.g. Material You)

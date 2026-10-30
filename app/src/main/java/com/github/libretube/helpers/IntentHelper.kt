@@ -57,6 +57,8 @@ object IntentHelper {
      * Resolve the uri and return a bundle with the arguments
      */
     fun resolveType(intent: Intent, uri: Uri) = with(intent) {
+        // YT: an opaque address ("x:y") has no path or parameters; reading them would crash
+        if (!uri.isHierarchical) return@with this
         val lastSegment = uri.lastPathSegment
         val secondLastSegment = uri.pathSegments.getOrNull(uri.pathSegments.size - 2)
         when {
