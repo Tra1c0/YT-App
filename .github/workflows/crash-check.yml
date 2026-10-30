@@ -1,16 +1,28 @@
 name: Crash check
 
-# Starts a published build in an emulator, in a chosen design, and collects the crash log.
+# Starts a published build in an emulator, once per chosen design, and collects the crash log.
 on:
   workflow_dispatch:
     inputs:
       build:
-        description: "Build number of the release to test (e.g. 31)"
+        description: "Build number of the release to test (e.g. 33)"
         required: true
       design:
-        description: "Design key to start with (youtube, movo, after, side, clay, editorial, glass, pop, shapes, frost, kiesel); empty = standard"
+        description: "Designs to start: a key (youtube, movo, after, side, clay, editorial, glass, pop, shapes, frost, kiesel, standard), a comma list, or all"
         required: false
-        default: ""
+        default: "all"
+      night:
+        description: "Dark mode"
+        type: boolean
+        default: true
+      locale:
+        description: "App locale (empty = the device's English)"
+        required: false
+        default: "de-DE"
+      api:
+        description: "Android API level of the emulator"
+        required: false
+        default: "34"
 
 permissions:
   contents: read
@@ -47,8 +59,10 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         env:
           YT_DESIGN: ${{ inputs.design }}
+          YT_NIGHT: ${{ inputs.night && 'yes' || 'no' }}
+          YT_LOCALE: ${{ inputs.locale }}
         with:
-          api-level: 34
+          api-level: ${{ inputs.api }}
           arch: x86_64
           target: google_apis
           profile: pixel_6
@@ -60,7 +74,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: logcat-build-${{ inputs.build }}-${{ inputs.design || 'standard' }}
+          name: logcat-build-${{ inputs.build }}-${{ inputs.design }}-${{ inputs.night && 'night' || 'day' }}
           path: |
-            logcat.txt
-            crash.txt
+            logcat-*.txt
+            crash-*.txt
