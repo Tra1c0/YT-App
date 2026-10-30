@@ -22,25 +22,22 @@ RETRACE=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/retrace 2>/dev/null | head -n 1
 crashed=""
 for design in $DESIGNS; do
   # a fresh start: no settings, no saved crash, as after an installation
-  adb shell pm clear "$PKG" >/dev/null
-  adb logcat -c || true
+  timeout 60 adb shell pm clear "$PKG" >/dev/null || echo "pm clear timed out"
+  timeout 20 adb logcat -c || true
+  echo "$(date -u +%H:%M:%S) start $design"
   if [ "$design" = "standard" ]; then
-    adb shell am start -W -n "$PKG/$ACTIVITY" | grep -E "Status|TotalTime|Error" || true
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" || echo "start timed out"
   else
-    adb shell am start -W -n "$PKG/$ACTIVITY" --es yt_design "$design" | grep -E "Status|TotalTime|Error" || true
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es yt_design "$design" || echo "start timed out"
   fi
   sleep "$WAIT"
-  adb logcat -d -v threadtime > "logcat-$design.txt" || true
-  if adb shell pidof "$PKG" >/dev/null 2>&1; then state="running"; else state="NOT RUNNING"; fi
+  timeout 60 adb logcat -d -v threadtime > "logcat-$design.txt" || true
+  if timeout 20 adb shell pidof "$PKG" >/dev/null 2>&1; then state="running"; else state="NOT RUNNING"; fi
   grep -n -A160 "FATAL EXCEPTION" "logcat-$design.txt" | head -400 > "crash-$design.txt" || true
   if [ -s "crash-$design.txt" ] || [ "$state" != "running" ]; then crashed="$crashed $design"; fi
   echo "::group::$design: process after $WAIT s is $state"
   if [ -s "crash-$design.txt" ]; then
-    if [ -n "$RETRACE" ] && [ -f apk/mapping.txt ]; then
-      "$RETRACE" apk/mapping.txt "crash-$design.txt" | head -300
-    else
-      cat "crash-$design.txt"
-    fi
+    head -60 "crash-$design.txt"
   else
     echo "no fatal exception in logcat"
     rm -f "crash-$design.txt"
@@ -49,6 +46,12 @@ for design in $DESIGNS; do
   echo "::endgroup::"
 done
 if [ -n "$crashed" ]; then
+  if [ -n "$RETRACE" ] && [ -f apk/mapping.txt ]; then
+    echo "::group::Retraced crashes"
+    cat crash-*.txt > crashes.txt
+    timeout 300 "$RETRACE" apk/mapping.txt crashes.txt | head -600 || echo "retrace did not finish in time"
+    echo "::endgroup::"
+  fi
   echo "::error::The app crashed in:$crashed"
   exit 1
 fi

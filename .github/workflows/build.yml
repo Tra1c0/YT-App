@@ -9,6 +9,8 @@ on:
       - "**.md"
       - "fastlane/**"
       - "assets/**"
+      - "scripts/**"
+      - ".github/workflows/crash-check.yml"
 
 permissions:
   contents: write

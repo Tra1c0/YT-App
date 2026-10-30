@@ -31,6 +31,7 @@ jobs:
   emulator:
     name: Start the app in an emulator
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
 
@@ -57,6 +58,7 @@ jobs:
 
       - name: Run the app
         uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 25
         env:
           YT_DESIGN: ${{ inputs.design }}
           YT_NIGHT: ${{ inputs.night && 'yes' || 'no' }}
