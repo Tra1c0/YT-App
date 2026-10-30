@@ -16,6 +16,8 @@ echo "APK: $APK, designs: $DESIGNS, night: ${YT_NIGHT:-no}, locale: ${YT_LOCALE:
 adb wait-for-device
 adb shell input keyevent 82 || true
 adb install -r "$APK"
+# an overloaded emulator shows "System UI isn't responding" over everything; no use for a check
+adb shell settings put global hide_error_dialogs 1 || true
 if [ "${YT_NIGHT:-no}" = "yes" ]; then adb shell cmd uimode night yes; fi
 if [ -n "${YT_LOCALE:-}" ]; then
   adb shell cmd locale set-app-locales "$PKG" --user current --locales "$YT_LOCALE" || echo "app locale not set"
@@ -47,8 +49,9 @@ for design in $DESIGNS; do
     # the start, the player with a video, then the player minimized onto the bar
     mkdir -p screens
     timeout 20 adb exec-out screencap -p > "screens/$design-1-start.png" || true
-    timeout 30 adb shell am start -a android.intent.action.VIEW -d "https://www.youtube.com/watch?v=${YT_VIDEO:-jNQXAC9IVRw}" \
-      -n "$PKG/com.github.libretube.ui.activities.RouterActivity" || echo "video start timed out"
+    # straight to the running main screen (a link would start it anew, with the welcome sheet)
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es videoId "${YT_VIDEO:-jNQXAC9IVRw}" --ez yt_quiet true \
+      || echo "video start timed out"
     sleep 18
     timeout 20 adb exec-out screencap -p > "screens/$design-2-player.png" || true
     timeout 10 adb shell input keyevent KEYCODE_BACK || true
