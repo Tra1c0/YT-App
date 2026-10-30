@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- YT: hides other apps' overlays while the YouTube sign-in is open -->
+    <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS" />
 
     <application
         android:name=".LibreTubeApp"

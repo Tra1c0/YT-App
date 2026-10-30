@@ -13,4 +13,26 @@
                 tools:ignore="AcceptsUserCertificates" />
         </trust-anchors>
     </base-config>
+    <!-- YT: YouTube and Google carry the YouTube session and the sign-in. For them only HTTPS and
+         only the certificate authorities that come with Android; a certificate someone installed
+         on the phone (e.g. to read the traffic) is not trusted here. Custom Piped/sync servers
+         keep the base config above. -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">youtube.com</domain>
+        <domain includeSubdomains="true">youtu.be</domain>
+        <domain includeSubdomains="true">youtube-nocookie.com</domain>
+        <domain includeSubdomains="true">googlevideo.com</domain>
+        <domain includeSubdomains="true">ytimg.com</domain>
+        <domain includeSubdomains="true">ggpht.com</domain>
+        <domain includeSubdomains="true">googleusercontent.com</domain>
+        <domain includeSubdomains="true">google.com</domain>
+        <domain includeSubdomains="true">google.de</domain>
+        <domain includeSubdomains="true">google.at</domain>
+        <domain includeSubdomains="true">google.ch</domain>
+        <domain includeSubdomains="true">gstatic.com</domain>
+        <domain includeSubdomains="true">googleapis.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
 </network-security-config>

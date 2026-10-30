@@ -1,7 +1,10 @@
 package com.github.libretube.ui.activities
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.graphics.Bitmap
+import android.os.Build
+import android.view.WindowManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -116,6 +119,10 @@ class YtSignInActivity : BaseActivity() {
         }
         web.configure()
         webView = web
+        // no screenshots, screen recordings or recents preview of the sign-in, and no other app's
+        // overlay above it (a fake layer could catch taps or cover Google's page)
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) window.setHideOverlayWindows(true)
         val palette = YtDesign.current().palette ?: YtPalettes.YouTube
         setContentView(
             ComposeView(this).apply {
@@ -155,6 +162,10 @@ class YtSignInActivity : BaseActivity() {
         settings.javaScriptCanOpenWindowsAutomatically = false
         settings.userAgentString = userAgent()
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+        // taps that pass through another app's window on top are dropped
+        filterTouchesWhenObscured = true
+        settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+        settings.setGeolocationEnabled(false)
         runCatching {
             CookieManager.getInstance().setAcceptCookie(true)
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
@@ -198,14 +209,26 @@ class YtSignInActivity : BaseActivity() {
     private inner class Client : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
             val url = request.url
-            // only web pages load in here; app links and other schemes are not followed
-            if (url.scheme != "https" && url.scheme != "http") return true
+            // only Google's and YouTube's own pages over HTTPS load in here; app links, other
+            // schemes and plain HTTP are not followed
+            if (url.scheme != "https") return true
+            if (request.isForMainFrame && !isTrustedHost(url.host)) {
+                // another site (e.g. a help link) opens in the browser, never under this window's
+                // bar, so nothing else can pose as the sign-in here
+                runCatching { startActivity(Intent(Intent.ACTION_VIEW, url).addCategory(Intent.CATEGORY_BROWSABLE)) }
+                return true
+            }
             return checkSignedIn(url)
         }
 
         override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
             val uri = url.toUri()
             uri.host?.let { host.value = it }
+            if (uri.scheme != "https" || !isTrustedHost(uri.host)) {
+                // a page that got here some other way (e.g. a redirect) is stopped
+                view.stopLoading()
+                return
+            }
             checkSignedIn(uri)
         }
 
@@ -225,8 +248,10 @@ class YtSignInActivity : BaseActivity() {
         override fun onPageFinished(view: WebView, url: String) {
             if (completed) return
             if (probe) {
+                // only the address without its parameters, the title and which fields exist:
+                // nothing a person typed or that names the account
                 view.evaluateJavascript(PROBE_JS) {
-                    Log.i(TAG, "probe ${if (desktop) "desktop" else "phone"} url=${url.take(140)} page=$it")
+                    Log.i(TAG, "probe ${if (desktop) "desktop" else "phone"} url=${url.substringBefore('?').take(100)} page=$it")
                 }
             }
             if (REJECTED.any { url.contains(it) }) {
@@ -500,7 +525,14 @@ class YtSignInActivity : BaseActivity() {
         const val EXTRA_PROBE = "yt_probe"
         private val REJECTED = listOf("/signin/rejected", "disallowed_useragent")
         private const val PROBE_JS =
-            "(function(){var b=document.body?document.body.innerText:'';return (document.title+' | '+b.replace(/\\s+/g,' ')).substring(0,300);})()"
+            "(function(){var q=function(s){return !!document.querySelector(s);};return document.title.substring(0,60)+' | email-field='+q('input[type=email],input[name=identifier]')+' password-field='+q('input[type=password]');})()"
+
+        /** Google's and YouTube's own hosts; the sign-in window opens nothing else. */
+        private val TRUSTED_HOST = Regex(
+            "^([a-z0-9-]+\\.)*(youtube\\.com|gstatic\\.com|google\\.(com|[a-z]{2}|co\\.[a-z]{2}|com\\.[a-z]{2}))$",
+        )
+
+        fun isTrustedHost(host: String?): Boolean = host != null && TRUSTED_HOST.matches(host.lowercase(Locale.ROOT))
         private const val REJECTED_JS =
             "(function(){var b=document.body?document.body.innerText:'';return /may not be secure|möglicherweise nicht sicher|disallowed_useragent/i.test(b);})()"
     }

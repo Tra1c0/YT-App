@@ -61,6 +61,8 @@ data class YtImportState(
 object YtImport {
     private const val MAX_HISTORY = 1000
     private const val MAX_ENTRY_BYTES = 64L * 1024 * 1024
+    private const val MAX_TOTAL_BYTES = 160L * 1024 * 1024
+    private const val MAX_ENTRIES = 20_000
     const val TAKEOUT_URL = "https://takeout.google.com/settings/takeout/custom/youtube"
 
     private val _state = MutableStateFlow(YtImportState())
@@ -312,21 +314,47 @@ object YtImport {
             stream.reset()
             when {
                 read == 2 && magic[0] == 'P'.code.toByte() && magic[1] == 'K'.code.toByte() -> ZipInputStream(stream).use { zip ->
+                    // a crafted ZIP must not fill the memory: each file, all files together and the
+                    // number of entries have limits, whatever sizes the ZIP claims
+                    var total = 0L
+                    var entries = 0
                     var entry = zip.nextEntry
-                    while (entry != null) {
+                    while (entry != null && entries < MAX_ENTRIES) {
+                        entries++
                         val path = entry.name
                         if (!entry.isDirectory && relevant(path) && entry.size <= MAX_ENTRY_BYTES) {
-                            files.add(path to zip.readBytes())
+                            val bytes = readLimited(zip, minOf(MAX_ENTRY_BYTES, MAX_TOTAL_BYTES - total))
+                            if (bytes != null) {
+                                total += bytes.size
+                                files.add(path to bytes)
+                            }
                         }
                         entry = zip.nextEntry
                     }
                 }
                 read == 2 && magic[0] == 0x1F.toByte() && magic[1] == 0x8B.toByte() ->
                     throw IOException(context.getString(R.string.yt_import_zip_only))
-                else -> files.add(name to stream.readBytes())
+                else -> readLimited(stream, MAX_ENTRY_BYTES)?.let { files.add(name to it) }
+                    ?: throw IOException(context.getString(R.string.yt_import_nothing_found))
             }
         }
         return files
+    }
+
+    /** Reads at most [limit] bytes; null if there is more, so oversized files are skipped. */
+    private fun readLimited(input: java.io.InputStream, limit: Long): ByteArray? {
+        if (limit <= 0) return null
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(64 * 1024)
+        var count = 0L
+        while (true) {
+            val n = input.read(buffer)
+            if (n < 0) break
+            count += n
+            if (count > limit) return null
+            out.write(buffer, 0, n)
+        }
+        return out.toByteArray()
     }
 
     private fun relevant(path: String): Boolean {

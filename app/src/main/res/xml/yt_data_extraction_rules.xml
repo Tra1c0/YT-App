@@ -3,10 +3,12 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="yt_account.xml" />
+        <exclude domain="sharedpref" path="auth.xml" />
         <exclude domain="root" path="app_webview/" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="yt_account.xml" />
+        <exclude domain="sharedpref" path="auth.xml" />
         <exclude domain="root" path="app_webview/" />
     </device-transfer>
 </data-extraction-rules>
