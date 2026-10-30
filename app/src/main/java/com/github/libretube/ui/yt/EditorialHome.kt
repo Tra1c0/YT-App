@@ -32,6 +32,10 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -239,8 +243,16 @@ private fun EditorialItem(
     actions: YtHomeActions,
     modifier: Modifier = Modifier,
 ) {
+    // print proof: the black-and-white picture takes on its colors while it is pressed
+    val press = remember { MutableInteractionSource() }
+    val pressed by press.collectIsPressedAsState()
+    val color by animateFloatAsState(
+        if (pressed && LocalYtMotion.current) 1f else 0f,
+        tween(if (pressed) 160 else 320, easing = YtEaseOut),
+        label = "editorialColor",
+    )
     Column(modifier.padding(start = 17.dp, end = 16.dp, top = 10.dp)) {
-        Row(Modifier.clickable { actions.onOpenVideo(video) }) {
+        Row(Modifier.clickable(interactionSource = press, indication = null) { actions.onOpenVideo(video) }) {
             Text(
                 text = "%02d".format(number),
                 color = palette.text,
@@ -260,7 +272,7 @@ private fun EditorialItem(
                     contentDescription = null,
                     imageLoader = imageLoader,
                     contentScale = ContentScale.Crop,
-                    colorFilter = ytGrayscale,
+                    colorFilter = if (color == 0f) ytGrayscale else ytSaturation(color),
                     modifier = Modifier.fillMaxSize(),
                 )
                 EditorialBadge(

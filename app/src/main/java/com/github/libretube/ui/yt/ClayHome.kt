@@ -68,7 +68,9 @@ import coil3.compose.AsyncImage
 import com.github.libretube.R
 import com.github.libretube.api.obj.StreamItem
 import kotlinx.coroutines.launch
+import kotlin.math.PI
 import kotlin.math.absoluteValue
+import kotlin.math.sin
 
 private val ClayMauve = Color(0xFF9D6A6C)
 private val ClayCream = Color(0xFFF7E8DA)
@@ -147,10 +149,14 @@ fun ClayHomeScreen(
                         onOpen = actions.onOpenVideo,
                         modifier = Modifier
                             .zIndex(1f - distance)
+                            // the card that lands in front wobbles like soft clay
+                            .ytJelly(pager.settledPage == page, amount = 0.05f)
                             .graphicsLayer {
                                 val scale = 1f - 0.12f * distance
-                                scaleX = scale
-                                scaleY = scale
+                                // pulled between two places, the card stretches like dough
+                                val pull = if (motion) sin(PI.toFloat() * distance) else 0f
+                                scaleX = scale * (1f + 0.05f * pull)
+                                scaleY = scale * (1f - 0.04f * pull)
                                 rotationZ = offset.coerceIn(-1f, 1f) * 3f
                                 translationX = offset.coerceIn(-1f, 1f) * 30.dp.toPx()
                             },

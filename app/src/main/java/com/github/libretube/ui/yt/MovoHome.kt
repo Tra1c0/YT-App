@@ -248,6 +248,7 @@ private fun MovoCard(
     Box(
         modifier = modifier
             .ytRecede(video.url)
+            .ytTilt()
             .ytPressable(RoundedCornerShape(16.dp)) { onOpenVideo(video) }
             .background(color),
     ) {

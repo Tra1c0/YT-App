@@ -57,16 +57,31 @@ dann wechseln Zustände direkt. „Animationen entfernen“ in den Android-Bedie
 
 | Design | Charakter | Was sich bewegt |
 | --- | --- | --- |
-| YouTube neu | ruhig | Videos blenden mit kurzem Anstieg ein, Filter wechseln weich die Farbe, Tab-Icons ploppen leicht |
-| Movo | federnd | Mosaik-Blöcke wachsen herein, gewähltes Cover wächst, die anderen treten zurück, Unterstrich federt |
-| After | filmisch | langsamer Zoom auf Plakat und Raumkarte, Plakate und Räume blenden langsam über, LIVE atmet |
-| Side | sanft | Beiträge gleiten herein, Herz ploppt, Gesprächsfläche zieht hoch und klappt am Griff |
-| Clay | knetig | Karten, Knöpfe und Blobs geben beim Drücken breit und flach nach, Play-Knopf atmet, „Als Nächstes“ gleitet nach |
-| Editorial | knapp | blauer Balken gleitet zwischen Reitern und in der Leiste, Einträge erscheinen schnell ohne Federn |
-| Glas | weich | helle Pille gleitet zwischen den Segmenten, aktiver Reiter wächst vom Kreis zur Pille |
-| Pop | verspielt | Blob gleitet federnd zum Reiter, Reiter-Blobs ploppen, Stern dreht sich beim Merken, Karten springen herein |
-| Formen | lebendig | Welle läuft über den Fortschritt, Zahlen zählen hoch, Cookie-Formen drehen sich langsam |
-| Frost | sanft | Zahlen zählen hoch, Karten gleiten herein, aktive Pille wächst |
+| YouTube neu | ruhig | Videos blenden mit kurzem Anstieg ein, beim Laden schimmern Platzhalter statt eines Kreises, Filter wechseln weich die Farbe |
+| Movo | federnd | Mosaik-Blöcke wachsen herein, Karten neigen sich unter dem Finger wie Kacheln, gewähltes Cover wächst, die anderen treten zurück |
+| After | filmisch | Kamerafahrt: das Plakat bleibt beim Scrollen mit halber Geschwindigkeit zurück und dunkelt ab, langsamer Zoom, Räume blenden über, LIVE atmet |
+| Side | sanft | Beiträge gleiten herein, das Herz ploppt mit Ring und Funken, Gesprächsfläche zieht hoch |
+| Clay | knetig | Blobs und Karten geben unter dem Finger nach und wackeln wie Gelee nach, Karussellkarten dehnen sich beim Wischen wie Teig, Play-Knopf atmet |
+| Editorial | knapp | Einträge werden von links „gedruckt“, Schwarz-Weiß-Bilder nehmen beim Drücken Farbe an, blauer Balken gleitet ohne Federn |
+| Glas | flüssig | echtes Glas (siehe unten): ziehbarer Tropfen in Leiste und Segmenten, Play-Knöpfe quellen unter dem Finger, Licht wandert langsam |
+| Pop | verspielt | der Pflaumen-Blob ist ziehbar, dehnt sich wie Sirup und wackelt beim Landen, die Bandblase beult sich aus, Stern dreht sich beim Merken |
+| Formen | lebendig | die aktive Form wächst aus einem Kreis (Wellen wachsen, Ecken werden eckig) und dreht sich ein, Welle läuft über den Fortschritt, Zahlen zählen hoch |
+| Frost | flüssig | Milchglas-Karten über wanderndem Licht, Leiste aus dunklem Glas mit ziehbarem Tropfen, Zahlen zählen hoch |
+
+Kurven und Dauern folgen den Regeln aus Emil Kowalskis Animations-Skills: starkes Ease-out
+(`cubic-bezier(0.23, 1, 0.32, 1)`) unter 300 ms für Eintritte und Antworten, Ease-in-out für
+Bewegung auf dem Bildschirm, Federn für alles, was man anfassen kann, nie aus Größe 0.
+
+## Liquid Glass (Glas und Frost)
+
+Die Glasflächen nutzen Kyants Backdrop-Bibliothek (`third_party/backdrop/`): Unschärfe ab
+Android 12, Lichtbrechung am Rand und chromatische Aberration ab Android 13, darunter eine fast
+deckende Tönung. Die schwebende Leiste sieht den Bildschirm darunter, obwohl beide getrennte
+Views sind: Sie zeichnet den Bildschirm-Container selbst (auf der Hardware-Leinwand nur Verweise
+auf die schon aufgezeichneten Display-Listen) und wird im selben Frame neu gezeichnet, wenn sich
+der Bildschirm ändert. Die Auswahl ist ein Glastropfen nach dem Katalog der Bibliothek: ruht als
+weiße Pille der Referenz, lässt sich über die Reiter ziehen, dehnt sich mit seiner Geschwindigkeit,
+quillt beim Festhalten auf, wird klar und vergrößert die Reiter darunter.
 
 ## Maße und Skalierung
 

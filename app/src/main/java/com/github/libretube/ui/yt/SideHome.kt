@@ -347,6 +347,7 @@ private fun SidePost(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
+                    .ytBurst(hearted, palette.accent)
                     .clip(RoundedCornerShape(50))
                     .clickable { actions.onToggleHeart(post) }
                     .padding(vertical = 6.dp, horizontal = 4.dp),

@@ -3,6 +3,7 @@ package com.github.libretube.ui.yt
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
@@ -33,11 +34,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.github.libretube.helpers.PreferenceHelper
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.launch
 
 /*
  * YT: motion of the designs. Every animation goes through [ytSpec] or checks [LocalYtMotion],
@@ -70,6 +91,12 @@ enum class YtMotionStyle {
     SOFT,
 }
 
+/** Strong ease-out for things that enter or answer (Emil Kowalski's UI curve). */
+val YtEaseOut = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
+
+/** Strong ease-in-out for things that move or morph on screen. */
+val YtEaseInOut = CubicBezierEasing(0.77f, 0f, 0.175f, 1f)
+
 /** False when the motion switch is off. */
 val LocalYtMotion = staticCompositionLocalOf { true }
 
@@ -88,11 +115,11 @@ fun <T> ytFinite(spec: FiniteAnimationSpec<T>): FiniteAnimationSpec<T> = if (Loc
 @Composable
 fun <T> ytStateSpec(): AnimationSpec<T> = ytSpec(
     when (LocalYtMotionStyle.current) {
-        YtMotionStyle.SPRINGY -> spring(dampingRatio = 0.62f, stiffness = 380f)
-        YtMotionStyle.CINEMATIC -> tween(520, easing = FastOutSlowInEasing)
-        YtMotionStyle.CRISP -> tween(160, easing = LinearOutSlowInEasing)
-        YtMotionStyle.SOFT -> spring(dampingRatio = 0.85f, stiffness = 240f)
-        YtMotionStyle.CALM -> tween(240, easing = FastOutSlowInEasing)
+        YtMotionStyle.SPRINGY -> spring(dampingRatio = 0.7f, stiffness = 420f)
+        YtMotionStyle.CINEMATIC -> tween(420, easing = YtEaseInOut)
+        YtMotionStyle.CRISP -> tween(160, easing = YtEaseOut)
+        YtMotionStyle.SOFT -> spring(dampingRatio = 0.9f, stiffness = 300f)
+        YtMotionStyle.CALM -> tween(220, easing = YtEaseOut)
     }
 )
 
@@ -257,39 +284,48 @@ fun Modifier.ytEnter(state: YtEnterState, key: Any, index: Int): Modifier {
     val progress = remember(key) { Animatable(0f) }
     LaunchedEffect(key) {
         val stagger = when (style) {
-            YtMotionStyle.SPRINGY -> 55L
-            YtMotionStyle.CINEMATIC -> 110L
+            YtMotionStyle.SPRINGY -> 45L
+            YtMotionStyle.CINEMATIC -> 80L
             YtMotionStyle.CRISP -> 30L
-            else -> 45L
+            else -> 40L
         }
-        delay(stagger * index.coerceIn(0, 8))
+        delay(stagger * index.coerceIn(0, 6))
         progress.animateTo(
             1f,
             when (style) {
-                YtMotionStyle.SPRINGY -> spring(dampingRatio = 0.6f, stiffness = 260f)
-                YtMotionStyle.CINEMATIC -> tween(700, easing = FastOutSlowInEasing)
-                YtMotionStyle.CRISP -> tween(180, easing = LinearOutSlowInEasing)
-                else -> tween(360, easing = FastOutSlowInEasing)
+                YtMotionStyle.SPRINGY -> spring(dampingRatio = 0.72f, stiffness = 380f)
+                YtMotionStyle.CINEMATIC -> tween(480, easing = YtEaseOut)
+                YtMotionStyle.CRISP -> tween(200, easing = YtEaseOut)
+                else -> tween(280, easing = YtEaseOut)
             },
         )
         state.seen += key
     }
     return graphicsLayer {
         val p = progress.value
-        alpha = p.coerceIn(0f, 1f)
         when (style) {
             YtMotionStyle.SPRINGY -> {
-                val scale = 0.86f + 0.14f * p
+                // never from nothing: a block grows in from 94 %
+                alpha = p.coerceIn(0f, 1f)
+                val scale = 0.94f + 0.06f * p
                 scaleX = scale
                 scaleY = scale
             }
             YtMotionStyle.CINEMATIC -> {
+                alpha = p.coerceIn(0f, 1f)
                 val scale = 1.03f - 0.03f * p
                 scaleX = scale
                 scaleY = scale
             }
-            YtMotionStyle.CRISP -> translationY = (1f - p) * 6.dp.toPx()
-            else -> translationY = (1f - p) * 14.dp.toPx()
+            YtMotionStyle.CRISP -> {
+                // print: the item is revealed from the left edge, like ink laid down
+                clip = true
+                shape = YtRevealShape(p.coerceIn(0f, 1f))
+            }
+            else -> {
+                alpha = p.coerceIn(0f, 1f)
+                translationY = (1f - p) * 10.dp.toPx()
+            }
         }
     }
 }
@@ -320,8 +356,136 @@ fun Modifier.ytSelectBounce(active: Boolean): Modifier {
     }
 }
 
+/**
+ * Clay and Pop: a soft body poked into shape. When [active] turns true it squashes (wider and
+ * flatter) and wobbles back through a few smaller squashes and stretches until it settles.
+ */
+@Composable
+fun Modifier.ytJelly(active: Boolean, amount: Float = 0.1f): Modifier {
+    if (!LocalYtMotion.current) return this
+    val jelly = remember { Animatable(0f) }
+    val initial = remember { booleanArrayOf(true) }
+    LaunchedEffect(active) {
+        // not on first appearance, only when it becomes active
+        if (initial[0]) {
+            initial[0] = false
+            return@LaunchedEffect
+        }
+        if (!active) return@LaunchedEffect
+        jelly.snapTo(1f)
+        jelly.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 260f))
+    }
+    return graphicsLayer {
+        val j = jelly.value
+        scaleX = 1f + amount * j
+        scaleY = 1f - amount * j
+    }
+}
+
+/**
+ * Movo: a card pressed off-center tilts under the finger like a physical tile, follows the
+ * finger while it moves and springs back flat when let go. Does not take the touch.
+ */
+@Composable
+fun Modifier.ytTilt(maxDegrees: Float = 5f): Modifier {
+    if (!LocalYtMotion.current) return this
+    val tiltX = remember { Animatable(0f) }
+    val tiltY = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    return this
+        .pointerInput(Unit) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                fun aim(position: Offset) {
+                    val x = (position.x / size.width - 0.5f).coerceIn(-0.5f, 0.5f) * 2f
+                    val y = (position.y / size.height - 0.5f).coerceIn(-0.5f, 0.5f) * 2f
+                    // the pressed side gives way: the right edge turns away, the top tips back
+                    scope.launch { tiltY.animateTo(x * maxDegrees, spring(dampingRatio = 0.8f, stiffness = 700f)) }
+                    scope.launch { tiltX.animateTo(-y * maxDegrees, spring(dampingRatio = 0.8f, stiffness = 700f)) }
+                }
+                aim(down.position)
+                while (true) {
+                    val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
+                    if (!change.pressed) break
+                    aim(change.position)
+                }
+                scope.launch { tiltX.animateTo(0f, spring(dampingRatio = 0.5f, stiffness = 320f)) }
+                scope.launch { tiltY.animateTo(0f, spring(dampingRatio = 0.5f, stiffness = 320f)) }
+            }
+        }
+        .graphicsLayer {
+            rotationX = tiltX.value
+            rotationY = tiltY.value
+            cameraDistance = 14f * density
+        }
+}
+
+/**
+ * Side: a small burst when something is liked: a ring opens around it and six sparks fly out,
+ * fading as they go. Only when [active] turns true, not on first appearance.
+ */
+@Composable
+fun Modifier.ytBurst(active: Boolean, color: Color): Modifier {
+    if (!LocalYtMotion.current) return this
+    val burst = remember { Animatable(1f) }
+    val initial = remember { booleanArrayOf(true) }
+    LaunchedEffect(active) {
+        if (initial[0]) {
+            initial[0] = false
+            return@LaunchedEffect
+        }
+        if (!active) return@LaunchedEffect
+        burst.snapTo(0f)
+        burst.animateTo(1f, tween(460, easing = YtEaseOut))
+    }
+    return drawBehind {
+        val p = burst.value
+        if (p >= 1f) return@drawBehind
+        val radius = size.minDimension / 2f
+        val fade = 1f - p
+        drawCircle(
+            color.copy(alpha = 0.7f * fade),
+            radius = radius * (0.6f + 1.0f * p),
+            style = Stroke(width = 2.dp.toPx() * fade),
+        )
+        repeat(6) { k ->
+            val angle = (k * 60f - 90f) * (PI.toFloat() / 180f)
+            val distance = radius * (0.8f + 1.2f * p)
+            drawCircle(
+                color.copy(alpha = fade),
+                radius = 2.dp.toPx() * fade,
+                center = center + Offset(cos(angle) * distance, sin(angle) * distance),
+            )
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
 // Ongoing motion (not started at all when motion is off)
+
+/** YouTube neu: a placeholder in [base] with a soft light sweeping across it; still when motion is off. */
+@Composable
+fun Modifier.ytShimmer(base: Color): Modifier {
+    if (!LocalYtMotion.current) return background(base)
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val sweep = transition.animateFloat(
+        initialValue = -1f,
+        targetValue = 2f,
+        animationSpec = infiniteRepeatable(tween(1300, easing = LinearEasing)),
+        label = "shimmerSweep",
+    )
+    return drawBehind {
+        drawRect(base)
+        val x = size.width * sweep.value
+        drawRect(
+            Brush.linearGradient(
+                listOf(Color.Transparent, Color.White.copy(alpha = 0.12f), Color.Transparent),
+                start = Offset(x - size.width * 0.5f, 0f),
+                end = Offset(x + size.width * 0.5f, size.height),
+            ),
+        )
+    }
+}
 
 /** After: a slow zoom over a poster, back and forth. */
 @Composable
@@ -391,4 +555,10 @@ fun rememberWavePhase(durationMillis: Int = 1600): Float {
         label = "wavePhase",
     )
     return value
+}
+
+/** A rectangle revealed from the left up to [fraction] of the width. */
+private class YtRevealShape(private val fraction: Float) : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
+        Outline.Rectangle(Rect(0f, 0f, size.width * fraction, size.height))
 }

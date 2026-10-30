@@ -65,6 +65,10 @@ fun ytInterleave(a: List<StreamItem>, b: List<StreamItem>): List<StreamItem> = b
 /** Grayscale for the Editorial thumbnails. */
 val ytGrayscale: ColorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
 
+/** A picture with [saturation] of its colors (0 black and white, 1 full color). */
+fun ytSaturation(saturation: Float): ColorFilter =
+    ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) })
+
 fun ytDuration(video: StreamItem): String? =
     video.duration?.takeIf { it > 0 }?.let { DateUtils.formatElapsedTime(it) }
 

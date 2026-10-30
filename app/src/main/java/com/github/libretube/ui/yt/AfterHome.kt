@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -103,15 +106,39 @@ fun AfterHomeScreen(
             .fillMaxSize()
             .background(palette.background),
     ) {
+        val list = rememberLazyListState()
+        val motion = LocalYtMotion.current
         LazyColumn(
+            state = list,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 32.dp + ytNavPadding()),
         ) {
             item {
-                AfterHero(
-                    palette, imageLoader, hero, opening.value, tab, isLoading || videos == null, onSelectTab, open,
-                    Modifier.fillParentMaxHeight(0.78f),
-                )
+                // a camera move: the poster stays behind at half speed and darkens as the
+                // programme scrolls over it
+                Box(
+                    Modifier
+                        .fillParentMaxHeight(0.78f)
+                        .clipToBounds(),
+                ) {
+                    AfterHero(
+                        palette, imageLoader, hero, opening.value, tab, isLoading || videos == null, onSelectTab, open,
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                if (motion && list.firstVisibleItemIndex == 0) {
+                                    translationY = list.firstVisibleItemScrollOffset * 0.5f
+                                }
+                            }
+                            .drawWithContent {
+                                drawContent()
+                                if (motion && list.firstVisibleItemIndex == 0) {
+                                    val fade = (list.firstVisibleItemScrollOffset / size.height).coerceIn(0f, 1f)
+                                    drawRect(Color.Black.copy(alpha = 0.6f * fade))
+                                }
+                            },
+                    )
+                }
             }
             if (later.isNotEmpty()) {
                 item {

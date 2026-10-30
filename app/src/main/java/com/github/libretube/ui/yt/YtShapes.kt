@@ -1,10 +1,17 @@
 package com.github.libretube.ui.yt
 
 import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.toRect
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -27,6 +34,19 @@ fun CookieShape(lobes: Int, depth: Float = 0.07f): Shape = GenericShape { size, 
         if (i == 0) moveTo(x, y) else lineTo(x, y)
     }
     close()
+}
+
+/**
+ * A rounded rectangle that blooms out of a circle: [progress] 0 is a circle (a stadium when
+ * wider than high), 1 has [corner] corners; a spring overshooting 1 squares it a little more.
+ */
+class MorphRoundRectShape(private val progress: Float, private val corner: Dp) : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val round = size.minDimension / 2f
+        val target = with(density) { corner.toPx() }
+        val radius = (round + (target - round) * progress).coerceIn(0f, round)
+        return Outline.Rounded(RoundRect(size.toRect(), CornerRadius(radius)))
+    }
 }
 
 /**

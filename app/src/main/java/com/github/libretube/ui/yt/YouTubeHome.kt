@@ -113,15 +113,19 @@ fun YouTubeHomeScreen(
                 FilterRow(palette, categories, selectedFilter, onSelectFilter)
             }
             if (source == null) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (isLoading) CircularProgressIndicator(color = palette.accent)
-                        else Text(stringResource(R.string.yt_home_empty), color = palette.textSecondary)
+                if (isLoading) {
+                    // the shape of what is coming, shimmering as on YouTube, instead of a spinner
+                    items(2) { YouTubeSkeleton(palette) }
+                } else {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(stringResource(R.string.yt_home_empty), color = palette.textSecondary)
+                        }
                     }
                 }
             }
@@ -408,5 +412,45 @@ private fun LiveCard(
             style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
             modifier = Modifier.padding(start = 2.dp),
         )
+    }
+}
+
+/** A placeholder video: picture, avatar and two lines, with a light sweeping across. */
+@Composable
+private fun YouTubeSkeleton(palette: YtPalette) {
+    val bone = palette.surface
+    Column(Modifier.padding(start = 4.dp, end = 4.dp, bottom = 16.dp)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+                .clip(RoundedCornerShape(12.dp))
+                .ytShimmer(bone),
+        )
+        Row(Modifier.padding(start = 8.dp, top = 12.dp, end = 8.dp)) {
+            Box(
+                Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .ytShimmer(bone),
+            )
+            Column(Modifier.padding(start = 12.dp)) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(0.9f)
+                        .height(14.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .ytShimmer(bone),
+                )
+                Box(
+                    Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth(0.55f)
+                        .height(12.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .ytShimmer(bone),
+                )
+            }
+        }
     }
 }

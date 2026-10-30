@@ -3,6 +3,7 @@ package com.github.libretube.ui.yt
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -57,6 +58,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.libretube.R
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.util.fastCoerceIn
+import androidx.compose.ui.util.fastRoundToInt
+import com.github.libretube.ui.yt.liquid.DampedDragAnimation
+import kotlin.math.abs
 
 /*
  * YT: navigation of the second round of designs (Clay, Editorial, Glas, Pop) and of the designs
@@ -157,6 +169,8 @@ fun ClayNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSel
                 modifier = Modifier
                     .offset(tile.x, tile.y)
                     .size(tile.w, tile.h)
+                    // a poked blob of clay: squashes under the finger, wobbles when it becomes active
+                    .ytJelly(active, amount = 0.08f)
                     .ytSquish(interaction)
                     .shadow(10.dp, tile.shape, clip = false, ambientColor = Color(0x66B07A66), spotColor = Color(0x80B07A66))
                     .clip(tile.shape)
@@ -327,17 +341,63 @@ fun GlassNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
 
 @Composable
 fun PopNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
+    val count = items.size
     val index = items.indexOfFirst { it.id == state.selected }.coerceAtLeast(0)
+    val scope = rememberCoroutineScope()
+    val motion = LocalYtMotion.current
+    val density = LocalDensity.current
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
             .padding(start = 10.dp, end = 10.dp, bottom = 8.dp)
             .height(70.dp),
     ) {
-        val itemWidth = maxWidth / items.size
-        val blobX by animateDpAsState(itemWidth * index, ytSpec(spring(dampingRatio = 0.55f, stiffness = 320f)), label = "popBlob")
+        val itemWidth = maxWidth / count
+        val itemWidthPx = with(density) { itemWidth.toPx() }
+        val blobWidthPx = with(density) { 100.dp.toPx() }
+        // the plum blob is a thick drop of syrup: it can be dragged along the band, stretches
+        // with its speed, swells while held and wobbles when it lands
+        val gesture = remember { FloatArray(2) }
+        val blob = remember(scope, count, motion, itemWidthPx) {
+            DampedDragAnimation(
+                animationScope = scope,
+                initialValue = index.toFloat(),
+                valueRange = 0f..(count - 1).toFloat(),
+                visibilityThreshold = 0.001f,
+                initialScale = 1f,
+                pressedScale = 1.1f,
+                motion = motion,
+                onDragStarted = {
+                    gesture[0] = targetValue.fastRoundToInt().toFloat()
+                    gesture[1] = 0f
+                },
+                onDragStopped = {
+                    val target = targetValue.fastRoundToInt().fastCoerceIn(0, count - 1)
+                    animateToValue(target.toFloat())
+                    if (target != gesture[0].toInt() || gesture[1] < itemWidthPx / 8f) onSelect(items[target].id)
+                },
+                onDrag = { _, dragAmount ->
+                    gesture[1] += abs(dragAmount.x)
+                    updateValue(targetValue + dragAmount.x / itemWidthPx)
+                },
+            )
+        }
+        LaunchedEffect(blob, index) {
+            if (abs(blob.targetValue - index) > 0.001f) blob.animateToValue(index.toFloat())
+        }
+        fun activeness(i: Int) = (1f - abs(blob.value - i)).fastCoerceIn(0f, 1f)
+        val blobX: Density.() -> IntOffset = {
+            IntOffset((blob.value * itemWidthPx + (itemWidthPx - blobWidthPx) / 2f).fastRoundToInt(), 0)
+        }
+        val stretch: GraphicsLayerScope.() -> Unit = {
+            val velocity = blob.velocity / 10f
+            scaleX = blob.scaleX / (1f - (velocity * 0.6f).fastCoerceIn(-0.25f, 0.25f))
+            scaleY = blob.scaleY * (1f - (velocity * 0.3f).fastCoerceIn(-0.2f, 0.2f))
+            transformOrigin = TransformOrigin(0.5f, 1f)
+        }
+
         // the band: one bubble per tab on a rounded bar, so it bulges around each tab and has
-        // round ends, as in the reference
+        // round ends, as in the reference; the bubble under the blob swells as it passes
         val band = Color(0xFFD9D1F6)
         Box(
             Modifier
@@ -355,12 +415,17 @@ fun PopNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSele
                     .background(band),
             )
             Row(Modifier.fillMaxSize()) {
-                items.forEach { _ ->
+                items.forEachIndexed { i, _ ->
                     Box(
                         Modifier
                             .weight(1f)
                             .fillMaxHeight()
                             .padding(horizontal = 1.dp)
+                            .graphicsLayer {
+                                val a = activeness(i)
+                                scaleX = 1f + 0.05f * a
+                                scaleY = 1f + 0.1f * a
+                            }
                             .clip(RoundedCornerShape(50))
                             .background(band),
                     )
@@ -369,39 +434,59 @@ fun PopNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSele
         }
         Box(
             Modifier
-                .offset(x = blobX + (itemWidth - 100.dp) / 2)
                 .align(Alignment.BottomStart)
+                .offset(blobX)
                 .size(100.dp, 68.dp)
+                .graphicsLayer(stretch)
                 .clip(BlobShape(0.55f, 0.45f, 0.5f, 0.6f))
                 .background(palette.accent),
         )
         Row(Modifier.fillMaxSize()) {
             items.forEachIndexed { i, item ->
-                val active = i == index
-                val tint by animateColorAsState(if (active) Color.White else palette.text, ytStateSpec(), label = "popTint")
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
+                Box(
+                    Modifier
                         .weight(1f)
                         .fillMaxHeight()
                         .padding(top = 12.dp)
-                        .noRippleClick { onSelect(item.id) },
+                        .noRippleClick {
+                            blob.animateToValue(i.toFloat())
+                            onSelect(item.id)
+                        },
                 ) {
-                    Box {
-                        NavIcon(item, active, tint, 26.dp)
-                        Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopEnd).offset(4.dp, (-3).dp))
-                    }
-                    Text(
-                        text = stringResource(item.label),
-                        color = tint,
-                        maxLines = 1,
-                        style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp),
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
+                    PopTab(palette, item, state, active = false, palette.text, Modifier.graphicsLayer { alpha = 1f - activeness(i) })
+                    PopTab(palette, item, state, active = true, Color.White, Modifier.graphicsLayer { alpha = activeness(i) })
                 }
             }
         }
+        // the handle to drag the blob, on top of the tabs
+        Box(
+            Modifier
+                .align(Alignment.BottomStart)
+                .offset(blobX)
+                .size(100.dp, 68.dp)
+                .then(blob.modifier),
+        )
+    }
+}
+
+@Composable
+private fun PopTab(palette: YtPalette, item: YtNavItem, state: YtNavState, active: Boolean, tint: Color, modifier: Modifier) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = modifier.fillMaxSize(),
+    ) {
+        Box {
+            NavIcon(item, active, tint, 26.dp)
+            Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopEnd).offset(4.dp, (-3).dp))
+        }
+        Text(
+            text = stringResource(item.label),
+            color = tint,
+            maxLines = 1,
+            style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp),
+            modifier = Modifier.padding(top = 2.dp),
+        )
     }
 }
 
@@ -410,7 +495,6 @@ fun PopNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSele
 
 @Composable
 fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
-    val shapes = remember { listOf(CookieShape(9), RoundedCornerShape(50), RoundedCornerShape(14.dp), CookieShape(6, 0.1f)) }
     val colors = listOf(palette.lime, Color(0xFFF6D365), palette.pink, palette.lavender)
     val bar = RoundedCornerShape(32.dp)
     Row(
@@ -434,8 +518,20 @@ fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
                     .fillMaxHeight()
                     .noRippleClick { onSelect(item.id) },
             ) {
-                // the scalloped shapes of the active tab turn slowly
+                // the shape of the active tab blooms out of a circle (lobes grow, corners
+                // square up) while it turns into place; the scalloped ones keep turning slowly
+                val morph by animateFloatAsState(
+                    if (active) 1f else 0f,
+                    ytSpec(spring(dampingRatio = 0.45f, stiffness = 320f)),
+                    label = "shapeMorph",
+                )
                 val spin = if (active && (i == 0 || i == 3)) rememberSpin(16000) else 0f
+                val shape = when (i % 4) {
+                    0 -> CookieShape(9, 0.07f * morph)
+                    2 -> MorphRoundRectShape(morph, 14.dp)
+                    3 -> CookieShape(6, 0.1f * morph)
+                    else -> RoundedCornerShape(50)
+                }
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
@@ -445,9 +541,12 @@ fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
                     Box(
                         Modifier
                             .matchParentSize()
-                            .graphicsLayer { rotationZ = spin }
-                            .clip(shapes[i % shapes.size])
-                            .background(if (active) colors[i % colors.size] else Color.Transparent),
+                            .graphicsLayer {
+                                rotationZ = spin - 70f * (1f - morph)
+                                alpha = morph.coerceIn(0f, 1f)
+                            }
+                            .clip(shape)
+                            .background(colors[i % colors.size]),
                     )
                     NavIcon(item, active, if (active) palette.ink else palette.text.copy(alpha = 0.75f), 22.dp)
                     Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopEnd))
