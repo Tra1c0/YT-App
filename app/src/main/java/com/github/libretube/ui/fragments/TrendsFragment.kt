@@ -38,6 +38,8 @@ class TrendsFragment : Fragment(R.layout.fragment_trends) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentTrendsBinding.bind(view)
+        // YT: the design "YouTube neu" shows its live page here instead of the trending tabs
+        if (com.github.libretube.ui.yt.YtLive.attach(this, binding.root)) return
         // YT: the design "After" shows live rooms here instead of the trending tabs
         if (com.github.libretube.ui.yt.YtRooms.attach(this, binding.root)) return
         // YT: the design "Kiesel" shows its tumbling pebbles to discover with here

@@ -1,0 +1,769 @@
+package com.github.libretube.ui.yt
+
+import android.content.Intent
+import android.view.ViewGroup
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.os.bundleOf
+import androidx.core.view.children
+import androidx.core.view.isGone
+import androidx.fragment.app.Fragment
+import coil3.ImageLoader
+import coil3.compose.AsyncImage
+import com.github.libretube.R
+import com.github.libretube.api.obj.StreamItem
+import com.github.libretube.api.obj.Subscription
+import com.github.libretube.constants.IntentData
+import com.github.libretube.extensions.toID
+import com.github.libretube.helpers.ImageHelper
+import com.github.libretube.helpers.NavigationHelper
+import com.github.libretube.helpers.YtDesign
+import com.github.libretube.parcelable.PlayerData
+import com.github.libretube.repo.FeedRefresh
+import com.github.libretube.ui.dialogs.AddToPlaylistDialog
+import com.github.libretube.ui.models.SubscriptionsViewModel
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import kotlin.math.roundToInt
+
+/*
+ * YT: the subscriptions tab of the designs, in place of the classic feed: the headline of the
+ * design, a strip of your channels, a filter (all, today, live) in the design's tabs, and the
+ * feed as the cards of the design. Every card can be pushed to the right to save it (a bookmark
+ * grows behind it), a long press opens the quick actions, and pull to refresh fetches the feed
+ * again. The classic layout keeps its groups and sorting for the standard design.
+ */
+object YtSubscriptions {
+    /** @return true if a design screen replaces the classic layout. */
+    fun attach(fragment: Fragment, root: ViewGroup, viewModel: SubscriptionsViewModel): Boolean {
+        val design = YtDesign.current()
+        val palette = design.palette ?: return false
+        val context = fragment.requireContext()
+        if (viewModel.videoFeed.value == null) viewModel.fetchFeed(context, FeedRefresh.Automatically)
+        if (viewModel.subscriptions.value == null) viewModel.fetchSubscriptions(context)
+        val title = design.navigationLabel(R.id.subscriptionsFragment) ?: R.string.yt_nav_subscriptions
+
+        root.children.forEach { it.isGone = true }
+        val composeView = ComposeView(context).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                val feed by viewModel.videoFeed.observeAsState()
+                val channels by viewModel.subscriptions.observeAsState()
+                var refreshing by remember { mutableStateOf(false) }
+                LaunchedEffect(feed) { refreshing = false }
+                YtTheme(palette) {
+                    YtSubscriptionsScreen(
+                        palette = palette,
+                        imageLoader = ImageHelper.loader(),
+                        feed = feed,
+                        channels = channels,
+                        refreshing = refreshing,
+                        title = stringResource(title),
+                        onRefresh = {
+                            refreshing = true
+                            viewModel.fetchFeed(context, FeedRefresh.All)
+                        },
+                        onOpenVideo = { video -> video.url?.let { NavigationHelper.navigateVideo(context, PlayerData(it.toID())) } },
+                        onOpenChannel = { url -> NavigationHelper.navigateChannel(context, url) },
+                        onSave = { ytSaveVideo(fragment, it) },
+                        onShare = { ytShareVideo(fragment, it) },
+                    )
+                }
+            }
+        }
+        root.addView(
+            composeView,
+            ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
+        )
+        return true
+    }
+}
+
+/** Opens the "add to playlist" dialog for [video]. */
+internal fun ytSaveVideo(fragment: Fragment, video: StreamItem) {
+    AddToPlaylistDialog().apply {
+        arguments = bundleOf(IntentData.videoInfo to video)
+    }.show(fragment.childFragmentManager, AddToPlaylistDialog::class.java.name)
+}
+
+/** Shares the link of [video]. */
+internal fun ytShareVideo(fragment: Fragment, video: StreamItem) {
+    val link = "https://youtu.be/" + (video.url ?: return).toID()
+    val intent = Intent(Intent.ACTION_SEND)
+        .setType("text/plain")
+        .putExtra(Intent.EXTRA_SUBJECT, video.title)
+        .putExtra(Intent.EXTRA_TEXT, link)
+    fragment.startActivity(Intent.createChooser(intent, video.title))
+}
+
+private const val DAY = 24L * 60 * 60 * 1000
+
+private val ClayShadow = Color(0x80B07A66)
+private val ClayInk = Color(0xFF7A5560)
+private val ClayLabel = Color(0xFF8C6563)
+private val ClayLight = Color(0xFFFFF3E9)
+private val PopInk = Color(0xFF3B2054)
+private val PopFrames = listOf(Color(0xFFFDE682), Color(0xFFF7B3CE), Color(0xFFDFD6F7), Color(0xFFBFE8D2))
+private val ShapesTags = listOf(Color(0xFFF6D365), Color(0xFFBFE26B), Color(0xFFD9D4EE), Color(0xFFF28B82))
+private val ShapesInk = Color(0xFF12122A)
+private val KieselBeige = Color(0xFFE2DCD5)
+private val KieselCard = Color(0xFFF7F4F1)
+private val KieselGrey = Color(0xFF7A7672)
+
+@Composable
+private fun YtSubscriptionsScreen(
+    palette: YtPalette,
+    imageLoader: ImageLoader,
+    feed: List<StreamItem>?,
+    channels: List<Subscription>?,
+    refreshing: Boolean,
+    title: String,
+    onRefresh: () -> Unit,
+    onOpenVideo: (StreamItem) -> Unit,
+    onOpenChannel: (String) -> Unit,
+    onSave: (StreamItem) -> Unit,
+    onShare: (StreamItem) -> Unit,
+) {
+    var filter by remember { mutableIntStateOf(0) }
+    val labels = listOf(stringResource(R.string.yt_subs_all), stringResource(R.string.yt_subs_today), stringResource(R.string.yt_tab_live))
+    val videos = remember(feed, filter) {
+        val now = System.currentTimeMillis()
+        feed.orEmpty().filter { it.url != null && !it.isShort }.filter {
+            when (filter) {
+                1 -> now - it.uploaded < DAY
+                2 -> it.isLive
+                else -> true
+            }
+        }
+    }
+    var quick by remember { mutableStateOf<StreamItem?>(null) }
+    val enter = rememberYtEnterState()
+    val count = channels?.size ?: 0
+
+    YtScreenSurface(palette, Modifier.fillMaxSize()) {
+        YtRefreshBox(
+            palette = palette,
+            isRefreshing = refreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 20.dp + ytNavPadding()),
+            ) {
+                item {
+                    LibraryHeadline(palette, title, pluralStringResource(R.plurals.yt_channels_count, count, count))
+                }
+                item { ChannelStrip(palette, imageLoader, channels, onOpenChannel) }
+                item {
+                    WatchTabs(palette, labels, filter, { filter = it }, Modifier.padding(top = 14.dp, bottom = 6.dp), trailingAction = false)
+                }
+                when {
+                    feed == null -> item {
+                        Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = if (palette.light) palette.text else Color.White)
+                        }
+                    }
+                    videos.isEmpty() -> item {
+                        Text(
+                            text = stringResource(R.string.yt_subs_empty),
+                            color = palette.textSecondary,
+                            style = TextStyle(fontFamily = palette.font, fontSize = 15.sp, lineHeight = 21.sp),
+                            modifier = Modifier.padding(horizontal = 15.dp, vertical = 24.dp),
+                        )
+                    }
+                    else -> itemsIndexed(videos, key = { _, v -> v.url!! }) { index, video ->
+                        SubsCard(
+                            palette, imageLoader, video, index,
+                            onOpen = onOpenVideo,
+                            onQuick = { quick = it },
+                            onSave = onSave,
+                            modifier = Modifier.ytEnter(enter, video.url!!, index),
+                        )
+                    }
+                }
+            }
+        }
+        YtQuickSheet(
+            palette, imageLoader, quick,
+            onDismiss = { quick = null },
+            onSave = onSave,
+            onShare = onShare,
+            onChannel = { it.uploaderUrl?.let(onOpenChannel) },
+        )
+    }
+}
+
+/** Your channels as a strip of avatars in the shape of the design. */
+@Composable
+private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels: List<Subscription>?, onOpenChannel: (String) -> Unit) {
+    if (channels.isNullOrEmpty()) return
+    val enter = rememberYtEnterState()
+    val shape: Shape = when (palette.signature) {
+        YtSignature.POP -> BlobShape(0.6f, 0.5f, 0.56f, 0.64f)
+        YtSignature.SHAPES -> CookieShape(8, 0.06f)
+        YtSignature.EDITORIAL -> RectangleShape
+        YtSignature.KIESEL, YtSignature.CLAY -> RoundedCornerShape(18.dp)
+        YtSignature.AFTER -> RoundedCornerShape(4.dp)
+        else -> CircleShape
+    }
+    val ink = when (palette.signature) {
+        YtSignature.SHAPES, YtSignature.FROST -> Color.White
+        YtSignature.KIESEL -> KieselInk
+        else -> palette.text
+    }
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 15.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.padding(top = 2.dp),
+    ) {
+        itemsIndexed(channels, key = { _, c -> c.url }) { i, channel ->
+            val ring = when (palette.signature) {
+                YtSignature.POP -> PopFrames[i % PopFrames.size]
+                YtSignature.SHAPES -> ShapesTags[i % ShapesTags.size]
+                YtSignature.KIESEL -> if (i % 2 == 0) KieselLavender else KieselPeach
+                YtSignature.CLAY -> ClayLight
+                YtSignature.EDITORIAL -> palette.text
+                YtSignature.FROST -> Color(0x73FFFFFF)
+                YtSignature.GLASS -> Color.White
+                YtSignature.AFTER -> palette.accent
+                else -> palette.raised
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .width(66.dp)
+                    .ytEnter(enter, channel.url, i)
+                    .ytPressable(RoundedCornerShape(14.dp), squish = palette.signature == YtSignature.CLAY || palette.signature == YtSignature.KIESEL) { onOpenChannel(channel.url) }
+                    .padding(vertical = 4.dp),
+            ) {
+                Box(
+                    Modifier
+                        .size(56.dp)
+                        .then(if (palette.signature == YtSignature.CLAY) Modifier.shadow(6.dp, shape, ambientColor = ClayShadow, spotColor = ClayShadow) else Modifier)
+                        .clip(shape)
+                        .background(ring)
+                        .padding(if (palette.signature == YtSignature.EDITORIAL) 1.5.dp else 3.dp)
+                        .clip(shape),
+                ) {
+                    AsyncImage(
+                        model = channel.avatar,
+                        contentDescription = channel.name,
+                        imageLoader = imageLoader,
+                        contentScale = ContentScale.Crop,
+                        colorFilter = if (palette.signature == YtSignature.EDITORIAL) ytGrayscale else null,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+                Text(
+                    text = channel.name,
+                    color = ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 10.5.sp),
+                    modifier = Modifier.padding(top = 5.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * A feed card that can be pushed to the right to save it: it follows the finger, a bookmark
+ * grows behind it, a tick at the threshold, letting go there saves.
+ */
+@Composable
+private fun SubsCard(
+    palette: YtPalette,
+    imageLoader: ImageLoader,
+    video: StreamItem,
+    index: Int,
+    onOpen: (StreamItem) -> Unit,
+    onQuick: (StreamItem) -> Unit,
+    onSave: (StreamItem) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val haptics = rememberYtHaptics()
+    val swipe = rememberYtSwipe()
+    val threshold = with(LocalDensity.current) { 96.dp.toPx() }
+    val field = when (palette.signature) {
+        YtSignature.POP -> PopFrames[0]
+        YtSignature.SHAPES -> palette.lime
+        YtSignature.KIESEL -> KieselLavender
+        YtSignature.CLAY -> ClayLight
+        YtSignature.EDITORIAL -> palette.text
+        YtSignature.FROST, YtSignature.GLASS -> Color(0x80FFFFFF)
+        else -> palette.lime
+    }
+    val mark = when (palette.signature) {
+        YtSignature.EDITORIAL -> palette.background
+        YtSignature.FROST, YtSignature.GLASS -> palette.text
+        else -> Color(0xFF111114)
+    }
+    Box(modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+        Box(
+            contentAlignment = Alignment.CenterStart,
+            modifier = Modifier
+                .matchParentSize()
+                .clip(ytCardShape(palette, 16))
+                .background(field),
+        ) {
+            Icon(
+                painterResource(R.drawable.ic_yt_nav_bookmark_fill),
+                contentDescription = null,
+                tint = mark,
+                modifier = Modifier
+                    .padding(start = 26.dp)
+                    .size(26.dp)
+                    .graphicsLayer {
+                        val p = (swipe.offset.value / threshold).coerceIn(0f, 1.2f)
+                        scaleX = 0.6f + 0.5f * p
+                        scaleY = 0.6f + 0.5f * p
+                        alpha = p.coerceAtMost(1f)
+                    },
+            )
+        }
+        Box(
+            Modifier
+                .offset { IntOffset(swipe.offset.value.roundToInt(), 0) }
+                .ytSwipe(swipe, threshold, direction = 1, haptics = haptics) { onSave(video) },
+        ) {
+            SubsCardFace(palette, imageLoader, video, index, onOpen = { onOpen(video) }, onQuick = { onQuick(video) })
+        }
+    }
+}
+
+@Composable
+private fun Meta(video: StreamItem, color: Color, style: TextStyle, modifier: Modifier = Modifier) {
+    Text(
+        text = listOf(video.uploaderName.orEmpty(), ytMeta(video, " · ")).filter { it.isNotBlank() }.joinToString(" · "),
+        color = color,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        style = style,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun DurationBadge(video: StreamItem, fill: Color, ink: Color, font: androidx.compose.ui.text.font.FontFamily, modifier: Modifier) {
+    val text = if (video.isLive) stringResource(R.string.yt_live_badge) else ytDuration(video) ?: return
+    Text(
+        text = text,
+        color = if (video.isLive) Color.White else ink,
+        style = TextStyle(fontFamily = font, fontWeight = FontWeight.Bold, fontSize = 11.sp),
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(if (video.isLive) Color(0xFFE53935) else fill)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
+/** The face of a feed card in the design. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SubsCardFace(
+    palette: YtPalette,
+    imageLoader: ImageLoader,
+    video: StreamItem,
+    index: Int,
+    onOpen: () -> Unit,
+    onQuick: () -> Unit,
+) {
+    val title = video.title.orEmpty()
+    when (palette.signature) {
+        YtSignature.MOVO -> {
+            // a tile of the mosaic: every third one in lime, all tilt towards the finger
+            val lime = index % 3 == 2
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .ytTilt(4f)
+                    .ytPressable(RoundedCornerShape(18.dp), onLongClick = onQuick, onClick = onOpen)
+                    .background(if (lime) palette.lime else palette.surface)
+                    .padding(8.dp),
+            ) {
+                Box(
+                    Modifier
+                        .width(132.dp)
+                        .aspectRatio(16f / 10f)
+                        .clip(RoundedCornerShape(12.dp)),
+                ) {
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    DurationBadge(video, Color(0xCC111114), Color.White, palette.font, Modifier.align(Alignment.BottomEnd).padding(6.dp))
+                }
+                Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
+                    Text(title, color = if (lime) palette.ink else palette.text, maxLines = 3, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Black, fontSize = 15.sp, lineHeight = 18.sp, letterSpacing = (-0.3).sp))
+                    Meta(video, if (lime) palette.ink.copy(alpha = 0.7f) else palette.textSecondary, TextStyle(fontFamily = palette.font, fontSize = 12.sp), Modifier.padding(top = 4.dp))
+                }
+            }
+        }
+        YtSignature.AFTER -> {
+            // a row of the programme: a letterboxed still, the title in Anton
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .ytPressable(RoundedCornerShape(4.dp), onLongClick = onQuick, onClick = onOpen)
+                    .background(palette.surface)
+                    .padding(8.dp),
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .width(124.dp)
+                        .height(70.dp)
+                        .background(Color.Black),
+                ) {
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxWidth().height(56.dp))
+                    DurationBadge(video, Color(0xCC000000), Color.White, YtFonts.robotoCondensed, Modifier.align(Alignment.BottomEnd).padding(4.dp))
+                }
+                Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
+                    Text(title.uppercase(), color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.anton, fontSize = 16.sp, lineHeight = 18.sp, letterSpacing = 0.5.sp))
+                    Meta(video, palette.textSecondary, TextStyle(fontFamily = YtFonts.robotoCondensed, fontWeight = FontWeight.Bold, fontSize = 11.5.sp, letterSpacing = 1.sp), Modifier.padding(top = 5.dp))
+                }
+            }
+        }
+        YtSignature.SIDE -> {
+            // a post: who, then what, then the picture
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .ytPressable(RoundedCornerShape(18.dp), onLongClick = onQuick, onClick = onOpen)
+                    .background(palette.surface)
+                    .padding(12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AsyncImage(model = video.uploaderAvatar, contentDescription = null, imageLoader = imageLoader, contentScale = ContentScale.Crop, modifier = Modifier.size(36.dp).clip(CircleShape).background(palette.raised))
+                    Column(Modifier.padding(start = 10.dp)) {
+                        Text(video.uploaderName.orEmpty(), color = palette.text, maxLines = 1, style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 13.5.sp))
+                        Text(ytMeta(video, " · "), color = palette.textSecondary, maxLines = 1, style = TextStyle(fontFamily = palette.font, fontSize = 11.5.sp))
+                    }
+                }
+                Text(title, color = palette.text, maxLines = 3, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = palette.font, fontSize = 15.sp, lineHeight = 20.sp), modifier = Modifier.padding(top = 10.dp))
+                Box(
+                    Modifier
+                        .padding(top = 10.dp)
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(14.dp)),
+                ) {
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    DurationBadge(video, Color(0xCC111114), Color.White, palette.font, Modifier.align(Alignment.BottomEnd).padding(8.dp))
+                }
+            }
+        }
+        YtSignature.CLAY -> {
+            val shape = RoundedCornerShape(24.dp)
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .ytPressable(shape, squish = true, onLongClick = onQuick, onClick = onOpen)
+                    .shadow(8.dp, shape, ambientColor = ClayShadow, spotColor = ClayShadow)
+                    .background(Brush.verticalGradient(listOf(ClayLight, palette.surface)))
+                    .border(1.dp, Color(0x99FFFFFF), shape)
+                    .padding(8.dp),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(18.dp)),
+                ) {
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    DurationBadge(video, ClayLight, ClayInk, palette.font, Modifier.align(Alignment.BottomEnd).padding(10.dp))
+                }
+                Text(title, color = ClayInk, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 6.dp, top = 8.dp, end = 6.dp))
+                Meta(video, ClayLabel, TextStyle(fontFamily = palette.font, fontSize = 12.sp), Modifier.padding(start = 6.dp, top = 2.dp, bottom = 4.dp))
+            }
+        }
+        YtSignature.EDITORIAL -> {
+            // a numbered row of the paper; the still is black and white and takes color under the finger
+            val press = remember { MutableInteractionSource() }
+            val pressed by press.collectIsPressedAsState()
+            val color by animateFloatAsState(if (pressed) 1f else 0f, ytSpec(tween(260, easing = YtEaseOut)), label = "editorialColor")
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(palette.background)
+                    .combinedClickable(interactionSource = press, indication = null, onLongClick = onQuick, onClick = onOpen),
+            ) {
+                Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)) {
+                    Text(
+                        "%02d".format(index + 1),
+                        color = palette.text,
+                        style = TextStyle(fontFamily = YtFonts.plexMono, fontWeight = FontWeight.Medium, fontSize = 11.sp, letterSpacing = 1.sp),
+                        modifier = Modifier.width(30.dp).padding(top = 2.dp),
+                    )
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text(title, color = palette.text, maxLines = 3, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.inter, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 19.sp))
+                        Meta(video, palette.textSecondary, TextStyle(fontFamily = YtFonts.plexMono, fontWeight = FontWeight.Medium, fontSize = 9.5.sp, letterSpacing = 1.sp), Modifier.padding(top = 5.dp))
+                    }
+                    AsyncImage(
+                        model = video.thumbnail,
+                        contentDescription = null,
+                        imageLoader = imageLoader,
+                        contentScale = ContentScale.Crop,
+                        colorFilter = if (color == 0f) ytGrayscale else ytSaturation(color),
+                        modifier = Modifier
+                            .width(104.dp)
+                            .height(58.dp),
+                    )
+                }
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(palette.text.copy(alpha = 0.3f)),
+                )
+            }
+        }
+        YtSignature.GLASS -> {
+            // the still with a caption of glass that bends it
+            val still = rememberLayerBackdrop()
+            val press = remember { MutableInteractionSource() }
+            val swell by rememberSwell(press)
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .ytPressScale(press)
+                    .shadow(6.dp, RoundedCornerShape(16.dp), clip = false, ambientColor = Color(0x405C8C85), spotColor = Color(0x405C8C85))
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(palette.lime)
+                    .combinedClickable(interactionSource = press, indication = LocalIndication.current, onLongClick = onQuick, onClick = onOpen),
+            ) {
+                YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().layerBackdrop(still))
+                Column(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                        .liquidGlass(still, RoundedCornerShape(12.dp), Color(0x80FFFFFF), null, blur = 8.dp, refraction = 8.dp, swell = { swell })
+                        .padding(horizontal = 12.dp, vertical = 9.dp),
+                ) {
+                    Text(title, color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, lineHeight = 17.sp))
+                    Meta(video, palette.textSecondary, TextStyle(fontFamily = YtFonts.googleSans, fontSize = 11.5.sp), Modifier.padding(top = 3.dp))
+                }
+            }
+        }
+        YtSignature.POP -> {
+            // a colored frame a little askew; it straightens while pressed
+            val press = remember { MutableInteractionSource() }
+            val pressed by press.collectIsPressedAsState()
+            val askew = if (index % 2 == 0) -1.5f else 1.5f
+            val tilt by animateFloatAsState(if (pressed) 0f else askew, ytSpec(spring(dampingRatio = 0.5f, stiffness = 260f)), label = "popTilt")
+            val shape = RoundedCornerShape(26.dp)
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer { rotationZ = tilt }
+                    .ytSquish(press)
+                    .clip(shape)
+                    .background(PopFrames[index % PopFrames.size])
+                    .combinedClickable(interactionSource = press, indication = null, onLongClick = onQuick, onClick = onOpen)
+                    .padding(7.dp),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(20.dp)),
+                ) {
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    DurationBadge(video, PopFrames[0], PopInk, YtFonts.nunito, Modifier.align(Alignment.BottomEnd).padding(10.dp))
+                }
+                Text(title, color = PopInk, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 14.5.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp))
+                Meta(video, PopInk.copy(alpha = 0.7f), TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.Bold, fontSize = 12.sp), Modifier.padding(start = 8.dp, top = 2.dp, bottom = 6.dp))
+            }
+        }
+        YtSignature.SHAPES -> {
+            val shape: Shape = if (index % 2 == 0) {
+                RoundedCornerShape(topStart = 44.dp, topEnd = 16.dp, bottomEnd = 44.dp, bottomStart = 16.dp)
+            } else {
+                RoundedCornerShape(topStart = 16.dp, topEnd = 44.dp, bottomEnd = 16.dp, bottomStart = 44.dp)
+            }
+            val tag = ShapesTags[index % ShapesTags.size]
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .ytPressable(shape, onLongClick = onQuick, onClick = onOpen)
+                    .background(palette.surface)
+                    .padding(6.dp),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(shape),
+                ) {
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    DurationBadge(video, tag, ShapesInk, YtFonts.googleSans, Modifier.align(if (index % 2 == 0) Alignment.BottomStart else Alignment.BottomEnd).padding(12.dp))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp, top = 8.dp, end = 10.dp, bottom = 6.dp)) {
+                    Box(
+                        Modifier
+                            .size(10.dp)
+                            .clip(CookieShape(6, 0.1f))
+                            .background(tag),
+                    )
+                    Column(Modifier.padding(start = 10.dp)) {
+                        Text(title, color = palette.ink, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Medium, fontSize = 15.sp, lineHeight = 19.sp))
+                        Meta(video, palette.ink.copy(alpha = 0.6f), TextStyle(fontFamily = YtFonts.googleSans, fontSize = 12.sp), Modifier.padding(top = 2.dp))
+                    }
+                }
+            }
+        }
+        YtSignature.FROST -> {
+            val backdrop = LocalScreenBackdrop.current
+            val press = remember { MutableInteractionSource() }
+            val thaw by rememberThaw(press)
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .ytPressScale(press)
+                    .frostGlass(backdrop, RoundedCornerShape(22.dp)) { thaw }
+                    .combinedClickable(interactionSource = press, indication = LocalIndication.current, onLongClick = onQuick, onClick = onOpen)
+                    .padding(8.dp),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(16.dp)),
+                ) {
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    DurationBadge(video, Color(0x59FFFFFF), Color.White, YtFonts.jakarta, Modifier.align(Alignment.BottomEnd).padding(10.dp))
+                }
+                Text(title, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 6.dp, top = 8.dp, end = 6.dp))
+                Meta(video, palette.textSecondary, TextStyle(fontFamily = YtFonts.jakarta, fontSize = 12.sp), Modifier.padding(start = 6.dp, top = 2.dp, bottom = 4.dp))
+            }
+        }
+        YtSignature.KIESEL -> {
+            val fresh = System.currentTimeMillis() - video.uploaded < DAY
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .ytPressable(RoundedCornerShape(18.dp), squish = true, onLongClick = onQuick, onClick = onOpen)
+                    .background(KieselCard)
+                    .padding(8.dp),
+            ) {
+                Box(
+                    Modifier
+                        .width(124.dp)
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(12.dp)),
+                ) {
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                }
+                Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
+                    Text(title, color = KieselInk, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, lineHeight = 18.sp))
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
+                        DurationBadge(video, KieselLavender, KieselInk, YtFonts.jakarta, Modifier)
+                        if (fresh) {
+                            Box(
+                                Modifier
+                                    .padding(start = 6.dp)
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(KieselPeach),
+                            )
+                        }
+                        Text(video.uploaderName.orEmpty(), color = KieselGrey, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 11.5.sp), modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+        }
+        else -> {
+            // YouTube neu: the still, then the channel's avatar with title and meta
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .ytPressable(RoundedCornerShape(14.dp), onLongClick = onQuick, onClick = onOpen)
+                    .background(palette.background),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(14.dp)),
+                ) {
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    DurationBadge(video, Color(0xCC111114), Color.White, palette.font, Modifier.align(Alignment.BottomEnd).padding(8.dp))
+                }
+                Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(top = 10.dp, start = 2.dp, end = 2.dp)) {
+                    AsyncImage(model = video.uploaderAvatar, contentDescription = null, imageLoader = imageLoader, contentScale = ContentScale.Crop, modifier = Modifier.size(36.dp).clip(CircleShape).background(palette.surface))
+                    Column(Modifier.padding(start = 12.dp)) {
+                        Text(title, color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 19.sp))
+                        Meta(video, palette.textSecondary, TextStyle(fontFamily = palette.font, fontSize = 12.5.sp), Modifier.padding(top = 3.dp))
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+            }
+        }
+    }
+}

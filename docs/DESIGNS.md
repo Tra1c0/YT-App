@@ -118,6 +118,33 @@ der Shorts-Reiter legt sein Raster im Material des Designs an (`ui/yt/YtShorts.k
 | Frost | Frostkreise, die auftauen | weiße Pille, als Frostglas wenn abonniert | Frostspur mit weißem Segment, das gleitet | Frostzeilen, die auftauen, weißer Balken wächst | Frostkarten auf Salbei, die auftauen |
 | Kiesel | Kapseln in Lavendel, Pfirsich und Beige, die sich quetschen | Creme-Kapsel auf dem schwarzen Panel, Lavendel wenn abonniert | beige Spur, schwarze Kapsel federt | Zeilen auf Creme, Pfirsichbalken wächst, Zeit in Lavendel-Kapsel | – |
 
+## Bereich „Du“, Abo-Reiter und Live-Seite (Runde 7, Etappe 4)
+
+Der Bereich „Du“ behält seine Reihenfolge (Überschrift, Schnellzugriff, Weiterschauen,
+Sammlungen, Lesezeichen), aber Überschrift, Weiterschauen-Karte und Sammlungskarten kommen aus
+dem Design (`ui/yt/YtLibraryDesigns.kt`); der Schnellzugriff nutzt die Aktionsknöpfe der
+Videoseite. Der Abo-Reiter ist in allen Designs ein eigener Bildschirm (`ui/yt/YtSubscriptions.kt`):
+Überschrift des Designs, eine Leiste deiner Kanäle in der Form des Designs, der Filter Alle /
+Heute / Live in den Reitern des Designs, der Feed als Karten des Designs. Jede Karte lässt sich
+nach rechts schieben, um sie zu merken (ein Lesezeichen wächst dahinter, Tick am Schwellwert),
+langes Drücken öffnet die Schnellaktionen, Ziehen aktualisiert. Für YouTube neu ersetzt eine
+Live-Seite die klassischen Trends (`ui/yt/YtLive.kt`): zuerst, was aus deinen Kanälen live ist,
+dann alles Live in deiner Region, mit atmendem LIVE-Punkt, Zuschauerzahl und Regionswahl.
+
+| Design | Überschrift | Weiterschauen | Sammlungen | Abo-Karten |
+| --- | --- | --- | --- | --- |
+| YouTube neu | fette Überschrift | Standbild mit Play und Akzentbalken, der sich füllt | Limette und Lavendel | Standbild, Avatar, Titel |
+| Movo | fette Überschrift | wie YouTube neu | Limette und Lavendel | Mosaikkacheln, jede dritte Limette, neigen sich zum Finger |
+| After | Anton-Versalien mit Akzentstrich | Plakat mit Letterbox, Titel in Anton, Akzentlinie als Fortschritt | Plakate mit Titel in Anton | Programmzeilen mit Letterbox-Bild |
+| Side | fette Überschrift | wie YouTube neu | Limette und Lavendel | Beiträge: wer, was, Bild |
+| Clay | Fraunces auf einem atmenden Knete-Blob | Knete-Rahmen, Rille mit rundem Knopf | puffige Karten in Creme und Mauve, runde Vorschauen | puffige Karten, die sich quetschen |
+| Editorial | Kopfzeile in Mono, Doppellinie | Schwarz-Weiß-Bild mit Farbe unter dem Finger, Prozent in Mono | nummerierte Tabellenzeilen | nummerierte Zeilen, Bild nimmt Farbe an |
+| Glas | Überschrift mit Glas-Unterzeile | Glas-Beschriftung über dem Bild hält den Fortschritt, quillt | Glaskacheln | Standbild mit Glas-Beschriftung |
+| Pop | erstes Wort auf gelbem Blob | Blob mit gelber Fortschrittspille | farbige Karten, schief, richten sich beim Drücken auf | farbige Rahmen, schief |
+| Formen | drei kleine Formen drehen sich | Widget-Form mit der Limetten-Welle als Fortschritt | wechselnde Widget-Formen | wechselnde Widget-Formen mit Farbpunkt |
+| Frost | Jakarta in Weiß | Frostrahmen, der auftaut, weiße Linie | Frostkarten, die auftauen | Frostkarten, die auftauen |
+| Kiesel | getippte Kontur-Überschrift | Pfirsichkarte, Lavendel-Kapsel füllt sich, Restzeit in schwarzer Kapsel | Lavendel, Pfirsich, Beige mit schwarzer Zähler-Kapsel | Creme-Zeilen mit Kapseln, Pfirsichpunkt für Neues |
+
 ## Liquid Glass (Glas und Frost)
 
 Die Glasflächen nutzen Kyants Backdrop-Bibliothek (`third_party/backdrop/`): Unschärfe ab

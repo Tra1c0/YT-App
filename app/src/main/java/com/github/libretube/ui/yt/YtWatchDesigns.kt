@@ -848,7 +848,15 @@ private fun KieselActions(actions: List<WatchAction>, modifier: Modifier) {
  * never selected. [selected] is the index of the open tab.
  */
 @Composable
-internal fun WatchTabs(palette: YtPalette, labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+internal fun WatchTabs(
+    palette: YtPalette,
+    labels: List<String>,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    /** True if the last label opens something (the comments) instead of being a tab. */
+    trailingAction: Boolean = true,
+) {
     val haptics = rememberYtHaptics()
     val pick: (Int) -> Unit = { i ->
         haptics.tick()
@@ -858,7 +866,7 @@ internal fun WatchTabs(palette: YtPalette, labels: List<String>, selected: Int, 
         YtSignature.AFTER -> AfterTabs(palette, labels, selected, pick, modifier)
         YtSignature.CLAY -> ClayTabs(palette, labels, selected, pick, modifier)
         YtSignature.EDITORIAL -> EditorialTabs(palette, labels, selected, pick, modifier)
-        YtSignature.GLASS -> GlassTabs(palette, labels, selected, onSelect, modifier)
+        YtSignature.GLASS -> GlassTabs(palette, labels, selected, onSelect, modifier, trailingAction)
         YtSignature.POP -> PopTabs(palette, labels, selected, pick, modifier)
         YtSignature.SHAPES -> ShapesTabs(palette, labels, selected, pick, modifier)
         YtSignature.FROST -> FrostTabs(labels, selected, pick, modifier)
@@ -1034,10 +1042,10 @@ private fun EditorialTabs(palette: YtPalette, labels: List<String>, selected: In
 
 /** Glas: a drop of glass over the tabs, draggable; the comments are a glass button beside it. */
 @Composable
-private fun GlassTabs(palette: YtPalette, labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier) {
-    val backdrop = LocalWatchBackdrop.current
+private fun GlassTabs(palette: YtPalette, labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier, trailingAction: Boolean) {
+    val backdrop = LocalWatchBackdrop.current ?: LocalScreenBackdrop.current
     val haptics = rememberYtHaptics()
-    val tabs = labels.dropLast(1)
+    val tabs = if (trailingAction) labels.dropLast(1) else labels
     val comments = labels.lastIndex
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1070,6 +1078,7 @@ private fun GlassTabs(palette: YtPalette, labels: List<String>, selected: Int, o
         } else {
             UnderlineTabs(palette, tabs, selected, { haptics.tick(); onSelect(it) }, Modifier.weight(1f))
         }
+        if (!trailingAction) return@Row
         Spacer(Modifier.width(10.dp))
         val press = remember { MutableInteractionSource() }
         val swell by rememberSwell(press)

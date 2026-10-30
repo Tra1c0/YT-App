@@ -177,4 +177,14 @@
     <string name="yt_kiesel_headline">Find your next video</string>
     <string name="yt_kiesel_hint">Throw, drag or tilt your phone. Tap a pebble.</string>
     <string name="yt_kiesel_close">Close</string>
+    <string name="yt_subs_all">All</string>
+    <string name="yt_subs_today">Today</string>
+    <string name="yt_subs_empty">Nothing here. Pull down to refresh the feed.</string>
+    <plurals name="yt_channels_count">
+        <item quantity="one">%d channel</item>
+        <item quantity="other">%d channels</item>
+    </plurals>
+    <string name="yt_live_yours">From your channels</string>
+    <string name="yt_live_empty">Nobody is live right now.</string>
+    <string name="yt_live_viewers">%1$s watching</string>
 </resources>

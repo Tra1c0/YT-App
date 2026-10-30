@@ -80,6 +80,8 @@ class SubscriptionsFragment : DynamicLayoutManagerFragment(R.layout.fragment_sub
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentSubscriptionsBinding.bind(view)
         super.onViewCreated(view, savedInstanceState)
+        // YT: the selected design shows its own subscriptions screen instead of the classic feed
+        if (com.github.libretube.ui.yt.YtSubscriptions.attach(this, binding.root, viewModel)) return
 
         setupSortAndFilter()
 

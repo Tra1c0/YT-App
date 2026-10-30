@@ -86,131 +86,115 @@ fun YouTubeLibraryScreen(
     val playlists = collections.filter { !it.isBookmark }
     val bookmarks = collections.filter { it.isBookmark }
     val enter = rememberYtEnterState()
+    // the newer designs use their action chips for the quick access, the first four their rows
+    val chips = palette.signature !in listOf(YtSignature.YOUTUBE, YtSignature.MOVO, YtSignature.SIDE)
+    val editorial = palette.signature == YtSignature.EDITORIAL
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(palette.background),
-        contentPadding = PaddingValues(bottom = 24.dp + ytNavPadding()),
-    ) {
-        item {
-            Column(Modifier.padding(start = 15.dp, end = 15.dp, top = 4.dp, bottom = 16.dp)) {
-                Text(
-                    text = headline,
-                    color = palette.text,
-                    style = TextStyle(
-                        fontFamily = palette.font,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 41.sp,
-                        lineHeight = 42.sp,
-                        letterSpacing = (-0.8).sp,
-                    ),
-                )
-                Text(
-                    text = subline,
-                    color = palette.textSecondary,
-                    style = TextStyle(fontFamily = palette.font, fontSize = 20.sp),
-                )
-            }
-        }
-        item {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.padding(horizontal = 10.dp),
-            ) {
-                if (showHistory) {
-                    QuickAccess(palette, R.drawable.ic_history, stringResource(R.string.watch_history), onOpenHistory, Modifier.weight(1f))
-                }
-                QuickAccess(palette, R.drawable.ic_download, stringResource(R.string.downloads), onOpenDownloads, Modifier.weight(1f))
-            }
-        }
-        continueWatching.firstOrNull()?.let { first ->
-            item { LibrarySection(palette, stringResource(R.string.yt_library_continue), onOpenHistory) }
+    YtScreenSurface(palette, Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 24.dp + ytNavPadding()),
+        ) {
+            item { LibraryHeadline(palette, headline, subline) }
             item {
-                Box(Modifier.ytEnter(enter, "continue" + first.video.url, 0)) {
-                    ContinueCard(palette, imageLoader, first, onOpenVideo)
+                if (chips) {
+                    WatchActionRow(
+                        palette,
+                        buildList {
+                            if (showHistory) add(WatchAction(R.drawable.ic_history, stringResource(R.string.watch_history), onOpenHistory))
+                            add(WatchAction(R.drawable.ic_download, stringResource(R.string.downloads), onOpenDownloads))
+                        },
+                    )
+                } else {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp),
+                    ) {
+                        if (showHistory) {
+                            QuickAccess(palette, R.drawable.ic_history, stringResource(R.string.watch_history), onOpenHistory, Modifier.weight(1f))
+                        }
+                        QuickAccess(palette, R.drawable.ic_download, stringResource(R.string.downloads), onOpenDownloads, Modifier.weight(1f))
+                    }
                 }
             }
-            val more = continueWatching.drop(1)
-            if (more.isNotEmpty()) {
+            continueWatching.firstOrNull()?.let { first ->
+                item { LibrarySection(palette, stringResource(R.string.yt_library_continue), onOpenHistory) }
                 item {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.padding(top = 10.dp),
-                    ) {
-                        items(more, key = { it.video.url.orEmpty() }) { item ->
-                            SmallContinueCard(palette, imageLoader, item, onOpenVideo)
+                    Box(Modifier.ytEnter(enter, "continue" + first.video.url, 0)) {
+                        LibraryContinue(palette, imageLoader, first, progress(first), remainingLabel(first), onOpenVideo)
+                    }
+                }
+                val more = continueWatching.drop(1)
+                if (more.isNotEmpty()) {
+                    item {
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.padding(top = 10.dp),
+                        ) {
+                            items(more, key = { it.video.url.orEmpty() }) { item ->
+                                SmallContinueCard(palette, imageLoader, item, onOpenVideo)
+                            }
                         }
                     }
                 }
             }
-        }
-        item {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 15.dp, end = 10.dp, top = 20.dp, bottom = 10.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.yt_library_collections),
-                    color = palette.text,
-                    style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 17.5.sp),
-                    modifier = Modifier.weight(1f),
-                )
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(palette.raised)
-                        .clickable(onClick = onNewCollection),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_add),
-                        contentDescription = stringResource(R.string.createPlaylist),
-                        tint = palette.text,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
-        }
-        if (playlists.isEmpty()) {
             item {
-                Text(
-                    text = stringResource(R.string.yt_library_no_collections),
-                    color = palette.textSecondary,
-                    style = TextStyle(fontFamily = palette.font, fontSize = 15.sp),
-                    modifier = Modifier.padding(horizontal = 15.dp),
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 15.dp, end = 12.dp, top = 20.dp, bottom = 10.dp),
+                ) {
+                    LibraryTitle(palette, stringResource(R.string.yt_library_collections), Modifier.weight(1f))
+                    LibraryAdd(palette, onNewCollection)
+                }
             }
-        }
-        // Two equally sized cards per row, alternating lime and lavender as in the brief.
-        itemsIndexed(playlists.chunked(2)) { row, pair ->
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(7.dp),
-                modifier = Modifier
-                    .padding(horizontal = 9.dp, vertical = 4.dp)
-                    .height(146.dp)
-                    .ytEnter(enter, "collections" + pair.first().id, row + 1),
-            ) {
-                pair.forEachIndexed { index, collection ->
-                    CollectionCard(
-                        palette = palette,
-                        imageLoader = imageLoader,
-                        collection = collection,
-                        color = if (index == 0) palette.lime else palette.lavender,
-                        onClick = { onOpenCollection(collection) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
+            if (playlists.isEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.yt_library_no_collections),
+                        color = palette.textSecondary,
+                        style = TextStyle(fontFamily = palette.font, fontSize = 15.sp),
+                        modifier = Modifier.padding(horizontal = 15.dp),
                     )
                 }
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
-        }
-        items(bookmarks, key = { "bookmark-" + it.id }) { bookmark ->
-            Box(Modifier.ytEnter(enter, "bookmark" + bookmark.id, 2 + bookmarks.indexOf(bookmark))) {
-                BookmarkRow(palette, bookmark) { onOpenCollection(bookmark) }
+            if (editorial) {
+                // Editorial lists its collections as the numbered rows of a table
+                itemsIndexed(playlists, key = { _, c -> "c-" + c.id }) { index, collection ->
+                    Box(Modifier.ytEnter(enter, "collections" + collection.id, index + 1)) {
+                        LibraryCollectionRow(palette, imageLoader, collection, index) { onOpenCollection(collection) }
+                    }
+                }
+            } else {
+                // two cards per row in the colors and shapes of the design
+                itemsIndexed(playlists.chunked(2)) { row, pair ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(if (palette.signature == YtSignature.POP) 12.dp else 8.dp),
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                            .height(150.dp)
+                            .ytEnter(enter, "collections" + pair.first().id, row + 1),
+                    ) {
+                        pair.forEachIndexed { index, collection ->
+                            LibraryCollection(
+                                palette = palette,
+                                imageLoader = imageLoader,
+                                collection = collection,
+                                index = row * 2 + index,
+                                onClick = { onOpenCollection(collection) },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight(),
+                            )
+                        }
+                        if (pair.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+            items(bookmarks, key = { "bookmark-" + it.id }) { bookmark ->
+                Box(Modifier.ytEnter(enter, "bookmark" + bookmark.id, 2 + bookmarks.indexOf(bookmark))) {
+                    BookmarkRow(palette, bookmark) { onOpenCollection(bookmark) }
+                }
             }
         }
     }
@@ -254,15 +238,11 @@ private fun LibrarySection(palette: YtPalette, title: String, onClick: () -> Uni
             .padding(start = 15.dp, end = 15.dp, top = 22.dp, bottom = 10.dp)
             .clickable(onClick = onClick),
     ) {
-        Text(
-            text = title,
-            color = palette.text,
-            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 17.5.sp),
-        )
+        LibraryTitle(palette, title)
         Icon(
             painterResource(R.drawable.ic_yt_chevron_right),
             contentDescription = null,
-            tint = palette.text,
+            tint = if (palette.signature == YtSignature.SHAPES || palette.signature == YtSignature.FROST) Color.White else palette.text,
             modifier = Modifier
                 .padding(start = 8.dp)
                 .size(15.dp),
@@ -303,76 +283,6 @@ private fun ProgressBar(palette: YtPalette, fraction: Float, modifier: Modifier 
 }
 
 @Composable
-private fun ContinueCard(
-    palette: YtPalette,
-    imageLoader: ImageLoader,
-    item: YtContinueItem,
-    onOpen: (YtContinueItem) -> Unit,
-) {
-    Column(
-        Modifier
-            .padding(horizontal = 12.dp)
-            .clickable { onOpen(item) },
-    ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .aspectRatio(3f)
-                .clip(RoundedCornerShape(12.dp)),
-        ) {
-            AsyncImage(
-                model = item.video.thumbnail,
-                contentDescription = null,
-                imageLoader = imageLoader,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 12.dp, bottom = 24.dp)
-                    .size(37.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xCC111114)),
-            ) {
-                Icon(painterResource(R.drawable.ic_play), contentDescription = null, tint = Color.White, modifier = Modifier.size(17.dp))
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 12.dp, end = 10.dp, bottom = 5.dp),
-            ) {
-                ProgressBar(palette, progress(item), Modifier.weight(1f))
-                remainingLabel(item)?.let {
-                    Text(
-                        text = stringResource(R.string.yt_library_remaining, it),
-                        color = Color.White,
-                        style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 13.sp),
-                        modifier = Modifier.padding(start = 30.dp),
-                    )
-                }
-            }
-        }
-        Text(
-            text = item.video.title.orEmpty(),
-            color = palette.text,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, lineHeight = 19.sp),
-            modifier = Modifier.padding(start = 3.dp, top = 8.dp),
-        )
-        Text(
-            text = item.video.uploaderName.orEmpty(),
-            color = palette.textSecondary,
-            style = TextStyle(fontFamily = palette.font, fontSize = 12.5.sp),
-            modifier = Modifier.padding(start = 3.dp, top = 1.dp),
-        )
-    }
-}
-
-@Composable
 private fun SmallContinueCard(
     palette: YtPalette,
     imageLoader: ImageLoader,
@@ -388,7 +298,7 @@ private fun SmallContinueCard(
             Modifier
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(16.dp)),
+                .clip(ytCardShape(palette, 16)),
         ) {
             AsyncImage(
                 model = item.video.thumbnail,
@@ -407,72 +317,6 @@ private fun SmallContinueCard(
             style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 18.sp),
             modifier = Modifier.padding(top = 8.dp),
         )
-    }
-}
-
-@Composable
-private fun CollectionCard(
-    palette: YtPalette,
-    imageLoader: ImageLoader,
-    collection: YtCollection,
-    color: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(color)
-            .clickable(onClick = onClick)
-            .padding(start = 9.dp, end = 9.dp, top = 12.dp, bottom = 9.dp),
-    ) {
-        Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(start = 5.dp)) {
-            Text(
-                text = collection.name,
-                color = palette.ink,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                style = TextStyle(
-                    fontFamily = palette.font,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 28.sp,
-                    lineHeight = 30.sp,
-                    letterSpacing = (-0.5).sp,
-                ),
-                modifier = Modifier.weight(1f),
-            )
-            Icon(painterResource(R.drawable.ic_arrow_right), contentDescription = null, tint = palette.ink, modifier = Modifier.size(20.dp))
-        }
-        Text(
-            text = pluralStringResource(R.plurals.yt_videos_count, collection.videoCount.toInt(), collection.videoCount.toInt()),
-            color = palette.ink,
-            style = TextStyle(fontFamily = palette.font, fontSize = 13.5.sp),
-            modifier = Modifier.padding(start = 5.dp, top = 2.dp),
-        )
-        Spacer(Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            collection.previews.take(3).forEach { url ->
-                AsyncImage(
-                    model = url,
-                    contentDescription = null,
-                    imageLoader = imageLoader,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .weight(1f)
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(6.dp)),
-                )
-            }
-            repeat((3 - collection.previews.size).coerceAtLeast(0)) {
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0x1F000000)),
-                )
-            }
-        }
     }
 }
 
