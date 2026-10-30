@@ -37,3 +37,8 @@ Geprüft wurde aus drei Angreifer-Sichten: eine fremde App auf demselben Handy o
 - **Selbst installierte Zertifikate** gelten weiter für selbst gehostete Piped-/Sync-Server, damit private Server nutzbar bleiben.
 - **Fremde Apps** können weiter ein Video zur Warteschlange hinzufügen oder eine Suche starten (Teilen-Funktion von LibreTube).
 - **Gerootetes oder verseuchtes Handy:** Dagegen schützt keine App-Verschlüsselung.
+
+## Berechtigungen nach dem Audit
+
+- **Über anderen Apps einblenden** (`SYSTEM_ALERT_WINDOW`), seit der Klangwelle unter dem Bild-im-Bild-Fenster: Android lässt keine App außerhalb ihres Bild-im-Bild-Fensters zeichnen, die Welle ist deshalb ein eigenes Fenster darunter. Die Erlaubnis gilt erst, wenn du sie in den Android-Einstellungen erteilst; der Schalter „Klangwelle unter Bild-im-Bild“ (Player-Einstellungen, standardmäßig aus) führt dorthin. Das Fenster nimmt keine Berührungen an (Android lässt sie bei 80 % Deckkraft zu dem durch, was darunter liegt), hat keinen Fokus und besteht nur, solange das Video schwebt. Wer die Welle nicht will, lässt die Erlaubnis aus; dann zeichnet die App nie über andere.
+- **Ton für die Welle:** wird im Player abgegriffen, bevor er zum Lautsprecher geht (`helpers/YtAudioTap.kt`). Kein Mikrofon, keine Aufnahme-Berechtigung, nichts verlässt die App; ausgewertet wird nur, solange die Welle sichtbar ist.

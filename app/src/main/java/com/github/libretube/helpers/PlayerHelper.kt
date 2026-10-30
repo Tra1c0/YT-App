@@ -30,6 +30,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.Renderer
@@ -447,6 +449,17 @@ object PlayerHelper {
                 @Suppress("DEPRECATION")
                 (out.last() as? TextRenderer)?.experimentalSetLegacyDecodingEnabled(true)
             }
+
+            // YT: the sound passes YtAudioTap on its way out, for the wave below the
+            // picture-in-picture window (only analysed while that wave is shown)
+            override fun buildAudioSink(
+                context: Context,
+                enableFloatOutput: Boolean,
+                enableAudioTrackPlaybackParams: Boolean
+            ): AudioSink = DefaultAudioSink.Builder(context)
+                .setEnableFloatOutput(enableFloatOutput)
+                .setAudioProcessors(arrayOf<androidx.media3.common.audio.AudioProcessor>(YtAudioTap.processor()))
+                .build()
         }
         return renderersFactory
     }

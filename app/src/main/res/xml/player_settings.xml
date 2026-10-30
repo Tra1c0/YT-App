@@ -134,6 +134,13 @@
 
         <SwitchPreferenceCompat
             android:defaultValue="false"
+            android:icon="@drawable/ic_audio"
+            android:summary="@string/yt_pip_visualizer_summary"
+            app:key="yt_pip_visualizer"
+            app:title="@string/yt_pip_visualizer" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
             android:icon="@drawable/ic_fullscreen"
             android:title="@string/auto_fullscreen_shorts"
             app:key="auto_fullscreen_shorts" />

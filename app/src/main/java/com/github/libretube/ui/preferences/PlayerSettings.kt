@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.SwitchPreferenceCompat
@@ -12,6 +13,7 @@ import com.github.libretube.R
 import com.github.libretube.constants.PreferenceKeys
 import com.github.libretube.helpers.LocaleHelper
 import com.github.libretube.ui.base.BasePreferenceFragment
+import com.github.libretube.ui.yt.YtPipVisualizer
 
 class PlayerSettings : BasePreferenceFragment() {
 
@@ -34,6 +36,21 @@ class PlayerSettings : BasePreferenceFragment() {
 
         val alternativePipControls =
             findPreference<SwitchPreferenceCompat>(PreferenceKeys.ALTERNATIVE_PIP_CONTROLS)
+
+        // YT: the sound wave below the picture-in-picture window needs to show over other apps;
+        // switching it on leads to that permission
+        findPreference<SwitchPreferenceCompat>(YtPipVisualizer.PREF_KEY)?.setOnPreferenceChangeListener { _, on ->
+            val context = requireContext()
+            if (on == true && !YtPipVisualizer.allowed(context)) {
+                Toast.makeText(context, R.string.yt_pip_visualizer_permission, Toast.LENGTH_LONG).show()
+                runCatching {
+                    startActivity(
+                        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context.packageName}".toUri()),
+                    )
+                }
+            }
+            true
+        }
     }
 
     private fun setupSubtitlePref(preference: ListPreference) {

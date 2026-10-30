@@ -242,4 +242,7 @@
     <string name="yt_import_too_large">Die Datei ist zu groß oder entpackt zu viel</string>
     <!-- the kicker of the Editorial mini player -->
     <string name="yt_mini_now">Jetzt</string>
+    <string name="yt_pip_visualizer">Klangwelle unter Bild-im-Bild</string>
+    <string name="yt_pip_visualizer_summary">Eine Lichtwelle unter dem schwebenden Fenster, die sich mit dem Ton bewegt. Braucht die Erlaubnis, über anderen Apps einzublenden; die Welle nimmt keine Berührungen an und erscheint nur, solange das Video schwebt.</string>
+    <string name="yt_pip_visualizer_permission">Erlaube „Über anderen Apps einblenden“ für YT und komm dann zurück</string>
 </resources>

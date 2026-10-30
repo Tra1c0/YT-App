@@ -994,6 +994,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
 
     override fun onDestroy() {
         super.onDestroy()
+        com.github.libretube.ui.yt.YtPipVisualizer.hide()
 
         handler.removeCallbacksAndMessages(null)
 
@@ -1420,7 +1421,14 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
 
             openOrCloseFullscreenDialog(true)
             pipActivity = activity
+            // YT: the sound wave below the floating window, if switched on
+            activity?.let { host ->
+                com.github.libretube.ui.yt.YtPipVisualizer.show(host) {
+                    if (::playerController.isInitialized && playerController.isPlaying) playerController.currentPosition else null
+                }
+            }
         } else {
+            com.github.libretube.ui.yt.YtPipVisualizer.hide()
             binding.player.useController = true
 
             // close button got clicked in PiP mode

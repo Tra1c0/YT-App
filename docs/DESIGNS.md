@@ -210,6 +210,19 @@ Alles Bewegte hängt am Schalter „Animationen der Designs“. Der Emulator-Che
 (`crash-check.yml`, Option „screens“) fotografiert Start, Player und Miniplayer je Design und
 legt die Bilder als Vorab-Release `screens-<Lauf>` ab.
 
+## Klangwelle unter dem Bild-im-Bild-Fenster
+
+Unter dem schwebenden Bild-im-Bild-Fenster läuft eine Welle aus vielen feinen Lichtlinien,
+blau oben, magenta unten (`ui/yt/YtPipVisualizer.kt`). Sie folgt dem Ton: der Bass schwingt die
+langen Wellen, die Mitten die kurzen, die Höhen lassen die Linien zittern; pausiert schwingt sie
+ruhig weiter. Der Ton wird im Player abgegriffen (`helpers/YtAudioTap.kt`, 8 Frequenzbänder aus
+einer FFT über 1024 Werte) und jedem Band seine Stelle im Datenstrom mitgegeben, so passt die
+Welle zu dem, was gerade zu hören ist, obwohl der Player den Ton eine Viertelsekunde vorher
+bekommt. Einschalten unter Player, „Klangwelle unter Bild-im-Bild“; die nötige Erlaubnis steht
+in [SICHERHEIT.md](SICHERHEIT.md). Grenzen: Android meldet nur die Endlage des Fensters, die
+Welle blendet beim Ziehen aus und an der neuen Stelle ein; ist unter dem Fenster kein Platz,
+wird sie flacher oder bleibt weg.
+
 ## Liquid Glass (Glas und Frost)
 
 Die Glasflächen nutzen Kyants Backdrop-Bibliothek (`third_party/backdrop/`): Unschärfe ab

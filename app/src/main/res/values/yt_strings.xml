@@ -242,4 +242,7 @@
     <string name="yt_import_too_large">The file is too large or unpacks to too much</string>
     <!-- the kicker of the Editorial mini player -->
     <string name="yt_mini_now">Now</string>
+    <string name="yt_pip_visualizer">Sound wave below picture-in-picture</string>
+    <string name="yt_pip_visualizer_summary">A wave of light below the floating window that moves with the sound. Needs the permission to show over other apps; the wave takes no touches and only shows while the video floats.</string>
+    <string name="yt_pip_visualizer_permission">Allow “Display over other apps” for YT, then come back</string>
 </resources>
