@@ -647,7 +647,12 @@ class DownloadService : LifecycleService() {
      * Get a [Path] from the corresponding download directory and the file name
      */
     private fun getDownloadPath(directory: String, fileName: String): Path {
-        return DownloadHelper.getDownloadDir(this, directory) / fileName
+        // YT: a name built from outside data can never point out of the download folder
+        val dir = DownloadHelper.getDownloadDir(this, directory)
+        val safeName = fileName.replace(Regex("[^A-Za-z0-9._-]"), "_").trimStart('.').ifEmpty { "download" }
+        val path = (dir / safeName).normalize()
+        require(path.startsWith(dir.normalize())) { "invalid download name" }
+        return path
     }
 
     override fun onDestroy() {

@@ -103,6 +103,11 @@ class DataManagementSettings : BasePreferenceFragment() {
                 context?.toastFromMainThread(R.string.invalid_url)
                 return@setOnPreferenceChangeListener false
             }
+            // YT: no account data in the clear across the internet
+            if (!com.github.libretube.helpers.YtGuard.isSafeServerUrl(newValue.toString())) {
+                context?.toastFromMainThread(R.string.yt_insecure_server)
+                return@setOnPreferenceChangeListener false
+            }
 
             logoutAndUpdateUI(true)
             true

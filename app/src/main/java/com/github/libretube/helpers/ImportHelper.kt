@@ -142,11 +142,23 @@ object ImportHelper {
         context.toastFromMainDispatcher(R.string.exportsuccess)
     }
 
+    /** YT: a broken or crafted file ends in a message, never in a crash. */
+    suspend fun importPlaylists(context: Context, uri: Uri, importFormat: ImportFormat) {
+        try {
+            importPlaylistsUnsafe(context, uri, importFormat)
+        } catch (e: Exception) {
+            Log.e(TAG(), e.toString())
+            context.toastFromMainDispatcher(e.localizedMessage ?: context.getString(R.string.error))
+        } catch (e: OutOfMemoryError) {
+            context.toastFromMainDispatcher(context.getString(R.string.error))
+        }
+    }
+
     /**
      * Import Playlists
      */
     @OptIn(ExperimentalSerializationApi::class)
-    suspend fun importPlaylists(context: Context, uri: Uri, importFormat: ImportFormat) {
+    private suspend fun importPlaylistsUnsafe(context: Context, uri: Uri, importFormat: ImportFormat) {
         val importPlaylists = mutableListOf<PipedImportPlaylist>()
 
         when (importFormat) {
@@ -328,8 +340,20 @@ object ImportHelper {
         }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
+    /** YT: a broken or crafted file ends in a message, never in a crash. */
     suspend fun importWatchHistory(context: Context, uri: Uri, importFormat: ImportFormat) {
+        try {
+            importWatchHistoryUnsafe(context, uri, importFormat)
+        } catch (e: Exception) {
+            Log.e(TAG(), e.toString())
+            context.toastFromMainDispatcher(e.localizedMessage ?: context.getString(R.string.error))
+        } catch (e: OutOfMemoryError) {
+            context.toastFromMainDispatcher(context.getString(R.string.error))
+        }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private suspend fun importWatchHistoryUnsafe(context: Context, uri: Uri, importFormat: ImportFormat) {
         val videos = when (importFormat) {
             ImportFormat.YOUTUBEJSON -> {
                 context.contentResolver.openInputStream(uri)?.use {
@@ -346,7 +370,7 @@ object ImportHelper {
                             title = it.title.replaceFirst("Watched ", ""),
                             uploader = it.subtitles.firstOrNull()?.name,
                             uploaderUrl = it.subtitles.firstOrNull()?.url?.let { url ->
-                                url.substring(url.length - 24)
+                                url.takeLast(24)
                             },
                             thumbnailUrl = "${YOUTUBE_IMG_URL}/vi/${videoId}/${IMPORT_THUMBNAIL_QUALITY}.jpg"
                         )

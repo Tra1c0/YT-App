@@ -30,7 +30,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.DecodeSequenceMode
+import kotlinx.serialization.json.decodeToSequence
 import java.io.BufferedInputStream
 import java.io.IOException
 import java.util.zip.ZipInputStream
@@ -60,9 +62,14 @@ data class YtImportState(
  */
 object YtImport {
     private const val MAX_HISTORY = 1000
-    private const val MAX_ENTRY_BYTES = 64L * 1024 * 1024
-    private const val MAX_TOTAL_BYTES = 160L * 1024 * 1024
+    private const val MAX_CSV_BYTES = 8L * 1024 * 1024
+    private const val MAX_HTML_BYTES = 24L * 1024 * 1024
+    private const val MAX_UNPACKED = 1024L * 1024 * 1024
     private const val MAX_ENTRIES = 20_000
+    private const val MAX_HISTORY_SCAN = 20_000
+    private const val MAX_SUBSCRIPTIONS = 5_000
+    private const val MAX_PLAYLISTS = 200
+    private const val MAX_PLAYLIST_VIDEOS = 5_000
     const val TAKEOUT_URL = "https://takeout.google.com/settings/takeout/custom/youtube"
 
     private val _state = MutableStateFlow(YtImportState())
@@ -82,6 +89,13 @@ object YtImport {
 
     fun fromTakeout(uri: Uri) = runImport { counter -> importTakeout(uri, counter) }
 
+    /** Stops a running import (e.g. on sign-out). */
+    fun cancel() {
+        job?.cancel()
+        job = null
+        _state.value = YtImportState()
+    }
+
     private fun runImport(block: suspend (Counter) -> Unit) {
         if (job?.isActive == true) return
         job = YtAccount.scope.launch {
@@ -100,6 +114,10 @@ object YtImport {
                 context.toastFromMainDispatcher(summary, Toast.LENGTH_LONG)
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: OutOfMemoryError) {
+                val message = context.getString(R.string.yt_import_failed, context.getString(R.string.yt_import_too_large))
+                _state.value = YtImportState(result = message, failed = true)
+                context.toastFromMainDispatcher(message, Toast.LENGTH_LONG)
             } catch (e: Exception) {
                 val message = context.getString(R.string.yt_import_failed, e.message ?: e.javaClass.simpleName)
                 _state.value = YtImportState(result = message, failed = true)
@@ -115,8 +133,10 @@ object YtImport {
     // --- from the account
 
     private suspend fun importAccount(options: YtImportOptions, counter: Counter) {
+        val epoch = YtAccount.epoch
         val cookies = YtAccount.session() ?: throw IOException(context.getString(R.string.yt_account_failed))
-        val api = YtInnerTube(cookies) { YtAccount.saveSession(it) }
+        // renewed cookies are kept only while the same sign-in lasts
+        val api = YtInnerTube(cookies) { if (YtAccount.epoch == epoch) YtAccount.saveSession(it) }
         runCatching { api.prepare() }
 
         if (options.subscriptions) {
@@ -128,6 +148,7 @@ object YtImport {
             if (channels.isEmpty()) runCatching { api.guideChannels() }.getOrDefault(emptyList()).forEach { channels.putIfAbsent(it.id, it) }
             val existing = SubscriptionHelper.getSubscriptionChannelIds().toSet()
             for (channel in channels.values) {
+                if (counter.subscriptions >= MAX_SUBSCRIPTIONS) break
                 if (channel.id in existing) continue
                 SubscriptionHelper.subscribe(channel.id, channel.name, channel.avatar, channel.verified)
                 counter.subscriptions++
@@ -137,7 +158,7 @@ object YtImport {
         if (options.playlists) {
             var refs = collectPlaylists(api, "FEplaylist_aggregation")
             if (refs.isEmpty()) refs = collectPlaylists(api, "FElibrary")
-            for (ref in refs) copyPlaylist(api, "VL" + ref.id, ref.title, counter)
+            for (ref in refs.take(MAX_PLAYLISTS)) copyPlaylist(api, "VL" + ref.id, ref.title, counter)
         }
         if (options.watchLater) copyPlaylist(api, "VLWL", context.getString(R.string.yt_import_watch_later_name), counter)
         if (options.liked) copyPlaylist(api, "VLLL", context.getString(R.string.yt_import_liked_name), counter)
@@ -215,59 +236,74 @@ object YtImport {
 
     // --- from a Google Takeout export
 
+    @OptIn(ExperimentalSerializationApi::class)
     private suspend fun importTakeout(uri: Uri, counter: Counter) {
-        val files = readTakeout(uri)
         val subscriptions = LinkedHashMap<String, String>()
         val playlists = mutableListOf<PipedImportPlaylist>()
         val history = LinkedHashMap<String, WatchHistoryItem>()
 
-        for ((path, bytes) in files) {
+        // each file is read and parsed on its own, never the whole export at once
+        readTakeout(uri) { path, input ->
             val name = path.substringAfterLast('/')
             val lower = name.lowercase()
-            val text = String(bytes, Charsets.UTF_8).removePrefix("﻿")
             when {
                 lower.endsWith(".csv") -> {
-                    val rows = text.lineSequence().map { csvCells(it) }.filter { it.isNotEmpty() }.toList()
+                    val bytes = readLimited(input, MAX_CSV_BYTES) ?: return@readTakeout
+                    val rows = String(bytes, Charsets.UTF_8).removePrefix("﻿")
+                        .lineSequence().map { csvCells(it) }.filter { it.isNotEmpty() }.toList()
                     val channelRows = rows.filter { YtInnerTube.CHANNEL_ID.matches(it[0]) }
-                    val videoIds = rows.map { it[0] }.filter { VIDEO_ID.matches(it) }.distinct()
+                    val videoIds = rows.asSequence().map { it[0] }.filter { VIDEO_ID.matches(it) }
+                        .distinct().take(MAX_PLAYLIST_VIDEOS).toList()
                     when {
-                        channelRows.isNotEmpty() -> channelRows.forEach { row ->
-                            subscriptions.putIfAbsent(row[0], row.getOrNull(2)?.takeIf { it.isNotBlank() } ?: row[0])
+                        channelRows.isNotEmpty() -> {
+                            for (row in channelRows) {
+                                if (subscriptions.size >= MAX_SUBSCRIPTIONS) break
+                                subscriptions.putIfAbsent(row[0], row.getOrNull(2)?.takeIf { it.isNotBlank() }?.take(200) ?: row[0])
+                            }
                         }
-                        videoIds.isNotEmpty() -> playlists.add(
+                        videoIds.isNotEmpty() && playlists.size < MAX_PLAYLISTS -> playlists.add(
                             PipedImportPlaylist(
-                                name = PLAYLIST_FILE.find(name)?.groupValues?.get(1) ?: name.removeSuffix(".csv"),
+                                name = (PLAYLIST_FILE.find(name)?.groupValues?.get(1) ?: name.removeSuffix(".csv")).take(200),
                                 videos = videoIds,
                             ),
                         )
                     }
                 }
-                lower.endsWith(".json") && text.trimStart().startsWith("[") && text.contains("titleUrl") -> {
-                    val items = runCatching { JsonHelper.json.decodeFromString<List<YouTubeWatchHistoryFileItem>>(text) }
-                        .getOrDefault(emptyList())
-                    items.forEach { item ->
-                        val id = WATCH_LINK.find(item.titleUrl)?.groupValues?.get(1) ?: return@forEach
-                        history.putIfAbsent(
-                            id,
-                            WatchHistoryItem(
-                                videoId = id,
-                                title = cleanTitle(item.title),
-                                uploader = item.subtitles.firstOrNull()?.name,
-                                uploaderUrl = item.subtitles.firstOrNull()?.url?.takeLast(24),
-                                thumbnailUrl = thumbnail(id),
-                            ),
-                        )
+                lower.endsWith(".json") -> {
+                    if (history.size >= MAX_HISTORY) return@readTakeout
+                    // read as a stream: only the newest entries, whatever the size of the file
+                    runCatching {
+                        JsonHelper.json.decodeToSequence(input, YouTubeWatchHistoryFileItem.serializer(), DecodeSequenceMode.ARRAY_WRAPPED)
+                            .take(MAX_HISTORY_SCAN)
+                            .forEach { item ->
+                                if (history.size >= MAX_HISTORY) return@runCatching
+                                val id = WATCH_LINK.find(item.titleUrl)?.groupValues?.get(1) ?: return@forEach
+                                history.putIfAbsent(
+                                    id,
+                                    WatchHistoryItem(
+                                        videoId = id,
+                                        title = cleanTitle(item.title).take(300),
+                                        uploader = item.subtitles.firstOrNull()?.name?.take(200),
+                                        uploaderUrl = item.subtitles.firstOrNull()?.url?.takeLast(24),
+                                        thumbnailUrl = thumbnail(id),
+                                    ),
+                                )
+                            }
                     }
                 }
                 lower.endsWith(".html") && HISTORY_FILE.containsMatchIn(lower) -> {
-                    HTML_ENTRY.findAll(text).forEach { match ->
+                    if (history.size >= MAX_HISTORY) return@readTakeout
+                    // the newest entries come first; the beginning of a huge file is enough
+                    val text = String(readPrefix(input, MAX_HTML_BYTES), Charsets.UTF_8)
+                    for (match in HTML_ENTRY.findAll(text)) {
+                        if (history.size >= MAX_HISTORY) break
                         val id = match.groupValues[1]
                         history.putIfAbsent(
                             id,
                             WatchHistoryItem(
                                 videoId = id,
-                                title = unescape(match.groupValues[2]),
-                                uploader = match.groupValues[4].takeIf { it.isNotEmpty() }?.let(::unescape),
+                                title = unescape(match.groupValues[2]).take(300),
+                                uploader = match.groupValues[4].takeIf { it.isNotEmpty() }?.let(::unescape)?.take(200),
                                 uploaderUrl = match.groupValues[3].takeIf { it.isNotEmpty() },
                                 thumbnailUrl = thumbnail(id),
                             ),
@@ -302,10 +338,13 @@ object YtImport {
         }
     }
 
-    /** The relevant files of a Takeout ZIP, or the single file that was picked. */
-    private fun readTakeout(uri: Uri): List<Pair<String, ByteArray>> {
+    /**
+     * Hands each relevant file of a Takeout ZIP (or the single file that was picked) to [consume]
+     * as a stream. A crafted ZIP cannot fill the memory or keep the phone busy: the number of
+     * entries and everything unpacked, skipped files included, have limits.
+     */
+    private fun readTakeout(uri: Uri, consume: (path: String, input: java.io.InputStream) -> Unit) {
         val name = DocumentFile.fromSingleUri(context, uri)?.name.orEmpty()
-        val files = mutableListOf<Pair<String, ByteArray>>()
         val input = context.contentResolver.openInputStream(uri) ?: throw IOException(context.getString(R.string.yt_import_nothing_found))
         BufferedInputStream(input).use { stream ->
             stream.mark(4)
@@ -314,31 +353,46 @@ object YtImport {
             stream.reset()
             when {
                 read == 2 && magic[0] == 'P'.code.toByte() && magic[1] == 'K'.code.toByte() -> ZipInputStream(stream).use { zip ->
-                    // a crafted ZIP must not fill the memory: each file, all files together and the
-                    // number of entries have limits, whatever sizes the ZIP claims
-                    var total = 0L
+                    var unpacked = 0L
                     var entries = 0
                     var entry = zip.nextEntry
-                    while (entry != null && entries < MAX_ENTRIES) {
-                        entries++
-                        val path = entry.name
-                        if (!entry.isDirectory && relevant(path) && entry.size <= MAX_ENTRY_BYTES) {
-                            val bytes = readLimited(zip, minOf(MAX_ENTRY_BYTES, MAX_TOTAL_BYTES - total))
-                            if (bytes != null) {
-                                total += bytes.size
-                                files.add(path to bytes)
-                            }
-                        }
+                    while (entry != null) {
+                        if (++entries > MAX_ENTRIES) throw IOException(context.getString(R.string.yt_import_too_large))
+                        val counting = CountingInput(zip)
+                        if (!entry.isDirectory && relevant(entry.name)) consume(entry.name, counting)
+                        // what the parser left of the entry is counted too, not skipped unseen
+                        counting.drain(MAX_UNPACKED - unpacked)
+                        unpacked += counting.count
+                        if (unpacked > MAX_UNPACKED) throw IOException(context.getString(R.string.yt_import_too_large))
                         entry = zip.nextEntry
                     }
                 }
                 read == 2 && magic[0] == 0x1F.toByte() && magic[1] == 0x8B.toByte() ->
                     throw IOException(context.getString(R.string.yt_import_zip_only))
-                else -> readLimited(stream, MAX_ENTRY_BYTES)?.let { files.add(name to it) }
-                    ?: throw IOException(context.getString(R.string.yt_import_nothing_found))
+                else -> consume(name, CountingInput(stream))
             }
         }
-        return files
+    }
+
+    /** Counts what is read and never closes the stream below (the ZIP goes on after a file). */
+    private class CountingInput(input: java.io.InputStream) : java.io.FilterInputStream(input) {
+        var count = 0L
+            private set
+
+        override fun read(): Int = super.read().also { if (it >= 0) count++ }
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int = super.read(b, off, len).also { if (it > 0) count += it }
+
+        override fun close() {}
+
+        /** Reads the rest of the entry, at most up to [limit] more bytes. */
+        fun drain(limit: Long) {
+            val buffer = ByteArray(64 * 1024)
+            val stop = count + limit
+            while (count <= stop) {
+                if (read(buffer) < 0) return
+            }
+        }
     }
 
     /** Reads at most [limit] bytes; null if there is more, so oversized files are skipped. */
@@ -352,6 +406,18 @@ object YtImport {
             if (n < 0) break
             count += n
             if (count > limit) return null
+            out.write(buffer, 0, n)
+        }
+        return out.toByteArray()
+    }
+
+    /** The first [limit] bytes of a stream. */
+    private fun readPrefix(input: java.io.InputStream, limit: Long): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(64 * 1024)
+        while (out.size() < limit) {
+            val n = input.read(buffer, 0, minOf(buffer.size.toLong(), limit - out.size()).toInt())
+            if (n < 0) break
             out.write(buffer, 0, n)
         }
         return out.toByteArray()

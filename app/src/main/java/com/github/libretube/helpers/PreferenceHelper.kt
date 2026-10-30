@@ -195,7 +195,9 @@ object PreferenceHelper {
     /**
      * Migrate preference to a new version.
      */
-    fun migrate() {
+    fun migrate() = runCatching { migrateUnsafe() }.onFailure { Log.e(TAG, "migration failed", it) }
+
+    private fun migrateUnsafe() {
         var currentPrefVersion = getInt(PreferenceKeys.PREFERENCE_VERSION, 0)
 
         while (currentPrefVersion < MIGRATIONS.count()) {
@@ -237,26 +239,31 @@ object PreferenceHelper {
         settings.edit(commit = true) { remove(key) }
     }
 
+    // YT: a stored value of the wrong type (e.g. from a crafted backup) gives the default
+    // instead of crashing the app on every start
+
     fun getString(key: String?, defValue: String): String {
-        return settings.getString(key, defValue) ?: defValue
+        return runCatching { settings.getString(key, defValue) }.getOrNull() ?: defValue
     }
 
     fun getBoolean(key: String?, defValue: Boolean): Boolean {
-        return settings.getBoolean(key, defValue)
+        return runCatching { settings.getBoolean(key, defValue) }.getOrDefault(defValue)
     }
 
     fun getInt(key: String?, defValue: Int): Int {
-        return runCatching {
-            settings.getInt(key, defValue)
-        }.getOrElse { settings.getLong(key, defValue.toLong()).toInt() }
+        return runCatching { settings.getInt(key, defValue) }
+            .recoverCatching { settings.getLong(key, defValue.toLong()).toInt() }
+            .getOrDefault(defValue)
     }
 
     fun getLong(key: String?, defValue: Long): Long {
-        return settings.getLong(key, defValue)
+        return runCatching { settings.getLong(key, defValue) }
+            .recoverCatching { settings.getInt(key, defValue.toInt()).toLong() }
+            .getOrDefault(defValue)
     }
 
     fun getStringSet(key: String?, defValue: Set<String>): Set<String> {
-        return settings.getStringSet(key, defValue).orEmpty()
+        return runCatching { settings.getStringSet(key, defValue) }.getOrNull().orEmpty()
     }
 
     fun clearPreferences() {

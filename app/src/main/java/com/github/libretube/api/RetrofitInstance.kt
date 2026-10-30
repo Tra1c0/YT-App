@@ -61,9 +61,15 @@ object RetrofitInstance {
 
         // add provided headers to all requests
         httpClient.addInterceptor { interceptorChain ->
-            val request = interceptorChain.request()
-                .newBuilder()
-            for ((key, value) in headersAccessor()) {
+            val original = interceptorChain.request()
+            val headers = headersAccessor()
+            // YT: a client that carries a token or a password (sign-in, sync) talks only over
+            // HTTPS, or plain HTTP inside the own network; never in the clear across the internet
+            if (headers.isNotEmpty() && !com.github.libretube.helpers.YtGuard.isSafeServerUrl(original.url.toString())) {
+                throw java.io.IOException("Unencrypted server: please use https")
+            }
+            val request = original.newBuilder()
+            for ((key, value) in headers) {
                 request.addHeader(key, value)
             }
 
@@ -73,6 +79,8 @@ object RetrofitInstance {
         if (BuildConfig.DEBUG) {
             val loggingInterceptor = HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
+                redactHeader("Authorization")
+                redactHeader("Cookie")
             }
 
             httpClient.addInterceptor(loggingInterceptor)

@@ -238,4 +238,6 @@
     <string name="yt_import_liked_name">„Mag ich“-Videos</string>
     <string name="yt_login_suggest_password">Starkes Passwort vorschlagen</string>
     <string name="yt_login_suggested">Starkes Passwort eingetragen. Dein Passwortmanager kann es speichern.</string>
+    <string name="yt_insecure_server">Nur HTTPS. Unverschlüsseltes HTTP geht nur für Server im eigenen Netz.</string>
+    <string name="yt_import_too_large">Die Datei ist zu groß oder entpackt zu viel</string>
 </resources>

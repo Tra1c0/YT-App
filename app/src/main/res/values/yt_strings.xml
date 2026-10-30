@@ -238,4 +238,6 @@
     <string name="yt_import_liked_name">Liked videos</string>
     <string name="yt_login_suggest_password">Suggest a strong password</string>
     <string name="yt_login_suggested">Strong password filled in. Your password manager can save it.</string>
+    <string name="yt_insecure_server">Only HTTPS. Plain HTTP only works for servers in your own network.</string>
+    <string name="yt_import_too_large">The file is too large or unpacks to too much</string>
 </resources>

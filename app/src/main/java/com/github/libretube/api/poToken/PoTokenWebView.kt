@@ -31,6 +31,8 @@ class PoTokenWebView private constructor(
         onInitializationError(exception)
     }
     private lateinit var expirationInstant: Instant
+    @Volatile
+    private var renderProcessGone = false
 
     //region Initialization
     init {
@@ -40,6 +42,23 @@ class PoTokenWebView private constructor(
             safeBrowsingEnabled = false
             userAgentString = USER_AGENT
             blockNetworkLoads = true // the WebView does not need internet access
+        }
+
+        // YT: without this a crashed or killed render process ends the whole app
+        webView.webViewClient = object : android.webkit.WebViewClient() {
+            override fun onRenderProcessGone(view: WebView, detail: android.webkit.RenderProcessGoneDetail): Boolean {
+                Log.w(TAG, "PoToken render process gone, crashed=${detail.didCrash()}")
+                renderProcessGone = true
+                val error = PoTokenException("render process gone")
+                poTokenContinuations.values.toList().forEach { runCatching { it.resumeWithException(error) } }
+                poTokenContinuations.clear()
+                // if this happened while starting up, the waiting start-up gets the error (a second
+                // resume after a finished start-up is refused and ignored)
+                runCatching { generatorContinuation.resumeWithException(error) }
+                // a dead WebView may only be destroyed, nothing else
+                view.post { runCatching { view.destroy() } }
+                return true
+            }
         }
 
         // so that we can run async functions and get back the result
@@ -157,6 +176,7 @@ class PoTokenWebView private constructor(
 
     //region Obtaining poTokens
     suspend fun generatePoToken(identifier: String): String {
+        if (renderProcessGone) throw PoTokenException("render process gone")
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "generatePoToken() called with identifier $identifier")
         }
@@ -167,7 +187,7 @@ class PoTokenWebView private constructor(
             Handler(Looper.getMainLooper()).post {
                 webView.evaluateJavascript(
                     """try {
-                        identifier = "$identifier"
+                        identifier = ${org.json.JSONObject.quote(identifier)}
                         u8Identifier = $u8Identifier
                         poTokenU8 = obtainPoToken(webPoSignalOutput, integrityToken, u8Identifier)
                         poTokenU8String = ""
@@ -249,7 +269,7 @@ class PoTokenWebView private constructor(
      * Releases all [webView] resources.
      */
     @MainThread
-    fun close() = with(webView) {
+    fun close() = if (renderProcessGone) Unit else with(webView) {
         clearHistory()
         // clears RAM cache and disk cache (globally for all WebViews)
         clearCache(true)

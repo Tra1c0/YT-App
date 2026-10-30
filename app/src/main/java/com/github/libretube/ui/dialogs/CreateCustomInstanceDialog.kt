@@ -49,6 +49,11 @@ class CreateCustomInstanceDialog : DialogFragment() {
                     val apiUrl = binding.instanceApiUrl.text.toString()
                     val frontendUrl = binding.instanceFrontendUrl.text.toString()
 
+                    // YT: no account data in the clear across the internet
+                    if (apiUrl.isNotBlank() && !com.github.libretube.helpers.YtGuard.isSafeServerUrl(apiUrl)) {
+                        context.toastFromMainThread(R.string.yt_insecure_server)
+                        return@setOnClickListener
+                    }
                     try {
                         viewModel.addCustomInstance(apiUrl, instanceName, frontendUrl)
                         requireDialog().dismiss()

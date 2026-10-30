@@ -51,4 +51,26 @@ object YtGuard {
     /** Only web links leave the app from texts of others (descriptions, comments). */
     fun isWebLink(uri: Uri?): Boolean = uri != null && uri.isHierarchical &&
         (uri.scheme.equals("https", true) || uri.scheme.equals("http", true))
+
+    /**
+     * True for HTTPS, and for plain HTTP only inside the own network (localhost, private
+     * addresses, .local/.lan/.home.arpa/.internal). Passwords and tokens never go elsewhere
+     * unencrypted.
+     */
+    fun isSafeServerUrl(url: String?): Boolean {
+        val parsed = url?.trim()?.let { runCatching { java.net.URI(it) }.getOrNull() } ?: return false
+        val scheme = parsed.scheme?.lowercase() ?: return false
+        if (scheme == "https") return true
+        if (scheme != "http") return false
+        val host = parsed.host?.lowercase()?.trim('[', ']') ?: return false
+        if (host == "localhost" || LOCAL_SUFFIXES.any { host.endsWith(it) }) return true
+        IPV4.matchEntire(host)?.let { match ->
+            val (a, b) = match.destructured.toList().take(2).map { it.toInt() }
+            return a == 10 || a == 127 || (a == 172 && b in 16..31) || (a == 192 && b == 168) || (a == 169 && b == 254)
+        }
+        return host == "::1" || host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80")
+    }
+
+    private val LOCAL_SUFFIXES = listOf(".local", ".lan", ".home.arpa", ".internal")
+    private val IPV4 = Regex("^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$")
 }

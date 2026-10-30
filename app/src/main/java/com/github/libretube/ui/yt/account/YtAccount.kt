@@ -43,6 +43,7 @@ object YtAccount {
     private const val HANDLE = "handle"
     private const val PHOTO = "photo"
     private const val OFFERED = "offered"
+    private const val WINDOW_OPEN = "window_open"
 
     /** Work that outlives a screen: imports and the sign-out at YouTube. */
     internal val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -61,6 +62,21 @@ object YtAccount {
             handle = prefs.getString(HANDLE, null).orEmpty(),
             photo = prefs.getString(PHOTO, null),
         )
+    }
+
+    /** Counts sign-ins and sign-outs; work started under another count may not save a session. */
+    @Volatile
+    internal var epoch = 0
+        private set
+
+    /** Set while the sign-in window is open; a start after a kill then wipes its leftovers. */
+    var signInWindowOpen: Boolean
+        get() = prefs().getBoolean(WINDOW_OPEN, false)
+        set(value) = prefs().edit(commit = true) { putBoolean(WINDOW_OPEN, value) }
+
+    /** Called at app start: a sign-in window that was killed may have left Google cookies. */
+    fun wipeLeftovers() {
+        if (signInWindowOpen) clearWebView { signInWindowOpen = false }
     }
 
     /** Whether the one-time offer to sign in has been shown. */
@@ -83,6 +99,7 @@ object YtAccount {
      * does not accept them.
      */
     suspend fun completeSignIn(cookies: String): YtAccountInfo? = withContext(Dispatchers.IO) {
+        epoch++
         saveSession(cookies)
         val api = YtInnerTube(cookies) { saveSession(it) }
         val loggedIn = runCatching { api.prepare() }.getOrDefault(false)
@@ -103,6 +120,8 @@ object YtAccount {
 
     /** Signs out: forgets the session here and ends it at YouTube. */
     fun signOut() {
+        epoch++
+        YtImport.cancel()
         val cookies = session()
         clearLocal()
         clearWebView()

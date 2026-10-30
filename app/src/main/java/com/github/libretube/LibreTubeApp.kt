@@ -53,6 +53,9 @@ class LibreTubeApp : Application() {
         ShortcutHelper.createShortcuts(this)
 
         NewPipeExtractorInstance.init()
+
+        // YT: a sign-in window that was killed may have left Google cookies; they go now
+        runCatching { com.github.libretube.ui.yt.account.YtAccount.wipeLeftovers() }
     }
 
     /**

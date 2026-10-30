@@ -119,6 +119,8 @@ class YtSignInActivity : BaseActivity() {
         }
         web.configure()
         webView = web
+        // if the app is killed while this is open, the next start wipes the window's store
+        YtAccount.signInWindowOpen = true
         // no screenshots, screen recordings or recents preview of the sign-in, and no other app's
         // overlay above it (a fake layer could catch taps or cover Google's page)
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -142,10 +144,13 @@ class YtSignInActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
-        // a sign-in that was not finished leaves nothing behind
-        if (!completed) YtAccount.clearWebView()
+        // whatever happened, the window leaves no cookies, storage, cache or form data behind
+        YtAccount.clearWebView { YtAccount.signInWindowOpen = false }
         webView?.apply {
             stopLoading()
+            clearCache(true)
+            clearFormData()
+            clearHistory()
             destroy()
         }
         webView = null
@@ -272,6 +277,8 @@ class YtSignInActivity : BaseActivity() {
         val cookies = sessionCookies() ?: return false
         completed = true
         webView?.stopLoading()
+        // the cookies are copied; the window's own store (with all Google cookies) goes at once
+        YtAccount.clearWebView()
         finishSignIn(cookies)
         return true
     }
@@ -527,12 +534,24 @@ class YtSignInActivity : BaseActivity() {
         private const val PROBE_JS =
             "(function(){var q=function(s){return !!document.querySelector(s);};return document.title.substring(0,60)+' | email-field='+q('input[type=email],input[name=identifier]')+' password-field='+q('input[type=password]');})()"
 
-        /** Google's and YouTube's own hosts; the sign-in window opens nothing else. */
-        private val TRUSTED_HOST = Regex(
-            "^([a-z0-9-]+\\.)*(youtube\\.com|gstatic\\.com|google\\.(com|[a-z]{2}|co\\.[a-z]{2}|com\\.[a-z]{2}))$",
+        /**
+         * The pages the sign-in needs; the window opens nothing else as a page (embedded parts
+         * of these pages may come from Google's other hosts). Pages with content of other users,
+         * such as sites.google.com, are not among them.
+         */
+        private val TRUSTED_HOSTS = setOf(
+            "accounts.google.com", "myaccount.google.com", "gds.google.com", "consent.google.com",
+            "www.google.com", "google.com",
+            "accounts.youtube.com", "consent.youtube.com", "www.youtube.com", "m.youtube.com", "youtube.com",
         )
 
-        fun isTrustedHost(host: String?): Boolean = host != null && TRUSTED_HOST.matches(host.lowercase(Locale.ROOT))
+        /** Google's sign-in on its country domains (accounts.google.de and the like). */
+        private val ACCOUNTS_COUNTRY = Regex("^accounts\\.google\\.([a-z]{2}|co\\.[a-z]{2}|com\\.[a-z]{2})$")
+
+        fun isTrustedHost(host: String?): Boolean {
+            val lower = host?.lowercase(Locale.ROOT) ?: return false
+            return lower in TRUSTED_HOSTS || ACCOUNTS_COUNTRY.matches(lower)
+        }
         private const val REJECTED_JS =
             "(function(){var b=document.body?document.body.innerText:'';return /may not be secure|möglicherweise nicht sicher|disallowed_useragent/i.test(b);})()"
     }
