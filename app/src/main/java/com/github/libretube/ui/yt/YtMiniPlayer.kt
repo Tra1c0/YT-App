@@ -345,6 +345,14 @@ object YtMiniPlayer {
         return ((look.navTop + look.overlap) * barDensity(context)).roundToInt()
     }
 
+    /** How far the docked player reaches above the top of the navigation view, in px. */
+    fun dockedExtentPx(context: Context): Int {
+        val design = YtDesign.current()
+        val palette = design.palette ?: return 0
+        val look = look(design, palette) ?: return 0
+        return ((look.height - look.navTop) * barDensity(context)).roundToInt().coerceAtLeast(0)
+    }
+
     /**
      * px per dp of the navigation bar: the design screens scale with the screen width
      * ([ytScale]), so the player measures in the same units as the bar it joins.

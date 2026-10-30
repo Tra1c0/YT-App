@@ -46,6 +46,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.snapshotFlow
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -227,12 +230,18 @@ object YtNav {
                 insetAll(fragment.childFragmentManager)
             }
         }
-        bottomNav.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
-            val overlap = if (view.isVisible) view.height else 0
+        // the room lists keep at their end: the bar and, while one is docked, the mini player
+        fun updateOverlap() {
+            val bar = if (bottomNav.isVisible) bottomNav.height else 0
+            val overlap = if (bar > 0 && YtDock.docked) bar + YtMiniPlayer.dockedExtentPx(activity) else bar
             if (overlap != YtChrome.navOverlapPx) {
                 YtChrome.navOverlapPx = overlap
                 insetAll(screens)
             }
+        }
+        bottomNav.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateOverlap() }
+        activity.lifecycleScope.launch {
+            snapshotFlow { YtDock.docked }.collect { updateOverlap() }
         }
         screens.registerFragmentLifecycleCallbacks(
             object : FragmentManager.FragmentLifecycleCallbacks() {
