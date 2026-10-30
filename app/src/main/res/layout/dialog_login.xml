@@ -13,6 +13,8 @@
             android:id="@+id/username"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:autofillHints="username"
+            android:importantForAutofill="yes"
             android:inputType="text" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -25,8 +27,19 @@
             android:id="@+id/password"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:autofillHints="password"
+            android:importantForAutofill="yes"
             android:inputType="textPassword" />
     </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- YT: a strong password for a new account; the password manager offers to save it -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/suggest_password"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="15dp"
+        android:text="@string/yt_login_suggest_password" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/oidc_login"

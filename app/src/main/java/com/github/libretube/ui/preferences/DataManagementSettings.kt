@@ -1,6 +1,8 @@
 package com.github.libretube.ui.preferences
 
+import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.os.bundleOf
@@ -22,6 +24,10 @@ import com.github.libretube.ui.dialogs.DeleteAccountDialog
 import com.github.libretube.ui.dialogs.LoginDialog
 import com.github.libretube.ui.dialogs.LogoutDialog
 import com.github.libretube.ui.dialogs.SelectInstanceDialog
+import com.github.libretube.ui.activities.YtSignInActivity
+import com.github.libretube.ui.yt.account.YtAccount
+import com.github.libretube.ui.yt.account.YtAccountSheet
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.github.libretube.ui.views.ButtonGroupPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -102,6 +108,33 @@ class DataManagementSettings : BasePreferenceFragment() {
             true
         }
 
+        // YT: the YouTube account
+        findPreference<Preference>(YT_ACCOUNT)?.setOnPreferenceClickListener {
+            if (YtAccount.signedIn) {
+                YtAccountSheet.show(requireActivity())
+            } else {
+                startActivity(Intent(requireContext(), YtSignInActivity::class.java))
+            }
+            true
+        }
+        findPreference<Preference>(YT_ACCOUNT_IMPORT)?.setOnPreferenceClickListener {
+            YtAccountSheet.show(requireActivity(), focus = YtAccountSheet.Focus.IMPORT)
+            true
+        }
+        findPreference<Preference>(YT_ACCOUNT_TAKEOUT)?.setOnPreferenceClickListener {
+            YtAccountSheet.show(requireActivity(), focus = YtAccountSheet.Focus.TAKEOUT)
+            true
+        }
+        findPreference<Preference>(YT_ACCOUNT_SIGN_OUT)?.setOnPreferenceClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.yt_account_sign_out)
+                .setMessage(R.string.yt_account_sign_out_question)
+                .setPositiveButton(R.string.yt_account_sign_out) { _, _ -> YtAccount.signOut() }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+            true
+        }
+
         // clear search history when history is disabled
         val searchHistory = findPreference<Preference>(PreferenceKeys.SEARCH_HISTORY_TOGGLE)
         searchHistory?.onPreferenceChangeListener = { _, newValue ->
@@ -109,6 +142,21 @@ class DataManagementSettings : BasePreferenceFragment() {
                 lifecycleScope.launch(Dispatchers.IO) { Database.searchHistoryDao().deleteAll() }
             }
             true
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        viewLifecycleOwner.lifecycleScope.launch {
+            YtAccount.state.collect { account ->
+                findPreference<Preference>(YT_ACCOUNT)?.summary = when {
+                    account == null -> getString(R.string.yt_account_pref_summary)
+                    account.name.isNotBlank() -> getString(R.string.yt_account_signed_in_as, account.name)
+                    else -> getString(R.string.yt_account_signed_in_as, account.handle)
+                }
+                findPreference<Preference>(YT_ACCOUNT_IMPORT)?.isVisible = account != null
+                findPreference<Preference>(YT_ACCOUNT_SIGN_OUT)?.isVisible = account != null
+            }
         }
     }
 
@@ -174,5 +222,9 @@ class DataManagementSettings : BasePreferenceFragment() {
 
     companion object {
         const val INSTANCE_DIALOG_REQUEST_KEY = "instance_dialog_request_key"
+        private const val YT_ACCOUNT = "yt_account"
+        private const val YT_ACCOUNT_IMPORT = "yt_account_import"
+        private const val YT_ACCOUNT_TAKEOUT = "yt_account_takeout"
+        private const val YT_ACCOUNT_SIGN_OUT = "yt_account_sign_out"
     }
 }

@@ -22,6 +22,8 @@
     <application
         android:name=".LibreTubeApp"
         android:allowBackup="true"
+        android:dataExtractionRules="@xml/yt_data_extraction_rules"
+        android:fullBackupContent="@xml/yt_backup_rules"
         android:banner="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"
         android:hardwareAccelerated="true"
@@ -64,6 +66,13 @@
             </intent-filter>
 
         </activity>
+
+        <!-- YT: sign-in to YouTube in Google's own page; kept across rotation so the sign-in goes on -->
+        <activity
+            android:name=".ui.activities.YtSignInActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout|uiMode"
+            android:label="@string/yt_account_sign_in"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.activities.AboutActivity"

@@ -2,6 +2,36 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- YT: the YouTube account (sign-in in Google's page, data on request, Takeout) -->
+    <PreferenceCategory android:title="@string/yt_account_category">
+
+        <Preference
+            android:icon="@drawable/ic_login_filled"
+            app:key="yt_account"
+            app:summary="@string/yt_account_pref_summary"
+            app:title="@string/yt_account_row_title" />
+
+        <Preference
+            android:icon="@drawable/ic_restore"
+            app:isPreferenceVisible="false"
+            app:key="yt_account_import"
+            app:summary="@string/yt_account_import_summary"
+            app:title="@string/yt_account_import" />
+
+        <Preference
+            android:icon="@drawable/ic_backup"
+            app:key="yt_account_takeout"
+            app:summary="@string/yt_account_takeout_note"
+            app:title="@string/yt_account_takeout" />
+
+        <Preference
+            android:icon="@drawable/ic_close"
+            app:isPreferenceVisible="false"
+            app:key="yt_account_sign_out"
+            app:title="@string/yt_account_sign_out" />
+
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/data_synchronization">
         <com.github.libretube.ui.views.ButtonGroupPreference
             android:icon="@drawable/ic_region"

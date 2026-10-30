@@ -27,6 +27,10 @@ on:
         description: "Emulator GPU mode: swiftshader_indirect (host, fast) or guest (software in the guest, robust)"
         required: false
         default: "swiftshader_indirect"
+      signin_probe:
+        description: "Also open the YouTube sign-in window and log what Google shows"
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -67,6 +71,7 @@ jobs:
           YT_DESIGN: ${{ inputs.design }}
           YT_NIGHT: ${{ inputs.night && 'yes' || 'no' }}
           YT_LOCALE: ${{ inputs.locale }}
+          YT_SIGNIN_PROBE: ${{ inputs.signin_probe && 'yes' || 'no' }}
         with:
           api-level: ${{ inputs.api }}
           arch: x86_64

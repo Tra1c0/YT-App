@@ -262,6 +262,23 @@ class MainActivity : AbstractPlayerHostActivity() {
         loadIntentData()
 
         showUserInfoDialogIfNeeded()
+
+        // YT: an emulator run opens the sign-in window and logs what Google shows (crash-check.sh)
+        if (intent?.getBooleanExtra(YtSignInActivity.EXTRA_PROBE, false) == true) {
+            startActivity(Intent(this, YtSignInActivity::class.java).putExtra(YtSignInActivity.EXTRA_PROBE, true))
+        }
+
+        // YT: once after the installation, offer the sign-in to YouTube (and the data on request)
+        val ytAccount = com.github.libretube.ui.yt.account.YtAccount
+        if (savedInstanceState == null && !ytAccount.offered && !ytAccount.signedIn) {
+            ytAccount.offered = true
+            binding.root.post {
+                com.github.libretube.ui.yt.account.YtAccountSheet.show(
+                    this,
+                    focus = com.github.libretube.ui.yt.account.YtAccountSheet.Focus.WELCOME,
+                )
+            }
+        }
     }
 
     /**

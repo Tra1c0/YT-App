@@ -5,6 +5,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
+import android.view.autofill.AutofillManager
 import android.widget.Toast
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
@@ -24,6 +25,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.security.SecureRandom
 
 class LoginDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -46,6 +48,13 @@ class LoginDialog : DialogFragment() {
                 activity?.startActivity(intent)
                 dismiss()
             }
+        }
+
+        // YT: suggests a strong password (for a new account) and shows it, so it can be noted
+        binding.suggestPassword.setOnClickListener {
+            binding.password.setText(strongPassword())
+            binding.password.transformationMethod = null
+            Toast.makeText(context, R.string.yt_login_suggested, Toast.LENGTH_LONG).show()
         }
 
         return MaterialAlertDialogBuilder(requireContext())
@@ -100,6 +109,11 @@ class LoginDialog : DialogFragment() {
             PreferenceHelper.setToken(token)
             PreferenceHelper.setUsername(username)
 
+            // YT: the password manager offers to save (or update) the login now
+            withContext(Dispatchers.Main) {
+                runCatching { context?.getSystemService(AutofillManager::class.java)?.commit() }
+            }
+
             withContext(Dispatchers.Main) {
                 setFragmentResult(
                     INSTANCE_DIALOG_REQUEST_KEY,
@@ -119,6 +133,12 @@ class LoginDialog : DialogFragment() {
             }
             .setPositiveButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun strongPassword(): String {
+        val chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789-_.!?"
+        val random = SecureRandom()
+        return (1..20).map { chars[random.nextInt(chars.length)] }.joinToString("")
     }
 
     private fun isEmail(text: String): Boolean {

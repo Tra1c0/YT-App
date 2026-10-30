@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # YT: starts the app in the emulator, once per design, and collects the crash, if any.
 # Run by crash-check.yml. Environment: YT_DESIGN (a key, a comma list, "all" or empty = standard),
-# YT_NIGHT (yes = dark mode), YT_LOCALE (an app locale such as de-DE, API 33+), YT_WAIT (seconds).
+# YT_NIGHT (yes = dark mode), YT_LOCALE (an app locale such as de-DE, API 33+), YT_WAIT (seconds),
+# YT_SIGNIN_PROBE (yes = also open the sign-in window and log what Google shows).
 set -u
 PKG="app.tra1c0.yt"
 ACTIVITY="com.github.libretube.ui.activities.MainActivity"
@@ -50,6 +51,21 @@ for design in $DESIGNS; do
   fi
   echo "::endgroup::"
 done
+# the sign-in window: starts it fresh and logs what Google's page shows (title and first text)
+if [ "${YT_SIGNIN_PROBE:-no}" = "yes" ] && [ "$(timeout 15 adb get-state 2>/dev/null)" = "device" ]; then
+  timeout 60 adb shell pm clear "$PKG" >/dev/null || true
+  timeout 20 adb logcat -c || true
+  timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_probe true || echo "start timed out"
+  sleep 45
+  timeout 60 adb logcat -d -v threadtime > logcat-signin.txt || true
+  if timeout 20 adb shell pidof "$PKG" >/dev/null 2>&1; then state="running"; else state="NOT RUNNING"; fi
+  echo "::group::sign-in window: process after 45 s is $state"
+  grep -a "YtSignIn" logcat-signin.txt | sed 's/^.*YtSignIn: //' | cut -c1-600 | head -30 || true
+  grep -a -A60 "FATAL EXCEPTION" logcat-signin.txt | head -80 > crash-signin.txt || true
+  if [ -s crash-signin.txt ]; then cat crash-signin.txt; crashed="$crashed signin"; else rm -f crash-signin.txt; fi
+  echo "::endgroup::"
+fi
+
 if [ -n "$crashed" ]; then
   if [ -n "$RETRACE" ] && [ -f apk/mapping.txt ]; then
     echo "::group::Retraced crashes"

@@ -61,6 +61,7 @@ object YtLibrary {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val signal by reloadSignal.collectAsState()
+                val account by com.github.libretube.ui.yt.account.YtAccount.state.collectAsState()
                 var continueWatching by remember { mutableStateOf(emptyList<YtContinueItem>()) }
                 var collections by remember { mutableStateOf(emptyList<YtCollection>()) }
 
@@ -102,6 +103,10 @@ object YtLibrary {
                         onOpenSettings = { context.startActivity(Intent(context, SettingsActivity::class.java)) },
                         onOpenHelp = { context.startActivity(Intent(context, HelpActivity::class.java)) },
                         onOpenAbout = { context.startActivity(Intent(context, AboutActivity::class.java)) },
+                        account = account,
+                        onAccount = {
+                            fragment.activity?.let { com.github.libretube.ui.yt.account.YtAccountSheet.show(it) }
+                        },
                     )
                 }
             }

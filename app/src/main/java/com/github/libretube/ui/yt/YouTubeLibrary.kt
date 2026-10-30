@@ -85,6 +85,8 @@ fun YouTubeLibraryScreen(
     onOpenSettings: () -> Unit = {},
     onOpenHelp: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
+    account: com.github.libretube.ui.yt.account.YtAccountInfo? = null,
+    onAccount: (() -> Unit)? = null,
 ) {
     val playlists = collections.filter { !it.isBookmark }
     val bookmarks = collections.filter { it.isBookmark }
@@ -99,6 +101,8 @@ fun YouTubeLibraryScreen(
             contentPadding = PaddingValues(bottom = 24.dp + ytNavPadding()),
         ) {
             item { LibraryHeadline(palette, headline, subline) }
+            // the YouTube account: one tap to sign in, or the signed-in account with its data
+            if (onAccount != null) item { LibraryAccount(palette, account, onAccount) }
             item {
                 if (chips) {
                     WatchActionRow(
@@ -363,5 +367,45 @@ private fun BookmarkRow(palette: YtPalette, bookmark: YtCollection, onClick: () 
             )
         }
         Icon(painterResource(R.drawable.ic_yt_chevron_right), contentDescription = null, tint = palette.text, modifier = Modifier.size(16.dp))
+    }
+}
+
+/** The account card of the personal area: sign in with one tap, or who is signed in. */
+@Composable
+private fun LibraryAccount(palette: YtPalette, account: com.github.libretube.ui.yt.account.YtAccountInfo?, onClick: () -> Unit) {
+    val shape = ytCardShape(palette, 16)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .fillMaxWidth()
+            .ytPressable(shape, squish = palette.surfaceStyle == YtSurfaceStyle.CLAY, onClick = onClick)
+            .ytSurface(palette, shape)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+    ) {
+        com.github.libretube.ui.yt.account.YtAccountAvatar(palette, account, 42)
+        Column(
+            Modifier
+                .weight(1f)
+                .padding(start = 12.dp),
+        ) {
+            Text(
+                text = when {
+                    account == null -> stringResource(R.string.yt_account_title)
+                    account.name.isNotBlank() -> account.name
+                    else -> stringResource(R.string.yt_account_row_title)
+                },
+                color = palette.text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
+            )
+            Text(
+                text = if (account == null) stringResource(R.string.yt_account_pref_summary) else stringResource(R.string.yt_account_import),
+                color = palette.textSecondary,
+                maxLines = 2,
+                style = TextStyle(fontFamily = palette.font, fontSize = 12.sp, lineHeight = 16.sp),
+            )
+        }
     }
 }

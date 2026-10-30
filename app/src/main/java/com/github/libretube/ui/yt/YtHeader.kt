@@ -54,7 +54,14 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.navigation.NavController
 import com.github.libretube.R
+import com.github.libretube.helpers.ImageHelper
 import com.github.libretube.helpers.YtDesign
+import com.github.libretube.ui.yt.account.YtAccount
+import com.github.libretube.ui.yt.account.YtAccountSheet
+import com.github.libretube.ui.yt.account.findComponentActivity
+import coil3.compose.AsyncImage
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.layout.ContentScale
 import com.google.android.material.appbar.MaterialToolbar
 
 /**
@@ -84,13 +91,7 @@ object YtHeader {
                     design = design,
                     palette = palette,
                     onSearch = onSearch,
-                    onProfile = {
-                        PopupMenu(header.context, header, Gravity.END).apply {
-                            menuInflater.inflate(R.menu.action_bar, menu)
-                            menu.removeItem(R.id.action_search)
-                            setOnMenuItemClickListener { onMenuItem(it) }
-                        }.show()
-                    },
+                    onProfile = { showAccount(header, onMenuItem) },
                 )
             }
         }
@@ -98,6 +99,34 @@ object YtHeader {
             header,
             Toolbar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
         )
+    }
+
+    /**
+     * The profile button opens the account sheet: signing in to YouTube (or the account), and
+     * below it the app menu that the button opened before (settings, help, donate, about).
+     */
+    private fun showAccount(header: View, onMenuItem: (MenuItem) -> Boolean) {
+        val activity = header.context.findComponentActivity()
+        val appMenu = PopupMenu(header.context, header, Gravity.END).apply { menuInflater.inflate(R.menu.action_bar, this.menu) }.menu
+        if (activity == null) {
+            PopupMenu(header.context, header, Gravity.END).apply {
+                menuInflater.inflate(R.menu.action_bar, this.menu)
+                this.menu.removeItem(R.id.action_search)
+                setOnMenuItemClickListener { onMenuItem(it) }
+            }.show()
+            return
+        }
+        val entries = listOf(
+            R.id.action_settings to R.drawable.ic_settings,
+            R.id.action_help to R.drawable.ic_help,
+            R.id.action_donate to R.drawable.ic_donate,
+            R.id.action_about to R.drawable.ic_info,
+        ).mapNotNull { (id, icon) ->
+            appMenu.findItem(id)?.takeIf { it.isVisible }?.let { item ->
+                YtAccountSheet.Entry(icon, item.title.toString()) { onMenuItem(item) }
+            }
+        }
+        YtAccountSheet.show(activity, entries)
     }
 
     /** The search item stays hidden until the header's search button opens it. */
@@ -334,12 +363,26 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
                 .then(if (look.fill != null) Modifier.background(look.fill) else Modifier)
                 .then(if (look.outline != null) Modifier.border(look.outlineWidth, look.outline, look.shape) else Modifier),
         )
-        Icon(
-            painterResource(if (look.filled) activeIcon else icon),
-            contentDescription = null,
-            tint = look.tint,
-            modifier = Modifier.size(look.iconSize),
-        )
+        val account by YtAccount.state.collectAsState()
+        val photo = if (kind == HeaderButton.PROFILE) account?.photo else null
+        if (photo != null) {
+            AsyncImage(
+                model = photo,
+                contentDescription = null,
+                imageLoader = ImageHelper.loader(),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(look.size - 4.dp)
+                    .clip(look.shape),
+            )
+        } else {
+            Icon(
+                painterResource(if (look.filled) activeIcon else icon),
+                contentDescription = null,
+                tint = look.tint,
+                modifier = Modifier.size(look.iconSize),
+            )
+        }
     }
 }
 
@@ -363,7 +406,19 @@ private fun KieselHeaderBar(palette: YtPalette, onSearch: () -> Unit, onProfile:
                 .background(palette.lavender)
                 .clickable(interactionSource = avatar, indication = null, onClick = onProfile),
         ) {
-            Icon(painterResource(R.drawable.ic_yt_nav_person_fill), contentDescription = null, tint = palette.ink, modifier = Modifier.size(22.dp))
+            val account by YtAccount.state.collectAsState()
+            val photo = account?.photo
+            if (photo != null) {
+                AsyncImage(
+                    model = photo,
+                    contentDescription = null,
+                    imageLoader = ImageHelper.loader(),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(42.dp),
+                )
+            } else {
+                Icon(painterResource(R.drawable.ic_yt_nav_person_fill), contentDescription = null, tint = palette.ink, modifier = Modifier.size(22.dp))
+            }
         }
         androidx.compose.foundation.layout.Column(Modifier.padding(start = 12.dp)) {
             Text(
