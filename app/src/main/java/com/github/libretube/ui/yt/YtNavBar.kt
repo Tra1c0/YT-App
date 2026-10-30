@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.children
@@ -379,7 +380,9 @@ private fun FloatingNav(
         ytStateSpec(),
         label = "navDock",
     )
-    val shape = RoundedCornerShape(topStart = top, topEnd = top, bottomEnd = style.radius, bottomStart = style.radius)
+    // a spring may swing past zero; a corner below zero ends the app
+    val topCorner = top.coerceIn(0.dp, style.radius)
+    val shape = RoundedCornerShape(topStart = topCorner, topEnd = topCorner, bottomEnd = style.radius, bottomStart = style.radius)
     Box(
         Modifier
             .fillMaxWidth()

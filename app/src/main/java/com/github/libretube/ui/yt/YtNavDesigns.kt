@@ -55,6 +55,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.libretube.R
@@ -275,7 +276,8 @@ fun EditorialNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
 @Composable
 fun GlassNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
     val top by animateDpAsState(if (YtDock.docked) 0.dp else 30.dp, ytStateSpec(), label = "glassDock")
-    val shape = RoundedCornerShape(topStart = top, topEnd = top, bottomEnd = 30.dp, bottomStart = 30.dp)
+    // a spring may swing past zero; a corner below zero ends the app
+    val shape = RoundedCornerShape(topStart = top.coerceIn(0.dp, 30.dp), topEnd = top.coerceIn(0.dp, 30.dp), bottomEnd = 30.dp, bottomStart = 30.dp)
     Box(
         Modifier
             .fillMaxWidth()
@@ -576,7 +578,7 @@ fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
 @Composable
 fun FrostNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
     val top by animateDpAsState(if (YtDock.docked) 0.dp else 32.dp, ytStateSpec(), label = "frostDock")
-    val bar = RoundedCornerShape(topStart = top, topEnd = top, bottomEnd = 32.dp, bottomStart = 32.dp)
+    val bar = RoundedCornerShape(topStart = top.coerceIn(0.dp, 32.dp), topEnd = top.coerceIn(0.dp, 32.dp), bottomEnd = 32.dp, bottomStart = 32.dp)
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

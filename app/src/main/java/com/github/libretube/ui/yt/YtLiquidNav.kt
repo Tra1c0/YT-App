@@ -1,5 +1,6 @@
 package com.github.libretube.ui.yt
 
+import androidx.compose.ui.unit.coerceIn
 import androidx.compose.runtime.getValue
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.border
@@ -279,9 +280,11 @@ fun LiquidNav(
         val barShape = RoundedCornerShape(50)
         // a mini player set on the bar: the glass squares its top corners, both are one pane
         val dockTop by animateDpAsState(if (YtDock.docked) 0.dp else look.barHeight / 2, ytStateSpec(), label = "liquidDock")
+        // a spring may swing past zero; a corner below zero ends the app
+        val top = dockTop.coerceIn(0.dp, look.barHeight / 2)
         val surfaceShape = RoundedCornerShape(
-            topStart = dockTop,
-            topEnd = dockTop,
+            topStart = top,
+            topEnd = top,
             bottomEnd = look.barHeight / 2,
             bottomStart = look.barHeight / 2,
         )
