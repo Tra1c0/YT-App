@@ -79,8 +79,10 @@ jobs:
           name: YT Build ${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           make_latest: true
-          files: out/${{ steps.apk.outputs.name }}
-          fail_on_unmatched_files: true
+          files: |
+            out/${{ steps.apk.outputs.name }}
+            app/build/outputs/mapping/release/mapping.txt
+          fail_on_unmatched_files: false
           body: |
             YT build ${{ github.run_number }} from commit ${{ github.sha }}.
             Signed with: ${{ env.SIGNED_WITH }}.

@@ -42,6 +42,10 @@ open class BaseActivity : AppCompatActivity() {
     var hasCutout: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // YT: a start may choose the design, e.g. an emulator run: am start ... --es yt_design pop
+        intent?.getStringExtra(com.github.libretube.helpers.YtDesign.PREF_KEY)?.let {
+            PreferenceHelper.putString(com.github.libretube.helpers.YtDesign.PREF_KEY, it)
+        }
         // set the app theme (e.g. Material You)
         ThemeHelper.updateTheme(this)
         if (isDialogActivity) ThemeHelper.applyDialogActivityTheme(this)
