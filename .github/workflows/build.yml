@@ -11,6 +11,7 @@ on:
       - "assets/**"
       - "scripts/**"
       - ".github/workflows/crash-check.yml"
+      - ".github/workflows/signing-key.yml"
 
 permissions:
   contents: write
@@ -38,14 +39,24 @@ jobs:
           java-version: 17
           cache: gradle
 
-      # The personal signing key lives in the repository secrets YT_KEYSTORE_BASE64 and
+      # The personal signing key lives in the repository secret YT_SIGNING ("password:base64",
+      # made by the "Create signing key" workflow) or in YT_KEYSTORE_BASE64 and
       # YT_KEYSTORE_PASSWORD. Without it the APK is signed with a throwaway debug key and
       # cannot update a build signed with the personal key.
       - name: Prepare signing key
         env:
+          YT_SIGNING: ${{ secrets.YT_SIGNING }}
           YT_KEYSTORE_BASE64: ${{ secrets.YT_KEYSTORE_BASE64 }}
         run: |
-          if [ -n "$YT_KEYSTORE_BASE64" ]; then
+          if [ -n "$YT_SIGNING" ]; then
+            pass="${YT_SIGNING%%:*}"
+            echo "::add-mask::$pass"
+            printf '%s' "${YT_SIGNING#*:}" | tr -d ' \r\n' | base64 -d > "$RUNNER_TEMP/yt-personal.p12"
+            echo "YT_KEYSTORE_PATH=$RUNNER_TEMP/yt-personal.p12" >> "$GITHUB_ENV"
+            echo "YT_SIGNING_PASSWORD=$pass" >> "$GITHUB_ENV"
+            fp=$(keytool -list -v -keystore "$RUNNER_TEMP/yt-personal.p12" -storepass "$pass" -alias yt | grep -m1 "SHA256:" | sed 's/.*SHA256: //')
+            echo "SIGNED_WITH=personal key (SHA-256 $fp)" >> "$GITHUB_ENV"
+          elif [ -n "$YT_KEYSTORE_BASE64" ]; then
             echo "$YT_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/yt-personal.p12"
             echo "YT_KEYSTORE_PATH=$RUNNER_TEMP/yt-personal.p12" >> "$GITHUB_ENV"
             echo "SIGNED_WITH=personal key" >> "$GITHUB_ENV"
@@ -56,7 +67,7 @@ jobs:
 
       - name: Build release APK
         env:
-          YT_KEYSTORE_PASSWORD: ${{ secrets.YT_KEYSTORE_PASSWORD }}
+          YT_KEYSTORE_PASSWORD: ${{ secrets.YT_KEYSTORE_PASSWORD || env.YT_SIGNING_PASSWORD }}
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Collect APK
