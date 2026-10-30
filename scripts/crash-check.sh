@@ -21,6 +21,11 @@ fi
 RETRACE=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/retrace 2>/dev/null | head -n 1)
 crashed=""
 for design in $DESIGNS; do
+  # the emulator itself can die (its GPU emulation is fragile); that is no crash of the app
+  if [ "$(timeout 15 adb get-state 2>/dev/null)" != "device" ]; then
+    echo "::error::The emulator is gone before $design; the designs from here on are untested"
+    exit 2
+  fi
   # a fresh start: no settings, no saved crash, as after an installation
   timeout 60 adb shell pm clear "$PKG" >/dev/null || echo "pm clear timed out"
   timeout 20 adb logcat -c || true

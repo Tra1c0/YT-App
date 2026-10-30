@@ -23,6 +23,10 @@ on:
         description: "Android API level of the emulator"
         required: false
         default: "34"
+      gpu:
+        description: "Emulator GPU mode: swiftshader_indirect (host, fast) or guest (software in the guest, robust)"
+        required: false
+        default: "swiftshader_indirect"
 
 permissions:
   contents: read
@@ -69,6 +73,7 @@ jobs:
           target: google_apis
           profile: pixel_6
           emulator-boot-timeout: 1200
+          emulator-options: -no-window -gpu ${{ inputs.gpu }} -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: bash scripts/crash-check.sh
 
