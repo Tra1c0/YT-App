@@ -102,6 +102,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # a screenshot taken after the emulator died is empty
+          find screens -name '*.png' -size -2k -delete 2>/dev/null || true
           ls screens/*.png >/dev/null 2>&1 || { echo "no screenshots"; exit 0; }
           for tag in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName' | grep '^screens-' || true); do
             gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
