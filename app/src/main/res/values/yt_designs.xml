@@ -1173,4 +1173,118 @@
         <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
     </style>
 
+    <!-- Kiesel: black and cream with lavender and peach (inspiration image 8) -->
+    <style name="TextAppearance.YT.Kiesel.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="fontFamily">@font/font_jakarta_700</item>
+        <item name="android:fontFamily">@font/font_jakarta_700</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="fontFamily">@font/font_jakarta_700</item>
+        <item name="android:fontFamily">@font/font_jakarta_700</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/font_jakarta_700</item>
+        <item name="android:fontFamily">@font/font_jakarta_700</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/font_jakarta_700</item>
+        <item name="android:fontFamily">@font/font_jakarta_700</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/font_jakarta_700</item>
+        <item name="android:fontFamily">@font/font_jakarta_700</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/font_jakarta_700</item>
+        <item name="android:fontFamily">@font/font_jakarta_700</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/font_jakarta_600</item>
+        <item name="android:fontFamily">@font/font_jakarta_600</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/font_jakarta_600</item>
+        <item name="android:fontFamily">@font/font_jakarta_600</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/font_jakarta_600</item>
+        <item name="android:fontFamily">@font/font_jakarta_600</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/font_jakarta_400</item>
+        <item name="android:fontFamily">@font/font_jakarta_400</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/font_jakarta_400</item>
+        <item name="android:fontFamily">@font/font_jakarta_400</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/font_jakarta_400</item>
+        <item name="android:fontFamily">@font/font_jakarta_400</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/font_jakarta_600</item>
+        <item name="android:fontFamily">@font/font_jakarta_600</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/font_jakarta_600</item>
+        <item name="android:fontFamily">@font/font_jakarta_600</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/font_jakarta_600</item>
+        <item name="android:fontFamily">@font/font_jakarta_600</item>
+    </style>
+    <style name="YtDesign.Kiesel" parent="">
+        <item name="fontFamily">@font/font_jakarta_400</item>
+        <item name="android:fontFamily">@font/font_jakarta_400</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Kiesel.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.YT.Kiesel.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.YT.Kiesel.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.YT.Kiesel.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.YT.Kiesel.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.YT.Kiesel.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.YT.Kiesel.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.YT.Kiesel.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.YT.Kiesel.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.YT.Kiesel.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.YT.Kiesel.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.YT.Kiesel.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.YT.Kiesel.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.YT.Kiesel.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.YT.Kiesel.LabelSmall</item>
+        <item name="colorPrimary">#0E0E0E</item>
+        <item name="colorOnPrimary">#F2EEEA</item>
+        <item name="colorPrimaryContainer">#B4A7F5</item>
+        <item name="colorOnPrimaryContainer">#0E0E0E</item>
+        <item name="colorSecondary">#F6C6A2</item>
+        <item name="colorOnSecondary">#0E0E0E</item>
+        <item name="colorSecondaryContainer">#F6C6A2</item>
+        <item name="colorOnSecondaryContainer">#0E0E0E</item>
+        <item name="colorTertiary">#B4A7F5</item>
+        <item name="colorOnTertiary">#0E0E0E</item>
+        <item name="colorTertiaryContainer">#DCD5FB</item>
+        <item name="colorOnTertiaryContainer">#0E0E0E</item>
+        <item name="android:colorBackground">#E9E5E0</item>
+        <item name="colorOnBackground">#0E0E0E</item>
+        <item name="colorSurface">#E9E5E0</item>
+        <item name="colorOnSurface">#0E0E0E</item>
+        <item name="colorSurfaceVariant">#DDD8D2</item>
+        <item name="colorOnSurfaceVariant">#6F6B67</item>
+        <item name="colorOutline">#B9B4AE</item>
+        <item name="colorOutlineVariant">#D6D1CB</item>
+        <item name="colorSurfaceDim">#DCD7D1</item>
+        <item name="colorSurfaceBright">#F6F3F0</item>
+        <item name="colorSurfaceContainerLowest">#FFFFFF</item>
+        <item name="colorSurfaceContainerLow">#F3F0EC</item>
+        <item name="colorSurfaceContainer">#EEEAE6</item>
+        <item name="colorSurfaceContainerHigh">#E6E1DC</item>
+        <item name="colorSurfaceContainerHighest">#DDD8D2</item>
+        <item name="colorSurfaceInverse">#0E0E0E</item>
+        <item name="colorOnSurfaceInverse">#F2EEEA</item>
+        <item name="colorPrimaryInverse">#B4A7F5</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">true</item>
+    </style>
+
 </resources>

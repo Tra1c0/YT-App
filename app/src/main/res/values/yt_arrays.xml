@@ -12,6 +12,7 @@
         <item>@string/yt_design_pop</item>
         <item>@string/yt_design_shapes</item>
         <item>@string/yt_design_frost</item>
+        <item>@string/yt_design_kiesel</item>
     </string-array>
     <string-array name="yt_designs_values" translatable="false">
         <item>standard</item>
@@ -25,5 +26,6 @@
         <item>pop</item>
         <item>shapes</item>
         <item>frost</item>
+        <item>kiesel</item>
     </string-array>
 </resources>

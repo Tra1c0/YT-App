@@ -302,6 +302,27 @@ val YtPalettes.Frost: YtPalette
         surfaceStyle = YtSurfaceStyle.FROST,
     )
 
+/** "Kiesel": black and cream with lavender and peach, tumbling pebbles (inspiration image 8). */
+val YtPalettes.Kiesel: YtPalette
+    get() = YtPalette(
+        background = Color(0xFFE9E5E0),
+        surface = Color(0xFFF7F4F1),
+        raised = Color(0xFFDDD8D2),
+        text = Color(0xFF0E0E0E),
+        textSecondary = Color(0xFF7A7672),
+        accent = Color(0xFFB4A7F5),
+        onAccent = Color(0xFF0E0E0E),
+        live = Color(0xFFF6C6A2),
+        lime = Color(0xFFF6C6A2),
+        lavender = Color(0xFFB4A7F5),
+        ink = Color(0xFF0E0E0E),
+        pink = Color(0xFFF6C6A2),
+        font = YtFonts.jakarta,
+        light = true,
+        motion = YtMotionStyle.SPRINGY,
+        surfaceStyle = YtSurfaceStyle.FLAT,
+    )
+
 /** The Compose palette of a design, or null for the classic look. */
 val YtDesign.palette: YtPalette?
     get() = when (this) {
@@ -315,6 +336,7 @@ val YtDesign.palette: YtPalette?
         YtDesign.POP -> YtPalettes.Pop
         YtDesign.SHAPES -> YtPalettes.Shapes
         YtDesign.FROST -> YtPalettes.Frost
+        YtDesign.KIESEL -> YtPalettes.Kiesel
         else -> null
     }
 
@@ -343,10 +365,15 @@ fun ytDensity(base: Density, configuration: Configuration): Density = Density(
 @Composable
 fun YtTheme(palette: YtPalette, content: @Composable () -> Unit) {
     val density = ytDensity(LocalDensity.current, LocalConfiguration.current)
+    val motion = YtMotionPrefs.enabled
+    // the glass designs let their light follow the tilt of the phone: one sensor per screen
+    val glass = palette.surfaceStyle == YtSurfaceStyle.GLASS || palette.surfaceStyle == YtSurfaceStyle.FROST
+    val tilt = rememberYtGravity(motion && glass)
     CompositionLocalProvider(
         LocalDensity provides density,
-        LocalYtMotion provides YtMotionPrefs.enabled,
+        LocalYtMotion provides motion,
         LocalYtMotionStyle provides palette.motion,
+        LocalYtTilt provides tilt,
     ) {
         val scheme = if (palette.light) {
             lightColorScheme(

@@ -132,6 +132,16 @@ internal fun YtRound2Home(
                 actions = actions,
             )
             YtDesign.FROST -> FrostHomeScreen(palette, imageLoader, data, actions)
+            YtDesign.KIESEL -> KieselHomeScreen(
+                palette = palette,
+                imageLoader = imageLoader,
+                data = data,
+                remaining = { video ->
+                    val position = video.url?.toID()?.let { positions[it] } ?: 0L
+                    ((video.duration ?: 0L) * 1000 - position).coerceAtLeast(0L)
+                },
+                actions = actions,
+            )
             else -> Unit
         }
     }

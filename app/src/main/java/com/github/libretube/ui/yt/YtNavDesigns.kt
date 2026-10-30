@@ -58,6 +58,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.libretube.R
+import kotlinx.coroutines.launch
+import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.GraphicsLayerScope
@@ -612,6 +614,75 @@ fun FrostNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
                                 style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Kiesel: a black floating bar with cream icons only; a dot slides under the active one and a
+// grey circle ripples out behind a tapped icon, as in the inspiration image.
+
+@Composable
+fun KieselNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
+    val index = items.indexOfFirst { it.id == state.selected }.coerceAtLeast(0)
+    val dot = animateFloatAsState(index.toFloat(), ytSpec(spring(dampingRatio = 0.6f, stiffness = 380f)), label = "kieselDot")
+    val cream = Color(0xFFEDE8E3)
+    val scope = rememberCoroutineScope()
+    val rippleSpec = ytFinite(tween<Float>(420, easing = YtEaseOut))
+    BoxWithConstraints(
+        Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 10.dp)
+            .height(64.dp)
+            .shadow(14.dp, RoundedCornerShape(26.dp), clip = false, ambientColor = Color(0x59000000), spotColor = Color(0x59000000))
+            .clip(RoundedCornerShape(26.dp))
+            .background(Color(0xFF0E0E0E)),
+    ) {
+        val itemWidth = maxWidth / items.size
+        Box(
+            Modifier
+                .align(Alignment.BottomStart)
+                .padding(bottom = 9.dp)
+                .graphicsLayer { translationX = (dot.value + 0.5f) * itemWidth.toPx() - 2.5.dp.toPx() }
+                .size(5.dp)
+                .clip(CircleShape)
+                .background(cream),
+        )
+        Row(Modifier.fillMaxSize()) {
+            items.forEachIndexed { i, item ->
+                val active = i == index
+                val ripple = remember { Animatable(1f) }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .noRippleClick {
+                            scope.launch {
+                                ripple.snapTo(0f)
+                                ripple.animateTo(1f, rippleSpec)
+                            }
+                            onSelect(item.id)
+                        },
+                ) {
+                    Box(
+                        Modifier
+                            .size(46.dp)
+                            .graphicsLayer {
+                                val r = ripple.value
+                                alpha = if (r >= 1f) 0f else 1f - r
+                                scaleX = 0.5f + 0.5f * r
+                                scaleY = 0.5f + 0.5f * r
+                            }
+                            .clip(CircleShape)
+                            .background(Color(0xFF3A3A3A)),
+                    )
+                    Box(Modifier.padding(bottom = 6.dp)) {
+                        NavIcon(item, active, if (active) cream else cream.copy(alpha = 0.55f), 25.dp)
+                        Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopEnd).offset(3.dp, (-2).dp))
                     }
                 }
             }

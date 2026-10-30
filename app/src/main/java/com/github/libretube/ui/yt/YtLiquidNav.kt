@@ -61,6 +61,7 @@ import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.highlight.HighlightStyle
 import com.kyant.backdrop.isRenderEffectSupported
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
@@ -210,6 +211,7 @@ fun LiquidNav(
     val count = items.size
     val index = items.indexOfFirst { it.id == state.selected }.coerceAtLeast(0)
     val scope = rememberCoroutineScope()
+    val tilt = LocalYtTilt.current
 
     val itemHeightPx = with(density) { look.itemHeight.roundToPx() }
     val pad = (look.barHeight - look.itemHeight) / 2
@@ -292,6 +294,7 @@ fun LiquidNav(
                         blur(look.blur.toPx())
                         lens(20.dp.toPx(), 22.dp.toPx())
                     },
+                    highlight = { Highlight(style = HighlightStyle.Default(angle = ytLightAngle(tilt.value))) },
                     shadow = { Shadow(radius = 22.dp, color = look.shadow) },
                     layerBlock = {
                         val scale = lerp(1f, 1f + 10.dp.toPx() / size.width, drop.pressProgress)
@@ -370,7 +373,7 @@ fun LiquidNav(
                             val progress = drop.pressProgress
                             lens(10.dp.toPx() * progress, 14.dp.toPx() * progress, chromaticAberration = true)
                         },
-                        highlight = { Highlight.Default.copy(alpha = drop.pressProgress) },
+                        highlight = { Highlight(alpha = drop.pressProgress, style = HighlightStyle.Default(angle = ytLightAngle(tilt.value))) },
                         shadow = { Shadow(radius = 10.dp, color = look.shadow, alpha = 1f - 0.4f * drop.pressProgress) },
                         innerShadow = {
                             val progress = drop.pressProgress

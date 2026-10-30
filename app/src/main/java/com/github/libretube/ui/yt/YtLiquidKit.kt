@@ -57,6 +57,7 @@ import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.highlight.HighlightStyle
 import com.kyant.backdrop.isRenderEffectSupported
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
@@ -77,6 +78,7 @@ fun glassTint(tint: Color): Color =
  * Glass over [backdrop]: blurred, more saturated, refracted towards the rim, with a light
  * catching its edge. [swell] (0 to 1, e.g. while pressed) makes it swell and refract more.
  */
+@Composable
 fun Modifier.liquidGlass(
     backdrop: Backdrop,
     shape: Shape,
@@ -85,6 +87,20 @@ fun Modifier.liquidGlass(
     blur: Dp = 10.dp,
     refraction: Dp = 14.dp,
     swell: () -> Float = { 0f },
+): Modifier {
+    val tilt = LocalYtTilt.current
+    return liquidGlassWithLight(backdrop, shape, tint, shadowColor, blur, refraction, swell) { ytLightAngle(tilt.value) }
+}
+
+private fun Modifier.liquidGlassWithLight(
+    backdrop: Backdrop,
+    shape: Shape,
+    tint: Color,
+    shadowColor: Color?,
+    blur: Dp,
+    refraction: Dp,
+    swell: () -> Float,
+    light: () -> Float,
 ): Modifier = this.drawBackdrop(
     backdrop = backdrop,
     shape = { shape },
@@ -94,6 +110,7 @@ fun Modifier.liquidGlass(
         val s = swell()
         lens(refraction.toPx() * (1f + 0.4f * s), (refraction * 1.5f).toPx() * (1f + 0.6f * s))
     },
+    highlight = { Highlight(style = HighlightStyle.Default(angle = light())) },
     shadow = shadowColor?.let { color -> { Shadow(radius = 16.dp, color = color) } },
     layerBlock = {
         val scale = 1f + 0.04f * swell()
@@ -179,6 +196,7 @@ fun LiquidSegments(
     val motion = LocalYtMotion.current
     val density = LocalDensity.current
     val shape = RoundedCornerShape(50)
+    val haptics = rememberYtHaptics()
 
     BoxWithConstraints(modifier) {
         val gapPx = with(density) { look.gap.toPx() }
@@ -206,7 +224,10 @@ fun LiquidSegments(
                 onDragStopped = {
                     val target = targetValue.fastRoundToInt().fastCoerceIn(0, count - 1)
                     animateToValue(target.toFloat())
-                    if (target != gesture[0].toInt()) onSelect(keys[target])
+                    if (target != gesture[0].toInt()) {
+                        haptics.tick()
+                        onSelect(keys[target])
+                    }
                 },
                 onDrag = { _, dragAmount ->
                     gesture[1] += abs(dragAmount.x)
@@ -233,6 +254,7 @@ fun LiquidSegments(
         }
 
         val select: (Int) -> Unit = { i ->
+            if (keys[i] != selected) haptics.tick()
             drop.animateToValue(i.toFloat())
             onSelect(keys[i])
         }

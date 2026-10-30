@@ -69,7 +69,7 @@ object YtHome {
                     YtDiscovery.refresh(context)
                 }
 
-                if (design.hasShortsTab) {
+                if (design.hasShortsTab || design == YtDesign.KIESEL) {
                     YtRound2Home(fragment, design, viewModel, refreshAll, charts)
                 } else if (design == YtDesign.SIDE) {
                     var sideTab by remember { mutableStateOf(SIDE_TAB_FOR_YOU) }

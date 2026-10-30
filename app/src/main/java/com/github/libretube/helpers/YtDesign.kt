@@ -27,7 +27,8 @@ enum class YtDesign(
     GLASS("glass", R.style.YtDesign_Glass, R.style.TextAppearance_YT_YouTube_Brand, true, light = true),
     POP("pop", R.style.YtDesign_Pop, R.style.TextAppearance_YT_YouTube_Brand, true, light = true),
     SHAPES("shapes", R.style.YtDesign_Shapes, R.style.TextAppearance_YT_YouTube_Brand, true),
-    FROST("frost", R.style.YtDesign_Frost, R.style.TextAppearance_YT_YouTube_Brand, true);
+    FROST("frost", R.style.YtDesign_Frost, R.style.TextAppearance_YT_YouTube_Brand, true),
+    KIESEL("kiesel", R.style.YtDesign_Kiesel, R.style.TextAppearance_YT_YouTube_Brand, false, light = true);
 
     /** Designs with a Shorts tab (in place of the trends tab) and the tabs Home, Shorts, Abos, Du. */
     val hasShortsTab: Boolean
@@ -57,6 +58,7 @@ enum class YtDesign(
             POP -> 0xFFE0457F.toInt()
             SHAPES -> 0xFFC6F36B.toInt()
             FROST -> 0xFFF08A3C.toInt()
+            KIESEL -> 0xFFB4A7F5.toInt()
         }
 
     /** The label of a bottom navigation destination in this design, or null to keep the default. */
@@ -85,6 +87,13 @@ enum class YtDesign(
             R.id.homeFragment -> R.string.yt_nav_start
             R.id.subscriptionsFragment -> R.string.yt_nav_inbox
             R.id.libraryFragment -> R.string.yt_nav_mine
+            else -> null
+        }
+        KIESEL -> when (itemId) {
+            R.id.homeFragment -> R.string.yt_nav_home
+            R.id.trendsFragment -> R.string.yt_nav_discover
+            R.id.subscriptionsFragment -> R.string.yt_nav_subscriptions
+            R.id.libraryFragment -> R.string.yt_nav_you
             else -> null
         }
         else -> when (itemId) {

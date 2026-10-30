@@ -40,7 +40,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -94,6 +96,14 @@ fun ClayHomeScreen(
     val pager = rememberPagerState { videos.size }
     val scope = rememberCoroutineScope()
     val motion = LocalYtMotion.current
+    val haptics = rememberYtHaptics()
+    LaunchedEffect(pager) {
+        var last = pager.settledPage
+        snapshotFlow { pager.settledPage }.collect { page ->
+            if (page != last) haptics.tick()
+            last = page
+        }
+    }
 
     Column(
         Modifier

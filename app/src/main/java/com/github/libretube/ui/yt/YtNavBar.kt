@@ -143,6 +143,12 @@ object YtNav {
             YtNavItem(R.id.subscriptionsFragment, R.string.yt_nav_subscriptions, R.drawable.ic_yt_nav_subs, R.drawable.ic_yt_nav_subs_fill),
             YtNavItem(R.id.libraryFragment, R.string.yt_nav_you, R.drawable.ic_yt_person, R.drawable.ic_yt_nav_person_fill),
         )
+        YtDesign.KIESEL -> listOf(
+            YtNavItem(R.id.homeFragment, R.string.yt_nav_home, R.drawable.ic_yt_nav_home, R.drawable.ic_yt_nav_home_fill),
+            YtNavItem(R.id.trendsFragment, R.string.yt_nav_discover, R.drawable.ic_yt_grid, R.drawable.ic_yt_grid_fill),
+            YtNavItem(R.id.subscriptionsFragment, R.string.yt_nav_subscriptions, R.drawable.ic_yt_nav_subs, R.drawable.ic_yt_nav_subs_fill),
+            YtNavItem(R.id.libraryFragment, R.string.yt_nav_you, R.drawable.ic_yt_heart, R.drawable.ic_yt_heart_fill),
+        )
         YtDesign.STANDARD -> emptyList()
     }
 
@@ -182,7 +188,12 @@ object YtNav {
         val bar = ComposeView(activity).apply {
             setContent {
                 YtTheme(palette) {
-                    YtNavBar(design, palette, items, state, backdrop) { id -> bottomNav.selectedItemId = id }
+                    YtNavBar(design, palette, items, state, backdrop) { id ->
+                        if (YtMotionPrefs.enabled && id != state.selected) {
+                            bottomNav.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                        }
+                        bottomNav.selectedItemId = id
+                    }
                 }
             }
         }
@@ -322,6 +333,7 @@ fun YtNavBar(
         YtDesign.GLASS -> if (backdrop != null) LiquidNav(design, palette, items, state, backdrop, onSelect) else GlassNav(palette, items, state, onSelect)
         YtDesign.POP -> PopNav(palette, items, state, onSelect)
         YtDesign.SHAPES -> ShapesNav(palette, items, state, onSelect)
+        YtDesign.KIESEL -> KieselNav(palette, items, state, onSelect)
         YtDesign.FROST -> if (backdrop != null) LiquidNav(design, palette, items, state, backdrop, onSelect) else FrostNav(palette, items, state, onSelect)
         else -> FloatingNav(design, palette, items, state, onSelect)
     }

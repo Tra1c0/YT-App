@@ -154,4 +154,27 @@
     <string name="yt_frost_shorts">Shorts</string>
     <string name="yt_frost_for_you">Für dich</string>
     <string name="yt_frost_see_all">Alle ansehen</string>
+
+    <!-- Kiesel -->
+    <string name="yt_design_kiesel">Kiesel: Schwarz, Creme, kullernde Kiesel (Inspiration)</string>
+    <string name="yt_kiesel_welcome">Willkommen zurück</string>
+    <string name="yt_kiesel_you">Dein YouTube</string>
+    <string name="yt_kiesel_reminder">Weiterschauen</string>
+    <string name="yt_kiesel_left">noch %s</string>
+    <string name="yt_kiesel_new_from">Neu von %s</string>
+    <string name="yt_kiesel_statistics">Statistik</string>
+    <string name="yt_kiesel_view_all">Alle</string>
+    <string name="yt_kiesel_new_videos">Neue Videos</string>
+    <string name="yt_kiesel_live">Live jetzt</string>
+    <string name="yt_kiesel_videos">Videos</string>
+    <string name="yt_kiesel_shorts">Shorts</string>
+    <string name="yt_kiesel_streams">Live</string>
+    <string name="yt_kiesel_for_you">Für dich</string>
+    <string name="yt_kiesel_more">Weitere Videos</string>
+    <string name="yt_kiesel_channels">Deine Kanäle</string>
+    <string name="yt_kiesel_open">Öffnen</string>
+    <string name="yt_kiesel_channel_new">%s neue Videos</string>
+    <string name="yt_kiesel_headline">Finde dein nächstes Video</string>
+    <string name="yt_kiesel_hint">Werfen, ziehen oder das Handy neigen. Tipp auf einen Kiesel.</string>
+    <string name="yt_kiesel_close">Schließen</string>
 </resources>

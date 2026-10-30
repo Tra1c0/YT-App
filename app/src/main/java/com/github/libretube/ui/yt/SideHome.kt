@@ -226,6 +226,7 @@ private fun SidePost(
     hearted: Boolean,
     actions: SideFeedActions,
 ) {
+    val haptics = rememberYtHaptics()
     var menu by remember { mutableStateOf(false) }
     Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -349,7 +350,10 @@ private fun SidePost(
                 modifier = Modifier
                     .ytBurst(hearted, palette.accent)
                     .clip(RoundedCornerShape(50))
-                    .clickable { actions.onToggleHeart(post) }
+                    .clickable {
+                        if (!hearted) haptics.confirm()
+                        actions.onToggleHeart(post)
+                    }
                     .padding(vertical = 6.dp, horizontal = 4.dp),
             ) {
                 Icon(

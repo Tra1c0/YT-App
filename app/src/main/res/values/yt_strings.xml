@@ -154,4 +154,27 @@
     <string name="yt_frost_shorts">Shorts</string>
     <string name="yt_frost_for_you">For you</string>
     <string name="yt_frost_see_all">See all</string>
+
+    <!-- Kiesel -->
+    <string name="yt_design_kiesel">Kiesel: black, cream, tumbling pebbles (inspiration)</string>
+    <string name="yt_kiesel_welcome">Welcome back</string>
+    <string name="yt_kiesel_you">Your YouTube</string>
+    <string name="yt_kiesel_reminder">Continue watching</string>
+    <string name="yt_kiesel_left">%s left</string>
+    <string name="yt_kiesel_new_from">New from %s</string>
+    <string name="yt_kiesel_statistics">Statistics</string>
+    <string name="yt_kiesel_view_all">View all</string>
+    <string name="yt_kiesel_new_videos">New videos</string>
+    <string name="yt_kiesel_live">Live now</string>
+    <string name="yt_kiesel_videos">Videos</string>
+    <string name="yt_kiesel_shorts">Shorts</string>
+    <string name="yt_kiesel_streams">Live</string>
+    <string name="yt_kiesel_for_you">For you</string>
+    <string name="yt_kiesel_more">More videos</string>
+    <string name="yt_kiesel_channels">Your channels</string>
+    <string name="yt_kiesel_open">Open</string>
+    <string name="yt_kiesel_channel_new">%s new videos</string>
+    <string name="yt_kiesel_headline">Find your next video</string>
+    <string name="yt_kiesel_hint">Throw, drag or tilt your phone. Tap a pebble.</string>
+    <string name="yt_kiesel_close">Close</string>
 </resources>

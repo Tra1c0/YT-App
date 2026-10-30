@@ -216,6 +216,10 @@ private fun YtHeaderBar(
     onSearch: () -> Unit,
     onProfile: () -> Unit,
 ) {
+    if (design == YtDesign.KIESEL) {
+        KieselHeaderBar(palette, onSearch, onProfile)
+        return
+    }
     val style = headerStyle(design, palette)
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -336,5 +340,53 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
             tint = look.tint,
             modifier = Modifier.size(look.iconSize),
         )
+    }
+}
+
+/** Kiesel: avatar with a greeting on the left, as in the inspiration image, search on the right. */
+@Composable
+private fun KieselHeaderBar(palette: YtPalette, onSearch: () -> Unit, onProfile: () -> Unit) {
+    val avatar = remember { MutableInteractionSource() }
+    val search = remember { MutableInteractionSource() }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(start = 18.dp, end = 12.dp),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(42.dp)
+                .ytPressScale(avatar)
+                .clip(CircleShape)
+                .background(palette.lavender)
+                .clickable(interactionSource = avatar, indication = null, onClick = onProfile),
+        ) {
+            Icon(painterResource(R.drawable.ic_yt_nav_person_fill), contentDescription = null, tint = palette.ink, modifier = Modifier.size(22.dp))
+        }
+        androidx.compose.foundation.layout.Column(Modifier.padding(start = 12.dp)) {
+            Text(
+                text = androidx.compose.ui.res.stringResource(R.string.yt_kiesel_welcome),
+                color = palette.textSecondary,
+                style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 12.sp),
+            )
+            Text(
+                text = androidx.compose.ui.res.stringResource(R.string.yt_kiesel_you),
+                color = palette.text,
+                style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp),
+            )
+        }
+        Spacer(Modifier.weight(1f))
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(42.dp)
+                .ytPressScale(search)
+                .clip(CircleShape)
+                .clickable(interactionSource = search, indication = null, onClick = onSearch),
+        ) {
+            Icon(painterResource(R.drawable.ic_yt_search), contentDescription = null, tint = palette.text, modifier = Modifier.size(23.dp))
+        }
     }
 }
