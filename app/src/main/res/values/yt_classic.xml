@@ -1,0 +1,822 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the classic screens (settings, sheets, dialogs, menus, rows) in the shapes and manners of
+     each design. The design overlays in yt_designs.xml point at these styles; the base theme in
+     themes.xml carries the defaults for the standard design. See docs/DESIGNS.md. -->
+<resources>
+
+    <!-- YouTube -->
+    <style name="ShapeAppearance.YT.YouTube.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">6dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.YouTube.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">10dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.YouTube.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.YouTube.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">18dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.YouTube.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.YouTube.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.YT.YouTube.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">24dp</item>
+        <item name="cornerSizeTopRight">24dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.YouTube.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.YouTube.Button</item>
+    </style>
+    <style name="Widget.YT.YouTube.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.YouTube.Button</item>
+    </style>
+    <style name="Widget.YT.YouTube.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.YouTube.Button</item>
+    </style>
+    <style name="Widget.YT.YouTube.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.YouTube.Button</item>
+    </style>
+    <style name="Widget.YT.YouTube.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.YouTube.Button</item>
+    </style>
+    <style name="Widget.YT.YouTube.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.YouTube.SheetTop</item>
+    </style>
+    <style name="ThemeOverlay.YT.YouTube.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.YouTube.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.YouTube.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.YouTube.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.YouTube.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.YouTube.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.YouTube.Button.Text</item>
+    </style>
+    <style name="Widget.YT.YouTube.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.YouTube.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.YouTube.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.YouTube.ToolbarTitle" parent="TextAppearance.YT.YouTube.TitleLarge">
+        <item name="android:textSize">20sp</item>
+    </style>
+    <style name="Widget.YT.YouTube.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.YouTube.L</item>
+    </style>
+
+    <!-- Movo -->
+    <style name="ShapeAppearance.YT.Movo.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Movo.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Movo.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Movo.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">22dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Movo.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">28dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Movo.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.YT.Movo.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">26dp</item>
+        <item name="cornerSizeTopRight">26dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.Movo.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Movo.Button</item>
+    </style>
+    <style name="Widget.YT.Movo.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Movo.Button</item>
+    </style>
+    <style name="Widget.YT.Movo.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Movo.Button</item>
+    </style>
+    <style name="Widget.YT.Movo.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Movo.Button</item>
+    </style>
+    <style name="Widget.YT.Movo.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Movo.Button</item>
+    </style>
+    <style name="Widget.YT.Movo.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Movo.SheetTop</item>
+    </style>
+    <style name="ThemeOverlay.YT.Movo.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.Movo.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.Movo.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Movo.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.Movo.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.Movo.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.Movo.Button.Text</item>
+    </style>
+    <style name="Widget.YT.Movo.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.Movo.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.Movo.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.Movo.ToolbarTitle" parent="TextAppearance.YT.Movo.TitleLarge">
+        <item name="android:textSize">20sp</item>
+    </style>
+    <style name="Widget.YT.Movo.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Movo.L</item>
+    </style>
+
+    <!-- After -->
+    <style name="ShapeAppearance.YT.After.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">2dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.After.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">3dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.After.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">4dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.After.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">6dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.After.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.After.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">4dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.After.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">10dp</item>
+        <item name="cornerSizeTopRight">10dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.After.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.After.Button</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.After.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.After.Button</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.After.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.After.Button</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.After.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.After.Button</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.After.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.After.XS</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.After.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.After.SheetTop</item>
+    </style>
+    <style name="ThemeOverlay.YT.After.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.After.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.After.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.After.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.After.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.After.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.After.Button.Text</item>
+    </style>
+    <style name="Widget.YT.After.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.After.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.After.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.After.ToolbarTitle" parent="TextAppearance.YT.After.TitleLarge">
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.After.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.After.L</item>
+    </style>
+
+    <!-- Side -->
+    <style name="ShapeAppearance.YT.Side.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">10dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Side.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Side.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">18dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Side.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Side.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">30dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Side.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.YT.Side.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">28dp</item>
+        <item name="cornerSizeTopRight">28dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.Side.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Side.Button</item>
+    </style>
+    <style name="Widget.YT.Side.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Side.Button</item>
+    </style>
+    <style name="Widget.YT.Side.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Side.Button</item>
+    </style>
+    <style name="Widget.YT.Side.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Side.Button</item>
+    </style>
+    <style name="Widget.YT.Side.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Side.Button</item>
+    </style>
+    <style name="Widget.YT.Side.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Side.SheetTop</item>
+    </style>
+    <style name="ThemeOverlay.YT.Side.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.Side.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.Side.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Side.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.Side.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.Side.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.Side.Button.Text</item>
+    </style>
+    <style name="Widget.YT.Side.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.Side.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.Side.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.Side.ToolbarTitle" parent="TextAppearance.YT.Side.TitleLarge">
+        <item name="android:textSize">20sp</item>
+    </style>
+    <style name="Widget.YT.Side.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Side.L</item>
+    </style>
+
+    <!-- Clay -->
+    <style name="ShapeAppearance.YT.Clay.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Clay.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">18dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Clay.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">26dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Clay.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">32dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Clay.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">36dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Clay.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.YT.Clay.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">36dp</item>
+        <item name="cornerSizeTopRight">36dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.Clay.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Clay.Button</item>
+    </style>
+    <style name="Widget.YT.Clay.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Clay.Button</item>
+    </style>
+    <style name="Widget.YT.Clay.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Clay.Button</item>
+    </style>
+    <style name="Widget.YT.Clay.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Clay.Button</item>
+    </style>
+    <style name="Widget.YT.Clay.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Clay.Button</item>
+    </style>
+    <style name="Widget.YT.Clay.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Clay.SheetTop</item>
+    </style>
+    <style name="ThemeOverlay.YT.Clay.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.Clay.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.Clay.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Clay.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.Clay.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.Clay.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.Clay.Button.Text</item>
+    </style>
+    <style name="Widget.YT.Clay.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.Clay.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.Clay.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.Clay.ToolbarTitle" parent="TextAppearance.YT.Clay.TitleLarge">
+        <item name="android:textSize">20sp</item>
+    </style>
+    <style name="Widget.YT.Clay.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Clay.L</item>
+    </style>
+
+    <!-- Editorial -->
+    <style name="ShapeAppearance.YT.Editorial.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Editorial.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Editorial.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Editorial.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Editorial.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Editorial.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Editorial.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">0dp</item>
+        <item name="cornerSizeTopRight">0dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.Editorial.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Editorial.Button</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.Editorial.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Editorial.Button</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.Editorial.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Editorial.Button</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.Editorial.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Editorial.Button</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.Editorial.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Editorial.XS</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.Editorial.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Editorial.SheetTop</item>
+    </style>
+    <style name="ThemeOverlay.YT.Editorial.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.Editorial.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.Editorial.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Editorial.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.Editorial.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.Editorial.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.Editorial.Button.Text</item>
+    </style>
+    <style name="Widget.YT.Editorial.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.Editorial.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.Editorial.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.Editorial.ToolbarTitle" parent="TextAppearance.YT.Editorial.TitleLarge">
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Widget.YT.Editorial.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Editorial.L</item>
+    </style>
+
+    <!-- Glass -->
+    <style name="ShapeAppearance.YT.Glass.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Glass.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Glass.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">22dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Glass.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">30dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Glass.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">32dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Glass.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.YT.Glass.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">32dp</item>
+        <item name="cornerSizeTopRight">32dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.Glass.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Glass.Button</item>
+    </style>
+    <style name="Widget.YT.Glass.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Glass.Button</item>
+    </style>
+    <style name="Widget.YT.Glass.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Glass.Button</item>
+    </style>
+    <style name="Widget.YT.Glass.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Glass.Button</item>
+    </style>
+    <style name="Widget.YT.Glass.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Glass.Button</item>
+    </style>
+    <style name="Widget.YT.Glass.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Glass.SheetTop</item>
+        <item name="backgroundTint">#E6F2FAF8</item>
+    </style>
+    <style name="ThemeOverlay.YT.Glass.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.Glass.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.Glass.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Glass.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.Glass.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.Glass.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.Glass.Button.Text</item>
+    </style>
+    <style name="Widget.YT.Glass.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.Glass.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.Glass.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.Glass.ToolbarTitle" parent="TextAppearance.YT.Glass.TitleLarge">
+        <item name="android:textSize">20sp</item>
+    </style>
+    <style name="Widget.YT.Glass.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Glass.L</item>
+    </style>
+
+    <!-- Pop -->
+    <style name="ShapeAppearance.YT.Pop.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Pop.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Pop.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">26dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Pop.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">32dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Pop.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">36dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Pop.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.YT.Pop.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">36dp</item>
+        <item name="cornerSizeTopRight">36dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.Pop.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Pop.Button</item>
+    </style>
+    <style name="Widget.YT.Pop.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Pop.Button</item>
+    </style>
+    <style name="Widget.YT.Pop.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Pop.Button</item>
+    </style>
+    <style name="Widget.YT.Pop.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Pop.Button</item>
+    </style>
+    <style name="Widget.YT.Pop.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Pop.Button</item>
+    </style>
+    <style name="Widget.YT.Pop.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Pop.SheetTop</item>
+    </style>
+    <style name="ThemeOverlay.YT.Pop.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.Pop.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.Pop.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Pop.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.Pop.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.Pop.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.Pop.Button.Text</item>
+    </style>
+    <style name="Widget.YT.Pop.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.Pop.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.Pop.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.Pop.ToolbarTitle" parent="TextAppearance.YT.Pop.TitleLarge">
+        <item name="android:textSize">20sp</item>
+    </style>
+    <style name="Widget.YT.Pop.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Pop.L</item>
+    </style>
+
+    <!-- Shapes -->
+    <style name="ShapeAppearance.YT.Shapes.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Shapes.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Shapes.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Shapes.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">32dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Shapes.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">36dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Shapes.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.YT.Shapes.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">32dp</item>
+        <item name="cornerSizeTopRight">32dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.Shapes.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Shapes.Button</item>
+    </style>
+    <style name="Widget.YT.Shapes.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Shapes.Button</item>
+    </style>
+    <style name="Widget.YT.Shapes.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Shapes.Button</item>
+    </style>
+    <style name="Widget.YT.Shapes.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Shapes.Button</item>
+    </style>
+    <style name="Widget.YT.Shapes.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Shapes.Button</item>
+    </style>
+    <style name="Widget.YT.Shapes.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Shapes.SheetTop</item>
+    </style>
+    <style name="ThemeOverlay.YT.Shapes.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.Shapes.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.Shapes.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Shapes.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.Shapes.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.Shapes.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.Shapes.Button.Text</item>
+    </style>
+    <style name="Widget.YT.Shapes.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.Shapes.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.Shapes.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.Shapes.ToolbarTitle" parent="TextAppearance.YT.Shapes.TitleLarge">
+        <item name="android:textSize">20sp</item>
+    </style>
+    <style name="Widget.YT.Shapes.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Shapes.L</item>
+    </style>
+
+    <!-- Frost -->
+    <style name="ShapeAppearance.YT.Frost.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frost.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frost.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">22dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frost.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">30dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frost.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">32dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frost.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frost.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">32dp</item>
+        <item name="cornerSizeTopRight">32dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.Frost.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frost.Button</item>
+    </style>
+    <style name="Widget.YT.Frost.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frost.Button</item>
+    </style>
+    <style name="Widget.YT.Frost.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frost.Button</item>
+    </style>
+    <style name="Widget.YT.Frost.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frost.Button</item>
+    </style>
+    <style name="Widget.YT.Frost.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frost.Button</item>
+    </style>
+    <style name="Widget.YT.Frost.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frost.SheetTop</item>
+        <item name="backgroundTint">#F2546A61</item>
+    </style>
+    <style name="ThemeOverlay.YT.Frost.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.Frost.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.Frost.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Frost.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.Frost.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.Frost.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.Frost.Button.Text</item>
+    </style>
+    <style name="Widget.YT.Frost.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.Frost.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.Frost.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.Frost.ToolbarTitle" parent="TextAppearance.YT.Frost.TitleLarge">
+        <item name="android:textSize">20sp</item>
+    </style>
+    <style name="Widget.YT.Frost.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frost.L</item>
+    </style>
+
+    <!-- Kiesel -->
+    <style name="ShapeAppearance.YT.Kiesel.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">10dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Kiesel.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Kiesel.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">22dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Kiesel.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">26dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Kiesel.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">30dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Kiesel.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.YT.Kiesel.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">30dp</item>
+        <item name="cornerSizeTopRight">30dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.Kiesel.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Kiesel.Button</item>
+    </style>
+    <style name="Widget.YT.Kiesel.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Kiesel.Button</item>
+    </style>
+    <style name="Widget.YT.Kiesel.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Kiesel.Button</item>
+    </style>
+    <style name="Widget.YT.Kiesel.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Kiesel.Button</item>
+    </style>
+    <style name="Widget.YT.Kiesel.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Kiesel.Button</item>
+    </style>
+    <style name="Widget.YT.Kiesel.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Kiesel.SheetTop</item>
+    </style>
+    <style name="ThemeOverlay.YT.Kiesel.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.Kiesel.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.Kiesel.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Kiesel.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.Kiesel.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.Kiesel.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.Kiesel.Button.Text</item>
+    </style>
+    <style name="Widget.YT.Kiesel.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.Kiesel.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.Kiesel.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.Kiesel.ToolbarTitle" parent="TextAppearance.YT.Kiesel.TitleLarge">
+        <item name="android:textSize">20sp</item>
+    </style>
+    <style name="Widget.YT.Kiesel.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Kiesel.L</item>
+    </style>
+</resources>

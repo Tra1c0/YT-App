@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: a settings row as a card of the design -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="?attr/colorControlHighlight">
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle">
+            <solid android:color="#000000" />
+            <corners android:radius="?attr/ytRowCorner" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/colorSurfaceContainerLow" />
+            <corners android:radius="?attr/ytRowCorner" />
+            <stroke android:width="?attr/ytOutlineWidth" android:color="?attr/ytOutlineColor" />
+        </shape>
+    </item>
+</ripple>

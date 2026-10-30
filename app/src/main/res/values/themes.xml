@@ -38,6 +38,17 @@
 
         <!-- needed for ButtonGroupPreference.kt -->
         <item name="tonalButtonStyleCustomAttr">@style/Widget.Material3Expressive.Button.TonalButton</item>
+
+        <!-- YT: the knobs of the classic screens, at their standard values (yt_attrs.xml) -->
+        <item name="ytCardCorner">22dp</item>
+        <item name="ytRowCorner">14dp</item>
+        <item name="ytThumbCorner">12dp</item>
+        <item name="ytOutlineColor">@android:color/transparent</item>
+        <item name="ytOutlineWidth">0dp</item>
+        <item name="ytIconHalo">@null</item>
+        <item name="ytIconPadding">0dp</item>
+        <item name="ytIconTint">?attr/colorOnSurface</item>
+        <item name="ytUppercase">false</item>
     </style>
 
     <style name="SplashScreenTheme" parent="Theme.SplashScreen">

@@ -65,6 +65,34 @@
     </style>
 
     <style name="YtDesign.YouTube" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.YouTube.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.YouTube.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.YouTube.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.YouTube.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.YouTube.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.YouTube.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.YouTube.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.YouTube.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.YouTube.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.YouTube.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.YouTube.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.YouTube.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.YouTube.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.YouTube.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.YouTube.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.YouTube.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.YouTube.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.YouTube.Snackbar</item>
+        <item name="ytCardCorner">18dp</item>
+        <item name="ytRowCorner">14dp</item>
+        <item name="ytThumbCorner">12dp</item>
+        <item name="ytOutlineColor">@android:color/transparent</item>
+        <item name="ytOutlineWidth">0dp</item>
+        <item name="ytIconHalo">@null</item>
+        <item name="ytIconPadding">0dp</item>
+        <item name="ytIconTint">?attr/colorOnSurface</item>
+        <item name="ytUppercase">false</item>
         <item name="fontFamily">@font/geist</item>
         <item name="android:fontFamily">@font/geist</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.YouTube.DisplayLarge</item>
@@ -192,6 +220,34 @@
     </style>
 
     <style name="YtDesign.Movo" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Movo.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Movo.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.Movo.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.Movo.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Movo.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.Movo.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.Movo.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.Movo.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.Movo.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.Movo.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.Movo.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.Movo.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.Movo.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.Movo.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.Movo.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.Movo.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.Movo.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.Movo.Snackbar</item>
+        <item name="ytCardCorner">18dp</item>
+        <item name="ytRowCorner">16dp</item>
+        <item name="ytThumbCorner">12dp</item>
+        <item name="ytOutlineColor">@android:color/transparent</item>
+        <item name="ytOutlineWidth">0dp</item>
+        <item name="ytIconHalo">@null</item>
+        <item name="ytIconPadding">0dp</item>
+        <item name="ytIconTint">?attr/colorOnSurface</item>
+        <item name="ytUppercase">false</item>
         <item name="fontFamily">@font/geist</item>
         <item name="android:fontFamily">@font/geist</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Movo.DisplayLarge</item>
@@ -313,6 +369,34 @@
     </style>
 
     <style name="YtDesign.After" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.After.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.After.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.After.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.After.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.After.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.After.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.After.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.After.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.After.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.After.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.After.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.After.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.After.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.After.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.After.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.After.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.After.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.After.Snackbar</item>
+        <item name="ytCardCorner">6dp</item>
+        <item name="ytRowCorner">4dp</item>
+        <item name="ytThumbCorner">4dp</item>
+        <item name="ytOutlineColor">?attr/colorOutlineVariant</item>
+        <item name="ytOutlineWidth">1dp</item>
+        <item name="ytIconHalo">@null</item>
+        <item name="ytIconPadding">0dp</item>
+        <item name="ytIconTint">?attr/colorOnSurface</item>
+        <item name="ytUppercase">true</item>
         <item name="fontFamily">@font/geist</item>
         <item name="android:fontFamily">@font/geist</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.After.DisplayLarge</item>
@@ -434,6 +518,34 @@
     </style>
 
     <style name="YtDesign.Side" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Side.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Side.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.Side.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.Side.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Side.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.Side.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.Side.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.Side.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.Side.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.Side.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.Side.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.Side.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.Side.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.Side.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.Side.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.Side.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.Side.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.Side.Snackbar</item>
+        <item name="ytCardCorner">20dp</item>
+        <item name="ytRowCorner">18dp</item>
+        <item name="ytThumbCorner">14dp</item>
+        <item name="ytOutlineColor">@android:color/transparent</item>
+        <item name="ytOutlineWidth">0dp</item>
+        <item name="ytIconHalo">@null</item>
+        <item name="ytIconPadding">0dp</item>
+        <item name="ytIconTint">?attr/colorOnSurface</item>
+        <item name="ytUppercase">false</item>
         <item name="fontFamily">@font/figtree</item>
         <item name="android:fontFamily">@font/figtree</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Side.DisplayLarge</item>
@@ -556,6 +668,34 @@
         <item name="android:fontFamily">@font/font_nunito_700</item>
     </style>
     <style name="YtDesign.Clay" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Clay.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Clay.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.Clay.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.Clay.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Clay.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.Clay.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.Clay.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.Clay.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.Clay.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.Clay.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.Clay.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.Clay.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.Clay.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.Clay.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.Clay.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.Clay.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.Clay.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.Clay.Snackbar</item>
+        <item name="ytCardCorner">28dp</item>
+        <item name="ytRowCorner">22dp</item>
+        <item name="ytThumbCorner">18dp</item>
+        <item name="ytOutlineColor">#99FFFFFF</item>
+        <item name="ytOutlineWidth">1dp</item>
+        <item name="ytIconHalo">@drawable/yt_icon_halo</item>
+        <item name="ytIconPadding">8dp</item>
+        <item name="ytIconTint">?attr/colorOnSecondaryContainer</item>
+        <item name="ytUppercase">false</item>
         <item name="fontFamily">@font/font_nunito_600</item>
         <item name="android:fontFamily">@font/font_nunito_600</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Clay.DisplayLarge</item>
@@ -669,6 +809,34 @@
         <item name="android:fontFamily">@font/font_inter_600</item>
     </style>
     <style name="YtDesign.Editorial" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Editorial.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Editorial.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.Editorial.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.Editorial.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Editorial.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.Editorial.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.Editorial.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.Editorial.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.Editorial.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.Editorial.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.Editorial.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.Editorial.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.Editorial.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.Editorial.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.Editorial.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.Editorial.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.Editorial.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.Editorial.Snackbar</item>
+        <item name="ytCardCorner">0dp</item>
+        <item name="ytRowCorner">0dp</item>
+        <item name="ytThumbCorner">0dp</item>
+        <item name="ytOutlineColor">?attr/colorOnSurface</item>
+        <item name="ytOutlineWidth">1dp</item>
+        <item name="ytIconHalo">@null</item>
+        <item name="ytIconPadding">0dp</item>
+        <item name="ytIconTint">?attr/colorOnSurface</item>
+        <item name="ytUppercase">true</item>
         <item name="fontFamily">@font/font_inter_400</item>
         <item name="android:fontFamily">@font/font_inter_400</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Editorial.DisplayLarge</item>
@@ -782,6 +950,34 @@
         <item name="android:fontFamily">@font/font_google_sans_500</item>
     </style>
     <style name="YtDesign.Glass" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Glass.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Glass.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.Glass.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.Glass.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Glass.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.Glass.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.Glass.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.Glass.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.Glass.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.Glass.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.Glass.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.Glass.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.Glass.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.Glass.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.Glass.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.Glass.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.Glass.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.Glass.Snackbar</item>
+        <item name="ytCardCorner">22dp</item>
+        <item name="ytRowCorner">18dp</item>
+        <item name="ytThumbCorner">14dp</item>
+        <item name="ytOutlineColor">#80FFFFFF</item>
+        <item name="ytOutlineWidth">1dp</item>
+        <item name="ytIconHalo">@drawable/yt_icon_halo</item>
+        <item name="ytIconPadding">8dp</item>
+        <item name="ytIconTint">?attr/colorOnSecondaryContainer</item>
+        <item name="ytUppercase">false</item>
         <item name="fontFamily">@font/font_google_sans_400</item>
         <item name="android:fontFamily">@font/font_google_sans_400</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Glass.DisplayLarge</item>
@@ -895,6 +1091,34 @@
         <item name="android:fontFamily">@font/font_nunito_700</item>
     </style>
     <style name="YtDesign.Pop" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Pop.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Pop.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.Pop.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.Pop.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Pop.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.Pop.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.Pop.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.Pop.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.Pop.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.Pop.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.Pop.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.Pop.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.Pop.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.Pop.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.Pop.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.Pop.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.Pop.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.Pop.Snackbar</item>
+        <item name="ytCardCorner">26dp</item>
+        <item name="ytRowCorner">22dp</item>
+        <item name="ytThumbCorner">20dp</item>
+        <item name="ytOutlineColor">@android:color/transparent</item>
+        <item name="ytOutlineWidth">0dp</item>
+        <item name="ytIconHalo">@drawable/yt_icon_halo</item>
+        <item name="ytIconPadding">8dp</item>
+        <item name="ytIconTint">?attr/colorOnSecondaryContainer</item>
+        <item name="ytUppercase">false</item>
         <item name="fontFamily">@font/font_nunito_600</item>
         <item name="android:fontFamily">@font/font_nunito_600</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Pop.DisplayLarge</item>
@@ -1008,6 +1232,34 @@
         <item name="android:fontFamily">@font/font_google_sans_500</item>
     </style>
     <style name="YtDesign.Shapes" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Shapes.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Shapes.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.Shapes.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.Shapes.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Shapes.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.Shapes.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.Shapes.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.Shapes.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.Shapes.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.Shapes.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.Shapes.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.Shapes.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.Shapes.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.Shapes.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.Shapes.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.Shapes.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.Shapes.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.Shapes.Snackbar</item>
+        <item name="ytCardCorner">24dp</item>
+        <item name="ytRowCorner">20dp</item>
+        <item name="ytThumbCorner">16dp</item>
+        <item name="ytOutlineColor">#26FFFFFF</item>
+        <item name="ytOutlineWidth">1dp</item>
+        <item name="ytIconHalo">@drawable/yt_icon_halo</item>
+        <item name="ytIconPadding">8dp</item>
+        <item name="ytIconTint">?attr/colorOnSecondaryContainer</item>
+        <item name="ytUppercase">false</item>
         <item name="fontFamily">@font/font_google_sans_400</item>
         <item name="android:fontFamily">@font/font_google_sans_400</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Shapes.DisplayLarge</item>
@@ -1121,6 +1373,34 @@
         <item name="android:fontFamily">@font/font_jakarta_600</item>
     </style>
     <style name="YtDesign.Frost" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Frost.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Frost.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.Frost.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.Frost.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Frost.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.Frost.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.Frost.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.Frost.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.Frost.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.Frost.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.Frost.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.Frost.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.Frost.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.Frost.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.Frost.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.Frost.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.Frost.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.Frost.Snackbar</item>
+        <item name="ytCardCorner">22dp</item>
+        <item name="ytRowCorner">18dp</item>
+        <item name="ytThumbCorner">14dp</item>
+        <item name="ytOutlineColor">#33FFFFFF</item>
+        <item name="ytOutlineWidth">1dp</item>
+        <item name="ytIconHalo">@drawable/yt_icon_halo</item>
+        <item name="ytIconPadding">8dp</item>
+        <item name="ytIconTint">?attr/colorOnSecondaryContainer</item>
+        <item name="ytUppercase">false</item>
         <item name="fontFamily">@font/font_jakarta_400</item>
         <item name="android:fontFamily">@font/font_jakarta_400</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Frost.DisplayLarge</item>
@@ -1235,6 +1515,34 @@
         <item name="android:fontFamily">@font/font_jakarta_600</item>
     </style>
     <style name="YtDesign.Kiesel" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Kiesel.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Kiesel.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.Kiesel.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.Kiesel.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Kiesel.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.Kiesel.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.Kiesel.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.Kiesel.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.Kiesel.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.Kiesel.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.Kiesel.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.Kiesel.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.Kiesel.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.Kiesel.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.Kiesel.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.Kiesel.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.Kiesel.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.Kiesel.Snackbar</item>
+        <item name="ytCardCorner">20dp</item>
+        <item name="ytRowCorner">18dp</item>
+        <item name="ytThumbCorner">14dp</item>
+        <item name="ytOutlineColor">@android:color/transparent</item>
+        <item name="ytOutlineWidth">0dp</item>
+        <item name="ytIconHalo">@drawable/yt_icon_halo</item>
+        <item name="ytIconPadding">8dp</item>
+        <item name="ytIconTint">?attr/colorOnSecondaryContainer</item>
+        <item name="ytUppercase">false</item>
         <item name="fontFamily">@font/font_jakarta_400</item>
         <item name="android:fontFamily">@font/font_jakarta_400</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Kiesel.DisplayLarge</item>

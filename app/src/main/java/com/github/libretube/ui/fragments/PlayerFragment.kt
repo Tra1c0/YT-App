@@ -408,6 +408,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentPlayerBinding.bind(view)
         super.onViewCreated(view, savedInstanceState)
+        // YT: the mini player takes the form of the design's navigation bar
+        com.github.libretube.ui.yt.YtMiniPlayer.attach(this, binding)
 
         // manually apply additional padding for edge-to-edge compatibility
         activity?.getSystemInsets()?.let { systemBars ->
@@ -503,7 +505,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
             override fun handleOnBackPressed() {
                 if (commonPlayerViewModel.isFullscreen.value == true) unsetFullscreen()
                 else {
-                    binding.playerMotionLayout.setTransitionDuration(250)
+                    binding.playerMotionLayout.setTransitionDuration(com.github.libretube.ui.yt.YtMiniPlayer.minimizeDuration())
                     binding.playerMotionLayout.transitionToEnd()
                     baseActivity.minimizePlayerContainerLayout()
                     baseActivity.requestOrientationChange()

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the background of popup menus in the corners and outline of the design -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="?attr/colorSurfaceContainer" />
+    <corners android:radius="?attr/ytRowCorner" />
+    <stroke android:width="?attr/ytOutlineWidth" android:color="?attr/ytOutlineColor" />
+</shape>

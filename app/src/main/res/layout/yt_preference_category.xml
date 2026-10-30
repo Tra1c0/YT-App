@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: a settings section title in the manner of the design (capitals where the design prints). -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/title"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="26dp"
+    android:paddingTop="22dp"
+    android:paddingEnd="26dp"
+    android:paddingBottom="8dp"
+    android:textAllCaps="?attr/ytUppercase"
+    android:textAppearance="?attr/textAppearanceLabelLarge"
+    android:textColor="?attr/colorPrimary" />

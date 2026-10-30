@@ -82,6 +82,9 @@ fun YouTubeLibraryScreen(
     onNewCollection: () -> Unit,
     headline: String = stringResource(R.string.yt_library_headline),
     subline: String = stringResource(R.string.yt_library_subline),
+    onOpenSettings: () -> Unit = {},
+    onOpenHelp: () -> Unit = {},
+    onOpenAbout: () -> Unit = {},
 ) {
     val playlists = collections.filter { !it.isBookmark }
     val bookmarks = collections.filter { it.isBookmark }
@@ -195,6 +198,18 @@ fun YouTubeLibraryScreen(
                 Box(Modifier.ytEnter(enter, "bookmark" + bookmark.id, 2 + bookmarks.indexOf(bookmark))) {
                     BookmarkRow(palette, bookmark) { onOpenCollection(bookmark) }
                 }
+            }
+            // settings, help and about sit here, in the chips of the design, besides the header menu
+            item {
+                LibraryTitle(palette, stringResource(R.string.yt_library_more), Modifier.padding(start = 15.dp, end = 15.dp, top = 26.dp, bottom = 10.dp))
+                WatchActionRow(
+                    palette,
+                    listOf(
+                        WatchAction(R.drawable.ic_settings, stringResource(R.string.settings), onOpenSettings),
+                        WatchAction(R.drawable.ic_help, stringResource(R.string.help), onOpenHelp),
+                        WatchAction(R.drawable.ic_info, stringResource(R.string.about), onOpenAbout),
+                    ),
+                )
             }
         }
     }

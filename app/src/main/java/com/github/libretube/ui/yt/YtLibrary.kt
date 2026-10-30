@@ -12,6 +12,10 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import android.content.Intent
+import com.github.libretube.ui.activities.AboutActivity
+import com.github.libretube.ui.activities.HelpActivity
+import com.github.libretube.ui.activities.SettingsActivity
 import com.github.libretube.R
 import com.github.libretube.api.PlaylistsHelper
 import com.github.libretube.constants.PreferenceKeys
@@ -95,6 +99,9 @@ object YtLibrary {
                         onNewCollection = onNewCollection,
                         headline = stringResource(headline),
                         subline = stringResource(subline),
+                        onOpenSettings = { context.startActivity(Intent(context, SettingsActivity::class.java)) },
+                        onOpenHelp = { context.startActivity(Intent(context, HelpActivity::class.java)) },
+                        onOpenAbout = { context.startActivity(Intent(context, AboutActivity::class.java)) },
                     )
                 }
             }

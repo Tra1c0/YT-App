@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: knobs of the classic screens that the design overlays turn (yt_classic.xml). -->
+<resources>
+    <attr name="ytCardCorner" format="dimension" />
+    <attr name="ytRowCorner" format="dimension" />
+    <attr name="ytThumbCorner" format="dimension" />
+    <attr name="ytOutlineColor" format="color|reference" />
+    <attr name="ytOutlineWidth" format="dimension" />
+    <attr name="ytIconHalo" format="reference" />
+    <attr name="ytIconPadding" format="dimension" />
+    <attr name="ytIconTint" format="color|reference" />
+    <attr name="ytUppercase" format="boolean" />
+</resources>

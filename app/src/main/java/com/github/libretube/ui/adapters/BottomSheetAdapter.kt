@@ -28,6 +28,8 @@ class BottomSheetAdapter(
             text = if (current != null) "${item.title} ($current)" else item.title
             isSelected = item.isSelected
             setDrawables(start = item.drawable)
+            // YT: the option in the manner of the selected design
+            com.github.libretube.ui.yt.YtClassic.styleSheetItem(this)
 
             setOnClickListener {
                 item.onClick.invoke()

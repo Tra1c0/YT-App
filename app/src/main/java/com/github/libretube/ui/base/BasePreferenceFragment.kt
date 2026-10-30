@@ -32,6 +32,8 @@ abstract class BasePreferenceFragment : PreferenceFragmentCompat() {
         listView.onSystemInsets { v, systemInsets ->
             v.updatePadding(bottom = v.paddingBottom + systemInsets.bottom)
         }
+        // YT: the rows of the settings in the manner of the selected design
+        com.github.libretube.ui.yt.YtClassic.stylePreferences(this)
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {

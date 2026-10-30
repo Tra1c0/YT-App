@@ -187,4 +187,5 @@
     <string name="yt_live_yours">From your channels</string>
     <string name="yt_live_empty">Nobody is live right now.</string>
     <string name="yt_live_viewers">%1$s watching</string>
+    <string name="yt_library_more">More</string>
 </resources>

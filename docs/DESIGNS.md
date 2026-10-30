@@ -145,6 +145,41 @@ dann alles Live in deiner Region, mit atmendem LIVE-Punkt, Zuschauerzahl und Reg
 | Frost | Jakarta in Weiß | Frostrahmen, der auftaut, weiße Linie | Frostkarten, die auftauen | Frostkarten, die auftauen |
 | Kiesel | getippte Kontur-Überschrift | Pfirsichkarte, Lavendel-Kapsel füllt sich, Restzeit in schwarzer Kapsel | Lavendel, Pfirsich, Beige mit schwarzer Zähler-Kapsel | Creme-Zeilen mit Kapseln, Pfirsichpunkt für Neues |
 
+## Miniplayer und klassische Bildschirme (Runde 8)
+
+Der Miniplayer nimmt die Form der Navigationsleiste seines Designs an (`ui/yt/YtMiniPlayer.kt`):
+derselbe Einzug, Radius, Fläche, Umriss und Schrift, das Bild sitzt mit runden Ecken darin,
+bei Glas und Frost eine Glasleiste, die den Bildschirm darunter sieht. Minimieren läuft im
+Bewegungscharakter des Designs (knapp bei Editorial, filmisch bei After, federnd bei Movo, Clay,
+Pop, Formen, Kiesel) und die Leiste landet mit einer kleinen Geste: Knete quetscht sich, Pop
+wackelt, der Kiesel fällt und hüpft, Glas quillt, Frost bildet sich.
+
+Die klassischen Bildschirme (Einstellungen, Sheets, Dialoge, Menüs, Suche, Kanal, Playlist,
+Verlauf, Downloads) bekommen über das Design-Overlay (`res/values/yt_classic.xml`) die Formen
+und Manieren des Designs: Eckenradien von eckig (Editorial) über knapp (After) bis puffig (Clay,
+Pop), Sheet-Oberkanten, Dialogecken, Knopfformen, Chips, Popup-Hintergründe, Toolbar-Titel,
+Snackbars, Umrisse (Editorial schwarz, Glas und Frost weiß), Versalien bei After und Editorial.
+Im Code (`ui/yt/YtClassic.kt`) kommen die Entscheidungen dazu, die ein Theme nicht treffen
+kann: Einstellungszeilen als Karten des Designs mit dem Icon in einem Halo (Clay, Glas, Pop,
+Formen, Frost, Kiesel), Zeilen ohne Icons, wo das Design druckt (After, Editorial), nummerierte
+Einstellungen bei Editorial, Sheet-Optionen in Versalien ohne Icons bei After und Editorial.
+Einstellungen, Hilfe und Über stehen zusätzlich am Ende von „Du“ in den Aktionsknöpfen des
+Designs. Die Inventur aller Bedienelemente mit ihrem Stand steht in [BUTTONS.md](BUTTONS.md).
+
+| Design | Ecken | Umriss | Icons in Einstellungen | Versalien | Besonderes |
+| --- | --- | --- | --- | --- | --- |
+| YouTube neu | 14 / 24 | keiner | ja | nein | Pillenknöpfe |
+| Movo | 16 / 28 | keiner | ja | nein | Pillenknöpfe |
+| After | 4 / 8 | feiner Rand | nein | ja | Knöpfe 4 dp, kondensierte Titel |
+| Side | 18 / 30 | keiner | ja | nein | weiche Pillen |
+| Clay | 26 / 36 | weiß | im Halo | nein | puffige Karten |
+| Editorial | 0 | schwarz, 1 dp | nein, nummeriert | ja | eckige Sheets, Mono-Optionen |
+| Glas | 22 / 32 | weiß 50 % | im Halo | nein | durchscheinende Sheets |
+| Pop | 26 / 36 | keiner | im Halo | nein | runde Blobs |
+| Formen | 24 / 36 | weiß 15 % | im Halo | nein | Nachtflächen |
+| Frost | 22 / 32 | weiß 20 % | im Halo | nein | dunkle, durchscheinende Sheets |
+| Kiesel | 22 / 30 | keiner | im Halo | nein | schwarze Kapselknöpfe |
+
 ## Liquid Glass (Glas und Frost)
 
 Die Glasflächen nutzen Kyants Backdrop-Bibliothek (`third_party/backdrop/`): Unschärfe ab
