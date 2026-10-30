@@ -159,7 +159,7 @@ class YtSignInActivity : BaseActivity() {
         webViewClient = Client()
         webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView, newProgress: Int) {
-                progress.intValue = newProgress
+                this@YtSignInActivity.progress.intValue = newProgress
             }
         }
     }
