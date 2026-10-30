@@ -147,12 +147,8 @@ dann alles Live in deiner Region, mit atmendem LIVE-Punkt, Zuschauerzahl und Reg
 
 ## Miniplayer und klassische Bildschirme (Runde 8)
 
-Der Miniplayer nimmt die Form der Navigationsleiste seines Designs an (`ui/yt/YtMiniPlayer.kt`):
-derselbe Einzug, Radius, Fläche, Umriss und Schrift, das Bild sitzt mit runden Ecken darin,
-bei Glas und Frost eine Glasleiste, die den Bildschirm darunter sieht. Minimieren läuft im
-Bewegungscharakter des Designs (knapp bei Editorial, filmisch bei After, federnd bei Movo, Clay,
-Pop, Formen, Kiesel) und die Leiste landet mit einer kleinen Geste: Knete quetscht sich, Pop
-wackelt, der Kiesel fällt und hüpft, Glas quillt, Frost bildet sich.
+Der Miniplayer (`ui/yt/YtMiniPlayer.kt`) schwebt seit Runde 10 nicht mehr über der Leiste,
+er dockt an ihr an (siehe unten).
 
 Die klassischen Bildschirme (Einstellungen, Sheets, Dialoge, Menüs, Suche, Kanal, Playlist,
 Verlauf, Downloads) bekommen über das Design-Overlay (`res/values/yt_classic.xml`) die Formen
@@ -179,6 +175,40 @@ Designs. Die Inventur aller Bedienelemente mit ihrem Stand steht in [BUTTONS.md]
 | Formen | 24 / 36 | weiß 15 % | im Halo | nein | Nachtflächen |
 | Frost | 22 / 32 | weiß 20 % | im Halo | nein | dunkle, durchscheinende Sheets |
 | Kiesel | 22 / 30 | keiner | im Halo | nein | schwarze Kapselknöpfe |
+
+## Miniplayer an der Leiste (Runde 10)
+
+Minimiert sitzt der Player auf der Navigationsleiste statt über ihr zu schweben. Wie er
+andockt, hängt vom Design ab:
+
+- **Aufsatz** (YouTube neu, Movo, After, Editorial, Glas, Frost): so breit wie die Leiste, direkt
+  auf ihr. Die Leiste macht ihre oberen Ecken eckig, Player und Leiste sind eine Fläche mit
+  einer Naht. Bei Glas und Frost ist es eine Glasscheibe.
+- **Ausbuchtung** (Side, Formen, Kiesel): ein schmalerer Körper wächst mit nach innen gewölbten
+  Kurven aus der Leiste, bei Kiesel wie ein schwarzer Tropfen.
+- **Angedrückt** (Clay, Pop): ein Blob, der auf die Blobs der Leiste gedrückt ist und sie
+  überlappt, wie Knete oder Sirup.
+
+Das Bild füllt seine Form (Zoom statt schwarzer Balken) und wird beim Vergrößern wieder
+eingepasst. Maße in dp.
+
+| Design | Andocken | Bildzuschnitt | Schrift | Play-Knopf | Fortschritt | Landung |
+| --- | --- | --- | --- | --- | --- | --- |
+| YouTube neu | Aufsatz, 64 dp | 16:9, Ecken 10 | Geist, Titel und Kanal | weißes Icon | rote Naht zur Leiste | keine |
+| Movo | Aufsatz, 68 dp | 16:9, Ecken 14 | Geist fett | Limetten-Scheibe | Kobalt-Unterstrich | Leiste und Player sacken ein |
+| After | Aufsatz, 58 dp | Cinemascope 2,39:1 | Anton in Versalien, Kanal gesperrt | Creme-Icon | orange Haarlinie | Titel steigt auf, Linie läuft ein |
+| Side | Ausbuchtung | 16:9, Ecken 12 | Figtree | Pfirsich-Scheibe | Ring um den Knopf | Körper wächst aus der Leiste |
+| Clay | angedrückt, 12 dp tief | 16:9, Ecken 20 | Nunito | Mauve-Blob, atmet beim Abspielen | dicker Mauve-Strang | quetscht sich, Leiste sackt ein |
+| Editorial | Aufsatz, eckig | quadratisch, schwarzer Rahmen | „JETZT — KANAL“ in Mono, Titel Inter | schwarzes Icon | blaue Marke auf der schwarzen Linie | Linie zieht sich durch |
+| Glas | Aufsatz aus Glas | 16:9, Ecken 16, Lichtkante | Google Sans | weiße Glasscheibe | Petrol-Naht | Leiste und Player federn |
+| Pop | angedrückt | Pille mit pinkem Sticker-Schatten | Nunito extra fett | Pflaumen-Blob | pinker Strang | wackelt wie Gelee |
+| Formen | Ausbuchtung | Pille vor drehender Limetten-Form | Google Sans | pinke Keks-Form, dreht sich | Limetten-Welle, fließt | Formen drehen sich ein |
+| Frost | Aufsatz aus Frostglas, so breit wie die Leiste | 16:9, Ecken 14 | Jakarta | weiße Scheibe | orange Naht | friert ein |
+| Kiesel | Ausbuchtung, schwarz | Kiesel-Pille | Jakarta fett | Lavendel-Scheibe | Creme-Ring | Kiesel fällt, hüpft, Leiste sackt ein |
+
+Alles Bewegte hängt am Schalter „Animationen der Designs“. Der Emulator-Check
+(`crash-check.yml`, Option „screens“) fotografiert Start, Player und Miniplayer je Design und
+legt die Bilder als Vorab-Release `screens-<Lauf>` ab.
 
 ## Liquid Glass (Glas und Frost)
 
