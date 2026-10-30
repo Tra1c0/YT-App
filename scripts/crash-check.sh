@@ -29,6 +29,8 @@ for design in $DESIGNS; do
   fi
   # a fresh start: no settings, no saved crash, as after an installation
   timeout 60 adb shell pm clear "$PKG" >/dev/null || echo "pm clear timed out"
+  # pm clear ends the old process on its own time; a start right after it can be swept away
+  sleep 3
   timeout 20 adb logcat -c || true
   # the log is written while the app runs, so it survives an emulator that dies on the way
   adb logcat -v threadtime > "logcat-$design.txt" 2>/dev/null &
@@ -64,13 +66,18 @@ done
 # the sign-in window: starts it fresh and logs what Google's page shows (title and first text)
 if [ "${YT_SIGNIN_PROBE:-no}" = "yes" ] && [ "$(timeout 15 adb get-state 2>/dev/null)" = "device" ]; then
   timeout 60 adb shell pm clear "$PKG" >/dev/null || true
+  sleep 3
   timeout 20 adb logcat -c || true
+  adb logcat -v threadtime > logcat-signin.txt 2>/dev/null &
+  logpid=$!
   timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_probe true || echo "start timed out"
   sleep 45
-  timeout 60 adb logcat -d -v threadtime > logcat-signin.txt || true
   if timeout 20 adb shell pidof "$PKG" >/dev/null 2>&1; then state="running"; else state="NOT RUNNING"; fi
+  kill "$logpid" 2>/dev/null; wait "$logpid" 2>/dev/null
   echo "::group::sign-in window: process after 45 s is $state"
-  grep -a "YtSignIn" logcat-signin.txt | sed 's/^.*YtSignIn: //' | cut -c1-600 | head -30 || true
+  grep -a "YtSignIn\|probe " logcat-signin.txt | sed 's/^.*YtSignIn *: //' | cut -c1-600 | head -30 || true
+  echo "--- deaths and kills"
+  grep -a -E "Fatal signal|SIGSEGV|SIGABRT|SIGTRAP|Abort message|aw_browser_terminator|Render process|render process|lowmemorykiller|Killing [0-9]+:$PKG|$PKG.*(died|crash)|Process $PKG|WIN DEATH|ANR in" logcat-signin.txt | cut -c1-300 | head -40 || true
   grep -a -A60 "FATAL EXCEPTION" logcat-signin.txt | head -80 > crash-signin.txt || true
   if [ -s crash-signin.txt ]; then cat crash-signin.txt; crashed="$crashed signin"; else rm -f crash-signin.txt; fi
   echo "::endgroup::"

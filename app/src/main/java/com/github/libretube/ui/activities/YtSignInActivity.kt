@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.View
 import android.view.autofill.AutofillManager
 import android.webkit.CookieManager
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -100,6 +101,8 @@ class YtSignInActivity : BaseActivity() {
     private val progress = mutableIntStateOf(0)
     private val host = mutableStateOf("accounts.google.com")
     private val info = mutableStateOf<YtAccountInfo?>(null)
+    /** False once the page's render process is gone: the WebView must leave the screen then. */
+    private val webAlive = mutableStateOf(true)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -206,6 +209,19 @@ class YtSignInActivity : BaseActivity() {
             checkSignedIn(uri)
         }
 
+        /**
+         * The page's render process died (or the system ended it for memory). Without this the
+         * WebView takes the whole app down; here only the window says so and offers a new try.
+         */
+        override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+            Log.w(TAG, "render process gone, crashed=${detail.didCrash()}")
+            webAlive.value = false
+            webView = null
+            view.post { view.destroy() }
+            if (!completed) phase.value = Phase.FAILED
+            return true
+        }
+
         override fun onPageFinished(view: WebView, url: String) {
             if (completed) return
             if (probe) {
@@ -294,7 +310,8 @@ class YtSignInActivity : BaseActivity() {
                     .weight(1f)
                     .fillMaxWidth(),
             ) {
-                AndroidView(factory = { web }, modifier = Modifier.fillMaxSize())
+                val alive by webAlive
+                if (alive) AndroidView(factory = { web }, modifier = Modifier.fillMaxSize())
                 when (current) {
                     Phase.WEB -> PasskeyHint(palette, Modifier.align(Alignment.BottomCenter))
                     Phase.FINISHING -> Panel(palette) {
@@ -356,7 +373,8 @@ class YtSignInActivity : BaseActivity() {
                     Phase.FAILED -> Panel(palette) {
                         Message(palette, stringResource(R.string.yt_account_title), stringResource(R.string.yt_account_failed))
                         YtPrimaryButton(palette, stringResource(R.string.yt_account_retry), R.drawable.ic_login_filled) {
-                            restart(asDesktop = desktop)
+                            // a window whose page died starts over with a new one
+                            if (webAlive.value) restart(asDesktop = desktop) else recreate()
                         }
                     }
                 }
