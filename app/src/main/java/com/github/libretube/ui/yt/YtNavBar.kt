@@ -45,6 +45,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -327,6 +328,21 @@ fun YtNavBar(
     backdrop: Backdrop?,
     onSelect: (Int) -> Unit,
 ) {
+    // the bar dips together with the mini player that lands on it
+    Box(Modifier.graphicsLayer { translationY = YtDock.dip }) {
+        YtNavBarOf(design, palette, items, state, backdrop, onSelect)
+    }
+}
+
+@Composable
+private fun YtNavBarOf(
+    design: YtDesign,
+    palette: YtPalette,
+    items: List<YtNavItem>,
+    state: YtNavState,
+    backdrop: Backdrop?,
+    onSelect: (Int) -> Unit,
+) {
     when (design) {
         YtDesign.CLAY -> ClayNav(palette, items, state, onSelect)
         YtDesign.EDITORIAL -> EditorialNav(palette, items, state, onSelect)
@@ -348,6 +364,13 @@ private fun FloatingNav(
     onSelect: (Int) -> Unit,
 ) {
     val style = remember(design) { style(design, palette) }
+    // a mini player set on the bar: the bar squares its top corners, both are one surface
+    val top by animateDpAsState(
+        if (YtDock.docked && YtMiniPlayer.stacks(design)) 0.dp else style.radius,
+        ytStateSpec(),
+        label = "navDock",
+    )
+    val shape = RoundedCornerShape(topStart = top, topEnd = top, bottomEnd = style.radius, bottomStart = style.radius)
     Box(
         Modifier
             .fillMaxWidth()
@@ -358,9 +381,9 @@ private fun FloatingNav(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(style.height)
-                .clip(RoundedCornerShape(style.radius))
+                .clip(shape)
                 .background(style.container)
-                .border(1.dp, style.border, RoundedCornerShape(style.radius)),
+                .border(1.dp, style.border, shape),
         ) {
             items.forEach { item ->
                 NavTab(

@@ -47,27 +47,33 @@ jobs:
         env:
           YT_SIGNING: ${{ secrets.YT_SIGNING }}
           YT_KEYSTORE_BASE64: ${{ secrets.YT_KEYSTORE_BASE64 }}
+          YT_KEYSTORE_PASSWORD_OLD: ${{ secrets.YT_KEYSTORE_PASSWORD }}
         run: |
+          key="$RUNNER_TEMP/yt-personal.p12"
           if [ -n "$YT_SIGNING" ]; then
-            pass="${YT_SIGNING%%:*}"
-            echo "::add-mask::$pass"
-            printf '%s' "${YT_SIGNING#*:}" | tr -d ' \r\n' | base64 -d > "$RUNNER_TEMP/yt-personal.p12"
-            echo "YT_KEYSTORE_PATH=$RUNNER_TEMP/yt-personal.p12" >> "$GITHUB_ENV"
-            echo "YT_SIGNING_PASSWORD=$pass" >> "$GITHUB_ENV"
-            fp=$(keytool -list -v -keystore "$RUNNER_TEMP/yt-personal.p12" -storepass "$pass" -alias yt | grep -m1 "SHA256:" | sed 's/.*SHA256: //')
-            echo "SIGNED_WITH=personal key (SHA-256 $fp)" >> "$GITHUB_ENV"
+            # a copied value may carry spaces or line breaks; neither belongs to password or key
+            pass=$(printf '%s' "${YT_SIGNING%%:*}" | tr -d ' \t\r\n')
+            printf '%s' "${YT_SIGNING#*:}" | tr -d ' \t\r\n' | base64 -d > "$key"
           elif [ -n "$YT_KEYSTORE_BASE64" ]; then
-            echo "$YT_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/yt-personal.p12"
-            echo "YT_KEYSTORE_PATH=$RUNNER_TEMP/yt-personal.p12" >> "$GITHUB_ENV"
-            echo "SIGNED_WITH=personal key" >> "$GITHUB_ENV"
+            pass="$YT_KEYSTORE_PASSWORD_OLD"
+            printf '%s' "$YT_KEYSTORE_BASE64" | tr -d ' \t\r\n' | base64 -d > "$key"
           else
-            echo "::warning::Secret YT_KEYSTORE_BASE64 is not set. The APK is signed with a throwaway debug key."
+            echo "::warning::No signing key (secret YT_SIGNING). The APK is signed with a throwaway debug key."
             echo "SIGNED_WITH=throwaway debug key (cannot update other builds)" >> "$GITHUB_ENV"
+            exit 0
           fi
+          echo "::add-mask::$pass"
+          # the build gets exactly the password that opens the key here
+          if ! info=$(keytool -list -v -keystore "$key" -storepass "$pass" -alias yt 2>&1); then
+            echo "::error::The signing key cannot be opened with its password. Create the secret YT_SIGNING again."
+            exit 1
+          fi
+          fp=$(printf '%s\n' "$info" | grep -m1 "SHA256:" | sed 's/.*SHA256: //' || true)
+          echo "YT_KEYSTORE_PATH=$key" >> "$GITHUB_ENV"
+          echo "YT_KEYSTORE_PASSWORD=$pass" >> "$GITHUB_ENV"
+          echo "SIGNED_WITH=personal key (SHA-256 $fp)" >> "$GITHUB_ENV"
 
       - name: Build release APK
-        env:
-          YT_KEYSTORE_PASSWORD: ${{ secrets.YT_KEYSTORE_PASSWORD || env.YT_SIGNING_PASSWORD }}
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Collect APK

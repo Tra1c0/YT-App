@@ -1,5 +1,7 @@
 package com.github.libretube.ui.yt
 
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -275,6 +277,14 @@ fun LiquidNav(
         }
         val glassOk = isRenderEffectSupported()
         val barShape = RoundedCornerShape(50)
+        // a mini player set on the bar: the glass squares its top corners, both are one pane
+        val dockTop by animateDpAsState(if (YtDock.docked) 0.dp else look.barHeight / 2, ytStateSpec(), label = "liquidDock")
+        val surfaceShape = RoundedCornerShape(
+            topStart = dockTop,
+            topEnd = dockTop,
+            bottomEnd = look.barHeight / 2,
+            bottomStart = look.barHeight / 2,
+        )
 
         fun select(i: Int) {
             drop.animateToValue(i.toFloat())
@@ -288,7 +298,7 @@ fun LiquidNav(
                 .height(look.barHeight)
                 .drawBackdrop(
                     backdrop = backdrop,
-                    shape = { barShape },
+                    shape = { surfaceShape },
                     effects = {
                         vibrancy()
                         blur(look.blur.toPx())
@@ -336,7 +346,7 @@ fun LiquidNav(
                 .layerBackdrop(tabsBackdrop)
                 .drawBackdrop(
                     backdrop = backdrop,
-                    shape = { barShape },
+                    shape = { surfaceShape },
                     effects = {
                         vibrancy()
                         blur(look.blur.toPx())

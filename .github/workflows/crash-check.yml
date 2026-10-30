@@ -31,9 +31,13 @@ on:
         description: "Also open the YouTube sign-in window and log what Google shows"
         type: boolean
         default: true
+      screens:
+        description: "Screenshots per design (start, player, mini player), published as the pre-release screens-<run>"
+        type: boolean
+        default: false
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   emulator:
@@ -72,6 +76,7 @@ jobs:
           YT_NIGHT: ${{ inputs.night && 'yes' || 'no' }}
           YT_LOCALE: ${{ inputs.locale }}
           YT_SIGNIN_PROBE: ${{ inputs.signin_probe && 'yes' || 'no' }}
+          YT_SCREENS: ${{ inputs.screens && 'yes' || 'no' }}
         with:
           api-level: ${{ inputs.api }}
           arch: x86_64
@@ -90,3 +95,17 @@ jobs:
           path: |
             logcat-*.txt
             crash-*.txt
+
+      # the screenshots as release files: they can be fetched like the APKs; older sets go
+      - name: Publish the screenshots
+        if: always() && inputs.screens
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls screens/*.png >/dev/null 2>&1 || { echo "no screenshots"; exit 0; }
+          for tag in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName' | grep '^screens-' || true); do
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          done
+          gh release create "screens-${{ github.run_number }}" screens/*.png --repo "$GITHUB_REPOSITORY" \
+            --prerelease --title "Screenshots ${{ github.run_number }} (build ${{ inputs.build }})" \
+            --notes "Emulator screenshots of build ${{ inputs.build }}: designs ${{ inputs.design }}, dark mode ${{ inputs.night }}."

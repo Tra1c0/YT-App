@@ -2,7 +2,8 @@
 # YT: starts the app in the emulator, once per design, and collects the crash, if any.
 # Run by crash-check.yml. Environment: YT_DESIGN (a key, a comma list, "all" or empty = standard),
 # YT_NIGHT (yes = dark mode), YT_LOCALE (an app locale such as de-DE, API 33+), YT_WAIT (seconds),
-# YT_SIGNIN_PROBE (yes = also open the sign-in window and log what Google shows).
+# YT_SIGNIN_PROBE (yes = also open the sign-in window and log what Google shows), YT_SCREENS (yes =
+# per design: screenshot the start, open a video, screenshot the player and the mini player).
 set -u
 PKG="app.tra1c0.yt"
 ACTIVITY="com.github.libretube.ui.activities.MainActivity"
@@ -37,11 +38,23 @@ for design in $DESIGNS; do
   logpid=$!
   echo "$(date -u +%H:%M:%S) start $design"
   if [ "$design" = "standard" ]; then
-    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" || echo "start timed out"
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true || echo "start timed out"
   else
-    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es yt_design "$design" || echo "start timed out"
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es yt_design "$design" --ez yt_quiet true || echo "start timed out"
   fi
   sleep "$WAIT"
+  if [ "${YT_SCREENS:-no}" = "yes" ]; then
+    # the start, the player with a video, then the player minimized onto the bar
+    mkdir -p screens
+    timeout 20 adb exec-out screencap -p > "screens/$design-1-start.png" || true
+    timeout 30 adb shell am start -a android.intent.action.VIEW -d "https://www.youtube.com/watch?v=${YT_VIDEO:-jNQXAC9IVRw}" \
+      -n "$PKG/com.github.libretube.ui.activities.RouterActivity" || echo "video start timed out"
+    sleep 18
+    timeout 20 adb exec-out screencap -p > "screens/$design-2-player.png" || true
+    timeout 10 adb shell input keyevent KEYCODE_BACK || true
+    sleep 5
+    timeout 20 adb exec-out screencap -p > "screens/$design-3-mini.png" || true
+  fi
   if timeout 20 adb shell pidof "$PKG" >/dev/null 2>&1; then state="running"; else state="NOT RUNNING"; fi
   kill "$logpid" 2>/dev/null; wait "$logpid" 2>/dev/null
   grep -n -A160 "FATAL EXCEPTION" "logcat-$design.txt" | head -400 > "crash-$design.txt" || true

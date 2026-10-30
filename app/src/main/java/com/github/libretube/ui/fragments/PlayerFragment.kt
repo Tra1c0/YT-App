@@ -660,6 +660,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
     }
 
     private fun closeMiniPlayer() {
+        // YT: the bar no longer carries the player that is swiped away
+        com.github.libretube.ui.yt.YtMiniPlayer.undock()
         binding
             .playerMotionLayout
             .animateDown(

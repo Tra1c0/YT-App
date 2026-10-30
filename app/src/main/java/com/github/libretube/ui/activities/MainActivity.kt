@@ -21,6 +21,7 @@ import androidx.core.os.bundleOf
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.allViews
 import androidx.core.view.children
+import androidx.core.view.isVisible
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.get
 import androidx.core.view.isNotEmpty
@@ -168,10 +169,14 @@ class MainActivity : AbstractPlayerHostActivity() {
                         binding.bottomNav.height
                     )
                 }
+                // YT: the mini player docks on the design's bar instead of floating above it
+                val dock = if (binding.bottomNav.isVisible && binding.bottomNav.height > 0) {
+                    com.github.libretube.ui.yt.YtMiniPlayer.dockOffsetPx(this)
+                } else 0
                 for (key in keyFrame.getKeyFramesForView(binding.container.id)) {
                     if (key.framePosition == 100) key.setValue(
                         Key.TRANSLATION_Y,
-                        -binding.bottomNav.height
+                        -binding.bottomNav.height + dock
                     )
                 }
             }
@@ -272,7 +277,9 @@ class MainActivity : AbstractPlayerHostActivity() {
 
         // YT: once after the installation, offer the sign-in to YouTube (and the data on request)
         val ytAccount = com.github.libretube.ui.yt.account.YtAccount
-        if (savedInstanceState == null && !ytAccount.offered && !ytAccount.signedIn) {
+        // (an emulator run that takes screenshots can skip it: --ez yt_quiet true)
+        val quiet = com.github.libretube.helpers.YtGuard.isEmulator && intent?.getBooleanExtra("yt_quiet", false) == true
+        if (savedInstanceState == null && !quiet && !ytAccount.offered && !ytAccount.signedIn) {
             ytAccount.offered = true
             binding.root.post {
                 com.github.libretube.ui.yt.account.YtAccountSheet.show(

@@ -274,7 +274,8 @@ fun EditorialNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
 
 @Composable
 fun GlassNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
-    val shape = RoundedCornerShape(30.dp)
+    val top by animateDpAsState(if (YtDock.docked) 0.dp else 30.dp, ytStateSpec(), label = "glassDock")
+    val shape = RoundedCornerShape(topStart = top, topEnd = top, bottomEnd = 30.dp, bottomStart = 30.dp)
     Box(
         Modifier
             .fillMaxWidth()
@@ -574,7 +575,8 @@ fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
 
 @Composable
 fun FrostNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
-    val bar = RoundedCornerShape(32.dp)
+    val top by animateDpAsState(if (YtDock.docked) 0.dp else 32.dp, ytStateSpec(), label = "frostDock")
+    val bar = RoundedCornerShape(topStart = top, topEnd = top, bottomEnd = 32.dp, bottomStart = 32.dp)
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
