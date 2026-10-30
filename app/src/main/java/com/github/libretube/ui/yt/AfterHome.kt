@@ -248,7 +248,7 @@ private fun AfterHero(
                 .graphicsLayer { alpha = heroAlpha },
         ) { video ->
             if (video != null) {
-                val zoom = rememberKenBurns()
+                val zoom by rememberKenBurns()
                 YtLargeThumbnail(
                     video,
                     imageLoader,
@@ -473,7 +473,7 @@ private fun AfterPoster(
 /** Small tangerine LIVE label. */
 @Composable
 fun AfterLiveBadge(palette: YtPalette, modifier: Modifier = Modifier) {
-    val pulse = rememberPulse(min = 0.6f, durationMillis = 1200)
+    val pulse by rememberPulse(min = 0.6f, durationMillis = 1200)
     Text(
         text = stringResource(R.string.yt_live_badge),
         color = palette.onAccent,

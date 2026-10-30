@@ -25,6 +25,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -461,7 +462,12 @@ fun Modifier.ytBurst(active: Boolean, color: Color): Modifier {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Ongoing motion (not started at all when motion is off)
+// Ongoing motion (not started at all when motion is off). The values come as State, so callers
+// read them where they draw (`val zoom by rememberKenBurns()` used in graphicsLayer), not in
+// composition: a running loop then redraws without recomposing every frame.
+
+/** A value that never changes, for ongoing motion that is switched off. */
+private class YtStill(override val value: Float) : State<Float>
 
 /** YouTube neu: a placeholder in [base] with a soft light sweeping across it; still when motion is off. */
 @Composable
@@ -489,72 +495,67 @@ fun Modifier.ytShimmer(base: Color): Modifier {
 
 /** After: a slow zoom over a poster, back and forth. */
 @Composable
-fun rememberKenBurns(durationMillis: Int = 18000, zoom: Float = 0.08f): Float {
-    if (!LocalYtMotion.current) return 1f
+fun rememberKenBurns(durationMillis: Int = 18000, zoom: Float = 0.08f): State<Float> {
+    if (!LocalYtMotion.current) return YtStill(1f)
     val transition = rememberInfiniteTransition(label = "kenBurns")
-    val value by transition.animateFloat(
+    return transition.animateFloat(
         initialValue = 1f,
         targetValue = 1f + zoom,
         animationSpec = infiniteRepeatable(tween(durationMillis, easing = LinearEasing), RepeatMode.Reverse),
         label = "kenBurnsScale",
     )
-    return value
 }
 
 /** A soft pulse between [min] and 1, e.g. for live dots. */
 @Composable
-fun rememberPulse(min: Float = 0.35f, durationMillis: Int = 900): Float {
-    if (!LocalYtMotion.current) return 1f
+fun rememberPulse(min: Float = 0.35f, durationMillis: Int = 900): State<Float> {
+    if (!LocalYtMotion.current) return YtStill(1f)
     val transition = rememberInfiniteTransition(label = "pulse")
-    val value by transition.animateFloat(
+    return transition.animateFloat(
         initialValue = 1f,
         targetValue = min,
         animationSpec = infiniteRepeatable(tween(durationMillis, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "pulseValue",
     )
-    return value
 }
 
 /** Clay: a slow breath of a puffy button. */
 @Composable
-fun rememberBreath(amount: Float = 0.04f, durationMillis: Int = 2400): Float {
-    if (!LocalYtMotion.current) return 1f
+fun rememberBreath(amount: Float = 0.04f, durationMillis: Int = 2400): State<Float> {
+    if (!LocalYtMotion.current) return YtStill(1f)
     val transition = rememberInfiniteTransition(label = "breath")
-    val value by transition.animateFloat(
+    return transition.animateFloat(
         initialValue = 1f,
         targetValue = 1f + amount,
         animationSpec = infiniteRepeatable(tween(durationMillis, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "breathValue",
     )
-    return value
 }
 
 /** Formen: a slow full turn, in degrees. */
 @Composable
-fun rememberSpin(durationMillis: Int = 20000): Float {
-    if (!LocalYtMotion.current) return 0f
+fun rememberSpin(durationMillis: Int = 20000): State<Float> {
+    if (!LocalYtMotion.current) return YtStill(0f)
     val transition = rememberInfiniteTransition(label = "spin")
-    val value by transition.animateFloat(
+    return transition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(tween(durationMillis, easing = LinearEasing)),
         label = "spinValue",
     )
-    return value
 }
 
 /** Formen: the phase of a travelling wave, 0 to 1. */
 @Composable
-fun rememberWavePhase(durationMillis: Int = 1600): Float {
-    if (!LocalYtMotion.current) return 0f
+fun rememberWavePhase(durationMillis: Int = 1600): State<Float> {
+    if (!LocalYtMotion.current) return YtStill(0f)
     val transition = rememberInfiniteTransition(label = "wave")
-    val value by transition.animateFloat(
+    return transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(durationMillis, easing = LinearEasing)),
         label = "wavePhase",
     )
-    return value
 }
 
 /** A rectangle revealed from the left up to [fraction] of the width. */

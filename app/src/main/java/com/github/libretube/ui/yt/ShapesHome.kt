@@ -301,7 +301,7 @@ private fun ShapesContinue(palette: YtPalette, imageLoader: ImageLoader, video: 
                 palette.accent,
                 Color(0xFFD9D4EE),
                 Modifier.padding(top = 12.dp).fillMaxWidth().height(18.dp),
-                phase = rememberWavePhase(),
+                phase = wavePhase(),
             )
         }
         Box(
@@ -327,7 +327,7 @@ private fun ShapesContinue(palette: YtPalette, imageLoader: ImageLoader, video: 
 
 /** Material 3 Expressive style progress: wavy where played, straight where not, with a thumb. */
 @Composable
-fun WavyProgress(progress: Float, played: Color, rest: Color, modifier: Modifier = Modifier, phase: Float = 0f) {
+fun WavyProgress(progress: Float, played: Color, rest: Color, modifier: Modifier = Modifier, phase: () -> Float = { 0f }) {
     Canvas(modifier) {
         val stroke = size.height * 0.22f
         val mid = size.height / 2f
@@ -339,7 +339,7 @@ fun WavyProgress(progress: Float, played: Color, rest: Color, modifier: Modifier
         wave.moveTo(0f, mid)
         while (x <= end) {
             // the wave travels along the played part while [phase] runs from 0 to 1
-            wave.lineTo(x, mid + amplitude * sin(2 * PI * (x / wavelength - phase)).toFloat())
+            wave.lineTo(x, mid + amplitude * sin(2 * PI * (x / wavelength - phase())).toFloat())
             x += 2f
         }
         drawPath(wave, played, style = Stroke(width = stroke, cap = StrokeCap.Round))
@@ -424,4 +424,11 @@ private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: Str
             )
         }
     }
+}
+
+/** The travelling phase of the wave, read where the wave is drawn. */
+@Composable
+private fun wavePhase(): () -> Float {
+    val phase = rememberWavePhase()
+    return { phase.value }
 }

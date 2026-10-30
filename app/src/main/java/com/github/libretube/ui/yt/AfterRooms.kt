@@ -245,7 +245,7 @@ private fun CreatorPortrait(
                         .align(Alignment.BottomStart)
                         .padding(start = 7.dp, bottom = 6.dp),
                 ) {
-                    val pulse = rememberPulse()
+                    val pulse by rememberPulse()
                     Box(
                         Modifier
                             .size(7.dp)
@@ -291,7 +291,7 @@ private fun RoomCover(
             .background(palette.surface)
             .clickable { onEnterRoom(room) },
     ) {
-        val zoom = rememberKenBurns(durationMillis = 22000)
+        val zoom by rememberKenBurns(durationMillis = 22000)
         YtLargeThumbnail(
             room,
             imageLoader,

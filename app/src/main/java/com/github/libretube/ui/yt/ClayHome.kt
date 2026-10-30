@@ -318,7 +318,7 @@ private fun ClayCard(
 @Composable
 private fun ClayPlayButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
-    val breath = rememberBreath()
+    val breath by rememberBreath()
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier

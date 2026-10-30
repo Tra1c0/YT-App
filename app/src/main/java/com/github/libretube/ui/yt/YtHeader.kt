@@ -313,7 +313,7 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
     }
     val interaction = remember { MutableInteractionSource() }
     // Formen: the scalloped search button turns slowly
-    val spin = if (design == YtDesign.SHAPES && kind == HeaderButton.SEARCH) rememberSpin(24000) else 0f
+    val spin = if (design == YtDesign.SHAPES && kind == HeaderButton.SEARCH) rememberSpin(24000) else null
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -324,7 +324,7 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
         Box(
             Modifier
                 .matchParentSize()
-                .graphicsLayer { rotationZ = spin }
+                .graphicsLayer { rotationZ = spin?.value ?: 0f }
                 .then(if (look.shadow > 0.dp) Modifier.shadow(look.shadow, look.shape, clip = false) else Modifier)
                 .clip(look.shape)
                 .then(if (look.fill != null) Modifier.background(look.fill) else Modifier)

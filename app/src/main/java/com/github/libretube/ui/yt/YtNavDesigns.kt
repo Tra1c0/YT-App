@@ -520,18 +520,12 @@ fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
             ) {
                 // the shape of the active tab blooms out of a circle (lobes grow, corners
                 // square up) while it turns into place; the scalloped ones keep turning slowly
-                val morph by animateFloatAsState(
+                val morph = animateFloatAsState(
                     if (active) 1f else 0f,
                     ytSpec(spring(dampingRatio = 0.45f, stiffness = 320f)),
                     label = "shapeMorph",
                 )
-                val spin = if (active && (i == 0 || i == 3)) rememberSpin(16000) else 0f
-                val shape = when (i % 4) {
-                    0 -> CookieShape(9, 0.07f * morph)
-                    2 -> MorphRoundRectShape(morph, 14.dp)
-                    3 -> CookieShape(6, 0.1f * morph)
-                    else -> RoundedCornerShape(50)
-                }
+                val spin = if (active && (i == 0 || i == 3)) rememberSpin(16000) else null
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
@@ -541,11 +535,19 @@ fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
                     Box(
                         Modifier
                             .matchParentSize()
+                            // read in the draw phase: the morph redraws, it does not recompose
                             .graphicsLayer {
-                                rotationZ = spin - 70f * (1f - morph)
-                                alpha = morph.coerceIn(0f, 1f)
+                                val m = morph.value
+                                rotationZ = (spin?.value ?: 0f) - 70f * (1f - m)
+                                alpha = m.coerceIn(0f, 1f)
+                                clip = true
+                                shape = when (i % 4) {
+                                    0 -> CookieShape(9, 0.07f * m)
+                                    2 -> MorphRoundRectShape(m, 14.dp)
+                                    3 -> CookieShape(6, 0.1f * m)
+                                    else -> RoundedCornerShape(50)
+                                }
                             }
-                            .clip(shape)
                             .background(colors[i % colors.size]),
                     )
                     NavIcon(item, active, if (active) palette.ink else palette.text.copy(alpha = 0.75f), 22.dp)
