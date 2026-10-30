@@ -88,6 +88,9 @@ internal fun YtRound2Home(
     }
     val actions = YtHomeActions(
         onOpenVideo = { video -> video.url?.let { NavigationHelper.navigateVideo(context, PlayerData(it.toID())) } },
+        onOpenVideoAt = { video, seconds ->
+            video.url?.let { NavigationHelper.navigateVideo(context, PlayerData(it.toID(), timestamp = seconds)) }
+        },
         onOpenChannel = { video -> NavigationHelper.navigateChannel(context, video.uploaderUrl) },
         onSave = { video ->
             AddToPlaylistDialog().apply {

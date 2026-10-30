@@ -41,6 +41,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlin.math.abs
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
@@ -98,7 +110,14 @@ fun KieselHomeScreen(
     val weekTotal = week.sum()
     val live = data.live?.count { it.isLive } ?: 0
     val shorts = data.shorts?.size ?: 0
-    val reminder = data.continueWatching?.firstOrNull { remaining(it) > 0 } ?: subs.firstOrNull()
+    // the reminder stack: what you were watching, then the newest of your channels
+    val reminders = remember(data.continueWatching, subs) {
+        (data.continueWatching.orEmpty().filter { remaining(it) > 0 } + subs).filter { it.url != null }.distinctBy { it.url }.take(6)
+    }
+    val days = remember(now) {
+        val format = SimpleDateFormat("EE", Locale.getDefault())
+        List(7) { i -> format.format(Date(now - (6 - i) * DAY)) }
+    }
     val forYou = data.forYou.orEmpty().take(10)
     val more = data.forYou.orEmpty().drop(10).take(12)
     val channels = remember(subs) {
@@ -121,8 +140,8 @@ fun KieselHomeScreen(
     ) {
         LazyColumn(Modifier.fillMaxSize()) {
             item {
-                reminder?.let {
-                    KieselReminder(it, remaining(it), actions, Modifier.padding(start = 18.dp, end = 18.dp, top = 6.dp))
+                if (reminders.isNotEmpty()) {
+                    KieselReminder(reminders, remaining, actions, Modifier.padding(start = 18.dp, end = 18.dp, top = 6.dp))
                 }
             }
             item {
@@ -140,7 +159,7 @@ fun KieselHomeScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier.weight(1.28f),
                     ) {
-                        KieselBars(week, weekTotal)
+                        KieselBars(week, weekTotal, days)
                         KieselStat(live, stringResource(R.string.yt_kiesel_live))
                     }
                     KieselLegend(
@@ -220,12 +239,15 @@ private fun KieselSection(title: String, onAll: (() -> Unit)?, modifier: Modifie
 }
 
 /**
- * Continue watching as the peach reminder lying on a lavender card. The stack fans out when it
- * appears and further when pressed, the front card lifts.
+ * Continue watching and what is new, as a stack of cards: a peach reminder lying on a lavender
+ * one. The stack fans out when it appears and further when pressed; swiping the front card
+ * away (1:1, the finger's flick decides) brings the next card forward.
  */
 @Composable
-private fun KieselReminder(video: StreamItem, left: Long, actions: YtHomeActions, modifier: Modifier = Modifier) {
+private fun KieselReminder(videos: List<StreamItem>, remaining: (StreamItem) -> Long, actions: YtHomeActions, modifier: Modifier = Modifier) {
     val motion = LocalYtMotion.current
+    val haptics = rememberYtHaptics()
+    val scope = rememberCoroutineScope()
     val press = remember { MutableInteractionSource() }
     val pressed by press.collectIsPressedAsState()
     val fan = remember { Animatable(if (motion) 0f else 1f) }
@@ -236,76 +258,113 @@ private fun KieselReminder(video: StreamItem, left: Long, actions: YtHomeActions
         }
     }
     val lift by animateFloatAsState(if (pressed && motion) 1f else 0f, spring(dampingRatio = 0.6f, stiffness = 500f), label = "lift")
+    var index by remember { mutableIntStateOf(0) }
+    var width by remember { mutableIntStateOf(0) }
+    val swipe = rememberYtSwipe()
+    val front = videos[index % videos.size]
+    val back = videos[(index + 1) % videos.size]
+    val colors = listOf(KieselPeach, KieselLavender)
+    val leaveSpec = ytFinite(spring<Float>(dampingRatio = 0.9f, stiffness = 320f))
     Box(
         modifier
             .fillMaxWidth()
-            .height(96.dp),
+            .height(96.dp)
+            .onSizeChanged { width = it.width },
     ) {
-        // the lavender card behind, turned a little
-        Box(
+        // the next card behind, turned a little; it straightens and comes forward with the swipe
+        KieselReminderFace(
+            back, remaining(back), colors[(index + 1) % 2],
             Modifier
                 .padding(start = 10.dp, end = 8.dp, top = 12.dp)
                 .fillMaxWidth()
                 .height(78.dp)
                 .graphicsLayer {
-                    val f = fan.value + 0.6f * lift
+                    val p = if (width > 0) (abs(swipe.offset.value) / width).coerceIn(0f, 1f) else 0f
+                    val f = (fan.value + 0.6f * lift) * (1f - p)
                     rotationZ = -4.5f * f
-                    translationY = 4.dp.toPx() * f
+                    translationY = 4.dp.toPx() * f - 12.dp.toPx() * p
                     translationX = 6.dp.toPx() * f
-                }
-                .clip(RoundedCornerShape(18.dp))
-                .background(KieselLavender),
+                    val s = 0.96f + 0.04f * p
+                    scaleX = s
+                    scaleY = s
+                    alpha = (0.4f + fan.value).coerceAtMost(1f)
+                },
         )
-        Column(
+        KieselReminderFace(
+            front, remaining(front), colors[index % 2],
             Modifier
                 .fillMaxWidth()
                 .height(78.dp)
                 .graphicsLayer {
+                    translationX = swipe.offset.value
+                    rotationZ = if (width > 0) 9f * swipe.offset.value / width else 0f
                     translationY = -6.dp.toPx() * lift - (1f - fan.value) * 16.dp.toPx()
                     alpha = (0.4f + fan.value).coerceAtMost(1f)
                 }
-                .clip(RoundedCornerShape(18.dp))
-                .clickable(interactionSource = press, indication = null) { actions.onOpenVideo(video) }
-                .background(KieselPeach)
-                .padding(horizontal = 18.dp, vertical = 14.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = if (left > 0) stringResource(R.string.yt_kiesel_reminder)
-                    else stringResource(R.string.yt_kiesel_new_from, video.uploaderName.orEmpty()),
-                    color = KieselInk,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp),
-                    modifier = Modifier.weight(1f),
-                )
-                val right = if (left > 0) stringResource(R.string.yt_kiesel_left, DateUtils.formatElapsedTime(left / 1000))
-                else ytDuration(video)
-                right?.let {
-                    Text(
-                        text = it,
-                        color = KieselInk,
-                        style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
-                    )
+                .ytSwipe(swipe, (width * 0.3f).coerceAtLeast(120f), direction = 0, haptics = haptics, enabled = videos.size > 1, settle = false) { way ->
+                    scope.launch {
+                        swipe.offset.animateTo(way * width * 1.3f, leaveSpec)
+                        index++
+                        swipe.offset.snapTo(0f)
+                    }
                 }
-            }
-            Text(
-                text = video.title.orEmpty(),
-                color = KieselInk.copy(alpha = 0.75f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 12.5.sp),
-                modifier = Modifier.padding(top = 6.dp),
-            )
-        }
+                .clickable(interactionSource = press, indication = null) { actions.onOpenVideo(front) },
+        )
     }
 }
 
-/** New videos of the week: the number counts up, the bars grow one after the other. */
 @Composable
-private fun KieselBars(week: IntArray, total: Int) {
+private fun KieselReminderFace(video: StreamItem, left: Long, color: Color, modifier: Modifier) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(color)
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = if (left > 0) stringResource(R.string.yt_kiesel_reminder)
+                else stringResource(R.string.yt_kiesel_new_from, video.uploaderName.orEmpty()),
+                color = KieselInk,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp),
+                modifier = Modifier.weight(1f),
+            )
+            val right = if (left > 0) stringResource(R.string.yt_kiesel_left, DateUtils.formatElapsedTime(left / 1000))
+            else ytDuration(video)
+            right?.let {
+                Text(
+                    text = it,
+                    color = KieselInk,
+                    style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
+                )
+            }
+        }
+        Text(
+            text = video.title.orEmpty(),
+            color = KieselInk.copy(alpha = 0.75f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 12.5.sp),
+            modifier = Modifier.padding(top = 6.dp),
+        )
+    }
+}
+
+/**
+ * New videos of the week: the number counts up, the bars grow one after the other. A tap on a
+ * bar lifts it and shows its day and count in a dark bubble; tapping again lets it down.
+ */
+@Composable
+private fun KieselBars(week: IntArray, total: Int, days: List<String>) {
     val motion = LocalYtMotion.current
+    val haptics = rememberYtHaptics()
     val growth = remember { List(7) { Animatable(if (motion) 0f else 1f) } }
+    var picked by remember { mutableIntStateOf(-1) }
+    val lifts = List(7) { i -> animateFloatAsState(if (picked == i) 1f else 0f, ytSpec(spring(dampingRatio = 0.5f, stiffness = 380f)), label = "bar$i") }
+    val measurer = rememberTextMeasurer()
+    val bubbleStyle = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = KieselCream)
     LaunchedEffect(Unit) {
         if (!motion) return@LaunchedEffect
         growth.forEachIndexed { i, a ->
@@ -329,7 +388,16 @@ private fun KieselBars(week: IntArray, total: Int) {
             Modifier
                 .padding(top = 10.dp)
                 .fillMaxWidth()
-                .height(70.dp),
+                .height(70.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures { at ->
+                        val gap = size.width * 0.04f
+                        val barWidth = (size.width - gap * 6) / 7
+                        val i = (at.x / (barWidth + gap)).toInt().coerceIn(0, 6)
+                        picked = if (picked == i) -1 else i
+                        haptics.tick()
+                    }
+                },
         ) {
             val gap = size.width * 0.04f
             val barWidth = (size.width - gap * 6) / 7
@@ -337,12 +405,27 @@ private fun KieselBars(week: IntArray, total: Int) {
                 // an empty day still shows a stub, as in the reference
                 val share = (week[i].toFloat() / max).coerceAtLeast(0.18f)
                 val h = size.height * share * growth[i].value
+                val l = lifts[i].value
+                val raised = 6.dp.toPx() * l
                 drawRoundRect(
                     colors[i],
-                    topLeft = Offset(i * (barWidth + gap), size.height - h),
+                    topLeft = Offset(i * (barWidth + gap), size.height - h - raised),
                     size = Size(barWidth, h),
                     cornerRadius = CornerRadius(barWidth * 0.3f),
                 )
+                if (l > 0.01f) {
+                    // the day and its count in a dark bubble above the lifted bar (inside it when tall)
+                    val text = measurer.measure(days[i] + " " + week[i], bubbleStyle)
+                    val w = text.size.width + 12.dp.toPx()
+                    val bh = text.size.height + 6.dp.toPx()
+                    val cx = (i * (barWidth + gap) + barWidth / 2).coerceIn(w / 2, size.width - w / 2)
+                    var top = size.height - h - raised - bh - 4.dp.toPx()
+                    if (top < 0f) top = size.height - h - raised + 6.dp.toPx()
+                    scale(l, l, pivot = Offset(cx, top + bh)) {
+                        drawRoundRect(KieselInk, Offset(cx - w / 2, top), Size(w, bh), CornerRadius(bh / 2))
+                        drawText(text, topLeft = Offset(cx - text.size.width / 2f, top + 3.dp.toPx()))
+                    }
+                }
             }
         }
     }

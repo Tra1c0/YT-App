@@ -34,6 +34,22 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
+import androidx.compose.foundation.gestures.drag
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.highlight.HighlightStyle
+import com.kyant.backdrop.shadow.Shadow
+import kotlin.math.roundToInt
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -203,6 +219,11 @@ private fun GlassVideo(
     val thumb = rememberLayerBackdrop()
     val press = remember { MutableInteractionSource() }
     val swell by rememberSwell(press)
+    // a long press brings up a glass magnifier over the picture that follows the finger
+    var magnifier by remember { mutableStateOf<Offset?>(null) }
+    val haptics = rememberYtHaptics()
+    val motion = LocalYtMotion.current
+    val lensSize = 104.dp
     Column(modifier.padding(start = 20.dp, end = 18.dp, bottom = 11.dp)) {
         Box(
             Modifier
@@ -211,7 +232,22 @@ private fun GlassVideo(
                 .shadow(6.dp, RoundedCornerShape(12.dp), clip = false, ambientColor = GlassShadow, spotColor = GlassShadow)
                 .clip(RoundedCornerShape(12.dp))
                 .background(palette.lime)
-                .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) },
+                .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
+                .pointerInput(motion) {
+                    if (!motion) return@pointerInput
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val hold = awaitLongPressOrCancellation(down.id) ?: return@awaitEachGesture
+                        hold.consume()
+                        haptics.tick()
+                        magnifier = hold.position
+                        drag(hold.id) { change ->
+                            change.consume()
+                            magnifier = change.position
+                        }
+                        magnifier = null
+                    }
+                },
         ) {
             YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().layerBackdrop(thumb))
             // a glass drop on the picture: bends it at the rim and swells under the finger
@@ -249,6 +285,27 @@ private fun GlassVideo(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                     )
                 }
+            }
+            magnifier?.let { at ->
+                val half = with(LocalDensity.current) { lensSize.toPx() / 2f }
+                Box(
+                    Modifier
+                        .offset { IntOffset((at.x - half).roundToInt(), (at.y - half).roundToInt()) }
+                        .size(lensSize)
+                        .drawBackdrop(
+                            backdrop = thumb,
+                            shape = { CircleShape },
+                            effects = { lens(14.dp.toPx(), 26.dp.toPx(), chromaticAberration = true) },
+                            highlight = { Highlight(style = HighlightStyle.Default(angle = 45f)) },
+                            shadow = { Shadow(radius = 14.dp, color = GlassShadow) },
+                            // the picture below is drawn at 1.6 x inside the circle
+                            layerBlock = {
+                                scaleX = 1.6f
+                                scaleY = 1.6f
+                            },
+                            onDrawSurface = { drawRect(Color(0x12FFFFFF)) },
+                        ),
+                )
             }
         }
         Row(

@@ -87,9 +87,11 @@ fun Modifier.liquidGlass(
     blur: Dp = 10.dp,
     refraction: Dp = 14.dp,
     swell: () -> Float = { 0f },
+    /** 0 to 1: the frost clears, the glass turns almost transparent (Frost: a warm finger). */
+    clear: () -> Float = { 0f },
 ): Modifier {
     val tilt = LocalYtTilt.current
-    return liquidGlassWithLight(backdrop, shape, tint, shadowColor, blur, refraction, swell) { ytLightAngle(tilt.value) }
+    return liquidGlassWithLight(backdrop, shape, tint, shadowColor, blur, refraction, swell, clear) { ytLightAngle(tilt.value) }
 }
 
 private fun Modifier.liquidGlassWithLight(
@@ -100,15 +102,17 @@ private fun Modifier.liquidGlassWithLight(
     blur: Dp,
     refraction: Dp,
     swell: () -> Float,
+    clear: () -> Float,
     light: () -> Float,
 ): Modifier = this.drawBackdrop(
     backdrop = backdrop,
     shape = { shape },
     effects = {
         vibrancy()
-        blur(blur.toPx())
+        val c = clear()
+        blur(blur.toPx() * (1f - 0.92f * c))
         val s = swell()
-        lens(refraction.toPx() * (1f + 0.4f * s), (refraction * 1.5f).toPx() * (1f + 0.6f * s))
+        lens(refraction.toPx() * (1f + 0.4f * s) * (1f - 0.6f * c), (refraction * 1.5f).toPx() * (1f + 0.6f * s) * (1f - 0.6f * c))
     },
     highlight = { Highlight(style = HighlightStyle.Default(angle = light())) },
     shadow = shadowColor?.let { color -> { Shadow(radius = 16.dp, color = color) } },
@@ -117,7 +121,7 @@ private fun Modifier.liquidGlassWithLight(
         scaleX = scale
         scaleY = scale
     },
-    onDrawSurface = { drawRect(glassTint(tint)) },
+    onDrawSurface = { drawRect(glassTint(tint), alpha = 1f - 0.85f * clear()) },
 )
 
 /** 0 to 1 while [interaction] is pressed, with a soft spring; 0 when motion is off. */

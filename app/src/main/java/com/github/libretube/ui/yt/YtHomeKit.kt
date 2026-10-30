@@ -48,6 +48,8 @@ class YtHomeActions(
     val onShowSubscriptions: () -> Unit,
     val onSearch: () -> Unit,
     val onRefresh: () -> Unit,
+    /** Opens a video at a position, in seconds. */
+    val onOpenVideoAt: (StreamItem, Long) -> Unit = { video, _ -> onOpenVideo(video) },
 )
 
 /** Videos that can be played as a regular video: no Shorts, nothing upcoming, with a URL. */

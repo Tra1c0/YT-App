@@ -29,10 +29,28 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.exponentialDecay
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.horizontalDrag
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.input.pointer.util.addPointerInputChange
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -81,6 +99,9 @@ fun PopHomeScreen(
     val shorts = data.shorts.orEmpty()
     val liveCard = data.live?.firstOrNull { it.url != null && it.isLive }
     val enter = rememberYtEnterState()
+    val list = rememberLazyListState()
+    // the cards swing a little with the speed of the scroll, like things on a string
+    val swing = rememberPopSwing(list)
 
     YtRefreshBox(
         palette = palette,
@@ -91,6 +112,7 @@ fun PopHomeScreen(
             .background(palette.background),
     ) {
         LazyColumn(
+            state = list,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 16.dp + ytNavPadding()),
         ) {
@@ -115,15 +137,44 @@ fun PopHomeScreen(
             videos.firstOrNull()?.let { first ->
                 item(key = "feature-" + first.url) { PopFeature(palette, imageLoader, first, actions, Modifier.ytEnter(enter, tab + first.url, 0)) }
             }
-            items(videos.drop(1).take(1), key = { "list-" + it.url }) { PopListCard(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, 1)) }
+            items(videos.drop(1).take(1), key = { "list-" + it.url }) {
+                PopListCard(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, 1).graphicsLayer { rotationZ = -2.5f * swing.value })
+            }
             if ((shorts.isNotEmpty() || liveCard != null) && tab != YT_TAB_LIVE) {
                 item { PopShorts(palette, imageLoader, shorts, liveCard, actions) }
             }
             items(videos.drop(2), key = { "more-" + it.url }) {
-                PopListCard(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)))
+                PopListCard(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)).graphicsLayer { rotationZ = -2.5f * swing.value })
             }
         }
     }
+}
+
+/** -1 to 1 with the scroll speed of [list], springing back to 0 when it stops. */
+@Composable
+private fun rememberPopSwing(list: LazyListState): State<Float> {
+    val motion = LocalYtMotion.current
+    val target = remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(list, motion) {
+        if (!motion) return@LaunchedEffect
+        snapshotFlow { list.isScrollInProgress }.collectLatest { scrolling ->
+            if (!scrolling) {
+                target.floatValue = 0f
+                return@collectLatest
+            }
+            var lastIndex = list.firstVisibleItemIndex
+            var lastOffset = list.firstVisibleItemScrollOffset
+            while (true) {
+                withFrameNanos { }
+                val index = list.firstVisibleItemIndex
+                val offset = list.firstVisibleItemScrollOffset
+                if (index == lastIndex) target.floatValue = ((offset - lastOffset) / 70f).coerceIn(-1f, 1f)
+                lastIndex = index
+                lastOffset = offset
+            }
+        }
+    }
+    return animateFloatAsState(target.floatValue, spring(dampingRatio = 0.5f, stiffness = 220f), label = "popSwing")
 }
 
 @Composable
@@ -170,10 +221,20 @@ private fun PopFeature(
     modifier: Modifier = Modifier,
 ) {
     val card = FeatureShape(smallFraction = 0.06f, largeFraction = 0.165f)
+    // held, the card inflates a little like a balloon and pops back when let go
+    val scope = rememberCoroutineScope()
+    val motion = LocalYtMotion.current
+    val inflate = remember { Animatable(0f) }
     Column(
         modifier
             .padding(horizontal = 14.dp)
             .fillMaxWidth()
+            .graphicsLayer {
+                val scale = 1f + 0.05f * inflate.value
+                scaleX = scale
+                scaleY = scale
+            }
+            .ytHold(inflate, scope, enabled = motion)
             .shadow(6.dp, card, clip = false, ambientColor = PopShadow, spotColor = PopShadow)
             .clip(card)
             .background(PopYellow)
@@ -262,20 +323,43 @@ private fun PopFeature(
                     style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp),
                 )
             }
-            // saving spins the cookie a fifth of a turn with a springy overshoot
-            var turns by remember { mutableIntStateOf(0) }
-            val rotation by animateFloatAsState(turns * 72f, ytSpec(spring(dampingRatio = 0.45f, stiffness = 260f)), label = "popStar")
+            // the star: a tap saves and spins it a fifth of a turn with a springy overshoot; a
+            // flick spins it with the finger and lets it run out like a top
+            val rotation = remember { Animatable(0f) }
+            val spinSpec = ytSpec(spring<Float>(dampingRatio = 0.45f, stiffness = 260f))
+            val runOut = remember { exponentialDecay<Float>(frictionMultiplier = 1.3f) }
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(46.dp)
-                    .graphicsLayer { rotationZ = rotation }
+                    .graphicsLayer { rotationZ = rotation.value }
                     .shadow(3.dp, CookieShape(9), clip = false, ambientColor = PopShadow, spotColor = PopShadow)
                     .clip(CookieShape(9))
                     .background(Color.White)
-                    .clickable {
-                        turns++
-                        actions.onSave(video)
+                    .pointerInput(motion) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown()
+                            val tracker = VelocityTracker()
+                            var moved = 0f
+                            var spun = rotation.value
+                            horizontalDrag(down.id) { change ->
+                                tracker.addPointerInputChange(change)
+                                val dx = change.positionChange().x
+                                moved += kotlin.math.abs(dx)
+                                if (moved > viewConfiguration.touchSlop) {
+                                    change.consume()
+                                    spun += dx * 0.9f
+                                    scope.launch { rotation.snapTo(spun) }
+                                }
+                            }
+                            if (moved <= viewConfiguration.touchSlop) {
+                                scope.launch { rotation.animateTo(rotation.value + 72f, spinSpec) }
+                                actions.onSave(video)
+                            } else if (motion) {
+                                val velocity = tracker.calculateVelocity().x * 0.9f
+                                scope.launch { rotation.animateDecay(velocity, runOut) }
+                            }
+                        }
                     },
             ) {
                 Icon(painterResource(R.drawable.ic_yt_star), contentDescription = null, tint = palette.text, modifier = Modifier.size(22.dp))

@@ -27,6 +27,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.horizontalDrag
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -74,6 +87,10 @@ fun ShapesHomeScreen(
     val newCount = data.subscriptions?.count { System.currentTimeMillis() - it.uploaded < DAY_MILLIS } ?: 0
     val liveCount = data.live?.count { it.isLive } ?: 0
     val enter = rememberYtEnterState()
+    // the cookie shapes turn with the scroll, a full turn per ~3000 px
+    val scrolled = rememberYtScrollTotal()
+    val motion = LocalYtMotion.current
+    val turn: () -> Float = remember(scrolled, motion) { { if (motion) scrolled.value / 8.5f else 0f } }
 
     YtRefreshBox(
         palette = palette,
@@ -84,7 +101,9 @@ fun ShapesHomeScreen(
             .background(Brush.verticalGradient(listOf(Color(0xFF12122A), Color(0xFF1C1A45), Color(0xFF3F3489), Color(0xFF6656C4)))),
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(scrolled.connection),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 20.dp + ytNavPadding()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -222,13 +241,26 @@ fun ShapesHomeScreen(
                             .background(palette.lime)
                             .clickable { short?.let(actions.onOpenVideo) ?: actions.onShowShorts() },
                     ) {
+                        // the cookie turns with the scroll while the picture inside stays upright
                         Box(
                             Modifier
                                 .size(112.dp)
+                                .graphicsLayer { rotationZ = turn() }
                                 .clip(CookieShape(11))
                                 .background(ShapesLimeDark),
                         ) {
-                            short?.let { YtLargeThumbnail(it, imageLoader, Modifier.fillMaxSize()) }
+                            short?.let {
+                                YtLargeThumbnail(
+                                    it, imageLoader,
+                                    Modifier
+                                        .fillMaxSize()
+                                        .graphicsLayer {
+                                            rotationZ = -turn()
+                                            scaleX = 1.42f
+                                            scaleY = 1.42f
+                                        },
+                                )
+                            }
                         }
                     }
                 }
@@ -243,7 +275,7 @@ fun ShapesHomeScreen(
             }
             itemsIndexed(videos.drop(1), key = { _, v -> "v-" + v.url }) { index, video ->
                 Box(Modifier.ytEnter(enter, "v" + video.url, index + 3)) {
-                    ShapesVideo(palette, imageLoader, video, index, actions)
+                    ShapesVideo(palette, imageLoader, video, index, actions, turn)
                 }
             }
         }
@@ -267,6 +299,10 @@ private fun ShapesTile(color: Color, modifier: Modifier, onClick: () -> Unit, co
 /** The player-like card: title, a wavy progress line and big rounded controls. */
 @Composable
 private fun ShapesContinue(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, progress: Float, actions: YtHomeActions) {
+    // dragging along the wave scrubs: letting go opens the video right there
+    var seek by remember { mutableStateOf<Float?>(null) }
+    val haptics = rememberYtHaptics()
+    val grabbed by animateFloatAsState(if (seek != null) 1f else 0f, ytSpec(spring(dampingRatio = 0.5f, stiffness = 420f)), label = "grab")
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -296,13 +332,41 @@ private fun ShapesContinue(palette: YtPalette, imageLoader: ImageLoader, video: 
                 maxLines = 1,
                 style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 12.sp),
             )
-            WavyProgress(
-                progress,
-                palette.accent,
-                Color(0xFFD9D4EE),
-                Modifier.padding(top = 12.dp).fillMaxWidth().height(18.dp),
-                phase = wavePhase(),
-            )
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .padding(top = 6.dp)
+                    .fillMaxWidth()
+                    .height(30.dp)
+                    .pointerInput(video.url) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            val start = awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
+                                ?: return@awaitEachGesture
+                            haptics.tick()
+                            seek = (start.position.x / size.width).coerceIn(0f, 1f)
+                            horizontalDrag(start.id) { change ->
+                                change.consume()
+                                seek = (change.position.x / size.width).coerceIn(0f, 1f)
+                            }
+                            val at = seek ?: return@awaitEachGesture
+                            seek = null
+                            haptics.confirm()
+                            val duration = video.duration ?: 0L
+                            if (duration > 0) actions.onOpenVideoAt(video, (at * duration).toLong()) else actions.onOpenVideo(video)
+                        }
+                    },
+            ) {
+                WavyProgress(
+                    progress,
+                    palette.accent,
+                    Color(0xFFD9D4EE),
+                    Modifier.fillMaxWidth().height(18.dp),
+                    phase = wavePhase(),
+                    seek = { seek },
+                    grabbed = { grabbed },
+                )
+            }
         }
         Box(
             contentAlignment = Alignment.Center,
@@ -327,14 +391,25 @@ private fun ShapesContinue(palette: YtPalette, imageLoader: ImageLoader, video: 
 
 /** Material 3 Expressive style progress: wavy where played, straight where not, with a thumb. */
 @Composable
-fun WavyProgress(progress: Float, played: Color, rest: Color, modifier: Modifier = Modifier, phase: () -> Float = { 0f }) {
+fun WavyProgress(
+    progress: Float,
+    played: Color,
+    rest: Color,
+    modifier: Modifier = Modifier,
+    phase: () -> Float = { 0f },
+    /** A position the finger holds instead of [progress], 0 to 1. */
+    seek: () -> Float? = { null },
+    /** 0 to 1 while the thumb is held: the wave rises and the thumb grows. */
+    grabbed: () -> Float = { 0f },
+) {
     Canvas(modifier) {
+        val g = grabbed()
         val stroke = size.height * 0.22f
         val mid = size.height / 2f
-        val end = size.width * progress.coerceIn(0f, 1f)
+        val end = size.width * (seek() ?: progress).coerceIn(0f, 1f)
         val wave = Path()
         val wavelength = size.height * 1.6f
-        val amplitude = size.height * 0.22f
+        val amplitude = size.height * (0.22f + 0.12f * g)
         var x = 0f
         wave.moveTo(0f, mid)
         while (x <= end) {
@@ -344,12 +419,13 @@ fun WavyProgress(progress: Float, played: Color, rest: Color, modifier: Modifier
         }
         drawPath(wave, played, style = Stroke(width = stroke, cap = StrokeCap.Round))
         drawLine(rest, Offset(end + stroke * 1.5f, mid), Offset(size.width, mid), strokeWidth = stroke, cap = StrokeCap.Round)
-        drawLine(played, Offset(end, mid - size.height * 0.45f), Offset(end, mid + size.height * 0.45f), strokeWidth = stroke * 1.4f, cap = StrokeCap.Round)
+        val reach = size.height * (0.45f + 0.2f * g)
+        drawLine(played, Offset(end, mid - reach), Offset(end, mid + reach), strokeWidth = stroke * (1.4f + 0.8f * g), cap = StrokeCap.Round)
     }
 }
 
 @Composable
-private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, index: Int, actions: YtHomeActions) {
+private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, index: Int, actions: YtHomeActions, turn: () -> Float) {
     // alternating corners give each card its own shape
     val shape = when (index % 3) {
         0 -> RoundedCornerShape(28.dp)
@@ -384,17 +460,28 @@ private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: Str
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(start = 4.dp, top = 10.dp),
         ) {
-            AsyncImage(
-                model = video.uploaderAvatar,
-                contentDescription = null,
-                imageLoader = imageLoader,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
+            Box(
+                Modifier
                     .size(36.dp)
+                    .graphicsLayer { rotationZ = turn() * 0.7f }
                     .clip(CookieShape(8, 0.06f))
                     .background(tag)
                     .clickable { actions.onOpenChannel(video) },
-            )
+            ) {
+                AsyncImage(
+                    model = video.uploaderAvatar,
+                    contentDescription = null,
+                    imageLoader = imageLoader,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            rotationZ = -turn() * 0.7f
+                            scaleX = 1.42f
+                            scaleY = 1.42f
+                        },
+                )
+            }
             Column(
                 Modifier
                     .weight(1f)

@@ -27,6 +27,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import android.os.Build
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -53,15 +67,30 @@ import com.github.libretube.api.obj.StreamItem
 
 private val FrostDark = Color(0xFF1F2A26)
 
+/**
+ * 0 to 1 while [interaction] is pressed: the frost thaws under a warm finger, slowly, and
+ * freezes over again slower still. 0 when motion is off.
+ */
+@Composable
+private fun rememberThaw(interaction: MutableInteractionSource): State<Float> {
+    val pressed by interaction.collectIsPressedAsState()
+    val warm = pressed && LocalYtMotion.current
+    return animateFloatAsState(
+        if (warm) 1f else 0f,
+        if (warm) tween<Float>(650, easing = YtEaseOut) else tween<Float>(1100, easing = YtEaseInOut),
+        label = "thaw",
+    )
+}
+
 /** The sage background with its drifting light, which the frosted cards blur and bend. */
 private val LocalFrostBackdrop = staticCompositionLocalOf<Backdrop?> { null }
 
 /** Frosted sage glass: the background blurred and bent at the rim, a little white, a light edge. */
 @Composable
-private fun Modifier.frost(shape: Shape): Modifier {
+private fun Modifier.frost(shape: Shape, clear: () -> Float = { 0f }): Modifier {
     val backdrop = LocalFrostBackdrop.current
     return if (backdrop != null) {
-        liquidGlass(backdrop, shape, Color(0x2EFFFFFF), Color(0x2E000000), blur = 16.dp, refraction = 10.dp)
+        liquidGlass(backdrop, shape, Color(0x2EFFFFFF), Color(0x2E000000), blur = 16.dp, refraction = 10.dp, clear = clear)
     } else {
         this
             .clip(shape)
@@ -82,6 +111,8 @@ fun FrostHomeScreen(
     data: YtHomeData,
     actions: YtHomeActions,
 ) {
+    val motion = LocalYtMotion.current
+    val list = rememberLazyListState()
     val videos = ytPlayable(data.forYou).orEmpty()
     val newVideos = data.subscriptions?.count { System.currentTimeMillis() - it.uploaded < 24L * 60 * 60 * 1000 }
     val live = data.live?.count { it.isLive }
@@ -106,6 +137,7 @@ fun FrostHomeScreen(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 LazyColumn(
+                    state = list,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 20.dp + ytNavPadding()),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -120,6 +152,20 @@ fun FrostHomeScreen(
                             },
                             color = palette.text,
                             style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Medium, fontSize = 24.sp, lineHeight = 30.sp),
+                            modifier = Modifier.graphicsLayer {
+                                // the greeting melts as the list scrolls: it sinks, stretches down, blurs and fades
+                                if (!motion) return@graphicsLayer
+                                val o = if (list.firstVisibleItemIndex == 0) list.firstVisibleItemScrollOffset.toFloat() else 300f
+                                val m = (o / 220f).coerceIn(0f, 1f)
+                                transformOrigin = TransformOrigin(0.5f, 0f)
+                                translationY = o * 0.45f
+                                scaleY = 1f + 0.35f * m
+                                scaleX = 1f - 0.08f * m
+                                alpha = 1f - m
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && m > 0f) {
+                                    renderEffect = BlurEffect(1f + 14f * m, 1f + 14f * m, TileMode.Decal)
+                                }
+                            },
                         )
                     }
                     item {
@@ -202,12 +248,14 @@ private fun FrostSection(palette: YtPalette, title: String, onSeeAll: (() -> Uni
 
 @Composable
 private fun FrostStat(palette: YtPalette, label: String, value: Int?, tag: String, onClick: () -> Unit) {
+    val press = remember { MutableInteractionSource() }
+    val thaw by rememberThaw(press)
     Column(
         Modifier
             .width(128.dp)
             .height(138.dp)
-            .frost(RoundedCornerShape(22.dp))
-            .clickable(onClick = onClick)
+            .frost(RoundedCornerShape(22.dp), clear = { thaw })
+            .clickable(interactionSource = press, indication = LocalIndication.current, onClick = onClick)
             .padding(14.dp),
     ) {
         Text(
@@ -246,12 +294,14 @@ private fun FrostStat(palette: YtPalette, label: String, value: Int?, tag: Strin
 
 @Composable
 private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, actions: YtHomeActions) {
+    val press = remember { MutableInteractionSource() }
+    val thaw by rememberThaw(press)
     Box(
         Modifier
             .fillMaxWidth()
             .aspectRatio(1.35f)
-            .frost(RoundedCornerShape(26.dp))
-            .clickable { actions.onOpenVideo(video) }
+            .frost(RoundedCornerShape(26.dp), clear = { thaw })
+            .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
             .padding(8.dp),
     ) {
         YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)))
@@ -304,12 +354,14 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
 
 @Composable
 private fun FrostRow(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, actions: YtHomeActions) {
+    val press = remember { MutableInteractionSource() }
+    val thaw by rememberThaw(press)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .frost(RoundedCornerShape(20.dp))
-            .clickable { actions.onOpenVideo(video) }
+            .frost(RoundedCornerShape(20.dp), clear = { thaw })
+            .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
             .padding(8.dp),
     ) {
         YtLargeThumbnail(

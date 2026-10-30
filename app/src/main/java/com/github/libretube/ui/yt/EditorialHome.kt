@@ -36,6 +36,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.Alignment
+import androidx.compose.animation.core.Animatable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -78,6 +83,26 @@ fun EditorialHomeScreen(
     val videos = (if (tab == YT_TAB_LIVE) source?.filter { it.url != null }?.distinctBy { it.url } else ytPlayable(source)).orEmpty()
     val shorts = data.shorts.orEmpty()
     val enter = rememberYtEnterState()
+    // a horizontal swipe turns to the next or previous tab: the page follows the finger a
+    // little, and the new page comes in from the side it was pulled from, crisp, no spring
+    val tabs = listOf(YT_TAB_FOR_YOU, YT_TAB_SUBS, YT_TAB_LIVE)
+    val motion = LocalYtMotion.current
+    val haptics = rememberYtHaptics()
+    val swipe = rememberYtSwipe()
+    val threshold = with(LocalDensity.current) { 72.dp.toPx() }
+    val turn = remember { Animatable(0f) }
+    val turnSpec = ytFinite(tween<Float>(220, easing = YtEaseOut))
+    val lastTab = remember { arrayOf(tab) }
+    LaunchedEffect(tab) {
+        if (tab != lastTab[0]) {
+            val from = if (tabs.indexOf(tab) > tabs.indexOf(lastTab[0])) 1f else -1f
+            lastTab[0] = tab
+            if (motion) {
+                turn.snapTo(from)
+                turn.animateTo(0f, turnSpec)
+            }
+        }
+    }
 
     YtRefreshBox(
         palette = palette,
@@ -88,7 +113,18 @@ fun EditorialHomeScreen(
             .background(palette.background),
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .offset { IntOffset((swipe.offset.value * 0.3f).roundToInt(), 0) }
+                .graphicsLayer {
+                    translationX = turn.value * size.width * 0.3f
+                    alpha = 1f - kotlin.math.abs(turn.value) * 0.85f
+                }
+                .ytSwipe(swipe, threshold, direction = 0, haptics = haptics) { way ->
+                    val i = tabs.indexOf(tab)
+                    val next = (i - way).coerceIn(0, tabs.lastIndex)
+                    if (next != i) onSelectTab(tabs[next])
+                },
             contentPadding = PaddingValues(bottom = 16.dp + ytNavPadding()),
         ) {
             item {
@@ -251,7 +287,40 @@ private fun EditorialItem(
         tween(if (pressed) 160 else 320, easing = YtEaseOut),
         label = "editorialColor",
     )
-    Column(modifier.padding(start = 17.dp, end = 16.dp, top = 10.dp)) {
+    // pushed to the left, the entry slides off a black slip that reads MERKEN; letting go
+    // there saves the video
+    val swipe = rememberYtSwipe()
+    val haptics = rememberYtHaptics()
+    val threshold = with(LocalDensity.current) { 96.dp.toPx() }
+    Box(modifier) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .matchParentSize()
+                .padding(end = 16.dp)
+                .graphicsLayer { alpha = (-swipe.offset.value / threshold * 1.5f).coerceIn(0f, 1f) }
+                .background(Color.Black),
+        ) {
+            Text(
+                text = stringResource(R.string.save).uppercase(),
+                color = Color.White,
+                style = TextStyle(fontFamily = YtFonts.plexMono, fontWeight = FontWeight.Medium, fontSize = 12.sp, letterSpacing = 2.sp),
+                modifier = Modifier
+                    .padding(start = 180.dp)
+                    .graphicsLayer {
+                        val p = (-swipe.offset.value / threshold).coerceIn(0f, 1.2f)
+                        translationX = (1f - p) * 24.dp.toPx()
+                    },
+            )
+        }
+    Column(
+        Modifier
+            .offset { IntOffset(swipe.offset.value.roundToInt(), 0) }
+            .ytSwipe(swipe, threshold, direction = -1, haptics = haptics) { actions.onSave(video) }
+            .background(palette.background)
+            .padding(start = 17.dp, end = 16.dp, top = 10.dp),
+    ) {
         Row(Modifier.clickable(interactionSource = press, indication = null) { actions.onOpenVideo(video) }) {
             Text(
                 text = "%02d".format(number),
@@ -335,6 +404,7 @@ private fun EditorialItem(
                 .height(1.dp)
                 .background(palette.text),
         )
+    }
     }
 }
 

@@ -45,6 +45,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.horizontalDrag
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlin.math.roundToInt
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -105,6 +111,12 @@ fun ClayHomeScreen(
         }
     }
 
+    YtRefreshBox(
+        palette = palette,
+        isRefreshing = data.isLoading && data.forYou != null,
+        onRefresh = actions.onRefresh,
+        modifier = Modifier.fillMaxSize(),
+    ) {
     Column(
         Modifier
             .fillMaxSize()
@@ -194,11 +206,33 @@ fun ClayHomeScreen(
         }
 
         if (videos.size > 1) {
+            // dragging over the dots scrubs the carousel 1:1, letting go settles on a card
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 14.dp),
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .height(30.dp)
+                    .pointerInput(pager, videos.size) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown()
+                            down.consume()
+                            haptics.tick()
+                            fun scrub(x: Float) {
+                                val pos = (x / size.width).coerceIn(0f, 0.9999f) * videos.size - 0.5f
+                                val page = pos.roundToInt().coerceIn(0, videos.lastIndex)
+                                val fraction = (pos - page).coerceIn(-0.5f, 0.5f)
+                                scope.launch { pager.scrollToPage(page, fraction) }
+                            }
+                            scrub(down.position.x)
+                            horizontalDrag(down.id) { change ->
+                                change.consume()
+                                scrub(change.position.x)
+                            }
+                            scope.launch { pager.ytScrollTo(pager.currentPage, motion) }
+                        }
+                    },
             ) {
                 repeat(videos.size.coerceAtMost(6)) { i ->
                     val active = pager.currentPage == i
@@ -228,6 +262,7 @@ fun ClayHomeScreen(
             ) { video -> ClayNextCard(palette, imageLoader, video, actions) }
         }
         Spacer(Modifier.height(16.dp))
+    }
     }
 }
 
@@ -329,14 +364,20 @@ private fun ClayCard(
 private fun ClayPlayButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val breath by rememberBreath()
+    // held, the button inflates slowly like a bubble of clay and pops back when let go
+    val scope = rememberCoroutineScope()
+    val motion = LocalYtMotion.current
+    val inflate = remember { Animatable(0f) }
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .size(72.dp)
             .graphicsLayer {
-                scaleX = breath
-                scaleY = breath
+                val scale = breath * (1f + 0.3f * inflate.value)
+                scaleX = scale
+                scaleY = scale
             }
+            .ytHold(inflate, scope, enabled = motion)
             .ytSquish(interaction)
             .shadow(10.dp, CircleShape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(CircleShape)
