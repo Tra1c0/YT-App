@@ -1,63 +1,34 @@
 package com.github.libretube.ui.yt
 
-import android.text.format.DateUtils
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Brush
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.ImageLoader
-import coil3.compose.AsyncImage
 import com.github.libretube.R
 import com.github.libretube.api.SubscriptionHelper
-import com.github.libretube.api.obj.ChapterSegment
 import com.github.libretube.api.obj.Streams
 import com.github.libretube.extensions.formatShort
 import com.github.libretube.extensions.toID
@@ -117,6 +88,21 @@ fun YouTubeWatchDetails(
     }
     LaunchedEffect(tab, streams.title) { actions.onShowDescription(tab == WatchTab.DESCRIPTION) }
 
+    // the glass designs see a gradient with drifting light through their glass pieces
+    val glass = palette.signature == YtSignature.GLASS || palette.signature == YtSignature.FROST
+    val backdrop = if (glass) rememberLayerBackdrop() else null
+    Box(Modifier.fillMaxWidth()) {
+        if (backdrop != null) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .layerBackdrop(backdrop)
+                    .background(Brush.verticalGradient(ytGlassScreenColors(palette))),
+            ) {
+                LiquidLight(ytGlassLightColors(palette), Modifier.fillMaxSize())
+            }
+        }
+        CompositionLocalProvider(LocalWatchBackdrop provides backdrop) {
     Column(Modifier.fillMaxWidth()) {
         Text(
             text = streams.title,
@@ -137,300 +123,62 @@ fun YouTubeWatchDetails(
             modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 3.dp),
         )
 
-        // Creator row
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 13.dp, end = 12.dp, top = 14.dp),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable(onClick = actions.onOpenChannel),
-            ) {
-                AsyncImage(
-                    model = streams.uploaderAvatar,
-                    contentDescription = streams.uploader,
-                    imageLoader = imageLoader,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(palette.surface),
-                )
-                Spacer(Modifier.width(15.dp))
-                Column {
-                    Text(
-                        text = streams.uploader,
-                        color = palette.text,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 14.5.sp),
-                    )
-                    if (streams.uploaderSubscriberCount >= 0) {
-                        Text(
-                            text = stringResource(R.string.subscribers, streams.uploaderSubscriberCount.formatShort()),
-                            color = palette.textSecondary,
-                            style = TextStyle(fontFamily = palette.font, fontSize = 12.5.sp),
-                        )
-                    }
-                }
-            }
+        val toggle: () -> Unit = {
+            val newState = subscribed != true
+            subscribed = newState
             if (channelId != null) {
-                val isSubscribed = subscribed == true
-                val haptics = rememberYtHaptics()
-                // subscribing is a moment: the pill changes color, wobbles, a ring opens around it
-                // and a check slides in; unsubscribing just turns it back
-                val fill by animateColorAsState(if (isSubscribed) palette.raised else palette.text, ytStateSpec(), label = "subscribeFill")
-                val ink by animateColorAsState(if (isSubscribed) palette.text else palette.background, ytStateSpec(), label = "subscribeInk")
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .ytBurst(isSubscribed, palette.accent)
-                        .ytJelly(isSubscribed, amount = 0.08f)
-                        .clip(ytPillShape(palette))
-                        .drawBehind { drawRect(fill) }
-                        .clickable {
-                            val newState = !isSubscribed
-                            if (newState) haptics.confirm() else haptics.tick()
-                            subscribed = newState
-                            scope.launch(Dispatchers.IO) {
-                                runCatching {
-                                    if (newState) {
-                                        SubscriptionHelper.subscribe(
-                                            channelId,
-                                            streams.uploader,
-                                            streams.uploaderAvatar,
-                                            streams.uploaderVerified
-                                        )
-                                    } else {
-                                        SubscriptionHelper.unsubscribe(channelId)
-                                    }
-                                }
-                            }
-                        }
-                        .height(32.dp)
-                        .padding(horizontal = 22.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        AnimatedVisibility(
-                            visible = isSubscribed,
-                            enter = ytEnterTransition(expandHorizontally(tween(220, easing = YtEaseOut)) + fadeIn()),
-                            exit = ytExitTransition(shrinkHorizontally(tween(160, easing = YtEaseOut)) + fadeOut()),
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_yt_check),
-                                contentDescription = null,
-                                tint = ink,
-                                modifier = Modifier
-                                    .padding(end = 6.dp)
-                                    .size(15.dp),
+                scope.launch(Dispatchers.IO) {
+                    runCatching {
+                        if (newState) {
+                            SubscriptionHelper.subscribe(
+                                channelId,
+                                streams.uploader,
+                                streams.uploaderAvatar,
+                                streams.uploaderVerified
                             )
+                        } else {
+                            SubscriptionHelper.unsubscribe(channelId)
                         }
-                        Text(
-                            text = stringResource(if (isSubscribed) R.string.yt_watch_subscribed else R.string.yt_watch_subscribe),
-                            color = ink,
-                            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 13.sp),
-                        )
                     }
                 }
             }
         }
+        WatchCreator(palette, imageLoader, streams, channelId != null, subscribed == true, toggle, actions.onOpenChannel)
 
-        // Compact actions
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 13.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(top = 18.dp),
-        ) {
-            item {
-                ActionPill(
-                    palette,
-                    R.drawable.ic_like,
-                    if (streams.likes > 0) streams.likes.formatShort() else stringResource(R.string.yt_watch_like),
-                ) {}
-            }
-            item { ActionPill(palette, R.drawable.ic_playlist_add, stringResource(R.string.yt_watch_save), actions.onSave) }
-            item { ActionPill(palette, R.drawable.ic_share, stringResource(R.string.share), actions.onShare) }
-            if (!streams.isLive) {
-                item { ActionPill(palette, R.drawable.ic_download, stringResource(R.string.yt_watch_download), actions.onDownload) }
-            }
-            item { ActionPill(palette, R.drawable.ic_headphones, stringResource(R.string.yt_watch_audio), actions.onAudioOnly) }
+        val watchActions = buildList {
+            add(WatchAction(R.drawable.ic_like, if (streams.likes > 0) streams.likes.formatShort() else stringResource(R.string.yt_watch_like)) {})
+            add(WatchAction(R.drawable.ic_playlist_add, stringResource(R.string.yt_watch_save), actions.onSave))
+            add(WatchAction(R.drawable.ic_share, stringResource(R.string.share), actions.onShare))
+            if (!streams.isLive) add(WatchAction(R.drawable.ic_download, stringResource(R.string.yt_watch_download), actions.onDownload))
+            add(WatchAction(R.drawable.ic_headphones, stringResource(R.string.yt_watch_audio), actions.onAudioOnly))
         }
+        WatchActionRow(palette, watchActions, Modifier.padding(top = 18.dp))
 
-        // Tabs
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-        ) {
-            if (hasChapters) {
-                WatchTabLabel(palette, stringResource(R.string.yt_watch_chapters), tab == WatchTab.CHAPTERS, Modifier.weight(1f)) { tab = WatchTab.CHAPTERS }
-            }
-            WatchTabLabel(palette, stringResource(R.string.yt_watch_description), tab == WatchTab.DESCRIPTION, Modifier.weight(1f)) { tab = WatchTab.DESCRIPTION }
-            WatchTabLabel(palette, stringResource(R.string.yt_watch_comments), false, Modifier.weight(1f)) { actions.onComments() }
+        val tabs = buildList {
+            if (hasChapters) add(WatchTab.CHAPTERS)
+            add(WatchTab.DESCRIPTION)
+            add(WatchTab.COMMENTS)
         }
-        Box(
-            Modifier
-                .padding(horizontal = 13.dp)
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(if (palette.surfaceStyle == YtSurfaceStyle.EDITORIAL) palette.text else palette.raised),
+        val labels = tabs.map {
+            stringResource(
+                when (it) {
+                    WatchTab.CHAPTERS -> R.string.yt_watch_chapters
+                    WatchTab.DESCRIPTION -> R.string.yt_watch_description
+                    WatchTab.COMMENTS -> R.string.yt_watch_comments
+                },
+            )
+        }
+        WatchTabs(
+            palette, labels, tabs.indexOf(tab),
+            onSelect = { i -> if (tabs[i] == WatchTab.COMMENTS) actions.onComments() else tab = tabs[i] },
+            modifier = Modifier.padding(top = 16.dp),
         )
 
         if (tab == WatchTab.CHAPTERS && hasChapters) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.padding(start = 3.dp, end = 3.dp, top = 8.dp, bottom = 4.dp),
-            ) {
-                streams.chapters.forEachIndexed { index, chapter ->
-                    val next = streams.chapters.getOrNull(index + 1)
-                    val length = (next?.start ?: streams.duration) - chapter.start
-                    ChapterRow(
-                        palette = palette,
-                        imageLoader = imageLoader,
-                        chapter = chapter,
-                        fallbackImage = streams.thumbnailUrl,
-                        lengthSeconds = length,
-                        active = index == controller.chapterIndex,
-                        onClick = { actions.onSeek(chapter.start * 1000) },
-                    )
-                }
-            }
+            WatchChapters(palette, imageLoader, streams, controller.chapterIndex, actions.onSeek)
         }
-        if (tab == WatchTab.CHAPTERS || !hasChapters) {
-            Text(
-                text = stringResource(R.string.yt_watch_up_next),
-                color = palette.text,
-                style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 16.sp),
-                modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 18.dp, bottom = 2.dp),
-            )
-        }
+        if (tab == WatchTab.CHAPTERS || !hasChapters) WatchUpNextTitle(palette)
     }
-}
-
-@Composable
-private fun ActionPill(palette: YtPalette, @DrawableRes icon: Int, label: String, onClick: () -> Unit) {
-    val haptics = rememberYtHaptics()
-    val press = remember { MutableInteractionSource() }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            // gives way under the finger in the character of the design
-            .ytPressScale(press)
-            .ytSurface(palette, ytPillShape(palette))
-            .clickable(interactionSource = press, indication = LocalIndication.current) {
-                haptics.tick()
-                onClick()
-            }
-            .height(36.dp)
-            .padding(horizontal = 18.dp),
-    ) {
-        Icon(painterResource(icon), contentDescription = null, tint = palette.text, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(10.dp))
-        Text(
-            text = label,
-            color = palette.text,
-            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 13.sp),
-        )
-    }
-}
-
-@Composable
-private fun WatchTabLabel(
-    palette: YtPalette,
-    label: String,
-    active: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.clickable(onClick = onClick),
-    ) {
-        Text(
-            text = label,
-            color = if (active) palette.text else palette.textSecondary,
-            style = TextStyle(
-                fontFamily = palette.font,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp,
-            ),
-            modifier = Modifier.padding(vertical = 10.dp),
-        )
-        Box(
-            Modifier
-                .fillMaxWidth(0.81f)
-                .height(3.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(if (active) palette.accent else Color.Transparent),
-        )
-    }
-}
-
-@Composable
-private fun ChapterRow(
-    palette: YtPalette,
-    imageLoader: ImageLoader,
-    chapter: ChapterSegment,
-    fallbackImage: String?,
-    lengthSeconds: Long,
-    active: Boolean,
-    onClick: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .then(if (active) Modifier.border(1.5.dp, palette.accent, RoundedCornerShape(10.dp)) else Modifier)
-            .clickable(onClick = onClick)
-            .padding(start = if (active) 16.dp else 10.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
-    ) {
-        if (active) {
-            Icon(
-                painterResource(R.drawable.ic_pause),
-                contentDescription = null,
-                tint = palette.accent,
-                modifier = Modifier.size(20.dp),
-            )
-            Spacer(Modifier.width(9.dp))
-        }
-        Box {
-            AsyncImage(
-                model = chapter.image.ifBlank { fallbackImage },
-                contentDescription = null,
-                imageLoader = imageLoader,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .width(if (active) 76.dp else 111.dp)
-                    .height(62.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-            )
-        }
-        Spacer(Modifier.width(19.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = DateUtils.formatElapsedTime(chapter.start),
-                color = palette.textSecondary,
-                style = TextStyle(fontFamily = palette.font, fontSize = 12.5.sp),
-            )
-            Text(
-                text = chapter.title,
-                color = palette.text,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
-            )
-        }
-        if (lengthSeconds > 0) {
-            Text(
-                text = DateUtils.formatElapsedTime(lengthSeconds),
-                color = palette.textSecondary,
-                style = TextStyle(fontFamily = palette.font, fontSize = 13.sp),
-                modifier = Modifier.padding(start = 8.dp),
-            )
         }
     }
 }

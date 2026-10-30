@@ -67,37 +67,13 @@ import com.github.libretube.api.obj.StreamItem
 
 private val FrostDark = Color(0xFF1F2A26)
 
-/**
- * 0 to 1 while [interaction] is pressed: the frost thaws under a warm finger, slowly, and
- * freezes over again slower still. 0 when motion is off.
- */
-@Composable
-private fun rememberThaw(interaction: MutableInteractionSource): State<Float> {
-    val pressed by interaction.collectIsPressedAsState()
-    val warm = pressed && LocalYtMotion.current
-    return animateFloatAsState(
-        if (warm) 1f else 0f,
-        if (warm) tween<Float>(650, easing = YtEaseOut) else tween<Float>(1100, easing = YtEaseInOut),
-        label = "thaw",
-    )
-}
-
 /** The sage background with its drifting light, which the frosted cards blur and bend. */
 private val LocalFrostBackdrop = staticCompositionLocalOf<Backdrop?> { null }
 
 /** Frosted sage glass: the background blurred and bent at the rim, a little white, a light edge. */
 @Composable
-private fun Modifier.frost(shape: Shape, clear: () -> Float = { 0f }): Modifier {
-    val backdrop = LocalFrostBackdrop.current
-    return if (backdrop != null) {
-        liquidGlass(backdrop, shape, Color(0x2EFFFFFF), Color(0x2E000000), blur = 16.dp, refraction = 10.dp, clear = clear)
-    } else {
-        this
-            .clip(shape)
-            .background(Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x1FFFFFFF))))
-            .border(1.dp, Color(0x59FFFFFF), shape)
-    }
-}
+private fun Modifier.frost(shape: Shape, clear: () -> Float = { 0f }): Modifier =
+    frostGlass(LocalFrostBackdrop.current, shape, clear)
 
 /**
  * Design "Frost" (from inspiration image 7): sage with frosted glass. A greeting, search, today's

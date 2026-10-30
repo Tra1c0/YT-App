@@ -25,6 +25,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
@@ -123,6 +126,36 @@ private fun Modifier.liquidGlassWithLight(
     },
     onDrawSurface = { drawRect(glassTint(tint), alpha = 1f - 0.85f * clear()) },
 )
+
+/**
+ * Frosted sage glass of the Frost design over [backdrop]; [clear] (0 to 1) thaws it. Without a
+ * backdrop (classic screens) a milky fill with a light edge.
+ */
+@Composable
+fun Modifier.frostGlass(backdrop: Backdrop?, shape: Shape, clear: () -> Float = { 0f }): Modifier =
+    if (backdrop != null) {
+        liquidGlass(backdrop, shape, Color(0x2EFFFFFF), Color(0x2E000000), blur = 16.dp, refraction = 10.dp, clear = clear)
+    } else {
+        this
+            .clip(shape)
+            .background(Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x1FFFFFFF))))
+            .border(1.dp, Color(0x59FFFFFF), shape)
+    }
+
+/**
+ * 0 to 1 while [interaction] is pressed: the frost thaws under a warm finger, slowly, and
+ * freezes over again slower still. 0 when motion is off.
+ */
+@Composable
+fun rememberThaw(interaction: MutableInteractionSource): State<Float> {
+    val pressed by interaction.collectIsPressedAsState()
+    val warm = pressed && LocalYtMotion.current
+    return animateFloatAsState(
+        if (warm) 1f else 0f,
+        if (warm) tween<Float>(650, easing = YtEaseOut) else tween<Float>(1100, easing = YtEaseInOut),
+        label = "thaw",
+    )
+}
 
 /** 0 to 1 while [interaction] is pressed, with a soft spring; 0 when motion is off. */
 @Composable
