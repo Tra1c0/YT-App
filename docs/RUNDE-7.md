@@ -46,3 +46,17 @@ Reiter bekommt je Design Kartenform, Farbe und Typografie.
 Sammlungen und Weiterschauen je Design (Knete, Druck, Glas, Blobs, Formen, Frost, Kiesel);
 der Abo-Reiter als gestalteter Bildschirm statt des klassischen Layouts; eine Live-Seite für
 YouTube neu statt der klassischen Trends.
+
+## Stand
+
+| Etappe | Build | Inhalt |
+| --- | --- | --- |
+| 1 | 27 | Aktualisieren je Design, Gesten-Baukasten, Gesten für YouTube neu, Movo, After, Side |
+| 2 | 28 | Gesten für Clay, Editorial, Glas, Pop, Formen, Frost, Kiesel |
+| 3 | 29 | Videoseite und Shorts je Design |
+| 4 | 30 | Bereich „Du“, Abo-Reiter, Live-Seite |
+
+Nichts davon ist auf einem Gerät geprüft; die Builds sind kompiliert und signiert, die Bewegungen
+sind nach den Regeln der Skills gebaut, aber Tempo, Schwellwerte und Haptik brauchen ein
+echtes Handy zum Feinschliff.
+
