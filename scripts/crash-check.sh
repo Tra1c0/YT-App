@@ -16,8 +16,14 @@ echo "APK: $APK, designs: $DESIGNS, night: ${YT_NIGHT:-no}, locale: ${YT_LOCALE:
 adb wait-for-device
 adb shell input keyevent 82 || true
 adb install -r "$APK"
-# an overloaded emulator shows "System UI isn't responding" over everything; no use for a check
+# an overloaded emulator shows "System UI isn't responding" over everything; no use for a check.
+# The setting is read on a configuration change, the user restriction right away.
 adb shell settings put global hide_error_dialogs 1 || true
+adb shell pm set-user-restriction no_system_error_dialogs 1 || true
+adb shell cmd uimode night yes >/dev/null 2>&1 || true
+adb shell cmd uimode night no >/dev/null 2>&1 || true
+# the launcher is not needed (the app is started directly) and is the first to stall
+adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher >/dev/null 2>&1 || true
 if [ "${YT_NIGHT:-no}" = "yes" ]; then adb shell cmd uimode night yes; fi
 if [ -n "${YT_LOCALE:-}" ]; then
   adb shell cmd locale set-app-locales "$PKG" --user current --locales "$YT_LOCALE" || echo "app locale not set"

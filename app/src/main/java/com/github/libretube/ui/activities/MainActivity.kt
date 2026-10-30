@@ -279,6 +279,7 @@ class MainActivity : AbstractPlayerHostActivity() {
         val ytAccount = com.github.libretube.ui.yt.account.YtAccount
         // (an emulator run that takes screenshots can skip it: --ez yt_quiet true)
         val quiet = com.github.libretube.helpers.YtGuard.isEmulator && intent?.getBooleanExtra("yt_quiet", false) == true
+        if (quiet) ytAccount.offered = true
         if (savedInstanceState == null && !quiet && !ytAccount.offered && !ytAccount.signedIn) {
             ytAccount.offered = true
             binding.root.post {
@@ -653,7 +654,11 @@ class MainActivity : AbstractPlayerHostActivity() {
 
         intent.getStringExtra(IntentData.videoId)?.let {
             // the below explained work around only seems to work on Android 11 and above
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && binding.bottomNav.menu.isNotEmpty()) {
+            // YT: a link that arrives while the app runs finds the bar laid out already; waiting
+            // for its next layout could wait forever, so the video opens right away
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && binding.bottomNav.menu.isNotEmpty() &&
+                !binding.bottomNav.isLaidOut
+            ) {
                 // the bottom navigation bar has to be created before opening the video
                 // otherwise the player layout measures aren't calculated properly
                 // and the miniplayer is opened at a closed state and overlapping the navigation bar

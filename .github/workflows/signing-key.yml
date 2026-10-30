@@ -69,9 +69,7 @@ jobs:
             echo "$value"
             echo '```'
             echo
-            echo "Fingerabdruck (SHA-256, nicht geheim, für die Registrierung bei Google):"
+            echo "Nur dieser eine Kasten ist der Schlüssel (mehrere tausend Zeichen)."
             echo
-            echo '```'
-            echo "$fingerprint"
-            echo '```'
+            echo "Fingerabdruck, nicht geheim und nicht zum Kopieren ins Secret, nur für die Registrierung bei Google: $fingerprint"
           } >> "$GITHUB_STEP_SUMMARY"
