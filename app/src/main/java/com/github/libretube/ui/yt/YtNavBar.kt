@@ -74,6 +74,8 @@ import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.compose.ui.platform.AbstractComposeView
 import com.github.libretube.ui.views.YtBottomNavigationView
+import com.github.libretube.ui.yt.liquid.YtViewBackdrop
+import com.kyant.backdrop.Backdrop
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.WeakHashMap
@@ -175,13 +177,16 @@ object YtNav {
                 ?.let { state.selected = it.id }
         }
 
+        // the screens below, seen through the glass of the liquid designs
+        val backdrop = activity.findViewById<View>(R.id.fragment)?.let { YtViewBackdrop(it, palette.background) }
         val bar = ComposeView(activity).apply {
             setContent {
                 YtTheme(palette) {
-                    YtNavBar(design, palette, items, state) { id -> bottomNav.selectedItemId = id }
+                    YtNavBar(design, palette, items, state, backdrop) { id -> bottomNav.selectedItemId = id }
                 }
             }
         }
+        backdrop?.let { bar.viewTreeObserver.addOnPreDrawListener(it.preDrawListener) }
         bottomNav.addView(
             bar,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT),
@@ -308,15 +313,16 @@ fun YtNavBar(
     palette: YtPalette,
     items: List<YtNavItem>,
     state: YtNavState,
+    backdrop: Backdrop?,
     onSelect: (Int) -> Unit,
 ) {
     when (design) {
         YtDesign.CLAY -> ClayNav(palette, items, state, onSelect)
         YtDesign.EDITORIAL -> EditorialNav(palette, items, state, onSelect)
-        YtDesign.GLASS -> GlassNav(palette, items, state, onSelect)
+        YtDesign.GLASS -> if (backdrop != null) LiquidNav(design, palette, items, state, backdrop, onSelect) else GlassNav(palette, items, state, onSelect)
         YtDesign.POP -> PopNav(palette, items, state, onSelect)
         YtDesign.SHAPES -> ShapesNav(palette, items, state, onSelect)
-        YtDesign.FROST -> FrostNav(palette, items, state, onSelect)
+        YtDesign.FROST -> if (backdrop != null) LiquidNav(design, palette, items, state, backdrop, onSelect) else FrostNav(palette, items, state, onSelect)
         else -> FloatingNav(design, palette, items, state, onSelect)
     }
 }

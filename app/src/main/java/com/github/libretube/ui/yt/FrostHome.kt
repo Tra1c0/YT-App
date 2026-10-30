@@ -43,17 +43,33 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import coil3.ImageLoader
 import com.github.libretube.R
 import com.github.libretube.api.obj.StreamItem
 
 private val FrostDark = Color(0xFF1F2A26)
 
-/** Frosted sage glass: a little white, a light edge. */
-private fun Modifier.frost(shape: Shape): Modifier = this
-    .clip(shape)
-    .background(Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x1FFFFFFF))))
-    .border(1.dp, Color(0x59FFFFFF), shape)
+/** The sage background with its drifting light, which the frosted cards blur and bend. */
+private val LocalFrostBackdrop = staticCompositionLocalOf<Backdrop?> { null }
+
+/** Frosted sage glass: the background blurred and bent at the rim, a little white, a light edge. */
+@Composable
+private fun Modifier.frost(shape: Shape): Modifier {
+    val backdrop = LocalFrostBackdrop.current
+    return if (backdrop != null) {
+        liquidGlass(backdrop, shape, Color(0x2EFFFFFF), Color(0x2E000000), blur = 16.dp, refraction = 10.dp)
+    } else {
+        this
+            .clip(shape)
+            .background(Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x1FFFFFFF))))
+            .border(1.dp, Color(0x59FFFFFF), shape)
+    }
+}
 
 /**
  * Design "Frost" (from inspiration image 7): sage with frosted glass. A greeting, search, today's
@@ -73,81 +89,92 @@ fun FrostHomeScreen(
     val shorts = data.shorts?.size
     val enter = rememberYtEnterState()
 
-    PullToRefreshBox(
-        isRefreshing = data.isLoading && data.forYou != null,
-        onRefresh = actions.onRefresh,
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF6F8A80), Color(0xFF627B71), Color(0xFF536A61)))),
-    ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 20.dp + ytNavPadding()),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+    val background = rememberLayerBackdrop()
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .layerBackdrop(background)
+                .background(Brush.verticalGradient(listOf(Color(0xFF6F8A80), Color(0xFF627B71), Color(0xFF536A61)))),
         ) {
-            item {
-                Text(
-                    text = buildAnnotatedString {
-                        val greeting = stringResource(R.string.yt_frost_greeting)
-                        val split = greeting.indexOf('!').takeIf { it > 0 }?.plus(1) ?: 0
-                        withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append(greeting.substring(0, split)) }
-                        append(greeting.substring(split))
-                    },
-                    color = palette.text,
-                    style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Medium, fontSize = 24.sp, lineHeight = 30.sp),
-                )
-            }
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(46.dp)
-                        .frost(RoundedCornerShape(23.dp))
-                        .clickable(onClick = actions.onSearch)
-                        .padding(horizontal = 6.dp),
+            LiquidLight(listOf(Color(0x40FFFFFF), Color(0x38F08A3C), Color(0x33D9EBE1)), Modifier.fillMaxSize())
+        }
+        CompositionLocalProvider(LocalFrostBackdrop provides background) {
+            PullToRefreshBox(
+                isRefreshing = data.isLoading && data.forYou != null,
+                onRefresh = actions.onRefresh,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 20.dp + ytNavPadding()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(CircleShape)
-                            .background(Color.White),
-                    ) {
-                        Icon(painterResource(R.drawable.ic_yt_search), contentDescription = null, tint = FrostDark, modifier = Modifier.size(17.dp))
+                    item {
+                        Text(
+                            text = buildAnnotatedString {
+                                val greeting = stringResource(R.string.yt_frost_greeting)
+                                val split = greeting.indexOf('!').takeIf { it > 0 }?.plus(1) ?: 0
+                                withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append(greeting.substring(0, split)) }
+                                append(greeting.substring(split))
+                            },
+                            color = palette.text,
+                            style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Medium, fontSize = 24.sp, lineHeight = 30.sp),
+                        )
                     }
-                    Text(
-                        text = stringResource(R.string.yt_search_youtube),
-                        color = palette.textSecondary,
-                        style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 14.sp),
-                        modifier = Modifier.padding(start = 12.dp),
-                    )
-                }
-            }
-            item { FrostSection(palette, stringResource(R.string.yt_frost_today), actions.onShowSubscriptions) }
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    item { FrostStat(palette, stringResource(R.string.yt_frost_new), newVideos, stringResource(R.string.yt_tab_subscriptions), actions.onShowSubscriptions) }
-                    item { FrostStat(palette, stringResource(R.string.yt_frost_live), live, stringResource(R.string.yt_live_badge), actions.onShowSubscriptions) }
-                    item { FrostStat(palette, stringResource(R.string.yt_frost_shorts), shorts, stringResource(R.string.yt_nav_shorts), actions.onShowShorts) }
-                }
-            }
-            item { FrostSection(palette, stringResource(R.string.yt_frost_for_you), null) }
-            if (videos.isEmpty()) {
-                item {
-                    Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
-                        if (data.isLoading) CircularProgressIndicator(color = Color.White)
-                        else Text(stringResource(R.string.yt_home_nothing), color = palette.textSecondary)
+                    item {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .frost(RoundedCornerShape(23.dp))
+                                .clickable(onClick = actions.onSearch)
+                                .padding(horizontal = 6.dp),
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White),
+                            ) {
+                                Icon(painterResource(R.drawable.ic_yt_search), contentDescription = null, tint = FrostDark, modifier = Modifier.size(17.dp))
+                            }
+                            Text(
+                                text = stringResource(R.string.yt_search_youtube),
+                                color = palette.textSecondary,
+                                style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 14.sp),
+                                modifier = Modifier.padding(start = 12.dp),
+                            )
+                        }
+                    }
+                    item { FrostSection(palette, stringResource(R.string.yt_frost_today), actions.onShowSubscriptions) }
+                    item {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            item { FrostStat(palette, stringResource(R.string.yt_frost_new), newVideos, stringResource(R.string.yt_tab_subscriptions), actions.onShowSubscriptions) }
+                            item { FrostStat(palette, stringResource(R.string.yt_frost_live), live, stringResource(R.string.yt_live_badge), actions.onShowSubscriptions) }
+                            item { FrostStat(palette, stringResource(R.string.yt_frost_shorts), shorts, stringResource(R.string.yt_nav_shorts), actions.onShowShorts) }
+                        }
+                    }
+                    item { FrostSection(palette, stringResource(R.string.yt_frost_for_you), null) }
+                    if (videos.isEmpty()) {
+                        item {
+                            Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
+                                if (data.isLoading) CircularProgressIndicator(color = Color.White)
+                                else Text(stringResource(R.string.yt_home_nothing), color = palette.textSecondary)
+                            }
+                        }
+                    }
+                    videos.firstOrNull()?.let { first ->
+                        item(key = "big-" + first.url) {
+                            Box(Modifier.ytEnter(enter, "big" + first.url, 0)) { FrostBig(palette, imageLoader, first, actions) }
+                        }
+                    }
+                    items(videos.drop(1), key = { "row-" + it.url }) {
+                        Box(Modifier.ytEnter(enter, "row" + it.url, videos.indexOf(it))) { FrostRow(palette, imageLoader, it, actions) }
                     }
                 }
-            }
-            videos.firstOrNull()?.let { first ->
-                item(key = "big-" + first.url) {
-                    Box(Modifier.ytEnter(enter, "big" + first.url, 0)) { FrostBig(palette, imageLoader, first, actions) }
-                }
-            }
-            items(videos.drop(1), key = { "row-" + it.url }) {
-                Box(Modifier.ytEnter(enter, "row" + it.url, videos.indexOf(it))) { FrostRow(palette, imageLoader, it, actions) }
             }
         }
     }

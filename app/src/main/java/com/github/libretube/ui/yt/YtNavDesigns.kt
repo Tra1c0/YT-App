@@ -111,7 +111,7 @@ private fun Modifier.noRippleClick(onClick: () -> Unit) =
     this.clickable(interactionSource = null, indication = null, onClick = onClick)
 
 @Composable
-private fun Badge(palette: YtPalette, visible: Boolean, modifier: Modifier = Modifier) {
+internal fun Badge(palette: YtPalette, visible: Boolean, modifier: Modifier = Modifier) {
     if (!visible) return
     Box(
         modifier

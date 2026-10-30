@@ -1,6 +1,12 @@
 package com.github.libretube.ui.yt
 
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.runtime.remember
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -82,61 +88,118 @@ fun GlassHomeScreen(
     val videos = (if (tab == YT_TAB_LIVE) source?.filter { it.url != null }?.distinctBy { it.url } else ytPlayable(source)).orEmpty()
     val shorts = data.shorts.orEmpty()
     val enter = rememberYtEnterState()
+    // the screen below the floating glass: drifting light, mint and the list
+    val screen = rememberLayerBackdrop()
+    val chrome = 89.dp
+    val refresh = rememberPullToRefreshState()
+    val searchPress = remember { MutableInteractionSource() }
+    val searchSwell by rememberSwell(searchPress)
 
-    PullToRefreshBox(
-        isRefreshing = data.isLoading && source != null,
-        onRefresh = actions.onRefresh,
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFCFE9E2), Color(0xFFDDF2EE), Color(0xFFD3ECE6)))),
-    ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp + ytNavPadding()),
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .layerBackdrop(screen)
+                .background(Brush.verticalGradient(listOf(Color(0xFFCFE9E2), Color(0xFFDDF2EE), Color(0xFFD3ECE6)))),
         ) {
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .padding(start = 18.dp, end = 18.dp, top = 4.dp)
-                        .fillMaxWidth()
-                        .height(38.dp)
-                        .ytGlass(RoundedCornerShape(19.dp))
-                        .clickable(onClick = actions.onSearch)
-                        .padding(horizontal = 16.dp),
+            LiquidLight(
+                listOf(Color(0x99FFFFFF), Color(0x5C8FD8CB), Color(0x66FFFFFF)),
+                Modifier.fillMaxSize(),
+            )
+            PullToRefreshBox(
+                isRefreshing = data.isLoading && source != null,
+                onRefresh = actions.onRefresh,
+                state = refresh,
+                modifier = Modifier.fillMaxSize(),
+                indicator = {
+                    PullToRefreshDefaults.Indicator(
+                        state = refresh,
+                        isRefreshing = data.isLoading && source != null,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = chrome),
+                    )
+                },
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(top = chrome, bottom = 16.dp + ytNavPadding()),
                 ) {
-                    Icon(
-                        painterResource(R.drawable.ic_yt_search),
-                        contentDescription = null,
-                        tint = palette.text,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.yt_search_youtube),
-                        color = palette.textSecondary,
-                        style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 13.sp),
-                        modifier = Modifier.padding(start = 15.dp),
-                    )
-                }
-            }
-            item { GlassSegments(palette, tab, onSelectTab) }
-            if (source == null || videos.isEmpty()) {
-                item {
-                    Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
-                        if (source == null || data.isLoading) CircularProgressIndicator(color = palette.text)
-                        else Text(stringResource(R.string.yt_home_nothing), color = palette.textSecondary, modifier = Modifier.padding(32.dp))
+                    if (source == null || videos.isEmpty()) {
+                        item {
+                            Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
+                                if (source == null || data.isLoading) CircularProgressIndicator(color = palette.text)
+                                else Text(stringResource(R.string.yt_home_nothing), color = palette.textSecondary, modifier = Modifier.padding(32.dp))
+                            }
+                        }
+                    }
+                    items(videos.take(2), key = { "top-" + it.url }) {
+                        GlassVideo(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)))
+                    }
+                    if (shorts.isNotEmpty() && tab != YT_TAB_LIVE) {
+                        item { GlassShorts(palette, imageLoader, shorts, actions) }
+                    }
+                    items(videos.drop(2), key = { "more-" + it.url }) {
+                        GlassVideo(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)))
                     }
                 }
             }
-            items(videos.take(2), key = { "top-" + it.url }) {
-                GlassVideo(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)))
+        }
+
+        // search and tabs float as glass over the list, which bends below them
+        Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(start = 18.dp, end = 18.dp, top = 4.dp)
+                    .fillMaxWidth()
+                    .height(38.dp)
+                    .liquidGlass(screen, RoundedCornerShape(19.dp), Color(0x80FFFFFF), GlassShadow, swell = { searchSwell })
+                    .clickable(interactionSource = searchPress, indication = null, onClick = actions.onSearch)
+                    .padding(horizontal = 16.dp),
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_yt_search),
+                    contentDescription = null,
+                    tint = palette.text,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = stringResource(R.string.yt_search_youtube),
+                    color = palette.textSecondary,
+                    style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 13.sp),
+                    modifier = Modifier.padding(start = 15.dp),
+                )
             }
-            if (shorts.isNotEmpty() && tab != YT_TAB_LIVE) {
-                item { GlassShorts(palette, imageLoader, shorts, actions) }
-            }
-            items(videos.drop(2), key = { "more-" + it.url }) {
-                GlassVideo(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)))
-            }
+            LiquidSegments(
+                backdrop = screen,
+                look = LiquidSegmentsLook(
+                    height = 31.dp,
+                    gap = 5.dp,
+                    tile = Color(0x73FFFFFF),
+                    pill = Color(0xF7FFFFFF),
+                    shadow = GlassShadow,
+                    text = palette.text,
+                    lensText = Color(0xFF0A8F7F),
+                    font = YtFonts.googleSans,
+                    size = 13.5.sp,
+                    activeSize = 14.sp,
+                ),
+                keys = listOf(YT_TAB_FOR_YOU, YT_TAB_SUBS, YT_TAB_LIVE),
+                labels = listOf(
+                    stringResource(R.string.yt_tab_for_you),
+                    stringResource(R.string.yt_tab_subscriptions),
+                    stringResource(R.string.yt_tab_live),
+                ),
+                // segment widths of the reference: 124 / 101 / 117 dp
+                weights = listOf(1.23f, 1f, 1.16f),
+                selected = tab,
+                onSelect = onSelectTab,
+                modifier = Modifier
+                    .padding(start = 21.dp, end = 20.dp, top = 6.dp, bottom = 10.dp)
+                    .fillMaxWidth()
+                    .height(31.dp),
+            )
         }
     }
 }
@@ -149,6 +212,9 @@ private fun GlassVideo(
     actions: YtHomeActions,
     modifier: Modifier = Modifier,
 ) {
+    val thumb = rememberLayerBackdrop()
+    val press = remember { MutableInteractionSource() }
+    val swell by rememberSwell(press)
     Column(modifier.padding(start = 20.dp, end = 18.dp, bottom = 11.dp)) {
         Box(
             Modifier
@@ -157,15 +223,16 @@ private fun GlassVideo(
                 .shadow(6.dp, RoundedCornerShape(12.dp), clip = false, ambientColor = GlassShadow, spotColor = GlassShadow)
                 .clip(RoundedCornerShape(12.dp))
                 .background(palette.lime)
-                .clickable { actions.onOpenVideo(video) },
+                .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) },
         ) {
-            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().layerBackdrop(thumb))
+            // a glass drop on the picture: bends it at the rim and swells under the finger
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .align(Alignment.Center)
                     .size(56.dp)
-                    .ytGlass(CircleShape),
+                    .liquidGlass(thumb, CircleShape, Color(0x4DFFFFFF), GlassShadow, blur = 6.dp, refraction = 14.dp, swell = { swell }),
             ) {
                 Icon(
                     painterResource(R.drawable.ic_yt_play_round),
@@ -177,17 +244,23 @@ private fun GlassVideo(
                 )
             }
             (if (video.isLive) stringResource(R.string.yt_live_badge) else ytDuration(video))?.let {
-                Text(
-                    text = it,
-                    color = Color.White,
-                    style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Medium, fontSize = 13.5.sp),
-                    modifier = Modifier
+                Box(
+                    Modifier
                         .align(Alignment.BottomEnd)
                         .padding(8.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (video.isLive) palette.live else Color(0xB3101C1E))
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
-                )
+                        .liquidGlass(
+                            thumb, RoundedCornerShape(8.dp),
+                            if (video.isLive) palette.live.copy(alpha = 0.85f) else Color(0x8C101C1E),
+                            null, blur = 8.dp, refraction = 5.dp,
+                        ),
+                ) {
+                    Text(
+                        text = it,
+                        color = Color.White,
+                        style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Medium, fontSize = 13.5.sp),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    )
+                }
             }
         }
         Row(
@@ -283,6 +356,7 @@ private fun GlassShorts(palette: YtPalette, imageLoader: ImageLoader, shorts: Li
             horizontalArrangement = Arrangement.spacedBy(9.dp),
         ) {
             items(shorts, key = { "short-" + it.url }) { short ->
+                val thumb = rememberLayerBackdrop()
                 Box(
                     Modifier
                         .width(173.dp)
@@ -292,7 +366,7 @@ private fun GlassShorts(palette: YtPalette, imageLoader: ImageLoader, shorts: Li
                         .background(palette.lime)
                         .clickable { actions.onOpenVideo(short) },
                 ) {
-                    YtLargeThumbnail(short, imageLoader, Modifier.fillMaxSize())
+                    YtLargeThumbnail(short, imageLoader, Modifier.fillMaxSize().layerBackdrop(thumb))
                     Icon(
                         painterResource(R.drawable.ic_yt_dots_vertical),
                         contentDescription = null,
@@ -308,8 +382,7 @@ private fun GlassShorts(palette: YtPalette, imageLoader: ImageLoader, shorts: Li
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
                                 .padding(6.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0x8C101C1E))
+                                .liquidGlass(thumb, RoundedCornerShape(14.dp), Color(0x73101C1E), null, blur = 8.dp, refraction = 6.dp)
                                 .padding(horizontal = 9.dp, vertical = 4.dp),
                         ) {
                             Icon(
@@ -326,72 +399,6 @@ private fun GlassShorts(palette: YtPalette, imageLoader: ImageLoader, shorts: Li
                             )
                         }
                     }
-                }
-            }
-        }
-    }
-}
-
-/** Segmented tabs: three glass segments, a bright pill glides to the selected one. */
-@Composable
-private fun GlassSegments(palette: YtPalette, tab: String, onSelectTab: (String) -> Unit) {
-    val segments = listOf(
-        Triple(YT_TAB_FOR_YOU, R.string.yt_tab_for_you, 1.23f),
-        Triple(YT_TAB_SUBS, R.string.yt_tab_subscriptions, 1f),
-        Triple(YT_TAB_LIVE, R.string.yt_tab_live, 1.16f),
-    )
-    val gap = 5.dp
-    BoxWithConstraints(
-        Modifier
-            .padding(start = 21.dp, end = 20.dp, top = 6.dp, bottom = 10.dp)
-            .fillMaxWidth()
-            .height(31.dp),
-    ) {
-        val total = segments.sumOf { it.third.toDouble() }.toFloat()
-        val free = maxWidth - gap * (segments.size - 1)
-        val widths = segments.map { free * (it.third / total) }
-        val starts = widths.runningFold(0.dp) { x, w -> x + w + gap }
-        val index = segments.indexOfFirst { it.first == tab }.coerceAtLeast(0)
-        val pillX by animateDpAsState(starts[index], ytStateSpec(), label = "glassPillX")
-        val pillWidth by animateDpAsState(widths[index], ytStateSpec(), label = "glassPillWidth")
-        Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
-            segments.forEachIndexed { i, _ ->
-                Box(
-                    Modifier
-                        .width(widths[i])
-                        .fillMaxHeight()
-                        .ytGlass(RoundedCornerShape(16.dp), shadow = false),
-                )
-            }
-        }
-        Box(
-            Modifier
-                .offset(x = pillX)
-                .width(pillWidth)
-                .fillMaxHeight()
-                .ytGlass(RoundedCornerShape(16.dp), strong = true),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
-            segments.forEachIndexed { i, (key, label, _) ->
-                val active = key == tab
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .width(widths[i])
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable { onSelectTab(key) },
-                ) {
-                    Text(
-                        text = stringResource(label),
-                        color = palette.text,
-                        maxLines = 1,
-                        style = TextStyle(
-                            fontFamily = YtFonts.googleSans,
-                            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = if (active) 14.sp else 13.5.sp,
-                        ),
-                    )
                 }
             }
         }
