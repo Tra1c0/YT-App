@@ -8,6 +8,8 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PixelFormat
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.Shader
 import android.os.Build
@@ -117,12 +119,13 @@ object YtPipVisualizer {
 
         val screen = screenBounds(activity)
         val density = activity.resources.displayMetrics.density
-        val gap = (6 * density).roundToInt()
-        val wanted = (bounds.height() * 0.5f).roundToInt()
-        val room = screen.bottom - bounds.bottom - gap
-        val height = min(wanted, room)
+        // the wave hangs right at the window's lower edge, a little under it, thin as a glow
+        val overlap = (3 * density).roundToInt()
+        val top = bounds.bottom - overlap
+        val wanted = (bounds.height() * 0.24f).roundToInt().coerceIn((30 * density).roundToInt(), (64 * density).roundToInt())
+        val height = min(wanted, screen.bottom - top)
         // stashed at the edge, or no room below: no wave
-        val visible = bounds.width() > 0 && screen.contains(bounds) && height >= (22 * density)
+        val visible = bounds.width() > 0 && screen.contains(bounds) && height >= (18 * density)
         val manager = activity.applicationContext.getSystemService(WindowManager::class.java)
         view.animate().cancel()
         if (!visible) {
@@ -133,7 +136,7 @@ object YtPipVisualizer {
         view.animate().alpha(0f).setDuration(if (view.alpha > 0f) 120L else 0L).withEndAction {
             val params = view.layoutParams as? WindowManager.LayoutParams ?: return@withEndAction
             params.x = bounds.left
-            params.y = bounds.bottom + gap
+            params.y = top
             params.width = bounds.width()
             params.height = height
             runCatching { manager.updateViewLayout(view, params) }
@@ -155,14 +158,23 @@ object YtPipVisualizer {
 
     /**
      * The wave: many thin lines over one curve, each a little shifted, so they braid into a
-     * ribbon; blue above, magenta below, as in the design.
+     * ribbon that glows; blue on the crests, violet and pink below, as in the design. Its ends
+     * taper and fade into what lies below.
      */
     @SuppressLint("ViewConstructor")
     private class WaveView(context: Context, private val position: () -> Long?) : View(context) {
         private val density = context.resources.displayMetrics.density
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = 0.8f * density
+            strokeWidth = 0.9f * density
+            strokeCap = Paint.Cap.ROUND
+        }
+        private val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeCap = Paint.Cap.ROUND
+        }
+        private val fadeMask = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
         }
         private val path = Path()
         private val bands = FloatArray(YtAudioTap.BANDS)
@@ -173,10 +185,14 @@ object YtPipVisualizer {
         private var lastFrame = 0L
 
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-            paint.shader = LinearGradient(
-                0f, 0f, w.toFloat(), h.toFloat(),
-                intArrayOf(0xFF3FA2F6.toInt(), 0xFF8E5CF7.toInt(), 0xFFE03BD6.toInt(), 0xFFF06AD8.toInt()),
-                floatArrayOf(0f, 0.35f, 0.7f, 1f),
+            val colors = intArrayOf(0xFF4AA8FF.toInt(), 0xFFA35CF5.toInt(), 0xFFF060D0.toInt())
+            val stops = floatArrayOf(0.15f, 0.5f, 0.85f)
+            paint.shader = LinearGradient(0f, 0f, w * 0.15f, h.toFloat(), colors, stops, Shader.TileMode.CLAMP)
+            glow.shader = LinearGradient(0f, 0f, w * 0.15f, h.toFloat(), colors, stops, Shader.TileMode.CLAMP)
+            fadeMask.shader = LinearGradient(
+                0f, 0f, w.toFloat(), 0f,
+                intArrayOf(0x00000000, 0xFF000000.toInt(), 0xFF000000.toInt(), 0x00000000),
+                floatArrayOf(0f, 0.2f, 0.8f, 1f),
                 Shader.TileMode.CLAMP,
             )
         }
@@ -200,34 +216,50 @@ object YtPipVisualizer {
             val w = width.toFloat()
             val h = height.toFloat()
             if (w <= 0f || h <= 0f) return
-            val mid = h / 2f
-            // a quiet wave even in silence, so the ribbon never lies flat
-            val a1 = h * (0.12f + 0.3f * bass)
-            val a2 = h * (0.05f + 0.18f * middle)
-            val a3 = h * (0.01f + 0.07f * treble)
-            val lines = 26
-            val segments = 72
+            val mid = h * 0.5f
+            // a quiet swing even in silence, so the ribbon never lies flat; never beyond the view
+            val a1 = h * (0.08f + 0.22f * bass)
+            val a2 = h * (0.04f + 0.12f * middle)
+            val a3 = h * (0.01f + 0.05f * treble)
+            val lines = 34
+            val segments = 80
+            val layer = canvas.saveLayer(0f, 0f, w, h, null)
+            // the glow: the middle of the ribbon, wide and faint
+            for ((width, alpha) in listOf(7f to 26, 3.5f to 55)) {
+                glow.strokeWidth = width * density
+                glow.alpha = alpha
+                ribbon(0.5f, w, mid, a1, a2, a3, segments)
+                canvas.drawPath(path, glow)
+            }
             for (i in 0 until lines) {
                 val t = i / (lines - 1f)
-                val spread = 1f - abs(t - 0.5f) * 1.2f
-                val shift = (t - 0.5f) * 1.6f
-                paint.alpha = (70 + 120 * spread).roundToInt().coerceIn(0, 255)
-                path.rewind()
-                for (s in 0..segments) {
-                    val x = w * s / segments
-                    val u = s / segments.toFloat()
-                    // the ends taper so the ribbon fades into the background
-                    val taper = sin(PI.toFloat() * u).let { 0.35f + 0.65f * it }
-                    val y = mid + taper * (
-                        a1 * sin(2f * PI.toFloat() * (1.1f * u) + phase + shift) * spread +
-                            a2 * sin(2f * PI.toFloat() * (2.3f * u) - 1.3f * phase + 1.7f * shift) +
-                            a3 * sin(2f * PI.toFloat() * (5.5f * u) + 2.9f * phase + 3f * shift)
-                        )
-                    if (s == 0) path.moveTo(x, y) else path.lineTo(x, y)
-                }
+                paint.alpha = (90 + 140 * (1f - abs(t - 0.5f) * 1.6f)).roundToInt().coerceIn(40, 230)
+                ribbon(t, w, mid, a1, a2, a3, segments)
                 canvas.drawPath(path, paint)
             }
+            // the ends fade into what lies below
+            canvas.drawRect(0f, 0f, w, h, fadeMask)
+            canvas.restoreToCount(layer)
             postInvalidateOnAnimation()
+        }
+
+        /** One line [t] (0 to 1) of the ribbon into [path]. */
+        private fun ribbon(t: Float, w: Float, mid: Float, a1: Float, a2: Float, a3: Float, segments: Int) {
+            val spread = 1f - abs(t - 0.5f) * 1.2f
+            val shift = (t - 0.5f) * 1.6f
+            path.rewind()
+            for (s in 0..segments) {
+                val u = s / segments.toFloat()
+                val x = w * u
+                // the lines meet at the ends, where the ribbon tapers to a point
+                val taper = sin(PI.toFloat() * u)
+                val y = mid + taper * (
+                    a1 * sin(2f * PI.toFloat() * (1.1f * u) + phase + shift) * spread +
+                        a2 * sin(2f * PI.toFloat() * (2.3f * u) - 1.3f * phase + 1.7f * shift) +
+                        a3 * sin(2f * PI.toFloat() * (5.5f * u) + 2.9f * phase + 3f * shift)
+                    )
+                if (s == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
         }
 
         private fun readBands() {
