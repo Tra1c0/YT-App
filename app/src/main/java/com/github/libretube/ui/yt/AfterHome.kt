@@ -105,7 +105,7 @@ fun AfterHomeScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 32.dp),
+            contentPadding = PaddingValues(bottom = 32.dp + ytNavPadding()),
         ) {
             item {
                 AfterHero(

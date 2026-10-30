@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -190,7 +191,8 @@ private fun lighten(c: Color, f: Float) = Color(
 private fun darken(c: Color, f: Float) = Color(red = c.red * (1 - f), green = c.green * (1 - f), blue = c.blue * (1 - f), alpha = c.alpha)
 
 // ---------------------------------------------------------------------------------------------
-// Editorial: docked text tabs under a black rule, a blue bar marks the active tab.
+// Editorial: a floating white slip with a hairline black frame; a blue bar on its top edge
+// marks the active tab and slides straight across, without overshoot.
 
 @Composable
 fun EditorialNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
@@ -198,16 +200,13 @@ fun EditorialNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .background(palette.background),
+            .padding(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 10.dp)
+            .shadow(12.dp, RectangleShape, clip = false, ambientColor = Color(0x33000000), spotColor = Color(0x40000000))
+            .background(palette.background)
+            .border(1.dp, palette.text),
     ) {
         val itemWidth = maxWidth / items.size
         val barX by animateDpAsState(itemWidth * index, ytSpec(tween(200, easing = LinearOutSlowInEasing)), label = "editorialBar")
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(palette.text),
-        )
         Box(
             Modifier
                 .offset(x = barX)
@@ -218,11 +217,19 @@ fun EditorialNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(top = 3.dp)
-                .height(44.dp),
+                .height(50.dp),
         ) {
-            items.forEach { item ->
+            items.forEachIndexed { i, item ->
                 val active = item.id == state.selected
+                if (i > 0) {
+                    Box(
+                        Modifier
+                            .padding(vertical = 14.dp)
+                            .width(1.dp)
+                            .fillMaxHeight()
+                            .background(palette.text.copy(alpha = 0.18f)),
+                    )
+                }
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
@@ -239,7 +246,7 @@ fun EditorialNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
                             fontSize = 14.sp,
                         ),
                     )
-                    Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopEnd).padding(top = 9.dp, end = 18.dp))
+                    Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopEnd).padding(top = 11.dp, end = 14.dp))
                 }
             }
         }

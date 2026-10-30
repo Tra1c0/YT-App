@@ -153,6 +153,9 @@ object YtChrome {
     /** Height in px of the header drawn over the current screen (After home), else 0. */
     var headerOverlapPx by mutableIntStateOf(0)
 
+    /** Height in px of the floating navigation bar over the bottom of the screens, else 0. */
+    var navOverlapPx by mutableIntStateOf(0)
+
     /** Opens the search field of the toolbar (e.g. from a search field on a home screen). */
     var openSearch: (() -> Unit)? = null
 }

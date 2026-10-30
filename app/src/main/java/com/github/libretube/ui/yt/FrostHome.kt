@@ -82,7 +82,7 @@ fun FrostHomeScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 20.dp),
+            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 20.dp + ytNavPadding()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {

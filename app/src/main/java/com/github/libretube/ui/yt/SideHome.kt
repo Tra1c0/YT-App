@@ -101,7 +101,7 @@ fun SideHomeScreen(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 96.dp),
+                contentPadding = PaddingValues(bottom = 96.dp + ytNavPadding()),
             ) {
                 item {
                     Text(
@@ -162,7 +162,7 @@ fun SideHomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 17.dp, bottom = 12.dp)
+                .padding(end = 17.dp, bottom = 12.dp + ytNavPadding())
                 .clickable(onClick = actions.onPost),
         ) {
             Box(

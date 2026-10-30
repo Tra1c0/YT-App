@@ -85,7 +85,7 @@ fun ShapesHomeScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 20.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 20.dp + ytNavPadding()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {

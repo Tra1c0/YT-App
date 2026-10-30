@@ -85,7 +85,7 @@ fun EditorialHomeScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp),
+            contentPadding = PaddingValues(bottom = 16.dp + ytNavPadding()),
         ) {
             item {
                 EditorialMainTabs(

@@ -93,7 +93,7 @@ fun YouTubeHomeScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 24.dp),
+            contentPadding = PaddingValues(bottom = 24.dp + ytNavPadding()),
         ) {
             item {
                 Text(

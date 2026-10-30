@@ -88,7 +88,7 @@ fun MovoHomeScreen(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 24.dp),
+                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 24.dp + ytNavPadding()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item {

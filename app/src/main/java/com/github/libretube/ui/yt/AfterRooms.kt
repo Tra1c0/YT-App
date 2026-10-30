@@ -83,7 +83,7 @@ fun AfterRoomsScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 28.dp),
+            contentPadding = PaddingValues(bottom = 28.dp + ytNavPadding()),
         ) {
             item {
                 Box(

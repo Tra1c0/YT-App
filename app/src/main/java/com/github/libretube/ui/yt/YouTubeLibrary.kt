@@ -86,7 +86,7 @@ fun YouTubeLibraryScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(palette.background),
-        contentPadding = PaddingValues(bottom = 24.dp),
+        contentPadding = PaddingValues(bottom = 24.dp + ytNavPadding()),
     ) {
         item {
             Column(Modifier.padding(start = 15.dp, end = 15.dp, top = 4.dp, bottom = 16.dp)) {

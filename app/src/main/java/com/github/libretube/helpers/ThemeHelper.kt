@@ -20,9 +20,10 @@ import com.google.android.material.color.MaterialColors
 object ThemeHelper {
     /**
      * YT: package of the launcher activity aliases (".Default" etc. in the manifest). They resolve
-     * against the namespace, which differs from the application id app.tra1c0.yt.
+     * against the namespace, which differs from the application id app.tra1c0.yt. A literal,
+     * because R8 renames classes like BuildConfig in release builds.
      */
-    private val ALIAS_PACKAGE = com.github.libretube.BuildConfig::class.java.name.substringBeforeLast('.')
+    private const val ALIAS_PACKAGE = "com.github.libretube"
 
     /**
      * Set the theme, including accent color and night mode
@@ -92,26 +93,22 @@ object ThemeHelper {
      * change the app icon
      */
     fun changeIcon(context: Context, newLogoActivityAlias: String) {
+        // YT: enable the new icon first, so there is always one launcher entry
+        context.packageManager.setComponentEnabledSetting(
+            ComponentName(context.packageName, "$ALIAS_PACKAGE.$newLogoActivityAlias"),
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+            PackageManager.DONT_KILL_APP
+        )
+
         // Disable Old Icon(s)
         for (appIcon in IconsSheetAdapter.availableIcons) {
-            val activityClass = ALIAS_PACKAGE + "." + appIcon.activityAlias
-
-            // remove old icons
+            if (appIcon.activityAlias == newLogoActivityAlias) continue
             context.packageManager.setComponentEnabledSetting(
-                ComponentName(context.packageName, activityClass),
+                ComponentName(context.packageName, "$ALIAS_PACKAGE.${appIcon.activityAlias}"),
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                 PackageManager.DONT_KILL_APP
             )
         }
-
-        // set the class name for the activity alias
-        val newLogoActivityClass = ALIAS_PACKAGE + "." + newLogoActivityAlias
-        // Enable New Icon
-        context.packageManager.setComponentEnabledSetting(
-            ComponentName(context.packageName, newLogoActivityClass),
-            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-            PackageManager.DONT_KILL_APP
-        )
     }
 
     /**

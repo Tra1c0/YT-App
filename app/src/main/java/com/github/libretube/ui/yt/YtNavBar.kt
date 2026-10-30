@@ -1,5 +1,6 @@
 package com.github.libretube.ui.yt
 
+import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -61,6 +62,21 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import com.github.libretube.R
 import com.github.libretube.helpers.YtDesign
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import android.widget.ScrollView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
+import androidx.core.view.updatePadding
+import androidx.core.widget.NestedScrollView
+import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.compose.ui.platform.AbstractComposeView
+import com.github.libretube.ui.views.YtBottomNavigationView
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.util.WeakHashMap
 
 /** One tab of a design's navigation bar. [icon] null draws the design's own mark or no icon. */
 class YtNavItem(
@@ -149,8 +165,8 @@ object YtNav {
         }
         bottomNav.children.forEach { it.visibility = View.GONE }
         bottomNav.background = null
-        bottomNav.elevation = 0f
         bottomNav.minimumHeight = 0
+        float(activity, bottomNav)
 
         val state = YtNavState()
         state.selected = bottomNav.selectedItemId
@@ -172,7 +188,84 @@ object YtNav {
         )
         return state
     }
+
+    /**
+     * Lets the bar float freely: the screens run to the bottom edge behind it, touches beside it
+     * reach the screen, and lists get room at their end to scroll out from under it.
+     */
+    private fun float(activity: AppCompatActivity, bottomNav: BottomNavigationView) {
+        (bottomNav as? YtBottomNavigationView)?.floating = true
+        // above the screens (no shadow without a background), below the player
+        bottomNav.elevation = 4 * activity.resources.displayMetrics.density
+        activity.findViewById<View>(R.id.fragment)?.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            bottomToTop = ConstraintLayout.LayoutParams.UNSET
+            bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+        }
+
+        val screens = activity.supportFragmentManager.findFragmentById(R.id.fragment)?.childFragmentManager ?: return
+        fun insetAll(manager: FragmentManager) {
+            for (fragment in manager.fragments) {
+                if (fragment is DialogFragment || !fragment.isAdded) continue
+                fragment.view?.let { YtNavInsets.apply(it, YtChrome.navOverlapPx) }
+                insetAll(fragment.childFragmentManager)
+            }
+        }
+        bottomNav.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
+            val overlap = if (view.isVisible) view.height else 0
+            if (overlap != YtChrome.navOverlapPx) {
+                YtChrome.navOverlapPx = overlap
+                insetAll(screens)
+            }
+        }
+        screens.registerFragmentLifecycleCallbacks(
+            object : FragmentManager.FragmentLifecycleCallbacks() {
+                override fun onFragmentViewCreated(manager: FragmentManager, fragment: Fragment, view: View, savedInstanceState: Bundle?) {
+                    if (fragment is DialogFragment) return
+                    // after the fragment has set up its lists
+                    view.post { YtNavInsets.apply(view, YtChrome.navOverlapPx) }
+                }
+            },
+            true,
+        )
+    }
 }
+
+/**
+ * YT: makes room for the floating navigation bar in the classic screens: vertical lists get
+ * padding at their end (and draw into it), floating action buttons move above the bar. Design
+ * screens drawn in Compose make room themselves with [ytNavPadding].
+ */
+private object YtNavInsets {
+    private val basePadding = WeakHashMap<View, Int>()
+    private val baseMargin = WeakHashMap<View, Int>()
+
+    fun apply(view: View, overlap: Int) {
+        if (view.visibility == View.GONE) return
+        when (view) {
+            is AbstractComposeView -> Unit
+            is RecyclerView -> if (view.layoutManager?.canScrollVertically() == true) padEnd(view, overlap)
+            is NestedScrollView, is ScrollView -> padEnd(view as ViewGroup, overlap)
+            is FloatingActionButton, is ExtendedFloatingActionButton -> lift(view, overlap)
+            is ViewGroup -> view.children.forEach { apply(it, overlap) }
+        }
+    }
+
+    private fun padEnd(view: ViewGroup, overlap: Int) {
+        val base = basePadding.getOrPut(view) { view.paddingBottom }
+        view.clipToPadding = false
+        view.updatePadding(bottom = base + overlap)
+    }
+
+    private fun lift(view: View, overlap: Int) {
+        val params = view.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+        val base = baseMargin.getOrPut(view) { params.bottomMargin }
+        view.updateLayoutParams<ViewGroup.MarginLayoutParams> { bottomMargin = base + overlap }
+    }
+}
+
+/** Room for the floating navigation bar at the end of a design screen. */
+@Composable
+fun ytNavPadding(): Dp = with(LocalDensity.current) { YtChrome.navOverlapPx.toDp() }
 
 private fun style(design: YtDesign, palette: YtPalette): YtNavStyle = when (design) {
     YtDesign.MOVO -> YtNavStyle(

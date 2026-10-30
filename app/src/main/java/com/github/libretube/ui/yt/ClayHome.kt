@@ -97,7 +97,8 @@ fun ClayHomeScreen(
         Modifier
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Color(0xFFF6DACA), Color(0xFFEFCDB9))))
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = ytNavPadding()),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
