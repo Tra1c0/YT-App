@@ -57,8 +57,12 @@ jobs:
             echo "YT_DEBUG_SIGNED=true" >> "$GITHUB_ENV"
             exit 0
           }
-          # a copied value may carry spaces or line breaks; none belong to password or key
-          value=$(printf '%s' "$YT_SIGNING" | tr -d ' \t\r\n')
+          # a copied value may carry spaces, line breaks, backticks or invisible characters;
+          # none belong to password or key
+          value=$(printf '%s' "$YT_SIGNING" | tr -cd 'A-Za-z0-9+/=:-')
+          if printf '%s' "$value" | grep -Eq '^([0-9A-F]{2}:){31}[0-9A-F]{2}$'; then
+            debug "YT_SIGNING holds the fingerprint (the second box), not the key (the first, long box)."
+          fi
           if [ -n "$value" ]; then
             case "$value" in
               *:*) pass="${value%%:*}"; b64="${value#*:}" ;;
@@ -70,10 +74,10 @@ jobs:
           else
             debug "No signing key (secret YT_SIGNING)."
           fi
-          printf '%s' "$b64" | base64 -d > "$key" 2>/dev/null || debug "The secret YT_SIGNING is no valid base64."
+          printf '%s' "$b64" | base64 -d > "$key" 2>/dev/null || debug "The secret YT_SIGNING is no valid key (${#value} characters; the key is several thousand). Copy the whole first box again."
           # the build gets exactly the password that opens the key here
           if ! info=$(keytool -list -v -keystore "$key" -storepass "$pass" -alias yt 2>&1); then
-            debug "The key in YT_SIGNING cannot be opened (password part: ${#pass} characters). Run \"Create signing key\" again."
+            debug "The key in YT_SIGNING cannot be opened (value: ${#value} characters). Copy the whole first box of \"Create signing key\" again."
           fi
           fp=$(printf '%s\n' "$info" | grep -m1 "SHA256:" | sed 's/.*SHA256: //' || true)
           echo "YT_KEYSTORE_PATH=$key" >> "$GITHUB_ENV"
