@@ -29,6 +29,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -279,20 +284,22 @@ private fun progress(item: YtContinueItem): Float {
 
 @Composable
 private fun ProgressBar(palette: YtPalette, fraction: Float, modifier: Modifier = Modifier) {
+    // the watched part fills up when the card appears, so the eye finds where you left off
+    val motion = LocalYtMotion.current
+    val fill = remember { Animatable(if (motion) 0f else fraction) }
+    LaunchedEffect(fraction) {
+        if (motion) fill.animateTo(fraction, tween(700, delayMillis = 150, easing = YtEaseOut)) else fill.snapTo(fraction)
+    }
     Box(
         modifier
             .fillMaxWidth()
             .height(6.dp)
             .clip(RoundedCornerShape(3.dp))
-            .background(Color(0x66FFFFFF)),
-    ) {
-        Box(
-            Modifier
-                .fillMaxWidth(fraction)
-                .fillMaxHeight()
-                .background(palette.accent),
-        )
-    }
+            .background(Color(0x66FFFFFF))
+            .drawBehind {
+                drawRect(palette.accent, size = size.copy(width = size.width * fill.value.coerceIn(0f, 1f)))
+            },
+    )
 }
 
 @Composable

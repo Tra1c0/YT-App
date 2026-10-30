@@ -59,6 +59,12 @@ class YtPebbleWorld {
     var motion = 0f
         private set
 
+    /** The hardest hit in the last step, in px/s (pebble on pebble or on a wall). */
+    var impact = 0f
+        private set
+
+    private var subStep = 1f / 240f
+
     private var grabbed: YtPebble? = null
     private var grabT = 0f
     private var grabX = 0f
@@ -109,7 +115,9 @@ class YtPebbleWorld {
         if (width <= 0f || height <= 0f) return
         val subSteps = 4
         val h = dt.coerceAtMost(1f / 30f) / subSteps
+        subStep = h
         motion = 0f
+        impact = 0f
         repeat(subSteps) {
             integrate(h)
             repeat(3) {
@@ -195,6 +203,13 @@ class YtPebbleWorld {
             nx /= dist; ny /= dist
         }
         val depth = reach - dist
+        // how fast the two contact points ran into each other
+        val vpx = (p.ax - p.pax) * (1f - s) + (p.bx - p.pbx) * s
+        val vpy = (p.ay - p.pay) * (1f - s) + (p.by - p.pby) * s
+        val vqx = (q.ax - q.pax) * (1f - t) + (q.bx - q.pbx) * t
+        val vqy = (q.ay - q.pay) * (1f - t) + (q.by - q.pby) * t
+        val approach = -((vqx - vpx) * nx + (vqy - vpy) * ny)
+        if (approach > 0f) impact = maxOf(impact, approach / subStep)
         val total = p.mass + q.mass
         move(p, s, -nx * depth * q.mass / total, -ny * depth * q.mass / total)
         move(q, t, nx * depth * p.mass / total, ny * depth * p.mass / total)
@@ -240,12 +255,12 @@ class YtPebbleWorld {
             if (p.ax < r) { val v = p.ax - p.pax; p.ax = r; p.pax = r + v * 0.25f; p.pay = p.ay - (p.ay - p.pay) * 0.9f }
             if (p.ax > width - r) { val v = p.ax - p.pax; p.ax = width - r; p.pax = p.ax + v * 0.25f; p.pay = p.ay - (p.ay - p.pay) * 0.9f }
             if (p.ay < r) { val v = p.ay - p.pay; p.ay = r; p.pay = r + v * 0.25f; p.pax = p.ax - (p.ax - p.pax) * 0.9f }
-            if (p.ay > height - r) { val v = p.ay - p.pay; p.ay = height - r; p.pay = p.ay + v * 0.25f; p.pax = p.ax - (p.ax - p.pax) * 0.86f }
+            if (p.ay > height - r) { val v = p.ay - p.pay; impact = maxOf(impact, v / subStep); p.ay = height - r; p.pay = p.ay + v * 0.25f; p.pax = p.ax - (p.ax - p.pax) * 0.86f }
             // b
             if (p.bx < r) { val v = p.bx - p.pbx; p.bx = r; p.pbx = r + v * 0.25f; p.pby = p.by - (p.by - p.pby) * 0.9f }
             if (p.bx > width - r) { val v = p.bx - p.pbx; p.bx = width - r; p.pbx = p.bx + v * 0.25f; p.pby = p.by - (p.by - p.pby) * 0.9f }
             if (p.by < r) { val v = p.by - p.pby; p.by = r; p.pby = r + v * 0.25f; p.pbx = p.bx - (p.bx - p.pbx) * 0.9f }
-            if (p.by > height - r) { val v = p.by - p.pby; p.by = height - r; p.pby = p.by + v * 0.25f; p.pbx = p.bx - (p.bx - p.pbx) * 0.86f }
+            if (p.by > height - r) { val v = p.by - p.pby; impact = maxOf(impact, v / subStep); p.by = height - r; p.pby = p.by + v * 0.25f; p.pbx = p.bx - (p.bx - p.pbx) * 0.86f }
         }
     }
 

@@ -4,6 +4,16 @@ import android.text.format.DateUtils
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -168,13 +179,21 @@ fun YouTubeWatchDetails(
             }
             if (channelId != null) {
                 val isSubscribed = subscribed == true
+                val haptics = rememberYtHaptics()
+                // subscribing is a moment: the pill changes color, wobbles, a ring opens around it
+                // and a check slides in; unsubscribing just turns it back
+                val fill by animateColorAsState(if (isSubscribed) palette.raised else palette.text, ytStateSpec(), label = "subscribeFill")
+                val ink by animateColorAsState(if (isSubscribed) palette.text else palette.background, ytStateSpec(), label = "subscribeInk")
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
+                        .ytBurst(isSubscribed, palette.accent)
+                        .ytJelly(isSubscribed, amount = 0.08f)
                         .clip(ytPillShape(palette))
-                        .background(if (isSubscribed) palette.raised else palette.text)
+                        .drawBehind { drawRect(fill) }
                         .clickable {
                             val newState = !isSubscribed
+                            if (newState) haptics.confirm() else haptics.tick()
                             subscribed = newState
                             scope.launch(Dispatchers.IO) {
                                 runCatching {
@@ -194,11 +213,27 @@ fun YouTubeWatchDetails(
                         .height(32.dp)
                         .padding(horizontal = 22.dp),
                 ) {
-                    Text(
-                        text = stringResource(if (isSubscribed) R.string.yt_watch_subscribed else R.string.yt_watch_subscribe),
-                        color = if (isSubscribed) palette.text else palette.background,
-                        style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 13.sp),
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AnimatedVisibility(
+                            visible = isSubscribed,
+                            enter = ytEnterTransition(expandHorizontally(tween(220, easing = YtEaseOut)) + fadeIn()),
+                            exit = ytExitTransition(shrinkHorizontally(tween(160, easing = YtEaseOut)) + fadeOut()),
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_yt_check),
+                                contentDescription = null,
+                                tint = ink,
+                                modifier = Modifier
+                                    .padding(end = 6.dp)
+                                    .size(15.dp),
+                            )
+                        }
+                        Text(
+                            text = stringResource(if (isSubscribed) R.string.yt_watch_subscribed else R.string.yt_watch_subscribe),
+                            color = ink,
+                            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                        )
+                    }
                 }
             }
         }
@@ -277,11 +312,18 @@ fun YouTubeWatchDetails(
 
 @Composable
 private fun ActionPill(palette: YtPalette, @DrawableRes icon: Int, label: String, onClick: () -> Unit) {
+    val haptics = rememberYtHaptics()
+    val press = remember { MutableInteractionSource() }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
+            // gives way under the finger in the character of the design
+            .ytPressScale(press)
             .ytSurface(palette, ytPillShape(palette))
-            .clickable(onClick = onClick)
+            .clickable(interactionSource = press, indication = LocalIndication.current) {
+                haptics.tick()
+                onClick()
+            }
             .height(36.dp)
             .padding(horizontal = 18.dp),
     ) {

@@ -379,6 +379,7 @@ private fun KieselPebbleField(labels: List<Pair<String, Any>>, onTap: (Any?) -> 
     if (motion) {
         LaunchedEffect(Unit) {
             var last = 0L
+            var lastBump = 0L
             var still = 0
             var lastGravity = gravity.value
             while (isActive) {
@@ -405,6 +406,11 @@ private fun KieselPebbleField(labels: List<Pair<String, Any>>, onTap: (Any?) -> 
                     lastGravity = g
                     world.step(dt)
                     frame++
+                    // a hard landing can be felt
+                    if (world.impact > 1100f * density.density && now - lastBump > 90_000_000L) {
+                        haptics.tick()
+                        lastBump = now
+                    }
                     if (world.motion < 0.04f * density.density) {
                         still++
                         if (still > 90) {

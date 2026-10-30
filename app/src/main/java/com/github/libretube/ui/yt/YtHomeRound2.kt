@@ -81,6 +81,8 @@ internal fun YtRound2Home(
         isLoading = isLoading,
     )
 
+    val haptics = rememberYtHaptics()
+
     fun selectTab(id: Int) {
         fragment.activity?.findViewById<BottomNavigationView>(R.id.bottomNav)?.selectedItemId = id
     }
@@ -96,6 +98,8 @@ internal fun YtRound2Home(
         onShowSubscriptions = { selectTab(R.id.subscriptionsFragment) },
         onSearch = { YtChrome.openSearch?.invoke() },
         onRefresh = {
+            // pulled far enough: a tick, as the refresh starts
+            haptics.tick()
             refresh()
             reload++
         },
