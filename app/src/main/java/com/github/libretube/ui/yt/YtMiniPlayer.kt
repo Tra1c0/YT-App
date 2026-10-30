@@ -342,8 +342,15 @@ object YtMiniPlayer {
         val design = YtDesign.current()
         val palette = design.palette ?: return 0
         val look = look(design, palette) ?: return 0
-        return ((look.navTop + look.overlap) * context.resources.displayMetrics.density).roundToInt()
+        return ((look.navTop + look.overlap) * barDensity(context)).roundToInt()
     }
+
+    /**
+     * px per dp of the navigation bar: the design screens scale with the screen width
+     * ([ytScale]), so the player measures in the same units as the bar it joins.
+     */
+    private fun barDensity(context: Context): Float =
+        context.resources.displayMetrics.density * ytScale(context.resources.configuration)
 
     /** Gives the mini player of [binding] its place on the design's navigation bar. */
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
@@ -352,7 +359,7 @@ object YtMiniPlayer {
         val palette = design.palette ?: return
         val look = look(design, palette) ?: return
         val context = binding.root.context
-        val density = context.resources.displayMetrics.density
+        val density = barDensity(context)
         fun dp(value: Int) = (value * density).roundToInt()
         val motion = binding.playerMotionLayout
 
