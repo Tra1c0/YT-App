@@ -30,6 +30,9 @@ for design in $DESIGNS; do
   # a fresh start: no settings, no saved crash, as after an installation
   timeout 60 adb shell pm clear "$PKG" >/dev/null || echo "pm clear timed out"
   timeout 20 adb logcat -c || true
+  # the log is written while the app runs, so it survives an emulator that dies on the way
+  adb logcat -v threadtime > "logcat-$design.txt" 2>/dev/null &
+  logpid=$!
   echo "$(date -u +%H:%M:%S) start $design"
   if [ "$design" = "standard" ]; then
     timeout 30 adb shell am start -n "$PKG/$ACTIVITY" || echo "start timed out"
@@ -37,8 +40,8 @@ for design in $DESIGNS; do
     timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es yt_design "$design" || echo "start timed out"
   fi
   sleep "$WAIT"
-  timeout 60 adb logcat -d -v threadtime > "logcat-$design.txt" || true
   if timeout 20 adb shell pidof "$PKG" >/dev/null 2>&1; then state="running"; else state="NOT RUNNING"; fi
+  kill "$logpid" 2>/dev/null; wait "$logpid" 2>/dev/null
   grep -n -A160 "FATAL EXCEPTION" "logcat-$design.txt" | head -400 > "crash-$design.txt" || true
   if [ -s "crash-$design.txt" ] || [ "$state" != "running" ]; then crashed="$crashed $design"; fi
   echo "::group::$design: process after $WAIT s is $state"
@@ -48,6 +51,13 @@ for design in $DESIGNS; do
     echo "no fatal exception in logcat"
     rm -f "crash-$design.txt"
     grep -n " E \| F " "logcat-$design.txt" | grep -i "$PKG\|libretube\|AndroidRuntime" | grep -v "jdwp\|JobScheduler\|ActivityManager:" | head -40 || true
+  fi
+  if [ "$state" != "running" ]; then
+    # why the process went without a Java crash: native signal, low-memory kill, system kill
+    echo "--- how the process ended"
+    grep -a -E "Fatal signal|SIGSEGV|SIGABRT|SIGBUS|Abort message|backtrace:|#0[0-9] pc|lowmemorykiller|lmkd|Killing [0-9]+:$PKG|$PKG.*(died|crash)|Process $PKG|am_kill|am_proc_died|Out of memory|OutOfMemory|GL error|EGL_BAD|gralloc|ANR in" "logcat-$design.txt" | cut -c1-300 | head -60 || true
+    echo "--- last lines before the end"
+    tail -n 40 "logcat-$design.txt" | cut -c1-300
   fi
   echo "::endgroup::"
 done
