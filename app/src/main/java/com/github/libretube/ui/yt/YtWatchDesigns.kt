@@ -515,39 +515,45 @@ private fun PillActions(palette: YtPalette, actions: List<WatchAction>, modifier
 @Composable
 private fun AfterActions(palette: YtPalette, actions: List<WatchAction>, modifier: Modifier) {
     val haptics = rememberYtHaptics()
-    Row(
+    // as wide as the screen, in up to two rows: every cell and label shows in full
+    val perRow = if (actions.size <= 4) actions.size.coerceAtLeast(1) else (actions.size + 1) / 2
+    Column(
         modifier
-            .horizontalScroll(rememberScrollState())
             .padding(horizontal = 13.dp)
-            .height(58.dp)
+            .fillMaxWidth()
             .border(1.dp, palette.raised, RoundedCornerShape(4.dp)),
     ) {
-        actions.forEachIndexed { i, action ->
-            if (i > 0) Box(Modifier.fillMaxHeight().width(1.dp).background(palette.raised))
-            val press = remember { MutableInteractionSource() }
-            val pressed by press.collectIsPressedAsState()
-            val glow by animateFloatAsState(if (pressed) 1f else 0f, ytSpec(spring(dampingRatio = 0.8f, stiffness = 500f)), label = "afterGlow")
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .width(86.dp)
-                    .fillMaxHeight()
-                    .drawBehind { drawRect(palette.accent, alpha = 0.18f * glow) }
-                    .clickable(interactionSource = press, indication = null) {
-                        haptics.tick()
-                        action.onClick()
-                    },
-            ) {
-                Icon(painterResource(action.icon), contentDescription = null, tint = palette.text, modifier = Modifier.size(20.dp))
-                Text(
-                    text = action.label.uppercase(),
-                    color = palette.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontFamily = YtFonts.robotoCondensed, fontWeight = FontWeight.Bold, fontSize = 9.5.sp, letterSpacing = 1.sp),
-                    modifier = Modifier.padding(top = 5.dp, start = 4.dp, end = 4.dp),
-                )
+        actions.chunked(perRow).forEachIndexed { r, row ->
+            if (r > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(palette.raised))
+            Row(Modifier.fillMaxWidth().height(58.dp)) {
+                row.forEachIndexed { i, action ->
+                    if (i > 0) Box(Modifier.fillMaxHeight().width(1.dp).background(palette.raised))
+                    val press = remember { MutableInteractionSource() }
+                    val pressed by press.collectIsPressedAsState()
+                    val glow by animateFloatAsState(if (pressed) 1f else 0f, ytSpec(spring(dampingRatio = 0.8f, stiffness = 500f)), label = "afterGlow")
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .drawBehind { drawRect(palette.accent, alpha = 0.18f * glow) }
+                            .clickable(interactionSource = press, indication = null) {
+                                haptics.tick()
+                                action.onClick()
+                            },
+                    ) {
+                        Icon(painterResource(action.icon), contentDescription = null, tint = palette.text, modifier = Modifier.size(20.dp))
+                        Text(
+                            text = action.label.uppercase(),
+                            color = palette.textSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = TextStyle(fontFamily = YtFonts.robotoCondensed, fontWeight = FontWeight.Bold, fontSize = 9.5.sp, letterSpacing = 1.sp),
+                            modifier = Modifier.padding(top = 5.dp, start = 4.dp, end = 4.dp),
+                        )
+                    }
+                }
             }
         }
     }

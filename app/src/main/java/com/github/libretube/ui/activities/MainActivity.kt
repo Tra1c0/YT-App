@@ -173,6 +173,7 @@ class MainActivity : AbstractPlayerHostActivity() {
                 val dock = if (binding.bottomNav.isVisible && binding.bottomNav.height > 0) {
                     com.github.libretube.ui.yt.YtMiniPlayer.dockOffsetPx(this)
                 } else 0
+                com.github.libretube.ui.yt.YtMiniPlayer.containerDockPx = dock
                 for (key in keyFrame.getKeyFramesForView(binding.container.id)) {
                     if (key.framePosition == 100) key.setValue(
                         Key.TRANSLATION_Y,

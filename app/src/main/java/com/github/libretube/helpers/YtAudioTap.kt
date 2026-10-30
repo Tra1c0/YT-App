@@ -21,15 +21,19 @@ import kotlin.math.sin
  *
  * The audio is taken inside the player, before it reaches the speaker: no microphone, no
  * permission, and nothing leaves the app. Work only happens while someone listens
- * ([listening]). The player hands the sound over ahead of time (it buffers about a quarter of
- * a second), so each set of bands is kept with its place in the stream; [bandsAt] returns the
- * set for the position the player is playing right now.
+ * ([listening]). The player hands the sound over ahead of time (its speaker buffer holds about
+ * a quarter of a second), so each set of bands is kept with its place in the stream; [startOf]
+ * ties those places to the player's position and [bandsAt] then returns the set for what is
+ * heard right now.
  */
 @OptIn(UnstableApi::class)
 object YtAudioTap {
     const val BANDS = 8
     private const val SIZE = 1024
     private const val KEEP = 256
+
+    /** How much more than the lead must have passed through before [startOf] trusts it. */
+    private const val SETTLE_MS = 120L
 
     /** True while a visualizer is shown; otherwise the sound only passes through. */
     @Volatile
@@ -148,8 +152,24 @@ object YtAudioTap {
     }
 
     /**
-     * The bands for the moment [positionMs] of the stream that started at [startMs] (the
-     * player's position when [generation] last changed); null when that moment is not known.
+     * Where the stream of [forGeneration] began, in the player's ms, judged from what is heard
+     * now ([positionMs]) and how far the tap runs ahead of it ([leadMs] of the stream): the tap
+     * has handed on [leadMs] more than was heard. Null while the stream has not yet run that
+     * far ahead (just after a seek or a change of speed): then the estimate would not hold, and
+     * the tap can only be trusted once the speaker's buffer has filled again.
+     */
+    fun startOf(forGeneration: Int, positionMs: Long, leadMs: Long): Long? {
+        synchronized(lock) {
+            if (forGeneration != generation) return null
+            val handedMs = (produced * SIZE + filled) * 1000L / sampleRate
+            if (handedMs < leadMs + SETTLE_MS) return null
+            return positionMs + leadMs - handedMs
+        }
+    }
+
+    /**
+     * The bands for the moment [positionMs] of the stream that started at [startMs] (from
+     * [startOf]); false when that moment is not known.
      */
     fun bandsAt(positionMs: Long, startMs: Long, out: FloatArray): Boolean {
         val rate = sampleRate
@@ -166,10 +186,11 @@ object YtAudioTap {
     /** The newest bands, for when the place in the stream is not known (e.g. a new video). */
     fun latest(out: FloatArray): Boolean {
         synchronized(lock) {
-            if (produced == 0L) return false
-            // about a quarter of a second behind what was handed over: what is heard now
+            // about a quarter of a second behind what was handed over: what is heard now; just
+            // after the stream restarted, what is heard is not in it yet
             val behind = (rate() / 4 / SIZE).coerceAtLeast(1)
-            val index = (produced - 1 - behind).coerceAtLeast(0)
+            val index = produced - 1 - behind
+            if (index < 0) return false
             val slot = (index % KEEP).toInt()
             if (frameIndex[slot] != index) return false
             System.arraycopy(frames[slot], 0, out, 0, min(BANDS, out.size))

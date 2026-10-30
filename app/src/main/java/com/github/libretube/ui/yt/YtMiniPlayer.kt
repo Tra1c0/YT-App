@@ -4,6 +4,7 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Outline
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -59,11 +61,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -345,6 +349,12 @@ object YtMiniPlayer {
         return ((look.navTop + look.overlap) * barDensity(context)).roundToInt()
     }
 
+    /**
+     * The offset the activity last gave the player container for docking, in px. The container
+     * also carries the audio player, which keeps its classic place above the bar by this much.
+     */
+    var containerDockPx = 0
+
     /** How far the docked player reaches above the top of the navigation view, in px. */
     fun dockedExtentPx(context: Context): Int {
         val design = YtDesign.current()
@@ -397,6 +407,10 @@ object YtMiniPlayer {
         end.setMargin(R.id.close_imageView, ConstraintSet.TOP, 0)
         end.setMargin(R.id.close_imageView, ConstraintSet.BOTTOM, dp(look.overlap))
         end.setMargin(R.id.play_imageView, ConstraintSet.END, dp(BUTTON_GAP))
+        // landscape: the list beside the video would stay as a strip next to the docked player
+        if (motion.findViewById<View>(R.id.related_container) != null) {
+            end.setVisibility(R.id.related_container, View.GONE)
+        }
         motion.updateState(R.id.end, end)
         motion.rebuildScene()
 
@@ -412,7 +426,10 @@ object YtMiniPlayer {
         binding.mainContainer.clipToPadding = false
         // the joint reaches into the bar and dips with it: nothing above may cut it off
         (binding.mainContainer.parent as? ViewGroup)?.clipChildren = false
-        (binding.root.parent as? ViewGroup)?.clipChildren = false
+        (binding.root.parent as? ViewGroup)?.let { container ->
+            container.clipChildren = false
+            (container.parent as? ViewGroup)?.clipChildren = false
+        }
         val glass = look.glassTint != null
         val backdrop = if (glass) {
             fragment.activity?.findViewById<View>(R.id.fragment)?.let { YtViewBackdrop(it, palette.background) }
@@ -436,7 +453,19 @@ object YtMiniPlayer {
                 YtTheme(palette) { MiniSurface(look, backdrop, info, landings.intValue) }
             }
         }
-        backdrop?.let { surface.viewTreeObserver.addOnPreDrawListener(it.preDrawListener) }
+        // the backdrop follows the screens below only while the surface is in the window; the
+        // listener would otherwise stay with the activity after this player is gone
+        backdrop?.let { b ->
+            surface.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {
+                    v.viewTreeObserver.addOnPreDrawListener(b.preDrawListener)
+                }
+
+                override fun onViewDetachedFromWindow(v: View) {
+                    v.viewTreeObserver.removeOnPreDrawListener(b.preDrawListener)
+                }
+            })
+        }
         binding.mainContainer.addView(
             surface,
             0,
@@ -460,7 +489,10 @@ object YtMiniPlayer {
         if (thumbRadius > 0f) {
             binding.player.outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
-                    outline.setRoundRect(0, 0, view.width, view.height, thumbRadius * motion.progress)
+                    // only on the page: moved into the fullscreen or picture-in-picture window,
+                    // the video keeps square corners
+                    val radius = if (view.parent === motion) thumbRadius * motion.progress else 0f
+                    outline.setRoundRect(0, 0, view.width, view.height, radius)
                 }
             }
             binding.player.clipToOutline = true
@@ -483,6 +515,8 @@ object YtMiniPlayer {
         var landing: ValueAnimator? = null
         motion.addTransitionListener(object : TransitionAdapter() {
             override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {
+                // opened again while it was still landing: the landing stops (and resets) first
+                if (progress < 1f) landing?.cancel()
                 surface.alpha = progress
                 binding.player.invalidateOutline()
                 YtDock.docked = progress > 0.02f
@@ -540,15 +574,16 @@ object YtMiniPlayer {
             interpolator = null
             addUpdateListener { animator ->
                 val t = animator.animatedValue as Float
-                // the shared dip: down, back and a little past, settling
-                val dipT = if (look.landing == Landing.DROP) ((t - 0.28f) / 0.72f).coerceAtLeast(0f) else t
-                val shared = if (dipT > 0f) look.dip * density * 2.2f * wobble(dipT, 1.4f, 4.5f) else 0f
+                // the shared dip: down, back and a little past, settling; every landing starts and
+                // ends at rest, so nothing jumps when it begins
+                val shared = look.dip * density * 2.2f * if (look.landing == Landing.DROP) wobble(t, 2f, 4f) else wobble(t, 1.4f, 4.5f)
                 var own = 0f
                 var scaleX = 1f
                 var scaleY = 1f
                 var alpha = 1f
                 when (look.landing) {
-                    Landing.DROP -> own = -12f * density * (1f - bounce(t))
+                    // the weight comes down: the player sinks a little further than the bar
+                    Landing.DROP -> own = 2.5f * density * wobble(t, 2f, 4f)
                     Landing.SQUISH -> {
                         val w = wobble(t, 1.2f, 5f)
                         scaleY = 1f - 0.16f * w
@@ -559,12 +594,10 @@ object YtMiniPlayer {
                         scaleX = 1f + 0.07f * w
                         scaleY = 1f - 0.07f * w
                     }
-                    Landing.RISE -> scaleY = 1f - 0.2f * exp(-6f * t) * kotlin.math.cos(2f * PI.toFloat() * 1.1f * t)
-                    Landing.SWELL -> {
-                        val w = exp(-5f * t)
-                        scaleY = 1f + 0.05f * w
-                    }
-                    Landing.FROST -> alpha = 0.4f + 0.6f * t
+                    Landing.RISE -> scaleY = 1f + 0.08f * wobble(t, 1.1f, 6f)
+                    Landing.SWELL -> scaleY = 1f + 0.05f * wobble(t, 0.8f, 5f)
+                    // a breath of frost: the glass clouds a little and clears
+                    Landing.FROST -> alpha = 1f - 0.3f * sin(PI.toFloat() * t)
                     else -> Unit
                 }
                 views.forEach { it.translationY = own + shared }
@@ -587,18 +620,6 @@ object YtMiniPlayer {
     /** A damped swing from 0: first towards 1, then back past 0, settling at 0. */
     private fun wobble(t: Float, frequency: Float, decay: Float): Float =
         exp(-decay * t) * sin(2f * PI.toFloat() * frequency * t)
-
-    /** A drop that bounces twice before it rests: 0 to 1. */
-    private fun bounce(t: Float): Float {
-        val n = 7.5625f
-        val d = 2.75f
-        return when {
-            t < 1f / d -> n * t * t
-            t < 2f / d -> { val x = t - 1.5f / d; n * x * x + 0.75f }
-            t < 2.5f / d -> { val x = t - 2.25f / d; n * x * x + 0.9375f }
-            else -> { val x = t - 2.625f / d; n * x * x + 0.984375f }
-        }
-    }
 
     private data class MiniInfo(val title: String, val channel: String, val fraction: Float, val playing: Boolean)
 
@@ -669,8 +690,10 @@ object YtMiniPlayer {
                 settle.animateTo(1f, tween(if (look.landing == Landing.CURTAIN) 620 else 420, easing = LinearOutSlowInEasing))
             }
         }
-        val spin = if (motionOn && data.playing && (look.frame == Frame.COOKIE || look.mark == Mark.COOKIE)) rememberSpin(14000) else null
-        val breath = if (motionOn && data.playing && look.mark == Mark.BLOB) {
+        // moving only while it can be seen: docked and playing
+        val live = motionOn && data.playing && YtDock.docked
+        val spin = if (live && (look.frame == Frame.COOKIE || look.mark == Mark.COOKIE)) rememberSpin(14000) else null
+        val breath = if (live && look.mark == Mark.BLOB) {
             rememberInfiniteTransition(label = "miniBreath").animateFloat(
                 0f, 1f, infiniteRepeatable(tween(1400, easing = LinearEasing), RepeatMode.Reverse), label = "miniBreathValue",
             )
@@ -678,6 +701,8 @@ object YtMiniPlayer {
             null
         }
         val density = LocalDensity.current.density
+        // right to left: the views swap sides, so the drawn frame and ring swap with them
+        val mirror = LocalLayoutDirection.current == LayoutDirection.Rtl
 
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val w = constraints.maxWidth.toFloat()
@@ -710,11 +735,23 @@ object YtMiniPlayer {
                 val shape = remember(look) {
                     GenericShape { size, _ -> addPath(bodyPath(look, size.width, size.height, density, open = false)) }
                 }
+                // before Android 10 a shadow takes only convex outlines and the joined body is
+                // not one: there the shadow comes from the body's rounded rectangle behind it
+                val convexShadow = look.shadow != null && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && look.joint == Joint.BULGE
+                if (convexShadow) {
+                    Box(
+                        Modifier
+                            .padding(horizontal = look.body.dp)
+                            .fillMaxWidth()
+                            .height(look.height.dp)
+                            .shadow(10.dp, RoundedCornerShape(look.radius.dp), clip = false, ambientColor = look.shadow ?: Color.Transparent, spotColor = look.shadow ?: Color.Transparent),
+                    )
+                }
                 Box(
                     Modifier
                         .fillMaxSize()
                         .then(
-                            if (look.shadow != null) {
+                            if (look.shadow != null && !convexShadow) {
                                 Modifier.shadow(10.dp, shape, clip = false, ambientColor = look.shadow, spotColor = look.shadow)
                             } else {
                                 Modifier
@@ -735,7 +772,7 @@ object YtMiniPlayer {
             }
 
             // 2: the frame of the picture, the seam or ring of progress
-            Canvas(Modifier.fillMaxSize()) {
+            Canvas(Modifier.fillMaxSize().graphicsLayer { if (mirror) scaleX = -1f }) {
                 when (look.frame) {
                     Frame.RULE -> drawRect(
                         look.frameColor,
@@ -879,7 +916,7 @@ object YtMiniPlayer {
                         }
                         Bar.WAVE -> {
                             Spacer(Modifier.height(4.dp))
-                            Wave(look, data.fraction, data.playing && motionOn)
+                            Wave(look, data.fraction, live, mirror)
                         }
                         else -> Unit
                     }
@@ -890,19 +927,22 @@ object YtMiniPlayer {
 
     /** Formen: the played part as a wave that flows while the video plays, the rest a line. */
     @Composable
-    private fun Wave(look: Look, fraction: Float, flowing: Boolean) {
-        val phase = if (flowing) {
+    private fun Wave(look: Look, fraction: Float, flowing: Boolean, mirror: Boolean) {
+        // read while drawing, so the flow only redraws and does not compose again every frame
+        val flow = if (flowing) {
             rememberInfiniteTransition(label = "miniWave").animateFloat(
                 0f, 1f, infiniteRepeatable(tween(1600, easing = LinearEasing)), label = "miniWavePhase",
-            ).value
+            )
         } else {
-            0f
+            null
         }
         Canvas(
             Modifier
                 .fillMaxWidth()
-                .height(8.dp),
+                .height(8.dp)
+                .graphicsLayer { if (mirror) scaleX = -1f },
         ) {
+            val phase = flow?.value ?: 0f
             val mid = size.height / 2f
             val stroke = look.barWidth * density
             val split = size.width * fraction

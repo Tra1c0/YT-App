@@ -1428,9 +1428,15 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
             pipActivity = activity
             // YT: the sound wave below the floating window, if switched on
             activity?.let { host ->
-                com.github.libretube.ui.yt.YtPipVisualizer.show(host) {
-                    if (::playerController.isInitialized && playerController.isPlaying) playerController.currentPosition else null
-                }
+                com.github.libretube.ui.yt.YtPipVisualizer.show(
+                    host,
+                    position = {
+                        if (::playerController.isInitialized && playerController.isPlaying) playerController.currentPosition else null
+                    },
+                    speed = {
+                        if (::playerController.isInitialized) playerController.playbackParameters.speed else 1f
+                    },
+                )
             }
         } else {
             com.github.libretube.ui.yt.YtPipVisualizer.hide()

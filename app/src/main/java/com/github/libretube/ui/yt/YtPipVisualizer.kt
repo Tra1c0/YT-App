@@ -53,12 +53,12 @@ object YtPipVisualizer {
 
     /**
      * Shows the wave below the picture-in-picture window of [activity]; [position] is the
-     * player's current position in ms (null while unknown).
+     * player's current position in ms (null while paused or unknown), [speed] its playback speed.
      */
-    fun show(activity: Activity, position: () -> Long?) {
+    fun show(activity: Activity, position: () -> Long?, speed: () -> Float) {
         if (!enabled() || !allowed(activity) || wave != null) return
         val app = activity.applicationContext
-        val view = WaveView(app, position)
+        val view = WaveView(app, position, speed)
         val params = WindowManager.LayoutParams(
             1,
             1,
@@ -162,7 +162,11 @@ object YtPipVisualizer {
      * taper and fade into what lies below.
      */
     @SuppressLint("ViewConstructor")
-    private class WaveView(context: Context, private val position: () -> Long?) : View(context) {
+    private class WaveView(
+        context: Context,
+        private val position: () -> Long?,
+        private val speed: () -> Float,
+    ) : View(context) {
         private val density = context.resources.displayMetrics.density
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
@@ -180,7 +184,8 @@ object YtPipVisualizer {
         private val bands = FloatArray(YtAudioTap.BANDS)
         private val smooth = FloatArray(YtAudioTap.BANDS)
         private var generation = -1
-        private var start = 0L
+        private var start: Long? = null
+        private var lastFound = 0L
         private var phase = 0f
         private var lastFrame = 0L
 
@@ -269,12 +274,32 @@ object YtPipVisualizer {
                 bands.fill(0f)
                 return
             }
-            if (YtAudioTap.generation != generation) {
-                generation = YtAudioTap.generation
-                start = now
+            // the stream restarted (seek, new video, change of speed): its place is found anew,
+            // from how far the tap has run ahead of what is heard, once that has settled
+            val current = YtAudioTap.generation
+            if (current != generation) {
+                generation = current
+                start = null
             }
-            if (!YtAudioTap.bandsAt(now, start, bands) && !YtAudioTap.latest(bands)) bands.fill(0f)
+            if (start == null) {
+                val lead = (LEAD_MS * speed().coerceIn(0.25f, 4f)).toLong()
+                start = YtAudioTap.startOf(current, now, lead)
+            }
+            val found = start?.let { YtAudioTap.bandsAt(now, it, bands) } == true || YtAudioTap.latest(bands)
+            val time = System.nanoTime()
+            if (found) {
+                lastFound = time
+            } else if (time - lastFound > HOLD_NS) {
+                // a short gap (the stream just restarted) keeps the last bands; a long one is quiet
+                bands.fill(0f)
+            }
             for (b in bands.indices) bands[b] = max(0f, bands[b])
+        }
+
+        private companion object {
+            /** What the player's speaker buffer holds ahead of what is heard, in ms of playing. */
+            const val LEAD_MS = 250f
+            const val HOLD_NS = 500_000_000L
         }
     }
 }

@@ -1,13 +1,20 @@
 package com.github.libretube.ui.yt
 
 import android.graphics.Typeface
+import android.text.Spannable
+import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.format.DateUtils
+import android.text.method.BaseMovementMethod
+import android.text.style.ClickableSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
+import android.text.style.URLSpan
 import android.text.util.Linkify
 import android.util.TypedValue
+import android.view.MotionEvent
+import android.view.View
 import android.widget.TextView
 import androidx.annotation.FontRes
 import androidx.compose.foundation.background
@@ -46,7 +53,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -56,11 +65,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.text.method.LinkMovementMethodCompat
 import androidx.core.text.parseAsHtml
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
@@ -204,29 +213,83 @@ internal fun WatchDescription(
 ) {
     val description = streams.description
     if (description.isBlank()) return
+    // the size in the page's own units (scaled with the screen width, like the text around it)
+    val textPx = with(LocalDensity.current) { sizeSp.sp.toPx() }
     AndroidView(
-        factory = { context -> TextView(context).apply { includeFontPadding = false } },
+        factory = { context ->
+            TextView(context).apply {
+                includeFontPadding = false
+                movementMethod = TapLinks
+            }
+        },
         update = { view ->
             view.setTextColor(color.toArgb())
             view.setLinkTextColor(linkColor.toArgb())
-            view.setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp)
+            view.setTextSize(TypedValue.COMPLEX_UNIT_PX, textPx)
             view.typeface = runCatching { ResourcesCompat.getFont(view.context, font) }.getOrNull() ?: Typeface.DEFAULT
             view.setLineSpacing(0f, 1.3f)
             view.maxLines = if (expanded) Int.MAX_VALUE else collapsedLines
             if (view.tag != description) {
                 view.tag = description
                 val text: CharSequence = if (description.contains("<") && description.contains(">")) {
-                    view.movementMethod = LinkMovementMethodCompat.getInstance()
                     description.replace("</a>", "</a> ").parseAsHtml(tagHandler = HtmlParser(LinkHandler(onLink)))
                 } else {
-                    view.autoLinkMask = Linkify.WEB_URLS
-                    description
+                    plainLinks(description, onLink)
                 }
                 view.text = if (dropCap) withDropCap(text) else text
             }
+            // collapsed, the text always starts at its first line
+            if (!expanded) view.scrollTo(0, 0)
         },
         modifier = modifier.fillMaxWidth(),
     )
+}
+
+/** Web addresses in a plain description as links that go the same way as the others. */
+private fun plainLinks(description: String, onLink: (String) -> Unit): CharSequence {
+    val text = SpannableString(description)
+    if (!Linkify.addLinks(text, Linkify.WEB_URLS)) return description
+    for (span in text.getSpans(0, text.length, URLSpan::class.java)) {
+        val start = text.getSpanStart(span)
+        val end = text.getSpanEnd(span)
+        text.removeSpan(span)
+        text.setSpan(
+            object : ClickableSpan() {
+                override fun onClick(widget: View) = onLink(span.url)
+            },
+            start,
+            end,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+        )
+    }
+    return text
+}
+
+/**
+ * Opens a link on a tap and does nothing else. The platform's link handling selects the tapped
+ * link and then keeps scrolling the text to it, so a collapsed description would show its
+ * middle; here nothing is selected and the text does not scroll. Only a tap on the link itself
+ * counts, not one beside the end of its line.
+ */
+private object TapLinks : BaseMovementMethod() {
+    override fun onTouchEvent(widget: TextView, buffer: Spannable, event: MotionEvent): Boolean {
+        val action = event.actionMasked
+        if (action != MotionEvent.ACTION_DOWN && action != MotionEvent.ACTION_UP) return false
+        val link = linkAt(widget, buffer, event) ?: return false
+        if (action == MotionEvent.ACTION_UP) link.onClick(widget)
+        return true
+    }
+
+    private fun linkAt(widget: TextView, buffer: Spannable, event: MotionEvent): ClickableSpan? {
+        val layout = widget.layout ?: return null
+        val x = event.x - widget.totalPaddingLeft + widget.scrollX
+        val y = event.y.toInt() - widget.totalPaddingTop + widget.scrollY
+        if (y < 0 || y > layout.height) return null
+        val line = layout.getLineForVertical(y)
+        if (x < layout.getLineLeft(line) || x > layout.getLineRight(line)) return null
+        val offset = layout.getOffsetForHorizontal(line, x)
+        return buffer.getSpans(offset, offset, ClickableSpan::class.java).firstOrNull()
+    }
 }
 
 private fun withDropCap(text: CharSequence): CharSequence {
@@ -300,35 +363,51 @@ private fun ChapterList(
 ) {
     Column(modifier) {
         streams.chapters.forEachIndexed { i, chapter ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onSeek(chapter.start * 1000) }
-                    .padding(vertical = 7.dp),
-            ) {
-                Text(
-                    text = chapter.title,
-                    style = if (i == activeIndex) title.copy(color = active) else title,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = !leader),
-                )
-                if (leader) {
-                    Text(
-                        text = " ··························································",
-                        style = time,
-                        maxLines = 1,
-                        overflow = TextOverflow.Clip,
-                        modifier = Modifier.weight(1f),
-                    )
+            val titleStyle = if (i == activeIndex) title.copy(color = active) else title
+            val timeStyle = if (i == activeIndex) time.copy(color = active) else time
+            val row = Modifier
+                .fillMaxWidth()
+                .clickable { onSeek(chapter.start * 1000) }
+                .padding(vertical = 7.dp)
+            if (leader) {
+                LeaderRow(chapter.title, DateUtils.formatElapsedTime(chapter.start), titleStyle, timeStyle, row)
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = row) {
+                    Text(chapter.title, style = titleStyle, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    Text(DateUtils.formatElapsedTime(chapter.start), style = timeStyle, modifier = Modifier.padding(start = 10.dp))
                 }
-                Text(
-                    text = DateUtils.formatElapsedTime(chapter.start),
-                    style = if (i == activeIndex) time.copy(color = active) else time,
-                    modifier = Modifier.padding(start = 10.dp),
-                )
             }
+        }
+    }
+}
+
+/**
+ * A line of a printed contents list: the title, dots up to the time, the time at the right
+ * edge. The time is measured first, the title gets the rest (and is cut only when it needs
+ * all of it), the dots fill what is left between them.
+ */
+@Composable
+private fun LeaderRow(title: String, time: String, titleStyle: TextStyle, timeStyle: TextStyle, modifier: Modifier) {
+    Layout(
+        content = {
+            Text(title, style = titleStyle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(" ".padEnd(120, '·'), style = timeStyle, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip)
+            Text(time, style = timeStyle, maxLines = 1)
+        },
+        modifier = modifier,
+    ) { measurables, constraints ->
+        val width = constraints.maxWidth
+        val gap = 10.dp.roundToPx()
+        val timeText = measurables[2].measure(Constraints())
+        val room = (width - timeText.width - gap).coerceAtLeast(0)
+        val titleText = measurables[0].measure(Constraints(maxWidth = room))
+        val dots = (room - titleText.width).coerceAtLeast(0)
+        val dotsText = measurables[1].measure(Constraints(minWidth = dots, maxWidth = dots))
+        val height = maxOf(titleText.height, timeText.height, dotsText.height)
+        layout(width, height) {
+            titleText.placeRelative(0, (height - titleText.height) / 2)
+            dotsText.placeRelative(titleText.width, (height - dotsText.height) / 2)
+            timeText.placeRelative(width - timeText.width, (height - timeText.height) / 2)
         }
     }
 }
@@ -626,19 +705,28 @@ private fun EditorialPage(palette: YtPalette, b: WatchBasics, controller: YtWatc
             if (b.hasChannel) WatchSubscribe(palette, b.subscribed, b.toggle)
         }
         Box(Modifier.padding(top = 14.dp).fillMaxWidth().height(2.dp).background(palette.text))
-        // the actions as a numbered table with rules between the columns
+        // the actions as a numbered table, three to a row, with rules between the cells: wide
+        // enough that every label shows in full
         val items = listOf(b.like) + b.actions
-        Row(Modifier.fillMaxWidth().height(58.dp)) {
-            items.forEachIndexed { i, action ->
-                if (i > 0) Box(Modifier.padding(vertical = 10.dp).width(1.dp).height(38.dp).background(palette.text.copy(alpha = 0.25f)))
-                Column(
-                    Modifier
-                        .weight(1f)
-                        .clickable(onClick = action.onClick)
-                        .padding(horizontal = 6.dp, vertical = 9.dp),
-                ) {
-                    Text("%02d".format(i + 1), color = palette.accent, style = mono.copy(fontSize = 9.sp))
-                    Text(action.label.uppercase(), color = palette.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = mono.copy(fontSize = 10.sp, letterSpacing = 0.6.sp), modifier = Modifier.padding(top = 3.dp))
+        val rule = palette.text.copy(alpha = 0.25f)
+        items.chunked(3).forEachIndexed { r, row ->
+            if (r > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(rule))
+            Row(Modifier.fillMaxWidth().height(58.dp)) {
+                row.forEachIndexed { c, action ->
+                    if (c > 0) Box(Modifier.padding(vertical = 10.dp).width(1.dp).height(38.dp).background(rule))
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .clickable(onClick = action.onClick)
+                            .padding(horizontal = 6.dp, vertical = 9.dp),
+                    ) {
+                        Text("%02d".format(r * 3 + c + 1), color = palette.accent, style = mono.copy(fontSize = 9.sp))
+                        Text(action.label.uppercase(), color = palette.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = mono.copy(fontSize = 10.sp, letterSpacing = 0.6.sp), modifier = Modifier.padding(top = 3.dp))
+                    }
+                }
+                repeat(3 - row.size) {
+                    Box(Modifier.padding(vertical = 10.dp).width(1.dp).height(38.dp).background(rule))
+                    Spacer(Modifier.weight(1f))
                 }
             }
         }
@@ -982,7 +1070,7 @@ private fun KieselPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 14.dp)) {
             Pebble(streams.views.formatShort(), stringResource(R.string.yt_watch_views_label), KieselLavender, Modifier.weight(1f))
             Pebble(if (streams.likes > 0) streams.likes.formatShort() else "–", stringResource(R.string.yt_watch_likes_label), KieselPeach, Modifier.weight(1f))
-            Pebble(TextUtils.formatRelativeDate(streams.uploaded ?: -1L).toString(), stringResource(R.string.yt_watch_uploaded_label), PebbleBeige, Modifier.weight(1f))
+            Pebble(streams.uploaded?.let { compactAge(it) } ?: "–", stringResource(R.string.yt_watch_uploaded_label), PebbleBeige, Modifier.weight(1f))
         }
         WatchCreator(palette, imageLoader, streams, b.hasChannel, b.subscribed, b.toggle, actions.onOpenChannel)
         // the actions as a grid of capsules: two in a row, nothing cut off
@@ -1030,6 +1118,32 @@ private fun KieselPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
     }
 }
 
+/**
+ * How long ago [unixTime] was, in the short form ("3 mo. ago", "vor 3 Mon."), so it fits a
+ * pebble a third of the screen wide.
+ */
+private fun compactAge(unixTime: Long): String {
+    val date = java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(unixTime), java.time.ZoneId.systemDefault())
+    val now = java.time.LocalDateTime.now()
+    val months = date.until(now, java.time.temporal.ChronoUnit.MONTHS)
+    val weeks = date.until(now, java.time.temporal.ChronoUnit.WEEKS)
+    val (unit, amount) = when {
+        months >= 12 -> android.icu.text.RelativeDateTimeFormatter.RelativeUnit.YEARS to months / 12
+        months > 0 -> android.icu.text.RelativeDateTimeFormatter.RelativeUnit.MONTHS to months
+        weeks > 0 -> android.icu.text.RelativeDateTimeFormatter.RelativeUnit.WEEKS to weeks
+        else -> return DateUtils.getRelativeTimeSpanString(
+            unixTime, System.currentTimeMillis(), 0L, DateUtils.FORMAT_ABBREV_RELATIVE,
+        ).toString()
+    }
+    val locale = android.icu.util.ULocale.getDefault()
+    return android.icu.text.RelativeDateTimeFormatter.getInstance(
+        locale,
+        android.icu.text.NumberFormat.getInstance(locale),
+        android.icu.text.RelativeDateTimeFormatter.Style.SHORT,
+        android.icu.text.DisplayContext.CAPITALIZATION_NONE,
+    ).format(amount.toDouble(), android.icu.text.RelativeDateTimeFormatter.Direction.LAST, unit)
+}
+
 @Composable
 private fun Pebble(value: String, label: String, color: Color, modifier: Modifier) {
     Column(
@@ -1038,7 +1152,7 @@ private fun Pebble(value: String, label: String, color: Color, modifier: Modifie
             .background(color)
             .padding(horizontal = 12.dp, vertical = 12.dp),
     ) {
-        Text(value, color = KieselInk, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp))
+        Text(value, color = KieselInk, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp))
         Text(label, color = KieselInk.copy(alpha = 0.65f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Medium, fontSize = 11.sp), modifier = Modifier.padding(top = 2.dp))
     }
 }

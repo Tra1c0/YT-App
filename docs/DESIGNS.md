@@ -236,6 +236,23 @@ eine Welle, Formen Bögen, Clay eine Kante mit Schatten, Glas und Frost einen Fr
 Lichtkante, After einen langen Verlauf, Editorial eine gedruckte Linie, YouTube, Movo und Side
 einen weichen Verlauf. Der Rand erscheint erst beim Scrollen; die Bildlaufleiste ist aus.
 
+Nach der Prüfung von Build 51 (22 bestätigte Befunde) geändert:
+
+- Beschreibung: Ein angetippter Link verschiebt den zugeklappten Text nicht mehr (eigene
+  Link-Behandlung ohne Auswahl), die Schriftgröße folgt der Skalierung der Seite, und einfache
+  Web-Adressen gehen denselben geprüften Weg wie die übrigen Links.
+- Editorial: Aktionstabelle in Reihen zu dritt, damit „HERUNTERLADEN“ ganz zu lesen ist;
+  im Inhaltsverzeichnis stehen die Zeiten bündig rechts, die Punktlinie füllt den Rest.
+- After: Aktionen in bis zu zwei Reihen über die volle Breite statt einer seitlichen Leiste.
+- Kiesel: das Datum im Kiesel in Kurzform („vor 3 Mon.“), damit es nicht abgeschnitten wird.
+- Miniplayer: Landungen beginnen in Ruhelage (kein Sprung beim Andocken), eine laufende Landung
+  bricht ab, wenn der Player wieder aufgezogen wird, der Rand unter dem Player schneidet die
+  Landung nicht mehr ab, im Querformat verschwindet die Liste neben dem Video, im
+  Bild-im-Bild-Modus hat das Video gerade Ecken, die Animationen ruhen, solange der Miniplayer
+  nicht zu sehen ist, der Kiesel-Schatten erscheint auch auf Android 8 und 9, Rahmen und Ring
+  spiegeln sich bei Sprachen, die von rechts nach links laufen, und der Audio-Miniplayer bleibt
+  über der Leiste.
+
 ## Klangwelle unter dem Bild-im-Bild-Fenster
 
 Unter dem schwebenden Bild-im-Bild-Fenster läuft eine Welle aus vielen feinen Lichtlinien,
@@ -244,7 +261,10 @@ langen Wellen, die Mitten die kurzen, die Höhen lassen die Linien zittern; paus
 ruhig weiter. Der Ton wird im Player abgegriffen (`helpers/YtAudioTap.kt`, 8 Frequenzbänder aus
 einer FFT über 1024 Werte) und jedem Band seine Stelle im Datenstrom mitgegeben, so passt die
 Welle zu dem, was gerade zu hören ist, obwohl der Player den Ton eine Viertelsekunde vorher
-bekommt. Einschalten unter Player, „Klangwelle unter Bild-im-Bild“; die nötige Erlaubnis steht
+bekommt. Diese Stelle wird aus der Menge des schon weitergereichten Tons und dem Puffer des
+Lautsprechers (etwa 250 ms, mal Wiedergabetempo) bestimmt, auch wenn Bild-im-Bild mitten im
+Video beginnt oder der Player nach einem Sprung oder Tempowechsel neu ansetzt; der Puffer ist
+geschätzt, nicht gemessen, kleine Abweichungen je Gerät sind möglich. Einschalten unter Player, „Klangwelle unter Bild-im-Bild“; die nötige Erlaubnis steht
 in [SICHERHEIT.md](SICHERHEIT.md). Grenzen: Android meldet nur die Endlage des Fensters, die
 Welle blendet beim Ziehen aus und an der neuen Stelle ein; ist unter dem Fenster kein Platz,
 wird sie flacher oder bleibt weg.

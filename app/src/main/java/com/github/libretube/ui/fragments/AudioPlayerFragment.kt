@@ -126,6 +126,16 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
 
         initializeTransitionLayout()
 
+        // YT: the container sinks onto the design's bar for the docked video player; the audio
+        // player keeps its place above the bar
+        val dock = com.github.libretube.ui.yt.YtMiniPlayer.containerDockPx
+        if (dock > 0) {
+            binding.playerMotionLayout.getConstraintSet(R.id.end)?.let { end ->
+                end.setMargin(R.id.audio_player_container, androidx.constraintlayout.widget.ConstraintSet.BOTTOM, dock)
+                binding.playerMotionLayout.updateState(R.id.end, end)
+            }
+        }
+
         // select the title TV in order for it to automatically scroll
         binding.title.isSelected = true
         binding.uploader.isSelected = true
