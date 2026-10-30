@@ -22,8 +22,6 @@ adb shell settings put global hide_error_dialogs 1 || true
 adb shell pm set-user-restriction no_system_error_dialogs 1 || true
 adb shell cmd uimode night yes >/dev/null 2>&1 || true
 adb shell cmd uimode night no >/dev/null 2>&1 || true
-# the launcher is not needed (the app is started directly) and is the first to stall
-adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher >/dev/null 2>&1 || true
 if [ "${YT_NIGHT:-no}" = "yes" ]; then adb shell cmd uimode night yes; fi
 if [ -n "${YT_LOCALE:-}" ]; then
   adb shell cmd locale set-app-locales "$PKG" --user current --locales "$YT_LOCALE" || echo "app locale not set"
@@ -66,7 +64,15 @@ for design in $DESIGNS; do
   fi
   if timeout 20 adb shell pidof "$PKG" >/dev/null 2>&1; then state="running"; else state="NOT RUNNING"; fi
   kill "$logpid" 2>/dev/null; wait "$logpid" 2>/dev/null
-  grep -n -A160 "FATAL EXCEPTION" "logcat-$design.txt" | head -400 > "crash-$design.txt" || true
+  # only crashes of this app count (other processes of the emulator crash too)
+  awk -v pkg="Process: $PKG," '
+    function flush() { if (keep) print block; block = ""; keep = 0; n = 0 }
+    /FATAL EXCEPTION/ { flush(); block = $0; n = 1; next }
+    n > 0 && n < 160 { block = block "\n" $0; n++; if (index($0, pkg)) keep = 1 }
+    END { flush() }
+  ' "logcat-$design.txt" | head -400 > "crash-$design.txt" || true
+  grep -c "FATAL EXCEPTION" "logcat-$design.txt" | xargs -I{} echo "fatal exceptions of any process in the log: {}"
+  grep -a -A2 "FATAL EXCEPTION" "logcat-$design.txt" | grep -a "Process:" | sed 's/^.*Process: /  crashed: /' | cut -c1-120 | sort | uniq -c || true
   if [ -s "crash-$design.txt" ] || [ "$state" != "running" ]; then crashed="$crashed $design"; fi
   echo "::group::$design: process after $WAIT s is $state"
   if [ -s "crash-$design.txt" ]; then
