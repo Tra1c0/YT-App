@@ -14,6 +14,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -71,8 +75,10 @@ fun Modifier.ytSwipe(
     haptics: YtHaptics,
     enabled: Boolean = true,
     vertical: Boolean = false,
+    /** False: after a commit the caller moves the element on (e.g. off the screen) itself. */
+    settle: Boolean = true,
     onCommit: (direction: Int) -> Unit,
-): Modifier = if (!enabled) this else pointerInput(state, thresholdPx, direction, vertical) {
+): Modifier = if (!enabled) this else pointerInput(state, thresholdPx, direction, vertical, settle) {
     val dimension = (if (vertical) size.height else size.width).toFloat().coerceAtLeast(1f)
     fun band(raw: Float): Float {
         val over = abs(raw) - thresholdPx
@@ -81,7 +87,7 @@ fun Modifier.ytSwipe(
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false)
         val tracker = VelocityTracker()
-        val slop = { change: androidx.compose.ui.input.pointer.PointerInputChange, over: Float ->
+        val slop: (androidx.compose.ui.input.pointer.PointerInputChange, Float) -> Unit = { change, over ->
             if (direction == 0 || sign(over) == direction.toFloat() || abs(over) < 0.5f) {
                 change.consume()
                 state.raw = over
@@ -94,7 +100,7 @@ fun Modifier.ytSwipe(
             awaitHorizontalTouchSlopOrCancellation(down.id, slop)
         } ?: return@awaitEachGesture
         tracker.addPointerInputChange(start)
-        val onDrag = { change: androidx.compose.ui.input.pointer.PointerInputChange ->
+        val onDrag: (androidx.compose.ui.input.pointer.PointerInputChange) -> Unit = { change ->
             tracker.addPointerInputChange(change)
             val delta = change.positionChange().let { if (vertical) it.y else it.x }
             change.consume()
@@ -120,11 +126,29 @@ fun Modifier.ytSwipe(
             haptics.confirm()
             onCommit(way)
         }
-        state.scope.launch {
-            state.offset.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 380f), initialVelocity = velocity)
+        if (settle || !commit || way == 0) {
+            state.scope.launch {
+                state.offset.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 380f), initialVelocity = velocity)
+            }
         }
     }
 }
+
+/** How far a list has been scrolled in all, in px, for things that turn or drift with scrolling. */
+class YtScrollTotal {
+    var value by mutableFloatStateOf(0f)
+        private set
+
+    val connection = object : NestedScrollConnection {
+        override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+            value -= consumed.y
+            return Offset.Zero
+        }
+    }
+}
+
+@Composable
+fun rememberYtScrollTotal(): YtScrollTotal = remember { YtScrollTotal() }
 
 /**
  * A press that inflates: [inflate] rises slowly towards 1 while the finger holds, and springs
