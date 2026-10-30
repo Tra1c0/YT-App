@@ -107,7 +107,12 @@ data class YtPalette(
     val motion: YtMotionStyle = YtMotionStyle.CALM,
     /** How pills and cards of the shared screens are drawn (video page, personal area, Shorts). */
     val surfaceStyle: YtSurfaceStyle = YtSurfaceStyle.FLAT,
+    /** Which design this is, for the pieces that differ per design beyond colors and surfaces. */
+    val signature: YtSignature = YtSignature.YOUTUBE,
 )
+
+/** The designs, as the shared screens tell them apart. */
+enum class YtSignature { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL }
 
 object YtPalettes {
     /** "YouTube, neu gedacht": graphite, warm white, YouTube red, lime and lavender collections. */
@@ -129,6 +134,7 @@ object YtPalettes {
 /** "Movo": near-black, cobalt, candy pink, acid lime and a light lavender chapter surface. */
 val YtPalettes.Movo: YtPalette
     get() = YtPalette(
+        signature = YtSignature.MOVO,
         background = Color(0xFF101112),
         surface = Color(0xFF1D1E21),
         raised = Color(0xFF2B2C30),
@@ -147,6 +153,7 @@ val YtPalettes.Movo: YtPalette
 /** "After": deep burgundy, bone white and a small tangerine accent. */
 val YtPalettes.After: YtPalette
     get() = YtPalette(
+        signature = YtSignature.AFTER,
         background = Color(0xFF1A0B0F),
         surface = Color(0xFF2B1219),
         raised = Color(0xFF3C1B24),
@@ -165,6 +172,7 @@ val YtPalettes.After: YtPalette
 /** "Side": matte graphite, raised surfaces and warm pale apricot. */
 val YtPalettes.Side: YtPalette
     get() = YtPalette(
+        signature = YtSignature.SIDE,
         background = Color(0xFF292A2C),
         surface = Color(0xFF353638),
         raised = Color(0xFF414245),
@@ -183,6 +191,7 @@ val YtPalettes.Side: YtPalette
 /** "Clay": peach, cream and mauve, puffy surfaces. */
 val YtPalettes.Clay: YtPalette
     get() = YtPalette(
+        signature = YtSignature.CLAY,
         background = Color(0xFFF5D8C7),
         surface = Color(0xFFF7E6D6),
         raised = Color(0xFFFBE8D9),
@@ -204,6 +213,7 @@ val YtPalettes.Clay: YtPalette
 /** "Editorial": white paper, black type, one signal blue. */
 val YtPalettes.Editorial: YtPalette
     get() = YtPalette(
+        signature = YtSignature.EDITORIAL,
         background = Color(0xFFFFFFFF),
         surface = Color(0xFFF4F4F4),
         raised = Color(0xFFE8E8E8),
@@ -224,6 +234,7 @@ val YtPalettes.Editorial: YtPalette
 /** "Glas": mint with frosted glass surfaces. */
 val YtPalettes.Glass: YtPalette
     get() = YtPalette(
+        signature = YtSignature.GLASS,
         background = Color(0xFFD1EAE3),
         surface = Color(0x8CFFFFFF),
         raised = Color(0xFFEFF9F8),
@@ -245,6 +256,7 @@ val YtPalettes.Glass: YtPalette
 /** "Pop": lavender, plum, butter yellow and pink, expressive shapes. */
 val YtPalettes.Pop: YtPalette
     get() = YtPalette(
+        signature = YtSignature.POP,
         background = Color(0xFFE6E5FD),
         surface = Color(0xFFF7F6FD),
         raised = Color(0xFFDCD6F5),
@@ -266,6 +278,7 @@ val YtPalettes.Pop: YtPalette
 /** "Formen": night blue to violet with bright Material shapes (inspiration images 5 and 6). */
 val YtPalettes.Shapes: YtPalette
     get() = YtPalette(
+        signature = YtSignature.SHAPES,
         background = Color(0xFF12122A),
         surface = Color(0xFFF4F1FA),
         raised = Color(0xFF2A2950),
@@ -286,6 +299,7 @@ val YtPalettes.Shapes: YtPalette
 /** "Frost": sage with frosted glass and a dark pill (inspiration image 7). */
 val YtPalettes.Frost: YtPalette
     get() = YtPalette(
+        signature = YtSignature.FROST,
         background = Color(0xFF6F8A80),
         surface = Color(0x33FFFFFF),
         raised = Color(0x26FFFFFF),
@@ -305,6 +319,7 @@ val YtPalettes.Frost: YtPalette
 /** "Kiesel": black and cream with lavender and peach, tumbling pebbles (inspiration image 8). */
 val YtPalettes.Kiesel: YtPalette
     get() = YtPalette(
+        signature = YtSignature.KIESEL,
         background = Color(0xFFE9E5E0),
         surface = Color(0xFFF7F4F1),
         raised = Color(0xFFDDD8D2),

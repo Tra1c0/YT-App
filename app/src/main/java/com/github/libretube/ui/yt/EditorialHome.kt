@@ -24,7 +24,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -80,7 +79,8 @@ fun EditorialHomeScreen(
     val shorts = data.shorts.orEmpty()
     val enter = rememberYtEnterState()
 
-    PullToRefreshBox(
+    YtRefreshBox(
+        palette = palette,
         isRefreshing = data.isLoading && source != null,
         onRefresh = actions.onRefresh,
         modifier = Modifier

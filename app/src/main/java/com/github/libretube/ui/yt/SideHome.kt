@@ -2,6 +2,16 @@ package com.github.libretube.ui.yt
 
 import android.text.format.DateUtils
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,10 +34,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,7 +77,6 @@ class SideFeedActions(
  * then the landscape video, the title and a calm row with heart, bookmark and an invitation
  * to the conversation. Matte graphite, apricot selection, 20dp gutters, 14dp media corners.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SideHomeScreen(
     palette: YtPalette,
@@ -94,7 +101,8 @@ fun SideHomeScreen(
             .fillMaxSize()
             .background(palette.background),
     ) {
-        PullToRefreshBox(
+        YtRefreshBox(
+            palette = palette,
             isRefreshing = isLoading && source != null,
             onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize(),
@@ -228,7 +236,35 @@ private fun SidePost(
 ) {
     val haptics = rememberYtHaptics()
     var menu by remember { mutableStateOf(false) }
-    Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 14.dp)) {
+    // swipe the post to the right to heart it: a heart grows at the left as the post follows
+    val swipe = rememberYtSwipe()
+    val threshold = with(LocalDensity.current) { 90.dp.toPx() }
+    // double tap on the picture: a big heart pops over it
+    var pops by remember { mutableIntStateOf(0) }
+    Box {
+        Icon(
+            painterResource(if (hearted) R.drawable.ic_yt_heart else R.drawable.ic_yt_heart_fill),
+            contentDescription = null,
+            tint = palette.accent,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 24.dp)
+                .size(32.dp)
+                .graphicsLayer {
+                    val p = (swipe.offset.value / threshold).coerceIn(0f, 1.3f)
+                    alpha = (p * 2f).coerceAtMost(1f)
+                    val scale = 0.5f + 0.55f * p
+                    scaleX = scale
+                    scaleY = scale
+                },
+        )
+    Column(
+        Modifier
+            .offset { IntOffset(swipe.offset.value.roundToInt(), 0) }
+            .ytSwipe(swipe, threshold, direction = 1, haptics = haptics) { actions.onToggleHeart(post) }
+            .background(palette.background)
+            .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 14.dp),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -296,10 +332,20 @@ private fun SidePost(
                 .padding(top = 8.dp)
                 .fillMaxWidth()
                 .aspectRatio(365f / 184f)
-                .ytPressable(RoundedCornerShape(12.dp)) { actions.onOpenVideo(post) }
+                .ytPressable(
+                    RoundedCornerShape(12.dp),
+                    onDoubleClick = {
+                        if (!hearted) {
+                            haptics.confirm()
+                            actions.onToggleHeart(post)
+                        }
+                        pops++
+                    },
+                ) { actions.onOpenVideo(post) }
                 .background(palette.surface),
         ) {
             YtLargeThumbnail(post, imageLoader, Modifier.fillMaxSize())
+            SideHeartPop(palette, pops)
             Box(
                 Modifier
                     .align(Alignment.Center)
@@ -422,6 +468,35 @@ private fun SidePost(
             }
         }
     }
+    }
+}
+
+/** The big heart of a double tap: it pops up over the picture and melts away. */
+@Composable
+private fun BoxScope.SideHeartPop(palette: YtPalette, pops: Int) {
+    val motion = LocalYtMotion.current
+    val pop = remember { Animatable(1f) }
+    LaunchedEffect(pops) {
+        if (pops > 0 && motion) {
+            pop.snapTo(0f)
+            pop.animateTo(1f, tween(800, easing = YtEaseOut))
+        }
+    }
+    Icon(
+        painterResource(R.drawable.ic_yt_heart_fill),
+        contentDescription = null,
+        tint = palette.accent,
+        modifier = Modifier
+            .align(Alignment.Center)
+            .size(96.dp)
+            .graphicsLayer {
+                val p = pop.value
+                alpha = if (p >= 1f) 0f else 1f - p * p * p
+                val scale = 0.5f + 0.6f * p
+                scaleX = scale
+                scaleY = scale
+            },
+    )
 }
 
 @Composable

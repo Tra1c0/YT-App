@@ -1,7 +1,21 @@
 package com.github.libretube.ui.yt
 
 import android.text.format.DateUtils
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.Velocity
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -30,10 +44,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,7 +83,6 @@ const val AFTER_TAB_SELECTION = "SELECTION"
  * credits, duration and one ivory "Ansehen" button, then "Für später" as small posters and
  * further videos as a two-column poster grid. Burgundy, bone white, tangerine.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AfterHomeScreen(
     palette: YtPalette,
@@ -88,29 +99,61 @@ fun AfterHomeScreen(
     val playable = videos.orEmpty()
         .filter { !it.isShort && !it.isUpcoming && it.url != null }
         .distinctBy { it.url }
-    val hero = playable.firstOrNull()
+    // the top posters: the first few, to swipe through
+    val featured = playable.take(5)
     val later = continueWatching.orEmpty().filter { it.url != null }.distinctBy { it.url }
-        .ifEmpty { playable.drop(1).take(6) }
-    val more = playable.drop(1).filter { candidate -> later.none { it.url == candidate.url } }
+        .ifEmpty { playable.drop(featured.size).take(6) }
+    val more = playable.drop(featured.size).filter { candidate -> later.none { it.url == candidate.url } }
     val opening = rememberYtOpening()
     val enter = rememberYtEnterState()
     val open: (StreamItem) -> Unit = { video ->
         opening.value = video.url
         onOpenVideo(video)
     }
+    val list = rememberLazyListState()
+    val motion = LocalYtMotion.current
+    val scope = rememberCoroutineScope()
+    // pulling down at the top stretches the poster (a rubber band), it springs back when let go
+    val stretch = remember { Animatable(0f) }
+    val stretching = remember(list, motion) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < 0f && stretch.value > 0f) {
+                    val next = (stretch.value + available.y).coerceAtLeast(0f)
+                    scope.launch { stretch.snapTo(next) }
+                }
+                return Offset.Zero
+            }
 
-    PullToRefreshBox(
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (motion && source == NestedScrollSource.UserInput && available.y > 0f &&
+                    list.firstVisibleItemIndex == 0 && list.firstVisibleItemScrollOffset == 0
+                ) {
+                    scope.launch { stretch.snapTo(stretch.value + available.y) }
+                }
+                return Offset.Zero
+            }
+
+            override suspend fun onPreFling(available: Velocity): Velocity {
+                if (stretch.value > 0f) scope.launch { stretch.animateTo(0f, spring(dampingRatio = 0.6f, stiffness = 220f)) }
+                return Velocity.Zero
+            }
+        }
+    }
+
+    YtRefreshBox(
+        palette = palette,
         isRefreshing = isLoading && videos != null,
         onRefresh = onRefresh,
         modifier = Modifier
             .fillMaxSize()
             .background(palette.background),
     ) {
-        val list = rememberLazyListState()
-        val motion = LocalYtMotion.current
         LazyColumn(
             state = list,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(stretching),
             contentPadding = PaddingValues(bottom = 32.dp + ytNavPadding()),
         ) {
             item {
@@ -122,12 +165,19 @@ fun AfterHomeScreen(
                         .clipToBounds(),
                 ) {
                     AfterHero(
-                        palette, imageLoader, hero, opening.value, tab, isLoading || videos == null, onSelectTab, open,
+                        palette, imageLoader, featured, opening.value, tab, isLoading || videos == null, onSelectTab, open,
                         Modifier
                             .fillMaxSize()
                             .graphicsLayer {
                                 if (motion && list.firstVisibleItemIndex == 0) {
                                     translationY = list.firstVisibleItemScrollOffset * 0.5f
+                                }
+                                val pull = stretch.value
+                                if (pull > 0f) {
+                                    val k = 1f + ytRubberBand(pull, size.height) / size.height * 1.6f
+                                    scaleX = k
+                                    scaleY = k
+                                    transformOrigin = TransformOrigin(0.5f, 0f)
                                 }
                             }
                             .drawWithContent {
@@ -215,11 +265,17 @@ fun AfterHomeScreen(
     }
 }
 
+/**
+ * The top of the programme: the featured posters, one screen each, to swipe through. The
+ * poster follows the finger at half speed (parallax) while the credits move with it, the fling
+ * settles on a poster with a slow spring, and a tick marks each one. Thin film-frame marks at
+ * the bottom show where you are.
+ */
 @Composable
 private fun AfterHero(
     palette: YtPalette,
     imageLoader: ImageLoader,
-    hero: StreamItem?,
+    featured: List<StreamItem>,
     openingUrl: String?,
     tab: String,
     isLoading: Boolean,
@@ -227,54 +283,71 @@ private fun AfterHero(
     onOpenVideo: (StreamItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val pager = rememberPagerState { featured.size }
+    val haptics = rememberYtHaptics()
+    val motion = LocalYtMotion.current
+    LaunchedEffect(pager) {
+        var last = pager.settledPage
+        snapshotFlow { pager.settledPage }.collect { page ->
+            if (page != last) haptics.tick()
+            last = page
+        }
+    }
     Box(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 520.dp)
             .background(palette.surface),
     ) {
-        // a calm crossfade between posters, and into playback when the film starts
-        val heroAlpha by animateFloatAsState(
-            targetValue = if (hero != null && openingUrl == hero.url) 0.3f else 1f,
-            animationSpec = ytSpec(tween(450)),
-            label = "heroFade",
-        )
-        Crossfade(
-            targetState = hero,
-            animationSpec = ytFinite(tween(700)),
-            label = "heroPoster",
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { alpha = heroAlpha },
-        ) { video ->
-            if (video != null) {
-                val zoom by rememberKenBurns()
-                YtLargeThumbnail(
-                    video,
-                    imageLoader,
-                    Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = zoom
-                            scaleY = zoom
-                        },
-                )
-            }
-        }
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        0f to palette.background.copy(alpha = 0.88f),
-                        0.2f to palette.background.copy(alpha = 0.45f),
-                        0.32f to Color.Transparent,
-                        0.45f to palette.background.copy(alpha = 0.15f),
-                        0.78f to palette.background.copy(alpha = 0.88f),
-                        1f to palette.background,
-                    )
+        if (featured.isNotEmpty()) {
+            HorizontalPager(
+                state = pager,
+                beyondViewportPageCount = 1,
+                flingBehavior = PagerDefaults.flingBehavior(
+                    state = pager,
+                    snapAnimationSpec = if (motion) spring(dampingRatio = 0.85f, stiffness = 180f) else snap(),
                 ),
-        )
+                modifier = Modifier.fillMaxSize(),
+            ) { page ->
+                val video = featured[page]
+                // fades towards playback when this film starts
+                val heroAlpha by animateFloatAsState(
+                    targetValue = if (openingUrl == video.url) 0.3f else 1f,
+                    animationSpec = ytSpec(tween(450)),
+                    label = "heroFade",
+                )
+                val zoom by rememberKenBurns()
+                Box(Modifier.fillMaxSize()) {
+                    YtLargeThumbnail(
+                        video,
+                        imageLoader,
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                // the poster stays behind the finger at half speed
+                                val off = (pager.currentPage - page) + pager.currentPageOffsetFraction
+                                translationX = off * size.width * 0.5f
+                                scaleX = zoom
+                                scaleY = zoom
+                                alpha = heroAlpha
+                            },
+                    )
+                    AfterGradient(palette)
+                    AfterCredits(
+                        palette, video, onOpenVideo,
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .graphicsLayer {
+                                val off = (pager.currentPage - page) + pager.currentPageOffsetFraction
+                                alpha = (1f - kotlin.math.abs(off) * 1.6f).coerceIn(0f, 1f)
+                                translationX = -off * size.width * 0.12f
+                            },
+                    )
+                }
+            }
+        } else {
+            AfterGradient(palette)
+        }
         val headerOverlap = with(LocalDensity.current) { YtChrome.headerOverlapPx.toDp() }
         Row(
             horizontalArrangement = Arrangement.spacedBy(25.dp),
@@ -312,93 +385,134 @@ private fun AfterHero(
                 }
             }
         }
-        if (hero == null) {
+        if (featured.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 if (isLoading) CircularProgressIndicator(color = palette.accent)
                 else Text(stringResource(R.string.yt_home_empty), color = palette.textSecondary)
             }
-        } else Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 27.dp, end = 25.dp, bottom = 17.dp),
-        ) {
-            // Poster type: the title in condensed caps as a narrow column on the left. Real titles
-            // are longer than the reference's three words, so the size steps down until it fits.
-            val title = hero.title.orEmpty().uppercase()
-            var size by remember(hero.url) { mutableStateOf(63.sp) }
-            Text(
-                text = title,
-                color = palette.text,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis,
-                style = TextStyle(
-                    fontFamily = YtFonts.anton,
-                    fontSize = size,
-                    lineHeight = size * 0.98f,
-                ),
-                onTextLayout = { layout ->
-                    if (layout.hasVisualOverflow && size > 34.sp) size = (size.value - 3f).sp
-                },
-                modifier = Modifier.fillMaxWidth(0.66f),
-            )
+        } else if (featured.size > 1) {
+            // film-frame marks: the current one fills with the drag
             Row(
-                verticalAlignment = Alignment.Bottom,
-                modifier = Modifier.padding(top = 10.dp),
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = hero.uploaderName.orEmpty(),
-                        color = palette.text,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 18.sp),
-                    )
-                    Text(
-                        text = listOfNotNull(
-                            hero.uploadedDate,
-                            hero.views?.takeIf { it > 0 }?.let { stringResource(R.string.yt_after_views, it.formatShort()) },
-                        ).joinToString(" · "),
-                        color = palette.textSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
-                    )
-                }
-                if (hero.isLive) {
-                    AfterLiveBadge(palette)
-                } else hero.duration?.takeIf { it > 0 }?.let {
-                    Text(
-                        text = DateUtils.formatElapsedTime(it),
-                        color = palette.text,
-                        style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
-                    )
-                }
-            }
-            // one short ivory button, 166 x 35 dp
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
                 modifier = Modifier
-                    .padding(top = 10.dp)
-                    .width(166.dp)
-                    .height(35.dp)
-                    .clip(RoundedCornerShape(9.dp))
-                    .background(Color(0xFFF7EBD8))
-                    .clickable { onOpenVideo(hero) }
-                    .padding(start = 26.dp, end = 18.dp),
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 25.dp, bottom = 20.dp),
             ) {
-                Text(
-                    text = stringResource(if (hero.isLive) R.string.yt_after_enter_room else R.string.yt_after_watch),
-                    color = palette.ink,
-                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp),
+                featured.indices.forEach { i ->
+                    Box(
+                        Modifier
+                            .size(14.dp, 3.dp)
+                            .graphicsLayer {
+                                val off = kotlin.math.abs((pager.currentPage - i) + pager.currentPageOffsetFraction)
+                                alpha = (1f - off).coerceIn(0.3f, 1f)
+                            }
+                            .background(palette.text),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AfterGradient(palette: YtPalette) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    0f to palette.background.copy(alpha = 0.88f),
+                    0.2f to palette.background.copy(alpha = 0.45f),
+                    0.32f to Color.Transparent,
+                    0.45f to palette.background.copy(alpha = 0.15f),
+                    0.78f to palette.background.copy(alpha = 0.88f),
+                    1f to palette.background,
                 )
-                Icon(
-                    painterResource(R.drawable.ic_arrow_right),
-                    contentDescription = null,
-                    tint = palette.ink,
-                    modifier = Modifier.size(16.dp),
+            ),
+    )
+}
+
+/** Title in condensed caps, creator, date and views, and the ivory button. */
+@Composable
+private fun AfterCredits(palette: YtPalette, hero: StreamItem, onOpenVideo: (StreamItem) -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.padding(start = 27.dp, end = 25.dp, bottom = 34.dp),
+    ) {
+        // Poster type: the title in condensed caps as a narrow column on the left. Real titles
+        // are longer than the reference's three words, so the size steps down until it fits.
+        val title = hero.title.orEmpty().uppercase()
+        var size by remember(hero.url) { mutableStateOf(63.sp) }
+        Text(
+            text = title,
+            color = palette.text,
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis,
+            style = TextStyle(
+                fontFamily = YtFonts.anton,
+                fontSize = size,
+                lineHeight = size * 0.98f,
+            ),
+            onTextLayout = { layout ->
+                if (layout.hasVisualOverflow && size > 34.sp) size = (size.value - 3f).sp
+            },
+            modifier = Modifier.fillMaxWidth(0.66f),
+        )
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.padding(top = 10.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = hero.uploaderName.orEmpty(),
+                    color = palette.text,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 18.sp),
+                )
+                Text(
+                    text = listOfNotNull(
+                        hero.uploadedDate,
+                        hero.views?.takeIf { it > 0 }?.let { stringResource(R.string.yt_after_views, it.formatShort()) },
+                    ).joinToString(" · "),
+                    color = palette.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
                 )
             }
+            if (hero.isLive) {
+                AfterLiveBadge(palette)
+            } else hero.duration?.takeIf { it > 0 }?.let {
+                Text(
+                    text = DateUtils.formatElapsedTime(it),
+                    color = palette.text,
+                    style = TextStyle(fontFamily = YtFonts.geist, fontSize = 13.sp),
+                )
+            }
+        }
+        // one short ivory button, 166 x 35 dp
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .padding(top = 10.dp)
+                .width(166.dp)
+                .height(35.dp)
+                .ytPressable(RoundedCornerShape(9.dp)) { onOpenVideo(hero) }
+                .background(Color(0xFFF7EBD8))
+                .padding(start = 26.dp, end = 18.dp),
+        ) {
+            Text(
+                text = stringResource(if (hero.isLive) R.string.yt_after_enter_room else R.string.yt_after_watch),
+                color = palette.ink,
+                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp),
+            )
+            Icon(
+                painterResource(R.drawable.ic_arrow_right),
+                contentDescription = null,
+                tint = palette.ink,
+                modifier = Modifier.size(16.dp),
+            )
         }
     }
 }

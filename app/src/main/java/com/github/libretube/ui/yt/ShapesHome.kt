@@ -25,7 +25,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,7 +75,8 @@ fun ShapesHomeScreen(
     val liveCount = data.live?.count { it.isLive } ?: 0
     val enter = rememberYtEnterState()
 
-    PullToRefreshBox(
+    YtRefreshBox(
+        palette = palette,
         isRefreshing = data.isLoading && data.forYou != null,
         onRefresh = actions.onRefresh,
         modifier = Modifier

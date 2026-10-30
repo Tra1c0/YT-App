@@ -19,7 +19,9 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.Composable
@@ -190,8 +192,15 @@ fun Modifier.ytRecede(url: String?): Modifier {
  * A clickable surface in [shape] that gives way while pressed, in the character of the design:
  * Clay squishes (wider and lower), springy designs dip deeper, Editorial barely moves.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Modifier.ytPressable(shape: Shape, squish: Boolean = false, onClick: () -> Unit): Modifier {
+fun Modifier.ytPressable(
+    shape: Shape,
+    squish: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
+    onDoubleClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
+): Modifier {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val style = LocalYtMotionStyle.current
@@ -218,7 +227,19 @@ fun Modifier.ytPressable(shape: Shape, squish: Boolean = false, onClick: () -> U
         }
     }
         .clip(shape)
-        .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick)
+        .then(
+            if (onLongClick == null && onDoubleClick == null) {
+                Modifier.clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick)
+            } else {
+                Modifier.combinedClickable(
+                    interactionSource = interaction,
+                    indication = LocalIndication.current,
+                    onLongClick = onLongClick,
+                    onDoubleClick = onDoubleClick,
+                    onClick = onClick,
+                )
+            },
+        )
 }
 
 /** Clay: the squish of [ytPressable] for things with their own click handling. */

@@ -34,7 +34,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -112,7 +111,8 @@ fun KieselHomeScreen(
     }
     val enter = rememberYtEnterState()
 
-    PullToRefreshBox(
+    YtRefreshBox(
+        palette = palette,
         isRefreshing = data.isLoading && data.forYou != null,
         onRefresh = actions.onRefresh,
         modifier = Modifier

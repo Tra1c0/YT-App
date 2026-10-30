@@ -156,6 +156,7 @@ object YtHome {
                             onOpenVideo = { video ->
                                 NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
                             },
+                            onSave = { video -> saveVideo(fragment, video) },
                         )
                     }
                 } else YtTheme(YtPalettes.YouTube) {
@@ -186,6 +187,8 @@ object YtHome {
                             fragment.activity?.findViewById<BottomNavigationView>(R.id.bottomNav)
                                 ?.selectedItemId = R.id.trendsFragment
                         },
+                        onSave = { video -> saveVideo(fragment, video) },
+                        onShare = { video -> shareVideo(fragment, video) },
                     )
                 }
             }
@@ -195,6 +198,12 @@ object YtHome {
             ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
         )
         return true
+    }
+
+    private fun saveVideo(fragment: Fragment, video: StreamItem) {
+        AddToPlaylistDialog().apply {
+            arguments = bundleOf(IntentData.videoInfo to video)
+        }.show(fragment.childFragmentManager, AddToPlaylistDialog::class.java.name)
     }
 
     private fun shareVideo(fragment: Fragment, video: StreamItem) {

@@ -2,8 +2,6 @@ package com.github.libretube.ui.yt
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.remember
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -34,7 +32,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,7 +88,6 @@ fun GlassHomeScreen(
     // the screen below the floating glass: drifting light, mint and the list
     val screen = rememberLayerBackdrop()
     val chrome = 89.dp
-    val refresh = rememberPullToRefreshState()
     val searchPress = remember { MutableInteractionSource() }
     val searchSwell by rememberSwell(searchPress)
 
@@ -106,20 +102,12 @@ fun GlassHomeScreen(
                 listOf(Color(0x99FFFFFF), Color(0x5C8FD8CB), Color(0x66FFFFFF)),
                 Modifier.fillMaxSize(),
             )
-            PullToRefreshBox(
+            YtRefreshBox(
+                palette = palette,
                 isRefreshing = data.isLoading && source != null,
                 onRefresh = actions.onRefresh,
-                state = refresh,
                 modifier = Modifier.fillMaxSize(),
-                indicator = {
-                    PullToRefreshDefaults.Indicator(
-                        state = refresh,
-                        isRefreshing = data.isLoading && source != null,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = chrome),
-                    )
-                },
+                indicatorTop = chrome,
             ) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),

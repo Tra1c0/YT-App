@@ -2,6 +2,26 @@ package com.github.libretube.ui.yt
 
 import android.text.format.DateUtils
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.unit.Constraints
+import kotlin.math.roundToInt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,10 +43,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -57,7 +75,7 @@ const val YT_FILTER_ALL = "ALL"
  * recommendation, "Gerade live" and further videos. Spacing follows the brief: 20dp gutters,
  * 20dp video corners, 16dp compact surfaces.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun YouTubeHomeScreen(
     palette: YtPalette,
@@ -72,6 +90,8 @@ fun YouTubeHomeScreen(
     onOpenVideo: (StreamItem) -> Unit,
     onOpenChannel: (StreamItem) -> Unit,
     onShowAllLive: () -> Unit = {},
+    onSave: (StreamItem) -> Unit = {},
+    onShare: (StreamItem) -> Unit = {},
 ) {
     // subscriptions first; without any (or with Shorts only) the charts
     val source = if (selectedFilter == YT_FILTER_ALL) feed?.takeIf { videos -> videos.any { !it.isShort } } ?: trending else trending
@@ -84,14 +104,24 @@ fun YouTubeHomeScreen(
     val rest = regular.drop(1)
 
     val enter = rememberYtEnterState()
-    PullToRefreshBox(
-        isRefreshing = isLoading && source != null,
-        onRefresh = onRefresh,
-        modifier = Modifier
+    val list = rememberLazyListState()
+    // a long press opens quick actions for a video
+    var quick by remember { mutableStateOf<StreamItem?>(null) }
+    // once the headline has scrolled away the filters pin at the top and the list runs under them
+    val pinned by remember { derivedStateOf { list.firstVisibleItemIndex >= 1 } }
+    Box(
+        Modifier
             .fillMaxSize()
             .background(palette.background),
     ) {
+    YtRefreshBox(
+        palette = palette,
+        isRefreshing = isLoading && source != null,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize(),
+    ) {
         LazyColumn(
+            state = list,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 24.dp + ytNavPadding()),
         ) {
@@ -109,8 +139,8 @@ fun YouTubeHomeScreen(
                     modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 4.dp, bottom = 9.dp),
                 )
             }
-            item {
-                FilterRow(palette, categories, selectedFilter, onSelectFilter)
+            stickyHeader {
+                FilterRow(palette, categories, selectedFilter, onSelectFilter, pinned)
             }
             if (source == null) {
                 if (isLoading) {
@@ -131,7 +161,7 @@ fun YouTubeHomeScreen(
             }
             hero?.let { video ->
                 item {
-                    LargeVideo(palette, imageLoader, video, onOpenVideo, onOpenChannel, Modifier.ytEnter(enter, "hero" + video.url, 0))
+                    LargeVideo(palette, imageLoader, video, onOpenVideo, onOpenChannel, { quick = it }, Modifier.ytEnter(enter, "hero" + video.url, 0))
                 }
             }
             if (live.isNotEmpty()) {
@@ -150,50 +180,105 @@ fun YouTubeHomeScreen(
             if (rest.isNotEmpty()) {
                 item { SectionTitle(palette, stringResource(R.string.yt_home_more)) }
                 items(rest, key = { it.url!! }) { video ->
-                    LargeVideo(palette, imageLoader, video, onOpenVideo, onOpenChannel, Modifier.ytEnter(enter, "rest" + video.url, 2 + rest.indexOf(video)))
+                    LargeVideo(palette, imageLoader, video, onOpenVideo, onOpenChannel, { quick = it }, Modifier.ytEnter(enter, "rest" + video.url, 2 + rest.indexOf(video)))
                 }
             }
         }
     }
+    YtQuickSheet(
+        palette = palette,
+        imageLoader = imageLoader,
+        video = quick,
+        onDismiss = { quick = null },
+        onSave = onSave,
+        onShare = onShare,
+        onChannel = onOpenChannel,
+    )
+    }
 }
 
+/**
+ * The topic filters: one pill that glides from word to word (the words themselves only change
+ * color), in a row that scrolls to keep the chosen filter in view. While pinned at the top, a
+ * soft edge below it shows the list running underneath.
+ */
 @Composable
 private fun FilterRow(
     palette: YtPalette,
     categories: List<TrendingCategory>,
     selected: String,
     onSelect: (String) -> Unit,
+    pinned: Boolean,
 ) {
     val filters = listOf(YT_FILTER_ALL to stringResource(R.string.all)) +
         categories.map { it.name to stringResource(it.titleRes) }
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 15.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.padding(top = 9.dp, bottom = 15.dp),
-    ) {
-        items(filters, key = { it.first }) { (key, label) ->
-            val active = key == selected
-            val pill by animateColorAsState(if (active) palette.text else palette.surface, ytStateSpec(), label = "ytFilter")
+    val scroll = rememberScrollState()
+    val bounds = remember { mutableStateMapOf<String, Pair<Int, Int>>() }
+    val target = bounds[selected]
+    val pillX by animateFloatAsState((target?.first ?: 0).toFloat(), ytStateSpec(), label = "filterX")
+    val pillWidth by animateFloatAsState((target?.second ?: 0).toFloat(), ytStateSpec(), label = "filterWidth")
+    val edge by animateFloatAsState(if (pinned) 1f else 0f, ytStateSpec(), label = "filterEdge")
+    val scrollSpec = ytFinite(tween<Float>(260, easing = YtEaseOut))
+    LaunchedEffect(selected, target) {
+        val (x, w) = target ?: return@LaunchedEffect
+        val margin = 48
+        if (x - margin < scroll.value) {
+            scroll.animateScrollTo((x - margin).coerceAtLeast(0), scrollSpec)
+        } else if (x + w + margin > scroll.value + scroll.viewportSize) {
+            scroll.animateScrollTo(x + w + margin - scroll.viewportSize, scrollSpec)
+        }
+    }
+    Column(Modifier.background(palette.background)) {
+        Box(
+            Modifier
+                .horizontalScroll(scroll)
+                .padding(start = 15.dp, end = 15.dp, top = 9.dp, bottom = 15.dp),
+        ) {
             Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(pill)
-                    .clickable { onSelect(key) }
+                Modifier
                     .height(34.dp)
-                    .padding(horizontal = 19.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = label,
-                    color = if (active) palette.ink else palette.text,
-                    style = TextStyle(
-                        fontFamily = YtFonts.geist,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 13.5.sp,
-                    ),
-                )
+                    // placed and sized in layout, so the glide never recomposes the row
+                    .layout { measurable, constraints ->
+                        val placeable = measurable.measure(Constraints.fixed(pillWidth.roundToInt().coerceAtLeast(0), constraints.maxHeight))
+                        layout(placeable.width, placeable.height) { placeable.place(pillX.roundToInt(), 0) }
+                    }
+                    .graphicsLayer { alpha = if (target == null) 0f else 1f }
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(palette.text),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                filters.forEach { (key, label) ->
+                    val active = key == selected
+                    val color by animateColorAsState(if (active) palette.ink else palette.text, ytStateSpec(), label = "ytFilterText")
+                    Box(
+                        modifier = Modifier
+                            .onGloballyPositioned { bounds[key] = it.positionInParent().x.roundToInt() to it.size.width }
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable(interactionSource = null, indication = null) { onSelect(key) }
+                            .height(34.dp)
+                            .padding(horizontal = 19.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = label,
+                            color = color,
+                            style = TextStyle(
+                                fontFamily = YtFonts.geist,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 13.5.sp,
+                            ),
+                        )
+                    }
+                }
             }
         }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(10.dp)
+                .graphicsLayer { alpha = edge }
+                .background(Brush.verticalGradient(listOf(palette.background, Color.Transparent))),
+        )
     }
 }
 
@@ -274,13 +359,14 @@ private fun LargeVideo(
     video: StreamItem,
     onOpenVideo: (StreamItem) -> Unit,
     onOpenChannel: (StreamItem) -> Unit,
+    onQuick: (StreamItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .ytPressable(RoundedCornerShape(14.dp)) { onOpenVideo(video) }
+            .ytPressable(RoundedCornerShape(14.dp), onLongClick = { onQuick(video) }) { onOpenVideo(video) }
             .padding(start = 4.dp, end = 4.dp, bottom = 16.dp),
     ) {
         Box {
