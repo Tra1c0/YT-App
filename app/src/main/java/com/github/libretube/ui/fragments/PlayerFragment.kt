@@ -759,16 +759,21 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
                 onAudioOnly = { binding.relPlayerBackground.performClick() },
                 onComments = { binding.commentsToggle.performClick() },
                 onOpenChannel = { binding.playerChannel.performClick() },
-                onShowDescription = { show ->
-                    ytShowDescription = show
-                    _binding?.descriptionLayout?.isVisible = show
+                // the design draws the description itself; the classic one stays hidden
+                onShowDescription = {
+                    ytShowDescription = false
+                    _binding?.descriptionLayout?.isVisible = false
                 },
                 currentPosition = {
                     if (::playerController.isInitialized) playerController.currentPosition else 0L
                 },
+                onLink = { link -> handleLink(link) },
             ),
         )
         if (ytWatch != null) {
+            binding.descriptionLayout.isVisible = false
+            // where the page slides under the video: the design's edge instead of a hard cut
+            com.github.libretube.ui.yt.YtWatchEdge.install(binding.playerScrollView)
             (binding.optionsLL.parent as? View)?.isVisible = false
             binding.playerChannel.isVisible = false
             binding.commentsToggle.isVisible = false

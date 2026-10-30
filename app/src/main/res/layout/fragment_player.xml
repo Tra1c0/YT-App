@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     app:layoutDescription="@xml/player_scene">
 
-    <ScrollView
+    <com.github.libretube.ui.views.YtEdgeScrollView
         android:id="@+id/player_scrollView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -158,7 +158,7 @@
 
         </LinearLayout>
 
-    </ScrollView>
+    </com.github.libretube.ui.views.YtEdgeScrollView>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/main_container"

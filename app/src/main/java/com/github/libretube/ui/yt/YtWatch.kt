@@ -46,8 +46,9 @@ object YtWatch {
                             actions = actions,
                         )
                     } else {
-                        // "After" shares the structure of view B in its own colors
-                        YouTubeWatchDetails(
+                        // every other design has a page of its own (YtWatchPages.kt)
+                        YtWatchPage(
+                            design = design,
                             palette = palette,
                             imageLoader = ImageHelper.loader(),
                             controller = controller,

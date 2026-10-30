@@ -245,4 +245,19 @@
     <string name="yt_pip_visualizer">Sound wave below picture-in-picture</string>
     <string name="yt_pip_visualizer_summary">A wave of light below the floating window that moves with the sound. Needs the permission to show over other apps; the wave takes no touches and only shows while the video floats.</string>
     <string name="yt_pip_visualizer_permission">Allow “Display over other apps” for YT, then come back</string>
+    <!-- the video pages of the designs -->
+    <string name="yt_watch_more">More</string>
+    <string name="yt_watch_less">Less</string>
+    <string name="yt_watch_open_comments">Tap to read and write</string>
+    <string name="yt_watch_views_label">Views</string>
+    <string name="yt_watch_likes_label">Likes</string>
+    <string name="yt_watch_uploaded_label">Uploaded</string>
+    <string name="yt_after_presented">Presented by</string>
+    <string name="yt_after_synopsis">Synopsis</string>
+    <string name="yt_after_scenes">Scenes</string>
+    <string name="yt_after_reviews">Reviews</string>
+    <string name="yt_editorial_video">Video</string>
+    <string name="yt_editorial_by">By</string>
+    <string name="yt_editorial_contents">Contents</string>
+    <string name="yt_editorial_letters">Letters to the editor</string>
 </resources>

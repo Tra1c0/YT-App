@@ -167,7 +167,6 @@ fun SideWatchDetails(
                     .clip(RoundedCornerShape(50))
                     .clickable {
                         showDescription = !showDescription
-                        actions.onShowDescription(showDescription)
                     }
                     .padding(horizontal = 10.dp, vertical = 6.dp),
             )
@@ -190,6 +189,13 @@ fun SideWatchDetails(
                     .clickable(onClick = actions.onShare)
                     .padding(8.dp)
                     .size(20.dp),
+            )
+        }
+
+        if (showDescription) {
+            WatchDescription(
+                streams, actions.onLink, palette.text, palette.accent, R.font.font_figtree_400, expanded = true,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp),
             )
         }
 

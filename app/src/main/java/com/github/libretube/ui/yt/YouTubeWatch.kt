@@ -55,6 +55,8 @@ class YtWatchActions(
     val onOpenChannel: () -> Unit,
     val onShowDescription: (Boolean) -> Unit,
     val currentPosition: () -> Long = { 0L },
+    /** Opens a link or jumps to a timestamp of the description. */
+    val onLink: (String) -> Unit = {},
 )
 
 private enum class WatchTab { CHAPTERS, COMMENTS, DESCRIPTION }

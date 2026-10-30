@@ -85,7 +85,6 @@ fun MovoWatchDetails(
         firstComment = page?.comments?.firstOrNull()
         commentCount = page?.commentCount ?: 0L
     }
-    LaunchedEffect(showDescription, streams.title) { actions.onShowDescription(showDescription) }
 
     Column(Modifier.fillMaxWidth()) {
         Text(
@@ -301,6 +300,16 @@ fun MovoWatchDetails(
                 text = stringResource(R.string.yt_watch_description),
                 color = if (showDescription) palette.ink else palette.text,
                 style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+            )
+        }
+        if (showDescription) {
+            WatchDescription(
+                streams, actions.onLink, palette.text, palette.lime, R.font.font_geist_400, expanded = true,
+                modifier = Modifier
+                    .padding(start = 15.dp, end = 15.dp, top = 4.dp, bottom = 8.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(palette.surface)
+                    .padding(16.dp),
             )
         }
     }

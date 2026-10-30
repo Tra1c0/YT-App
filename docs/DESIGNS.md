@@ -210,6 +210,32 @@ Alles Bewegte hängt am Schalter „Animationen der Designs“. Der Emulator-Che
 (`crash-check.yml`, Option „screens“) fotografiert Start, Player und Miniplayer je Design und
 legt die Bilder als Vorab-Release `screens-<Lauf>` ab.
 
+## Videoseite je Design (Runde 11)
+
+Unter dem Video hat jedes Design seinen eigenen Aufbau (`ui/yt/YtWatchPages.kt`; Movo und Side
+behalten ihre Seiten aus Runde 7). Aktionen liegen in gleich breiten Reihen statt in einer
+seitlichen Leiste, nichts wird am Rand abgeschnitten. Die Beschreibung zeichnet die Seite selbst
+in der Schrift des Designs, mit funktionierenden Links und Zeitmarken; die klassische
+LibreTube-Beschreibung bleibt versteckt, so steht nichts doppelt da.
+
+| Design | Aufbau |
+| --- | --- |
+| YouTube neu | Titel, Metazeile mit „Mehr“ (Beschreibung klappt darunter auf), Kanalzeile, vier gleiche Aktionskacheln, Kommentar-Karte |
+| After | Filmplakat: Titel in großen Versalien, Credits-Zeile, „Präsentiert von“, Filmstreifen, „Handlung“, „Szenen“, „Kritiken“ |
+| Clay | Puffige Platte mit Titel und Kanal, Raster aus Knete-Kacheln (3 je Reihe), Beschreibung auf einer zweiten Platte |
+| Editorial | Zeitungsartikel: Dachzeile, Schlagzeile, Byline mit „Folgen“, nummerierte Aktionstabelle mit Spaltenlinien, Fließtext mit Initiale, Inhaltsverzeichnis mit Punktlinie, Leserbriefe |
+| Glas | Glasscheibe mit Titel, Kanal auf einer Glaspille, runde Glasknöpfe mit Beschriftung, Beschreibung auf Glas |
+| Pop | Erstes Wort auf gelbem Marker, Kanal als schiefer Sticker, Blobs in zwei Reihen, Beschreibung als Sprechblase |
+| Formen | Nachtseite, Reihe aus Material-Formen (Keks, Pille, Blob) als Knöpfe, Beschreibungskarte |
+| Frost | Freier Titel, Kanal auf Frostkarte, Frost-Kreise nur mit Icons, Beschreibung auf Frost |
+| Kiesel | Dashboard: drei Kiesel mit Aufrufen, Likes und Datum, schwarze Kanal-Kapsel, Aktionen als Kapsel-Raster (2 je Reihe), Beschreibung auf heller Karte |
+
+Wo die Seite unter das Video läuft, zeichnet jedes Design einen eigenen Rand statt eines harten
+Schnitts (`ui/yt/YtWatchEdge.kt`, `ui/views/YtEdgeScrollView.kt`): Kiesel eine runde Lippe, Pop
+eine Welle, Formen Bögen, Clay eine Kante mit Schatten, Glas und Frost einen Froststreifen mit
+Lichtkante, After einen langen Verlauf, Editorial eine gedruckte Linie, YouTube, Movo und Side
+einen weichen Verlauf. Der Rand erscheint erst beim Scrollen; die Bildlaufleiste ist aus.
+
 ## Klangwelle unter dem Bild-im-Bild-Fenster
 
 Unter dem schwebenden Bild-im-Bild-Fenster läuft eine Welle aus vielen feinen Lichtlinien,

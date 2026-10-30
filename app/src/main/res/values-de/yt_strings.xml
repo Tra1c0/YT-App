@@ -245,4 +245,19 @@
     <string name="yt_pip_visualizer">Klangwelle unter Bild-im-Bild</string>
     <string name="yt_pip_visualizer_summary">Eine Lichtwelle unter dem schwebenden Fenster, die sich mit dem Ton bewegt. Braucht die Erlaubnis, über anderen Apps einzublenden; die Welle nimmt keine Berührungen an und erscheint nur, solange das Video schwebt.</string>
     <string name="yt_pip_visualizer_permission">Erlaube „Über anderen Apps einblenden“ für YT und komm dann zurück</string>
+    <!-- the video pages of the designs -->
+    <string name="yt_watch_more">Mehr</string>
+    <string name="yt_watch_less">Weniger</string>
+    <string name="yt_watch_open_comments">Tippen zum Lesen und Schreiben</string>
+    <string name="yt_watch_views_label">Aufrufe</string>
+    <string name="yt_watch_likes_label">Gefällt</string>
+    <string name="yt_watch_uploaded_label">Hochgeladen</string>
+    <string name="yt_after_presented">Präsentiert von</string>
+    <string name="yt_after_synopsis">Handlung</string>
+    <string name="yt_after_scenes">Szenen</string>
+    <string name="yt_after_reviews">Kritiken</string>
+    <string name="yt_editorial_video">Video</string>
+    <string name="yt_editorial_by">Von</string>
+    <string name="yt_editorial_contents">Inhalt</string>
+    <string name="yt_editorial_letters">Leserbriefe</string>
 </resources>
