@@ -11,12 +11,18 @@
 # permission to show over other apps: YT's switch and dialog, Android 15's lock on it, the unlock),
 # YT_FLOAT (yes = per design: YT's own floating player with the wave: Home, a drag with the finger
 # held and screenshots during it, a pixel check that the wave stays right below the video, the
-# controls, back to the app, and closing by dropping it on the ✕).
+# controls, back to the app, and closing by dropping it on the ✕), YT_VIDEO (the online video id
+# of the player checks), YT_TEST_VIDEO (yes = per design: put scripts/fixtures/yt-test.mp4 into the
+# app's own files and open it as a downloaded video; the screens then show it), YT_GESTURES (yes =
+# per design: the gesture checks scripts/gestures/a.sh ... e.sh with the animations on).
 set -u
 PKG="app.tra1c0.yt"
 ACTIVITY="com.github.libretube.ui.activities.MainActivity"
 APK=$(ls apk/*.apk | head -n 1)
 WAIT="${YT_WAIT:-20}"
+case "$WAIT" in *[!0-9]*) echo "::warning::YT_WAIT=$WAIT is no number of seconds; 20 instead"; WAIT=20 ;; esac
+# the id goes into a device shell command line: only what a video id holds
+case "${YT_VIDEO:-}" in *[!A-Za-z0-9_-]*) echo "::warning::YT_VIDEO=$YT_VIDEO is no video id; the default instead"; YT_VIDEO="" ;; esac
 DESIGNS="${YT_DESIGN:-standard}"
 [ "$DESIGNS" = "all" ] && DESIGNS="standard youtube movo after side clay editorial glass pop shapes frost kiesel"
 DESIGNS="${DESIGNS//,/ }"
@@ -35,9 +41,9 @@ if [ "${YT_LOCK:-no}" = "yes" ]; then
 else
   adb install -r "$APK"
 fi
-# the floating check looks at the app's threads: root first (adbd restarts, which would cut a
-# running log capture short), as the emulator image allows
-if [ "${YT_FLOAT:-no}" = "yes" ]; then
+# the floating check looks at the app's threads, the test video goes into the app's own files:
+# root first (adbd restarts, which would cut a running log capture short), as the emulator image allows
+if [ "${YT_FLOAT:-no}" = "yes" ] || [ "${YT_TEST_VIDEO:-no}" = "yes" ]; then
   timeout 20 adb root >/dev/null 2>&1 || true
   sleep 3
   timeout 30 adb wait-for-device || true
@@ -59,6 +65,9 @@ if [ -n "${YT_LOCALE:-}" ]; then
 fi
 RETRACE=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/retrace 2>/dev/null | head -n 1)
 crashed=""
+# extras for every start of the app; the gesture checks log the gestures (YtTestHooks, emulator only)
+START_EXTRAS=()
+[ "${YT_GESTURES:-no}" = "yes" ] && START_EXTRAS+=(--ez yt_gesture_log true)
 
 # the time on the device, to line up with its log
 mark() { echo "$(timeout 5 adb shell date +%H:%M:%S 2>/dev/null | tr -d '\r') $*"; }
@@ -102,6 +111,81 @@ rawshot() {
   mark "screenshot $1"
   timeout 20 adb exec-out screencap > "screens/$1.raw" || true
   python3 -I scripts/wave-check.py --png "screens/$1.raw" "screens/$1.png" 2>/dev/null || true
+}
+# the local test video: into the app's private files after its first start (pm clear wipes them,
+# so once per design), with the owner and SELinux label of the app's own files, so the app reads
+# it like one of its downloads. Needs adb root, which the emulator images allow.
+TEST_VIDEO_SRC="scripts/fixtures/yt-test.mp4"
+TEST_VIDEO=""
+push_test_video() {
+  local dir="/data/user/0/$PKG/files" ref owner label
+  TEST_VIDEO=""
+  if [ "$(timeout 10 adb shell id -u 2>/dev/null | tr -d '\r')" != "0" ]; then
+    echo "::warning::No adb root: the test video cannot go into the app's files"
+    return 1
+  fi
+  # the files dir appears on the app's first use of it; until then its data dir has the same owner and label
+  ref="$dir"
+  timeout 10 adb shell "test -d $dir" || ref="/data/user/0/$PKG"
+  owner=$(timeout 10 adb shell stat -c %u:%g "$ref" 2>/dev/null | tr -d '\r')
+  label=$(timeout 10 adb shell ls -Zd "$ref" 2>/dev/null | tr -d '\r' \
+    | awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^u:object_r:/) { print $i; exit } }')
+  if [ -z "$owner" ] || [ -z "$label" ]; then
+    echo "::warning::Owner (${owner:-?}) or SELinux label (${label:-?}) of $ref unknown: no test video"
+    return 1
+  fi
+  if ! timeout 60 adb push "$TEST_VIDEO_SRC" "$dir/yt-test.mp4" >/dev/null; then
+    echo "::warning::The test video could not be pushed"
+    return 1
+  fi
+  if ! timeout 20 adb shell "chown $owner $dir $dir/yt-test.mp4 && chmod 771 $dir && chmod 600 $dir/yt-test.mp4 && chcon $label $dir $dir/yt-test.mp4"; then
+    echo "::warning::The test video's owner or label could not be set"
+    return 1
+  fi
+  mark "test video: $(timeout 10 adb shell ls -lZ "$dir/yt-test.mp4" 2>/dev/null | tr -d '\r')"
+  TEST_VIDEO="$dir/yt-test.mp4"
+}
+# opens the test video the way the downloads screen opens a downloaded one (YtTestHooks, emulator
+# only); further extras for the hooks may follow, e.g. --ei yt_queue_test 3 or --el yt_seek_test 60000.
+# Returns once the app logs "test hooks done" (the video plays, the extras ran), at most
+# OPEN_WAIT s (default 60). Status 1 if there is no test video, the app logs that it failed, or
+# it logs nothing at all within 15 s: a build without the hooks (main before round 12) ignores
+# the parameter, so the callers then go on without the test video.
+# shellcheck disable=SC2120 # the gesture checks pass extras
+open_test_video() {
+  local log="logcat-${design:-standard}.txt" from waited=0 lines failed
+  if [ -z "$TEST_VIDEO" ]; then mark "no test video on the device"; return 1; fi
+  from=$(wc -l < "$log" 2>/dev/null || echo 0)
+  mark "open the test video $*"
+  timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true ${START_EXTRAS[@]+"${START_EXTRAS[@]}"} \
+    --es yt_test_video "$TEST_VIDEO" "$@" >/dev/null || echo "test video start timed out"
+  while :; do
+    lines=$(tail -n +"$((from + 1))" "$log" 2>/dev/null | grep -a -E " [IW] YtTest *: " || true)
+    if printf '%s\n' "$lines" | grep -a -q -E " I YtTest *: test hooks done"; then
+      mark "test video ready"
+      return 0
+    fi
+    failed=$(printf '%s\n' "$lines" | grep -a -E " W YtTest *: test video" | tail -n 1 | sed -E 's/^.* W YtTest *: //')
+    if [ -n "$failed" ]; then
+      mark "test video failed: $(printf '%s' "$failed" | cut -c1-160)"
+      return 1
+    fi
+    if [ -z "$lines" ] && [ "$waited" -ge 15 ]; then
+      mark "the app logs nothing about the test video (a build without YtTestHooks?)"
+      return 1
+    fi
+    if [ "$waited" -ge "${OPEN_WAIT:-60}" ]; then
+      mark "test video not ready after $waited s"
+      return 1
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+}
+# the online video in the player, as the screens did before the test video
+open_online_video() {
+  timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es videoId "${YT_VIDEO:-jNQXAC9IVRw}" --ez yt_quiet true \
+    || echo "video start timed out"
 }
 # back until YT is in front again (at most 5 times)
 back_to_yt() {
@@ -213,11 +297,27 @@ for design in $DESIGNS; do
   logpid=$!
   echo "$(date -u +%H:%M:%S) start $design"
   if [ "$design" = "standard" ]; then
-    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true || echo "start timed out"
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true ${START_EXTRAS[@]+"${START_EXTRAS[@]}"} || echo "start timed out"
   else
-    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es yt_design "$design" --ez yt_quiet true || echo "start timed out"
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es yt_design "$design" --ez yt_quiet true ${START_EXTRAS[@]+"${START_EXTRAS[@]}"} || echo "start timed out"
   fi
   sleep "$WAIT"
+  if [ "${YT_TEST_VIDEO:-no}" = "yes" ]; then
+    mkdir -p screens
+    push_test_video || true
+    # with the screens the video opens there (after the start screen's shot); otherwise here,
+    # so the gesture checks begin with it
+    if [ -n "$TEST_VIDEO" ] && [ "${YT_SCREENS:-no}" != "yes" ]; then
+      # a build without the hooks gets the online video, so the gesture checks start in the player
+      # shellcheck disable=SC2119
+      if ! open_test_video; then
+        echo "::warning::$design: the test video did not open; the online video instead"
+        open_online_video
+      fi
+      sleep 15
+      shot "$design-0-test-video"
+    fi
+  fi
   if [ "${YT_PIP:-no}" = "yes" ]; then
     mkdir -p screens
     # the permission the switch would ask for, given as the user would give it
@@ -419,14 +519,50 @@ for design in $DESIGNS; do
     # the start, the player with a video, then the player minimized onto the bar
     mkdir -p screens
     timeout 20 adb exec-out screencap -p > "screens/$design-1-start.png" || true
-    # straight to the running main screen (a link would start it anew, with the welcome sheet)
-    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es videoId "${YT_VIDEO:-jNQXAC9IVRw}" --ez yt_quiet true \
-      || echo "video start timed out"
+    # straight to the running main screen (a link would start it anew, with the welcome sheet);
+    # the local test video when there is one, since online videos do not play in the emulator;
+    # the online one when it does not open (a build without the hooks), so the shots still show
+    # the player and the mini player instead of the home screen and the launcher
+    # shellcheck disable=SC2119
+    if [ -n "$TEST_VIDEO" ] && open_test_video; then
+      :
+    else
+      [ -n "$TEST_VIDEO" ] && echo "::warning::$design: the test video did not open; the online video instead"
+      open_online_video
+    fi
     sleep 18
     timeout 20 adb exec-out screencap -p > "screens/$design-2-player.png" || true
     timeout 10 adb shell input keyevent KEYCODE_BACK || true
     sleep 5
     timeout 20 adb exec-out screencap -p > "screens/$design-3-mini.png" || true
+  fi
+  # round 12: the gesture checks of the packages (scripts/gestures/a.sh ... e.sh, helpers in lib.sh),
+  # with the animations on as on a phone; the runner turns them off for everything else
+  if [ "${YT_GESTURES:-no}" = "yes" ]; then
+    mkdir -p screens
+    echo "::group::$design: gesture checks"
+    gesture_fails=0
+    # shellcheck disable=SC2034 # read by lib.sh
+    LOG_FROM=0
+    # shellcheck source=scripts/gestures/lib.sh
+    . scripts/gestures/lib.sh
+    anim_on
+    # shellcheck source=/dev/null
+    for f in scripts/gestures/[a-e].sh; do . "$f"; done
+    anim_off
+    rm -f screens/*.raw
+    echo "gesture checks failed: $gesture_fails"
+    echo "::endgroup::"
+    if [ "$gesture_fails" != 0 ]; then
+      echo "::error::$design: $gesture_fails gesture checks failed"
+      crashed="$crashed $design-gestures"
+    fi
+  fi
+  if [ -n "$TEST_VIDEO" ]; then
+    echo "::group::$design: test hooks"
+    grep -a -E " [VDIWEF] YtTest *: " "logcat-$design.txt" | sed -E 's/^[0-9-]+ ([0-9:.]+) [^:]*: /\1 /' | cut -c1-220 | head -40 || true
+    echo "::endgroup::"
+    TEST_VIDEO=""
   fi
   if timeout 20 adb shell pidof "$PKG" >/dev/null 2>&1; then state="running"; else state="NOT RUNNING"; fi
   kill "$logpid" 2>/dev/null; wait "$logpid" 2>/dev/null

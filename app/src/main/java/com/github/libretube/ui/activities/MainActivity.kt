@@ -611,6 +611,10 @@ class MainActivity : AbstractPlayerHostActivity() {
             // no sound in the emulator: the wave draws a fixed pattern instead
             com.github.libretube.ui.yt.YtWaveView.testSignal = intent?.getBooleanExtra("yt_wave_test", false) == true
         }
+        // YT: emulator tests of round 12 (test video, gesture log, queue fixtures; crash-check.sh)
+        if (com.github.libretube.helpers.YtGuard.isEmulator) {
+            intent?.let { com.github.libretube.ui.yt.YtTestHooks.apply(this, it) }
+        }
         // If activity is running in PiP mode, then start it in front.
         if (PictureInPictureCompat.isInPictureInPictureMode(this)) {
             val nIntent = Intent(this, MainActivity::class.java)
