@@ -235,6 +235,8 @@ private fun YouTubeLiveScreen(
             onShare = onShare,
             onChannel = { it.uploaderUrl?.let(onOpenChannel) },
         )
+        // the undo pill of a stream hidden or a channel paused from the quick sheet
+        YtHomePills(palette)
     }
 }
 
