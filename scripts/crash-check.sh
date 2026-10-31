@@ -35,6 +35,13 @@ if [ "${YT_LOCK:-no}" = "yes" ]; then
 else
   adb install -r "$APK"
 fi
+# the floating check looks at the app's threads: root first (adbd restarts, which would cut a
+# running log capture short), as the emulator image allows
+if [ "${YT_FLOAT:-no}" = "yes" ]; then
+  timeout 20 adb root >/dev/null 2>&1 || true
+  sleep 3
+  timeout 30 adb wait-for-device || true
+fi
 # an installation that failed would show as crashes in every design
 if ! timeout 20 adb shell pm path "$PKG" >/dev/null 2>&1; then
   echo "::error::YT is not installed; nothing to check"
@@ -268,19 +275,23 @@ for design in $DESIGNS; do
       --ez yt_quiet true --ez yt_pip_test true --ez yt_wave_test true || echo "video start timed out"
     sleep 18
     shot "$design-float-0-player"
-    # root for a look at the threads right after Home (the emulator image allows it)
-    timeout 20 adb root >/dev/null 2>&1 || true
-    sleep 3
-    timeout 20 adb wait-for-device || true
     fpid=$(timeout 10 adb shell pidof "$PKG" | tr -d '\r')
+    newest=$(timeout 10 adb shell ls -t /data/anr 2>/dev/null | tr -d '\r' | head -n 1)
     mark "Home"
     timeout 10 adb shell input keyevent KEYCODE_HOME || true
-    sleep 1.5
-    # what the main thread does 1.5 s after Home (a stack dump, as Android takes it for an ANR)
+    sleep 1
+    # what the main thread does 1 s after Home (a stack dump, as Android takes it for an ANR);
+    # writing it can take seconds on a slow emulator, so wait for the new file
     if [ -n "${fpid:-}" ]; then
       timeout 10 adb shell kill -3 "$fpid" || true
-      sleep 3
-      dump=$(timeout 20 adb shell ls -t /data/anr 2>/dev/null | tr -d '\r' | head -n 1)
+      dump=""
+      for _ in $(seq 1 20); do
+        sleep 1
+        dump=$(timeout 10 adb shell ls -t /data/anr 2>/dev/null | tr -d '\r' | head -n 1)
+        [ -n "$dump" ] && [ "$dump" != "${newest:-}" ] && break
+        dump=""
+      done
+      sleep 1
       echo "::group::$design: threads 1.5 s after Home ($dump)"
       if [ -n "${dump:-}" ]; then
         for thread in '"main"' '"RenderThread"' '"ExoPlayer:Playback"'; do
