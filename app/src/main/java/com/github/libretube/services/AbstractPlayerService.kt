@@ -496,8 +496,9 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
 
             handler.removeCallbacksAndMessages(null)
 
-            // YT: the modules let go of the player before it is released
-            runCatching { YtServiceModules.release() }
+            // YT: the modules let go of this service's player before it is released (unless a
+            // newer service handed its player over meanwhile)
+            runCatching { YtServiceModules.release(exoPlayer) }
 
             runCatching {
                 exoPlayer?.stop()
