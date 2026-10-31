@@ -271,6 +271,20 @@ for design in $DESIGNS; do
     timeout 10 adb shell input keyevent KEYCODE_HOME || true
     sleep 4
     rawshot "$design-float-1-floating"
+    echo "::group::$design: why the floating player shows or not (window, process, frames)"
+    timeout 30 adb shell dumpsys window windows 2>/dev/null | grep -a -A70 "YT player}" \
+      | grep -a -E "mHasSurface|isReadyForDisplay|mDrawState|isOnScreen|isVisible|mViewVisibility|fl=|Frames|mShownAlpha|mLastHidden|mWindowRemovalAllowed|mOrientationChanging|mDestroying|mAnimatingExit|mHidden|HIDE" \
+      | cut -c1-220 | head -24 || true
+    fpid=$(timeout 10 adb shell pidof "$PKG" | tr -d '\r')
+    echo "pid ${fpid:-none}"
+    timeout 30 adb shell dumpsys activity processes "$PKG" 2>/dev/null \
+      | grep -a -i -E "ProcessRecord|curAdj|setAdj|procState|adjType|hasOverlayUi|overlay|frozen|freez|cached|foregroundServices|hasShownUi" | cut -c1-200 | head -24 || true
+    timeout 30 adb shell dumpsys gfxinfo "$PKG" 2>/dev/null | grep -a -E "Total frames|Janky|Window:|---PROFILEDATA" | head -12 || true
+    echo "--- the app's own warnings"
+    [ -n "${fpid:-}" ] && timeout 20 adb logcat -d --pid="$fpid" "*:W" 2>/dev/null | tail -n 30 | cut -c1-220 || true
+    echo "--- the system about the app (freezer, kills, windows)"
+    timeout 20 adb logcat -d 2>/dev/null | grep -a -i -E "freez|tra1c0|YT player" | grep -a -v -E "YtFloat|YtWave" | tail -n 30 | cut -c1-220 || true
+    echo "::endgroup::"
     echo "::group::$design: YT's own floating player and the wave"
     read -r l t r b <<< "$(frame_of "YT player")"
     size=$(float_log | grep -m1 "float added" | sed -E 's/.*video=([0-9]+) x ([0-9]+) strip=([0-9]+).*/\1 \2 \3/')
