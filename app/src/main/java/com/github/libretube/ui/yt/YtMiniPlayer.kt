@@ -1,13 +1,16 @@
 package com.github.libretube.ui.yt
 
 import android.animation.ValueAnimator
+import android.app.Activity
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Outline
+import android.graphics.RectF
 import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
+import android.view.ViewTreeObserver
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -38,7 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,6 +85,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.media3.ui.AspectRatioFrameLayout
 import com.github.libretube.R
 import com.github.libretube.databinding.FragmentPlayerBinding
+import com.github.libretube.helpers.ContextHelper
+import com.github.libretube.helpers.NavBarHelper
 import com.github.libretube.helpers.YtDesign
 import com.github.libretube.ui.yt.liquid.YtViewBackdrop
 import com.kyant.backdrop.Backdrop
@@ -91,19 +95,6 @@ import kotlin.math.PI
 import kotlin.math.exp
 import kotlin.math.roundToInt
 import kotlin.math.sin
-
-/**
- * YT: what the navigation bar knows of the mini player docked on it. The bar squares its top
- * corners while a player sits on it (for the designs where both form one surface) and dips
- * together with the player when it lands.
- */
-object YtDock {
-    /** True while a mini player sits on the navigation bar. */
-    var docked by mutableStateOf(false)
-
-    /** How far bar and player dip together as the player lands, in px. */
-    var dip by mutableFloatStateOf(0f)
-}
 
 /**
  * YT: the mini player as a part of the design's navigation bar. Minimized, the player docks on
@@ -364,6 +355,63 @@ object YtMiniPlayer {
     }
 
     /**
+     * Where the picture ends up once docked, in window px: the rect [attach] gives the player in
+     * the end state of the design, at the place the activity moves the player container to when
+     * the player is minimized. Null for the classic layout or while no player page is laid out.
+     */
+    fun endPlayerRectPx(context: Context): RectF? {
+        val design = YtDesign.current()
+        val palette = design.palette ?: return null
+        val look = look(design, palette) ?: return null
+        val activity = ContextHelper.tryUnwrapActivity<Activity>(context) ?: return null
+        val container = activity.findViewById<View>(R.id.container) ?: return null
+        val page = container.findViewById<View>(R.id.playerMotionLayout) ?: return null
+        if (!page.isAttachedToWindow || page.width == 0 || page.height == 0) return null
+        val density = barDensity(context)
+        fun dp(value: Int) = (value * density).roundToInt()
+
+        // the page without the shift the container has now, plus the shift it has when docked
+        // (the last keyframe MainActivity writes: up by the bar, down again by the dock offset)
+        val at = IntArray(2)
+        page.getLocationInWindow(at)
+        val bar = activity.findViewById<View>(R.id.bottomNav)
+        val dockedShift = if (bar != null && bar.visibility == View.VISIBLE && bar.height > 0 && NavBarHelper.hasTabs()) {
+            (containerDockPx - bar.height).toFloat()
+        } else {
+            container.translationY
+        }
+        val pageTop = at[1] - container.translationY + dockedShift
+        val pageLeft = at[0].toFloat()
+
+        // main_container in the end set: at the bottom of the page, between the margins of the
+        // design (or as wide as the bar and centered)
+        val rtl = page.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        val boxHeight = dp(look.height + look.overlap)
+        val boxBottom = pageTop + page.height - page.paddingBottom
+        val boxTop = boxBottom - boxHeight
+        val boxLeft: Float
+        val boxRight: Float
+        if (look.width != null) {
+            val width = dp(look.width)
+            boxLeft = pageLeft + page.paddingLeft + (page.width - page.paddingLeft - page.paddingRight - width) / 2f
+            boxRight = boxLeft + width
+        } else {
+            val start = dp(look.start)
+            val end = dp(look.end)
+            boxLeft = pageLeft + page.paddingLeft + if (rtl) end else start
+            boxRight = pageLeft + page.width - page.paddingRight - if (rtl) start else end
+        }
+
+        // the picture: at the start of the body, centered over the part above the bar
+        val thumbWidth = dp(look.thumbWidth)
+        val thumbHeight = dp(look.thumbHeight)
+        val inset = dp(look.body + look.thumbStart)
+        val left = if (rtl) boxRight - inset - thumbWidth else boxLeft + inset
+        val top = boxTop + (boxHeight - dp(look.overlap) - thumbHeight) / 2f
+        return RectF(left, top, left + thumbWidth, top + thumbHeight)
+    }
+
+    /**
      * px per dp of the navigation bar: the design screens scale with the screen width
      * ([ytScale]), so the player measures in the same units as the bar it joins.
      */
@@ -511,6 +559,45 @@ object YtMiniPlayer {
             }
         }
 
+        // the drop target for videos dragged onto the docked player (YtDrag): the window rect of
+        // main_container while the player sits on the bar, else null. Checked before every frame
+        // too, since the activity moves the player container a frame after the transition ends
+        // and the landing moves the player
+        val windowAt = IntArray(2)
+        fun publishBounds() {
+            val box = binding.mainContainer
+            if (!YtDock.docked || motion.currentState != R.id.end || !box.isAttachedToWindow || box.width == 0) {
+                if (YtDrag.miniBounds != null) YtDrag.miniBounds = null
+                return
+            }
+            box.getLocationInWindow(windowAt)
+            val old = YtDrag.miniBounds
+            if (old != null && old.left == windowAt[0] && old.top == windowAt[1] &&
+                old.width() == box.width && old.height() == box.height
+            ) {
+                return
+            }
+            YtDrag.miniBounds = android.graphics.Rect(windowAt[0], windowAt[1], windowAt[0] + box.width, windowAt[1] + box.height)
+        }
+        val boundsCheck = ViewTreeObserver.OnPreDrawListener {
+            publishBounds()
+            true
+        }
+        binding.mainContainer.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {
+                v.viewTreeObserver.addOnPreDrawListener(boundsCheck)
+            }
+
+            override fun onViewDetachedFromWindow(v: View) {
+                v.viewTreeObserver.removeOnPreDrawListener(boundsCheck)
+                YtDrag.miniBounds = null
+            }
+        })
+        if (binding.mainContainer.isAttachedToWindow) {
+            binding.mainContainer.viewTreeObserver.addOnPreDrawListener(boundsCheck)
+        }
+        binding.mainContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> publishBounds() }
+
         val miniViews = listOf(binding.mainContainer, binding.player, binding.titleTextView, binding.playImageView, binding.closeImageView)
         var landing: ValueAnimator? = null
         motion.addTransitionListener(object : TransitionAdapter() {
@@ -520,6 +607,7 @@ object YtMiniPlayer {
                 surface.alpha = progress
                 binding.player.invalidateOutline()
                 YtDock.docked = progress > 0.02f
+                YtDock.progress = progress.coerceIn(0f, 1f)
                 if (progress < 0.98f) crop(false)
             }
 
@@ -528,6 +616,8 @@ object YtMiniPlayer {
                 surface.alpha = if (mini) 1f else 0f
                 binding.player.invalidateOutline()
                 YtDock.docked = mini
+                YtDock.progress = if (mini) 1f else 0f
+                publishBounds()
                 crop(mini)
                 if (mini && YtMotionPrefs.enabled) {
                     landing?.cancel()
@@ -544,6 +634,8 @@ object YtMiniPlayer {
                     landing?.cancel()
                     YtDock.docked = false
                     YtDock.dip = 0f
+                    YtDock.progress = 0f
+                    YtDrag.miniBounds = null
                 }
             },
         )
@@ -553,6 +645,8 @@ object YtMiniPlayer {
     fun undock() {
         YtDock.docked = false
         YtDock.dip = 0f
+        YtDock.progress = 0f
+        YtDrag.miniBounds = null
     }
 
     /**
