@@ -29,8 +29,8 @@ import com.github.libretube.R
  *   to [MiniTouch.onPeekEnd]; the gesture does nothing else (no OnSwipe, no tap, no swipe down).
  *   False: the gesture goes on as before (a long press opens nothing).
  * - [MiniTouch.onDoubleTap] on the second tap of a double tap. True if it handled it; false opens
- *   the player. With a [miniTouch], a single tap opens the player once it is sure to be no double
- *   tap (after the double-tap timeout) instead of at once.
+ *   the player. With a [miniTouch] that [MiniTouch.takesDoubleTap], a single tap opens the player
+ *   once it is sure to be no double tap (after the double-tap timeout) instead of at once.
  * - Coordinates are in this layout's coordinates.
  *
  * [minimizeDrag] (dragging the player down and up under the finger):
@@ -60,6 +60,9 @@ class SingleViewTouchableMotionLayout(context: Context, attributeSet: AttributeS
 
         /** True if handled; false opens the player as a tap does. */
         fun onDoubleTap(x: Float, y: Float): Boolean
+
+        /** Whether double taps are wanted; false opens the player at the first tap, as before. */
+        val takesDoubleTap: Boolean get() = true
     }
 
     /** YT: the player shrinking under the finger and growing again (package B). */
@@ -171,7 +174,7 @@ class SingleViewTouchableMotionLayout(context: Context, attributeSet: AttributeS
     private inner class Listener : GestureDetector.SimpleOnGestureListener() {
         override fun onSingleTapUp(e: MotionEvent): Boolean {
             // YT: with a double tap of its own, the mini player opens once the tap is confirmed
-            if (delegated && miniTouch != null) return false
+            if (delegated && miniTouch?.takesDoubleTap == true) return false
 
             setTransitionDuration(200)
             transitionToStart()
@@ -179,7 +182,7 @@ class SingleViewTouchableMotionLayout(context: Context, attributeSet: AttributeS
         }
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-            if (!delegated || miniTouch == null) return false
+            if (!delegated || miniTouch?.takesDoubleTap != true) return false
             setTransitionDuration(200)
             transitionToStart()
             return true
@@ -188,6 +191,7 @@ class SingleViewTouchableMotionLayout(context: Context, attributeSet: AttributeS
         override fun onDoubleTap(e: MotionEvent): Boolean {
             if (!delegated) return false
             val mini = miniTouch ?: return false
+            if (!mini.takesDoubleTap) return false
             if (!mini.onDoubleTap(e.x, e.y)) {
                 setTransitionDuration(200)
                 transitionToStart()

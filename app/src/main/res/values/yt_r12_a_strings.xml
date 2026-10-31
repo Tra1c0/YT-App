@@ -2,4 +2,13 @@
 <!-- YT: round 12, package A (the mini player of each design). Same keys in the same order in values and values-de. -->
 <resources>
     <string name="yt_r12_a_category">Mini player</string>
+    <string name="yt_mini_peek">Preview on long press</string>
+    <string name="yt_mini_peek_summary">Hold the picture of the docked player to see it larger, with the next video</string>
+    <string name="yt_mini_peek_playing">Playing</string>
+    <string name="yt_mini_peek_paused">Paused</string>
+    <string name="yt_mini_peek_next">Up next</string>
+    <string name="yt_mini_drop_next">Up next</string>
+    <string name="yt_mini_drop_end">At the end · No. %1$d</string>
+    <string name="yt_mini_a11y_play_pause">Play or pause</string>
+    <string name="yt_mini_a11y_play_next">Play the next video</string>
 </resources>

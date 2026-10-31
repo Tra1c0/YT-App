@@ -30,6 +30,15 @@
             motion:touchAnchorSide="bottom" />
     </Transition>
 
+    <!-- YT: the long-press preview of the docked mini player (ui/yt/mini/YtMiniHost): from the
+         docked state to the grown one. A spring in code drives it, so it has no OnSwipe; the
+         design fills yt_peek_set from the end set when the preview starts. -->
+    <Transition
+        android:id="@+id/yt_peek"
+        motion:constraintSetEnd="@+id/yt_peek_set"
+        motion:constraintSetStart="@id/end"
+        motion:duration="300" />
+
     <ConstraintSet android:id="@+id/start">
         <Constraint
             android:id="@+id/player"
@@ -91,4 +100,8 @@
             motion:layout_constraintStart_toEndOf="@+id/player"
             motion:layout_constraintTop_toTopOf="@+id/play_imageView" />
     </ConstraintSet>
+
+    <ConstraintSet
+        android:id="@+id/yt_peek_set"
+        motion:deriveConstraintsFrom="@id/end" />
 </MotionScene>
