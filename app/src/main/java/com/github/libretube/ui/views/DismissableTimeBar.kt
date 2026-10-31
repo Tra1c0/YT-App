@@ -186,6 +186,8 @@ open class DismissableTimeBar(
         scrub?.let { engine ->
             live.end(null, engine.originMs)
             listeners.forEach { it.onScrubStop(this, engine.originMs, true) }
+            // super ends its scrub too, while it is still ignored
+            toSuper(MotionEvent.ACTION_CANCEL, xFor(engine.originMs.toDouble()), SystemClock.uptimeMillis())
             scrub = null
             scrubOriginMs = -1L
             lens?.end()

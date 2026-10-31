@@ -85,9 +85,10 @@ class YtScrubLive {
         handler.removeCallbacks(flush)
         handler.removeCallbacks(keepAlive)
         val player = player
+        // (the page may be going: a released controller must not throw here)
         if (seekBack && seeked && targetMs == null && player != null) {
             YtPlaybackClock.tagNextSeek(YtSeekReason.USER_SCRUB)
-            player.seekTo(originMs)
+            runCatching { player.seekTo(originMs) }
             YtTestHooks.log("YtScrub") { "live back to=$originMs" }
         }
         if (on) {
@@ -113,10 +114,13 @@ class YtScrubLive {
     }
 
     private fun command(name: String) {
-        (player as? MediaController)?.sendCustomCommand(
-            AbstractPlayerService.runPlayerActionCommand,
-            bundleOf(YtServiceModules.KEY to name),
-        )
+        val controller = player as? MediaController ?: return
+        runCatching {
+            controller.sendCustomCommand(
+                AbstractPlayerService.runPlayerActionCommand,
+                bundleOf(YtServiceModules.KEY to name),
+            )
+        }
     }
 
     private companion object {
