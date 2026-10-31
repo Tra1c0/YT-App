@@ -117,15 +117,21 @@ object YtCardSwipePrefs {
     val enabled: Boolean get() = PreferenceHelper.getBoolean(KEY, true)
 }
 
-/** Cards brought back by "Rückgängig": they slide in again from where they left. */
+/**
+ * Cards brought back by "Rückgängig": they slide in again from where they left, if they come
+ * back on screen right away (a card scrolled out of view meanwhile just appears).
+ */
 internal object YtCardReturns {
-    private val ids = HashSet<String>()
+    private val ids = HashMap<String, Long>()
 
     fun mark(videoId: String) {
-        ids += videoId
+        ids[videoId] = System.currentTimeMillis()
     }
 
-    fun take(videoId: String): Boolean = ids.remove(videoId)
+    fun take(videoId: String): Boolean {
+        val at = ids.remove(videoId) ?: return false
+        return System.currentTimeMillis() - at < 1500L
+    }
 }
 
 @Stable
