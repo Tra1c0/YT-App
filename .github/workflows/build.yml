@@ -3,8 +3,10 @@ name: Build YT
 on:
   workflow_dispatch:
   push:
+    # main publishes the latest build; a round-12 branch publishes a test build (pre-release)
     branches:
       - main
+      - "r12/**"
     paths-ignore:
       - "**.md"
       - "fastlane/**"
@@ -84,6 +86,57 @@ jobs:
           echo "YT_KEYSTORE_PASSWORD=$pass" >> "$GITHUB_ENV"
           echo "SIGNED_WITH=personal key (SHA-256 $fp)" >> "$GITHUB_ENV"
 
+      # every YT string needs its German twin: a key only in values/ shows English in the German
+      # app, one only in values-de/ crashes every other locale. Compared per file, by name.
+      - name: Check English and German YT strings
+        run: |
+          res=app/src/main/res
+          # the names of the strings and plurals in one file, in file order (none if it is missing)
+          names() {
+            [ -f "$1" ] || return 0
+            grep -o -E '<(string|plurals) [^>]*name="[^"]+"[^>]*>' "$1" | grep -v 'translatable="false"' \
+              | sed -E 's/.*name="([^"]+)".*/\1/'
+          }
+          failed=0
+          for f in $(for p in "$res"/values/yt_*.xml "$res"/values-de/yt_*.xml; do [ -e "$p" ] && basename "$p"; done | sort -u); do
+            names "$res/values/$f" > en.txt
+            names "$res/values-de/$f" > de.txt
+            only_en=$(comm -23 <(sort -u en.txt) <(sort -u de.txt) | tr '\n' ' ')
+            only_de=$(comm -13 <(sort -u en.txt) <(sort -u de.txt) | tr '\n' ' ')
+            if [ -n "$only_en" ]; then failed=1; echo "::error file=$res/values-de/$f::$f: missing in values-de: $only_en"; fi
+            if [ -n "$only_de" ]; then failed=1; echo "::error file=$res/values/$f::$f: missing in values: $only_de"; fi
+            if [ -z "$only_en$only_de" ]; then
+              # the same order makes the two files easy to compare by eye; a different one is no error
+              cmp -s en.txt de.txt || echo "::warning file=$res/values-de/$f::$f: the same names, in another order"
+              echo "$f: $(wc -l < en.txt) names in both"
+            fi
+          done
+          rm -f en.txt de.txt
+          [ "$failed" = 0 ] || { echo "::error::The English and German YT strings differ (see above)"; exit 1; }
+
+      # the YT unit tests (plain JVM, no Android): a failing test stops the build before anything
+      # is published. The upstream tests are compiled but not run; they are not YT's to keep green.
+      # On the release variant, so the release build below reuses the compiled app (AGP 9 makes
+      # that task only with android.onlyEnableUnitTestForTheTestedBuildType=false; without it,
+      # the debug variant is tested instead, at the cost of a second compile).
+      - name: Run the YT unit tests
+        run: |
+          set -o pipefail
+          filter=(--tests 'com.github.libretube.helpers.Yt*' --tests 'com.github.libretube.ui.yt.*')
+          if ! ./gradlew :app:testReleaseUnitTest --no-daemon "${filter[@]}" 2>&1 | tee unit-tests.log; then
+            grep -q "testReleaseUnitTest' not found" unit-tests.log || exit 1
+            echo "::warning::No release unit test task; testing the debug variant"
+            ./gradlew :app:testDebugUnitTest --no-daemon "${filter[@]}"
+          fi
+
+      - name: Upload the test report
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: unit-test-report-${{ github.run_number }}
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
+
       - name: Build release APK
         run: ./gradlew assembleRelease --no-daemon
 
@@ -102,14 +155,40 @@ jobs:
           name: ${{ steps.apk.outputs.name }}
           path: out/${{ steps.apk.outputs.name }}
 
+      # main: build-<run>, the latest build (unless signed with the throwaway key). Any other
+      # branch: check-<run>-<commit>, a pre-release that never becomes the latest build, so the
+      # crash check can test it and nobody gets it as an update.
+      - name: Name the release
+        id: release
+        run: |
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            tag="build-$GITHUB_RUN_NUMBER"
+            name="YT Build $GITHUB_RUN_NUMBER"
+            note=""
+            if [ "${YT_DEBUG_SIGNED:-}" = "true" ]; then latest=false; pre=true; else latest=true; pre=false; fi
+          else
+            tag="check-$GITHUB_RUN_NUMBER-${GITHUB_SHA::7}"
+            name="YT test build $GITHUB_RUN_NUMBER of the branch $GITHUB_REF_NAME"
+            note="Test build of the branch $GITHUB_REF_NAME, not a release: for the crash check and for trying it out."
+            latest=false
+            pre=true
+          fi
+          {
+            echo "tag=$tag"
+            echo "name=$name"
+            echo "note=$note"
+            echo "latest=$latest"
+            echo "prerelease=$pre"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: build-${{ github.run_number }}
-          name: YT Build ${{ github.run_number }}
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: ${{ steps.release.outputs.name }}
           target_commitish: ${{ github.sha }}
-          make_latest: ${{ env.YT_DEBUG_SIGNED != 'true' }}
-          prerelease: ${{ env.YT_DEBUG_SIGNED == 'true' }}
+          make_latest: ${{ steps.release.outputs.latest }}
+          prerelease: ${{ steps.release.outputs.prerelease }}
           files: |
             out/${{ steps.apk.outputs.name }}
             app/build/outputs/mapping/release/mapping.txt
@@ -117,3 +196,4 @@ jobs:
           body: |
             YT build ${{ github.run_number }} from commit ${{ github.sha }}.
             Signed with: ${{ env.SIGNED_WITH }}.
+            ${{ steps.release.outputs.note }}
