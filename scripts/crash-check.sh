@@ -53,12 +53,13 @@ if ! timeout 20 adb shell pm path "$PKG" >/dev/null 2>&1; then
   echo "::error::YT is not installed; nothing to check"
   exit 2
 fi
-# an overloaded emulator shows "System UI isn't responding" over everything; no use for a check.
-# The setting is read on a configuration change, the user restriction right away.
-adb shell settings put global hide_error_dialogs 1 || true
-# the input timeout the emulator was started with (crash-check.yml: ro.hw_timeout_multiplier)
-echo "input timeout multiplier: $(timeout 10 adb shell getprop ro.hw_timeout_multiplier | tr -d '\r')"
-adb shell pm set-user-restriction no_system_error_dialogs 1 || true
+# Error dialogs stay on: with them hidden, Android kills an app that does not respond at once.
+# On the emulator that hits Glas and Frost on a cold start (their GPU programs are compiled over
+# the emulator's slow GL pipe for seconds, while the main thread waits for the render thread;
+# build 60 showed it too, a phone never does), so a watcher presses "Wait" on any
+# not-responding dialog instead, and each such ANR is reported as a warning below.
+adb shell settings put global hide_error_dialogs 0 || true
+adb shell pm set-user-restriction no_system_error_dialogs 0 || true
 adb shell cmd uimode night yes >/dev/null 2>&1 || true
 adb shell cmd uimode night no >/dev/null 2>&1 || true
 if [ "${YT_NIGHT:-no}" = "yes" ]; then adb shell cmd uimode night yes; fi
@@ -88,6 +89,16 @@ dismiss_anr() {
   timeout 10 adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 )) || true
   sleep 1
 }
+# presses "Wait" on any not-responding dialog during the whole check (see above)
+anr_watch() {
+  while true; do
+    sleep 3
+    timeout 15 adb shell dumpsys window windows 2>/dev/null | grep -a -q "Application Not Responding" && dismiss_anr
+  done
+}
+anr_watch > anr-watch.txt 2>&1 &
+ANR_WATCH=$!
+trap 'kill "$ANR_WATCH" 2>/dev/null || true' EXIT
 # the screen's elements as uiautomator sees them, one node per line
 ui() {
   timeout 30 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
@@ -593,6 +604,8 @@ for design in $DESIGNS; do
   grep -c "FATAL EXCEPTION" "logcat-$design.txt" | xargs -I{} echo "fatal exceptions of any process in the log: {}"
   grep -a -A2 "FATAL EXCEPTION" "logcat-$design.txt" | grep -a "Process:" | sed 's/^.*Process: /  crashed: /' | cut -c1-120 | sort | uniq -c || true
   if [ -s "crash-$design.txt" ] || [ "$state" != "running" ]; then crashed="$crashed $design"; fi
+  anrs=$(grep -a -c "ANR in $PKG" "logcat-$design.txt" || true)
+  [ "${anrs:-0}" -gt 0 ] && echo "::warning::$design: Android saw the app not responding $anrs time(s) (on the emulator mostly the GPU programs of a cold start; see the thread stacks)"
   echo "::group::$design: process after $WAIT s is $state"
   if [ -s "crash-$design.txt" ]; then
     head -60 "crash-$design.txt"
