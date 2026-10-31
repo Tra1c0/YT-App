@@ -525,9 +525,17 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         }
 
         val onBackPressedCallback = object : OnBackPressedCallback(true) {
+            // YT: true while a back swipe goes to a feature of round 12, so the page stays open
+            private var ytBackHeld = false
+
             override fun handleOnBackPressed() {
-                // YT: a feature of round 12 may take back first (e.g. to close what it shows)
-                if (com.github.libretube.ui.yt.player.YtPlayerModules.onBack(this@PlayerFragment)) return
+                ytBackHeld = false
+                // YT: a feature of round 12 may take back first (e.g. to close what it shows);
+                // the page opens fully again if the swipe had shrunk it
+                if (com.github.libretube.ui.yt.player.YtPlayerModules.onBack(this@PlayerFragment)) {
+                    binding.playerMotionLayout.transitionToStart()
+                    return
+                }
                 if (commonPlayerViewModel.isFullscreen.value == true) unsetFullscreen()
                 else {
                     binding.playerMotionLayout.setTransitionDuration(com.github.libretube.ui.yt.YtMiniPlayer.minimizeDuration())
@@ -537,11 +545,17 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
                 }
             }
 
+            override fun handleOnBackStarted(backEvent: BackEventCompat) {
+                ytBackHeld = com.github.libretube.ui.yt.player.YtPlayerModules.wantsBack(this@PlayerFragment)
+            }
+
             override fun handleOnBackProgressed(backEvent: BackEventCompat) {
+                if (ytBackHeld) return
                 binding.playerMotionLayout.progress = backEvent.progress
             }
 
             override fun handleOnBackCancelled() {
+                ytBackHeld = false
                 binding.playerMotionLayout.transitionToStart()
             }
         }

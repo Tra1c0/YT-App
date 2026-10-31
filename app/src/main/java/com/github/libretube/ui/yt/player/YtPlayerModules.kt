@@ -22,9 +22,17 @@ interface YtPlayerModule {
 
     /**
      * Back was pressed while the page is open (not while it is minimized: the page's back
-     * callback is off then). True if the module handled it; back then does nothing else.
+     * callback is off then). True if the module handled it; back then does nothing else, and
+     * the page opens fully again if a back swipe had already shrunk it.
      */
     fun onBack(host: YtPlayerHost): Boolean = false
+
+    /**
+     * True while back would go to this module's [onBack] (e.g. while it shows something that
+     * back closes). Asked when a back swipe starts: the page then does not shrink with the
+     * swipe, as back will not minimize it.
+     */
+    fun wantsBack(host: YtPlayerHost): Boolean = false
 
     /** The page's view goes, while it still exists. */
     fun onDestroyView(host: YtPlayerHost) {}
@@ -65,6 +73,9 @@ object YtPlayerModules {
 
     /** True if a module handled back; the first one that does wins. */
     fun onBack(host: YtPlayerHost): Boolean = modules.any { it.onBack(host) }
+
+    /** True if a module wants the next back. */
+    fun wantsBack(host: YtPlayerHost): Boolean = modules.any { it.wantsBack(host) }
 
     fun onDestroyView(host: YtPlayerHost) = modules.forEach { it.onDestroyView(host) }
 
