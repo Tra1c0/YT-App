@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,6 +46,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalAccessibilityManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -198,6 +200,23 @@ fun YtHomePills(palette: YtPalette, modifier: Modifier = Modifier) {
                 DraftPill(look, draft.coerceAtLeast(1))
             }
         }
+    }
+}
+
+/**
+ * [YtHomePills] over a screen that has its theme further down: the design's scaled density and
+ * motion, without a second YtTheme (which would start another tilt sensor for the glass designs).
+ */
+@Composable
+fun YtPillLayer(palette: YtPalette) {
+    val density = ytDensity(LocalDensity.current, LocalConfiguration.current)
+    val motion = remember { YtMotionPrefs.enabled }
+    CompositionLocalProvider(
+        LocalDensity provides density,
+        LocalYtMotion provides motion,
+        LocalYtMotionStyle provides palette.motion,
+    ) {
+        YtHomePills(palette)
     }
 }
 

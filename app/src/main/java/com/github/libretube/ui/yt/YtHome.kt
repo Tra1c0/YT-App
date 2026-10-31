@@ -6,7 +6,6 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -61,13 +60,13 @@ object YtHome {
         if (design == YtDesign.STANDARD) return false
 
         // the queued cards' tokens fly above the player and the bar
-        (fragment.activity as? ComponentActivity)?.let(YtFlightLayer::attach)
+        fragment.activity?.let(YtFlightLayer::attach)
         val composeView = ComposeView(fragment.requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 Box(Modifier.fillMaxSize().ytTestRoot()) {
                     Screen(fragment, design, viewModel, refresh)
-                    design.palette?.let { palette -> YtTheme(palette) { YtHomePills(palette) } }
+                    design.palette?.let { palette -> YtPillLayer(palette) }
                 }
             }
         }
