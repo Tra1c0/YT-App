@@ -245,6 +245,15 @@ class MainActivity : AbstractPlayerHostActivity() {
             },
             onMenuItem = { item -> onOptionsItemSelected(item) },
         )
+        // YT: a search for a given text from a design screen (e.g. a channel name dropped on a
+        // card), the same way as a search query passed to the app
+        com.github.libretube.ui.yt.YtChrome.searchFor = { query ->
+            if (::searchItem.isInitialized && ::searchView.isInitialized) {
+                searchItem.isVisible = true
+                searchItem.expandActionView()
+                searchView.setQuery(query, true)
+            }
+        }
         if (com.github.libretube.ui.yt.YtHeader.active) supportActionBar?.setDisplayShowTitleEnabled(false)
         if (ytDesign.labeledNavigation) {
             binding.bottomNav.labelVisibilityMode =
@@ -255,6 +264,8 @@ class MainActivity : AbstractPlayerHostActivity() {
         }
         // YT: the design draws its own floating navigation bar and header
         ytNavState = com.github.libretube.ui.yt.YtNav.attach(this, binding.bottomNav, navController)
+        // YT: the layer for drags across the screens (a card onto the mini player), above all
+        com.github.libretube.ui.yt.YtDragLayer.attach(this)
         com.github.libretube.ui.yt.YtHeader.overlayAfterHome(binding.appBarLayout, binding.fragment, navController)
 
         // handle error logs
@@ -290,6 +301,19 @@ class MainActivity : AbstractPlayerHostActivity() {
                 )
             }
         }
+
+        // YT: the features of round 12 that follow the activity's lifecycle
+        com.github.libretube.ui.yt.YtActivityHooks.onCreate(this, savedInstanceState)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        com.github.libretube.ui.yt.YtActivityHooks.onStart(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        com.github.libretube.ui.yt.YtActivityHooks.onStop(this)
     }
 
     /**
@@ -569,6 +593,10 @@ class MainActivity : AbstractPlayerHostActivity() {
             PreferenceHelper.putBoolean(com.github.libretube.ui.yt.YtPipVisualizer.PREF_KEY, true)
             // no sound in the emulator: the wave draws a fixed pattern instead
             com.github.libretube.ui.yt.YtWaveView.testSignal = intent?.getBooleanExtra("yt_wave_test", false) == true
+        }
+        // YT: emulator tests of round 12 (test video, gesture log, queue fixtures; crash-check.sh)
+        if (com.github.libretube.helpers.YtGuard.isEmulator) {
+            intent?.let { com.github.libretube.ui.yt.YtTestHooks.apply(this, it) }
         }
         // If activity is running in PiP mode, then start it in front.
         if (PictureInPictureCompat.isInPictureInPictureMode(this)) {

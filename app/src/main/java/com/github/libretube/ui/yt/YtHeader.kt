@@ -187,6 +187,9 @@ object YtChrome {
 
     /** Opens the search field of the toolbar (e.g. from a search field on a home screen). */
     var openSearch: (() -> Unit)? = null
+
+    /** Searches for a text right away, as a search query passed to the app does (MainActivity). */
+    var searchFor: ((String) -> Unit)? = null
 }
 
 private enum class HeaderButton { SEARCH, PROFILE }
