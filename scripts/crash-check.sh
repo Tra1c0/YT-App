@@ -8,7 +8,10 @@
 # log where the wave's window and the floating window are, screenshot; for the first design also
 # take the permission back and give it again while the video floats),
 # YT_LOCK (yes = install as from a downloaded APK file, as the user does, and walk through the
-# permission to show over other apps: YT's switch and dialog, Android 15's lock on it, the unlock).
+# permission to show over other apps: YT's switch and dialog, Android 15's lock on it, the unlock),
+# YT_FLOAT (yes = per design: YT's own floating player with the wave: Home, a drag with the finger
+# held and screenshots during it, a pixel check that the wave stays right below the video, the
+# controls, back to the app, and closing by dropping it on the ✕).
 set -u
 PKG="app.tra1c0.yt"
 ACTIVITY="com.github.libretube.ui.activities.MainActivity"
@@ -82,6 +85,17 @@ tap() {
   mark "not found: \"$pattern\""
   return 1
 }
+# the frame of a window by its title in dumpsys ("l t r b"), empty when it is not there
+frame_of() {
+  timeout 30 adb shell dumpsys window windows 2>/dev/null | grep -a -A40 "$1}" \
+    | grep -a -m1 -o " frame=\[[0-9-]*,[0-9-]*\]\[[0-9-]*,[0-9-]*\]" | tr -c '0-9-\n' ' ' | awk '{print $1, $2, $3, $4}'
+}
+# a raw screenshot (for the pixel check) and a PNG of it (to publish)
+rawshot() {
+  mark "screenshot $1"
+  timeout 20 adb exec-out screencap > "screens/$1.raw" || true
+  python3 -I scripts/wave-check.py --png "screens/$1.raw" "screens/$1.png" 2>/dev/null || true
+}
 # back until YT is in front again (at most 5 times)
 back_to_yt() {
   for _ in 1 2 3 4 5; do
@@ -106,7 +120,7 @@ if [ "${YT_LOCK:-no}" = "yes" ]; then
   echo "--- YT's switch"
   timeout 30 adb shell am start -n "$PKG/com.github.libretube.ui.activities.SettingsActivity" --es redirect yt_player >/dev/null || true
   sleep 8
-  tap "Klangwelle unter Bild-im-Bild|Sound wave below picture-in-picture" 10 || true
+  tap "Schwebender Player mit Klangwelle|Floating player with sound wave" 10 || true
   sleep 3
   shot lock-1-yt-dialog
   texts 20
@@ -159,7 +173,7 @@ if [ "${YT_LOCK:-no}" = "yes" ]; then
   timeout 10 adb shell input swipe 540 1600 540 900 400 || true
   sleep 2
   shot lock-9-yt-on
-  texts 80 | grep -A2 -E "^(Klangwelle unter Bild-im-Bild|Sound wave below picture-in-picture)$" || echo "the wave's switch is not on the screen"
+  texts 80 | grep -A2 -E "^(Schwebender Player mit Klangwelle|Floating player with sound wave)$" || echo "the wave's switch is not on the screen"
   kill "$logpid" 2>/dev/null; wait "$logpid" 2>/dev/null
   grep -a -E "YtPipWave|ENHANCED_CONFIRMATION|SHOW_ECM" logcat-lock.txt | cut -c1-240 | head -30 || true
   # a crash of YT on the way counts like one in a design
@@ -242,6 +256,97 @@ for design in $DESIGNS; do
     timeout 30 adb shell dumpsys window displays 2>/dev/null | grep -a -i -E "pinned|PiP|mStableInsets|cutout|mBaseDisplayInfo" | cut -c1-240 | head -20 || true
     echo "::endgroup::"
     # back from the floating window for the next design
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true >/dev/null 2>&1 || true
+    sleep 4
+  fi
+  if [ "${YT_FLOAT:-no}" = "yes" ]; then
+    mkdir -p screens
+    float_log() { grep -a -E "YtFloat|YtWave" "logcat-$design.txt" | sed -E 's/^[0-9-]+ ([0-9:.]+) [^:]*: /\1 /' | cut -c1-220; }
+    timeout 20 adb shell appops set "$PKG" SYSTEM_ALERT_WINDOW allow || echo "appops failed"
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es videoId "${YT_VIDEO:-jNQXAC9IVRw}" \
+      --ez yt_quiet true --ez yt_pip_test true --ez yt_wave_test true || echo "video start timed out"
+    sleep 18
+    shot "$design-float-0-player"
+    mark "Home"
+    timeout 10 adb shell input keyevent KEYCODE_HOME || true
+    sleep 4
+    rawshot "$design-float-1-floating"
+    echo "::group::$design: YT's own floating player and the wave"
+    read -r l t r b <<< "$(frame_of "YT player")"
+    size=$(float_log | grep -m1 "float added" | sed -E 's/.*video=([0-9]+) x ([0-9]+) strip=([0-9]+).*/\1 \2 \3/')
+    read -r vw vh strip <<< "$size"
+    echo "window: ${l:-?} ${t:-?} ${r:-?} ${b:-?}; video ${vw:-?} x ${vh:-?}, strip ${strip:-?}"
+    echo "pinned task (should be none): $(timeout 20 adb shell dumpsys activity activities 2>/dev/null | grep -a -c 'mode=pinned')"
+    float_ok=yes
+    if [ -z "${l:-}" ] || [ -z "${vh:-}" ]; then
+      echo "::error::$design: YT's floating player did not appear"
+      float_ok=no
+    else
+      echo "--- at rest"
+      python3 -I scripts/wave-check.py "screens/$design-float-1-floating.raw" "$l" "$t" "$((r - l))" "$vh" "$strip" || float_ok=no
+      # a drag with the finger held: up and to the left, screenshots while it is down
+      cx=$(( (l + r) / 2 )); cy=$(( t + vh / 3 ))
+      timeout 10 adb shell input motionevent DOWN "$cx" "$cy" || true
+      for i in $(seq 1 14); do
+        timeout 10 adb shell input motionevent MOVE "$((cx - i * 22))" "$((cy - i * 45))" || true
+        if [ "$i" = 7 ]; then
+          read -r ml mt mr mb <<< "$(frame_of "YT player")"
+          rawshot "$design-float-2-dragging"
+        fi
+      done
+      read -r hl ht hr hb <<< "$(frame_of "YT player")"
+      rawshot "$design-float-3-held"
+      timeout 10 adb shell input motionevent UP "$((cx - 14 * 22))" "$((cy - 14 * 45))" || true
+      sleep 2
+      read -r al at ar ab <<< "$(frame_of "YT player")"
+      rawshot "$design-float-4-released"
+      echo "--- while dragging (finger down), window at ${ml:-?},${mt:-?}"
+      [ -n "${ml:-}" ] && { python3 -I scripts/wave-check.py "screens/$design-float-2-dragging.raw" "$ml" "$mt" "$((mr - ml))" "$vh" "$strip" "$l" "$t" || float_ok=no; }
+      echo "--- held at the end of the drag, window at ${hl:-?},${ht:-?}"
+      [ -n "${hl:-}" ] && { python3 -I scripts/wave-check.py "screens/$design-float-3-held.raw" "$hl" "$ht" "$((hr - hl))" "$vh" "$strip" "$l" "$t" || float_ok=no; }
+      echo "--- released (settled at a side), window at ${al:-?},${at:-?}"
+      [ -n "${al:-}" ] && { python3 -I scripts/wave-check.py "screens/$design-float-4-released.raw" "$al" "$at" "$((ar - al))" "$vh" "$strip" || float_ok=no; }
+      if [ "${ml:-$l}" = "$l" ] && [ "${mt:-$t}" = "$t" ]; then echo "::error::$design: the window did not move during the drag"; float_ok=no; fi
+      # a tap shows the controls; the expand button (top left) opens YT again (before they hide)
+      dp=$(timeout 5 adb shell wm density | grep -o '[0-9]*' | tail -n 1)
+      off=$(( 24 * ${dp:-420} / 160 ))
+      ax=$(( (al + ar) / 2 )); ay=$(( at + vh / 2 ))
+      timeout 10 adb shell input tap "$ax" "$ay" || true
+      sleep 1
+      shot "$design-float-5-controls"
+      timeout 10 adb shell input tap "$((al + off))" "$((at + off))" || true
+      sleep 5
+      shot "$design-float-6-back-in-app"
+      if [ -n "$(frame_of "YT player")" ]; then echo "::error::$design: the floating player stayed after opening the app"; float_ok=no; fi
+      timeout 20 adb shell dumpsys activity activities 2>/dev/null | grep -a -m1 "topResumedActivity" | cut -c1-160 || true
+      # Home again, then drop it on the ✕ at the bottom
+      timeout 10 adb shell input keyevent KEYCODE_HOME || true
+      sleep 4
+      read -r l t r b <<< "$(frame_of "YT player")"
+      if [ -n "${l:-}" ]; then
+        cx=$(( (l + r) / 2 )); cy=$(( t + vh / 3 ))
+        sw=$(timeout 5 adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -n 1)
+        sx=${sw%x*}; sy=${sw#*x}
+        tx=$(( sx / 2 )); ty=$(( sy - (96 + 32) * ${dp:-420} / 160 ))
+        timeout 10 adb shell input motionevent DOWN "$cx" "$cy" || true
+        for i in $(seq 1 10); do
+          timeout 10 adb shell input motionevent MOVE "$((cx + (tx - cx) * i / 10))" "$((cy + (ty - cy) * i / 10))" || true
+        done
+        shot "$design-float-7-over-close"
+        timeout 10 adb shell input motionevent UP "$tx" "$ty" || true
+        sleep 2
+        if [ -n "$(frame_of "YT player")" ]; then echo "::error::$design: dropping on the ✕ did not close it"; float_ok=no; else echo "closed by the ✕"; fi
+      else
+        echo "::error::$design: no floating player on the second Home"
+        float_ok=no
+      fi
+    fi
+    echo "--- app log"
+    float_log | head -60
+    echo "floating player check: $float_ok"
+    [ "$float_ok" = yes ] || crashed="$crashed $design-float"
+    echo "::endgroup::"
+    rm -f screens/*.raw
     timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true >/dev/null 2>&1 || true
     sleep 4
   fi

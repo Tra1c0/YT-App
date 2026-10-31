@@ -450,8 +450,9 @@ object PlayerHelper {
                 (out.last() as? TextRenderer)?.experimentalSetLegacyDecodingEnabled(true)
             }
 
-            // YT: the sound passes YtAudioTap on its way out, for the wave below the
-            // picture-in-picture window (only analysed while that wave is shown)
+            // YT: the sound passes YtAudioTap on its way out, for the wave at the floating
+            // player (only analysed while that wave is shown); the sink's own buffer size tells
+            // the wave how far the sound handed on runs ahead of what is heard
             override fun buildAudioSink(
                 context: Context,
                 enableFloatOutput: Boolean,
@@ -460,6 +461,7 @@ object PlayerHelper {
                 .setEnableFloatOutput(enableFloatOutput)
                 .setAudioProcessors(arrayOf<androidx.media3.common.audio.AudioProcessor>(YtAudioTap.processor()))
                 .build()
+                .also { sink -> YtAudioTap.bufferSizeUs = { sink.audioTrackBufferSizeUs } }
         }
         return renderersFactory
     }

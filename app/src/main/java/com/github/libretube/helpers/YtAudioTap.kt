@@ -6,36 +6,33 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.audio.TeeAudioProcessor
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.hypot
-import kotlin.math.ln
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.pow
-import kotlin.math.sin
+import kotlin.math.floor
 
 /**
- * YT: listens to the sound the player is about to play and turns it into a few loudness
- * bands (bass to treble) for the wave below the picture-in-picture window.
+ * YT: listens to the sound the player is about to play and turns it into [BANDS] levels, bass
+ * to treble, for the wave at the floating player ([YtSpectrum] does the analysis).
  *
  * The audio is taken inside the player, before it reaches the speaker: no microphone, no
  * permission, and nothing leaves the app. Work only happens while someone listens
- * ([listening]). The player hands the sound over ahead of time (its speaker buffer holds about
- * a quarter of a second), so each set of bands is kept with its place in the stream; [startOf]
- * ties those places to the player's position and [bandsAt] then returns the set for what is
- * heard right now.
+ * ([listening]). The player hands the sound over ahead of time (its speaker buffer, [leadUs]),
+ * so each set of bands is kept with its place in the stream; [startOf] ties those places to the
+ * player's position and [bandsAt] then returns the bands for what is heard right now, blended
+ * between the two nearest analyses, so every frame of the screen gets its own exact moment.
  */
 @OptIn(UnstableApi::class)
 object YtAudioTap {
-    const val BANDS = 8
-    private const val SIZE = 1024
+    const val BANDS = YtSpectrum.BANDS
+    private const val N = YtSpectrum.N
+    private const val HOP = YtSpectrum.HOP
     private const val KEEP = 256
 
     /** How much more than the lead must have passed through before [startOf] trusts it. */
     private const val SETTLE_MS = 120L
 
-    /** True while a visualizer is shown; otherwise the sound only passes through. */
+    /** The speaker buffer assumed until the player reports its own: media3's smallest, 250 ms. */
+    private const val DEFAULT_LEAD_US = 250_000L
+
+    /** True while a wave is shown; otherwise the sound only passes through. */
     @Volatile
     var listening = false
 
@@ -44,110 +41,114 @@ object YtAudioTap {
     var generation = 0
         private set
 
+    /**
+     * The player's speaker buffer in µs, asked on the player's own thread while sound passes
+     * (set by [PlayerHelper] with the audio sink it builds).
+     */
+    @Volatile
+    var bufferSizeUs: (() -> Long)? = null
+
+    /** How far the sound handed on runs ahead of what is heard, in µs of playing. */
+    @Volatile
+    var leadUs = DEFAULT_LEAD_US
+        private set
+
     @Volatile
     private var sampleRate = 44100
 
     private val lock = Any()
     private val frames = Array(KEEP) { FloatArray(BANDS) }
     private val frameIndex = LongArray(KEEP) { -1 }
-    private var produced = 0L
 
-    // the analysis window, filled sample by sample (mono)
-    private val window = FloatArray(SIZE)
-    private var filled = 0
+    /** Samples (per channel) handed on since the stream began; read under [lock]. */
+    private var handed = 0L
+
+    // the player's thread only
+    private var counted = 0L
+    private var fresh = 0L
+    private val ring = FloatArray(N)
+    private var ringPos = 0
+    private var spectrum = YtSpectrum(44100)
+    private val levels = FloatArray(BANDS)
+    private var wasListening = false
     private var channels = 2
     private var encoding = C.ENCODING_PCM_16BIT
-    private val re = FloatArray(SIZE)
-    private val im = FloatArray(SIZE)
-    private val hann = FloatArray(SIZE) { (0.5 - 0.5 * cos(2 * PI * it / (SIZE - 1))).toFloat() }
-    private val level = FloatArray(BANDS)
-    private var peak = 1e-3f
 
     /** The processor to put into the player's audio chain. */
     fun processor(): TeeAudioProcessor = TeeAudioProcessor(sink)
 
+    /** The lead for [speed], in ms of the stream (the buffer plays faster when sped up). */
+    fun leadMs(speed: Float): Long = (leadUs / 1000.0 * speed.coerceIn(0.25f, 4f)).toLong()
+
     private val sink = object : TeeAudioProcessor.AudioBufferSink {
         override fun flush(sampleRateHz: Int, channelCount: Int, encoding: Int) {
+            val rate = sampleRateHz.coerceAtLeast(1)
             synchronized(lock) {
-                sampleRate = sampleRateHz.coerceAtLeast(1)
-                channels = channelCount.coerceAtLeast(1)
-                this@YtAudioTap.encoding = encoding
-                filled = 0
-                produced = 0
+                sampleRate = rate
+                handed = 0
                 frameIndex.fill(-1)
                 generation++
             }
+            channels = channelCount.coerceAtLeast(1)
+            this@YtAudioTap.encoding = encoding
+            counted = 0
+            fresh = 0
+            ringPos = 0
+            if (spectrum.sampleRate != rate.coerceAtLeast(8000)) spectrum = YtSpectrum(rate) else spectrum.reset()
         }
 
         override fun handleBuffer(buffer: ByteBuffer) {
-            if (listening) {
-                read(buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN))
+            readLead()
+            val step = frameBytes()
+            val count = buffer.remaining() / step
+            val readable = encoding == C.ENCODING_PCM_16BIT || encoding == C.ENCODING_PCM_FLOAT
+            if (!listening || !readable) {
+                // nobody watches: only count, so the bands stay in step later
+                wasListening = false
+                counted += count
             } else {
-                // nobody watches: only count the windows, so the bands stay in step later
-                skip(buffer.remaining() / frameBytes())
+                if (!wasListening) {
+                    // the window holds old sound from before: start it afresh
+                    wasListening = true
+                    fresh = 0
+                    spectrum.reset()
+                }
+                read(buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN), count)
             }
+            synchronized(lock) { handed = counted }
         }
+    }
+
+    private fun readLead() {
+        val size = bufferSizeUs ?: return
+        val us = runCatching { size() }.getOrNull() ?: return
+        if (us > 0 && us != C.TIME_UNSET) leadUs = us
     }
 
     private fun frameBytes(): Int = channels * if (encoding == C.ENCODING_PCM_FLOAT) 4 else 2
 
-    private fun skip(samples: Int) {
-        filled += samples
-        if (filled < SIZE) return
-        synchronized(lock) {
-            while (filled >= SIZE) {
-                filled -= SIZE
-                produced++
-            }
-        }
-    }
-
-    private fun read(data: ByteBuffer) {
+    private fun read(data: ByteBuffer, count: Int) {
         val float = encoding == C.ENCODING_PCM_FLOAT
-        val step = frameBytes()
-        if (encoding != C.ENCODING_PCM_16BIT && !float) return
-        while (data.remaining() >= step) {
+        repeat(count) {
             var sum = 0f
             for (c in 0 until channels) {
                 sum += if (float) data.float else data.short / 32768f
             }
-            window[filled++] = sum / channels
-            if (filled == SIZE) {
-                analyse()
-                filled = 0
-            }
+            ring[ringPos] = sum / channels
+            ringPos = (ringPos + 1) and (N - 1)
+            counted++
+            fresh++
+            // frame i covers samples i·HOP until i·HOP + N
+            if (counted >= N && fresh >= N && counted % HOP == 0L) analyse((counted - N) / HOP)
         }
     }
 
-    /** One window of sound into [BANDS] levels from 0 to 1, kept with its place in the stream. */
-    private fun analyse() {
-        for (i in 0 until SIZE) {
-            re[i] = window[i] * hann[i]
-            im[i] = 0f
-        }
-        fft(re, im)
-        val rate = sampleRate
-        for (b in 0 until BANDS) {
-            // logarithmic bands from 40 Hz to 12 kHz
-            val from = 40.0 * (12000.0 / 40.0).pow(b.toDouble() / BANDS)
-            val to = 40.0 * (12000.0 / 40.0).pow((b + 1).toDouble() / BANDS)
-            val lo = (from * SIZE / rate).toInt().coerceIn(1, SIZE / 2 - 1)
-            val hi = (to * SIZE / rate).toInt().coerceIn(lo + 1, SIZE / 2)
-            var energy = 0f
-            for (k in lo until hi) energy = max(energy, hypot(re[k], im[k]))
-            level[b] = energy
-        }
-        // a slowly falling peak keeps quiet and loud videos in the same range
-        val loudest = level.maxOrNull() ?: 0f
-        peak = max(loudest, peak * 0.995f).coerceAtLeast(1e-3f)
+    private fun analyse(index: Long) {
+        spectrum.analyse(ring, ringPos, levels)
         synchronized(lock) {
-            val slot = (produced % KEEP).toInt()
-            for (b in 0 until BANDS) {
-                val v = level[b] / peak
-                frames[slot][b] = (ln(1f + 9f * v) / ln(10f)).coerceIn(0f, 1f)
-            }
-            frameIndex[slot] = produced
-            produced++
+            val slot = (index % KEEP).toInt()
+            System.arraycopy(levels, 0, frames[slot], 0, BANDS)
+            frameIndex[slot] = index
         }
     }
 
@@ -161,7 +162,7 @@ object YtAudioTap {
     fun startOf(forGeneration: Int, positionMs: Long, leadMs: Long): Long? {
         synchronized(lock) {
             if (forGeneration != generation) return null
-            val handedMs = (produced * SIZE + filled) * 1000L / sampleRate
+            val handedMs = handed * 1000L / sampleRate
             if (handedMs < leadMs + SETTLE_MS) return null
             return positionMs + leadMs - handedMs
         }
@@ -169,76 +170,38 @@ object YtAudioTap {
 
     /**
      * The bands for the moment [positionMs] of the stream that started at [startMs] (from
-     * [startOf]); false when that moment is not known.
+     * [startOf]), blended between the two analyses around it; false when that moment is not
+     * known.
      */
     fun bandsAt(positionMs: Long, startMs: Long, out: FloatArray): Boolean {
         val rate = sampleRate
-        val index = ((positionMs - startMs) * rate / 1000L) / SIZE
-        if (index < 0) return false
-        synchronized(lock) {
-            val slot = (index % KEEP).toInt()
-            if (frameIndex[slot] != index) return false
-            System.arraycopy(frames[slot], 0, out, 0, min(BANDS, out.size))
-        }
-        return true
+        // analysis i is centred on sample i·HOP + N/2
+        val at = ((positionMs - startMs) * rate / 1000.0 - N / 2) / HOP
+        return blend(at, out)
     }
 
-    /** The newest bands, for when the place in the stream is not known (e.g. a new video). */
-    fun latest(out: FloatArray): Boolean {
-        synchronized(lock) {
-            // about a quarter of a second behind what was handed over: what is heard now; just
-            // after the stream restarted, what is heard is not in it yet
-            val behind = (rate() / 4 / SIZE).coerceAtLeast(1)
-            val index = produced - 1 - behind
-            if (index < 0) return false
-            val slot = (index % KEEP).toInt()
-            if (frameIndex[slot] != index) return false
-            System.arraycopy(frames[slot], 0, out, 0, min(BANDS, out.size))
-        }
-        return true
+    /** The bands for what is heard now when the place in the stream is not known (a new video). */
+    fun latest(out: FloatArray, leadMs: Long): Boolean {
+        val rate = sampleRate
+        val heard = synchronized(lock) { handed } - leadMs * rate / 1000L
+        return blend((heard - N / 2).toDouble() / HOP, out)
     }
 
-    private fun rate(): Int = sampleRate
-
-    /** In-place radix-2 FFT of [SIZE] points. */
-    private fun fft(re: FloatArray, im: FloatArray) {
-        val n = re.size
-        var j = 0
-        for (i in 1 until n) {
-            var bit = n shr 1
-            while (j and bit != 0) {
-                j = j xor bit
-                bit = bit shr 1
-            }
-            j = j xor bit
-            if (i < j) {
-                var t = re[i]; re[i] = re[j]; re[j] = t
-                t = im[i]; im[i] = im[j]; im[j] = t
+    private fun blend(at: Double, out: FloatArray): Boolean {
+        if (at < 0) return false
+        val first = floor(at).toLong()
+        val share = (at - first).toFloat()
+        synchronized(lock) {
+            val a = (first % KEEP).toInt()
+            if (frameIndex[a] != first) return false
+            val b = ((first + 1) % KEEP).toInt()
+            val count = minOf(BANDS, out.size)
+            if (frameIndex[b] == first + 1) {
+                for (i in 0 until count) out[i] = frames[a][i] + (frames[b][i] - frames[a][i]) * share
+            } else {
+                System.arraycopy(frames[a], 0, out, 0, count)
             }
         }
-        var len = 2
-        while (len <= n) {
-            val angle = -2 * PI / len
-            val wr = cos(angle).toFloat()
-            val wi = sin(angle).toFloat()
-            var i = 0
-            while (i < n) {
-                var cr = 1f
-                var ci = 0f
-                for (k in 0 until len / 2) {
-                    val ar = re[i + k + len / 2] * cr - im[i + k + len / 2] * ci
-                    val ai = re[i + k + len / 2] * ci + im[i + k + len / 2] * cr
-                    re[i + k + len / 2] = re[i + k] - ar
-                    im[i + k + len / 2] = im[i + k] - ai
-                    re[i + k] += ar
-                    im[i + k] += ai
-                    val next = cr * wr - ci * wi
-                    ci = cr * wi + ci * wr
-                    cr = next
-                }
-                i += len
-            }
-            len = len shl 1
-        }
+        return true
     }
 }

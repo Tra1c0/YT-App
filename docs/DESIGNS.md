@@ -253,32 +253,57 @@ Nach der Prüfung von Build 51 (22 bestätigte Befunde) geändert:
   spiegeln sich bei Sprachen, die von rechts nach links laufen, und der Audio-Miniplayer bleibt
   über der Leiste.
 
-## Klangwelle unter dem Bild-im-Bild-Fenster
+## Schwebender Player mit Klangwelle
 
-Unter dem schwebenden Bild-im-Bild-Fenster läuft eine Welle aus vielen feinen Lichtlinien,
-blau oben, magenta unten (`ui/yt/YtPipVisualizer.kt`). Sie folgt dem Ton: der Bass schwingt die
-langen Wellen, die Mitten die kurzen, die Höhen lassen die Linien zittern; pausiert schwingt sie
-ruhig weiter. Der Ton wird im Player abgegriffen (`helpers/YtAudioTap.kt`, 8 Frequenzbänder aus
-einer FFT über 1024 Werte) und jedem Band seine Stelle im Datenstrom mitgegeben, so passt die
-Welle zu dem, was gerade zu hören ist, obwohl der Player den Ton eine Viertelsekunde vorher
-bekommt. Diese Stelle wird aus der Menge des schon weitergereichten Tons und dem Puffer des
-Lautsprechers (etwa 250 ms, mal Wiedergabetempo) bestimmt, auch wenn Bild-im-Bild mitten im
-Video beginnt oder der Player nach einem Sprung oder Tempowechsel neu ansetzt; der Puffer ist
-geschätzt, nicht gemessen, kleine Abweichungen je Gerät sind möglich. Einschalten unter Player, „Klangwelle unter Bild-im-Bild“; die nötige Erlaubnis steht
-in [SICHERHEIT.md](SICHERHEIT.md). Grenzen: Android meldet nur die Endlage des Fensters, die
-Welle blendet beim Ziehen aus und an der neuen Stelle ein; ist unter dem Fenster kein Platz,
-wird sie flacher oder bleibt weg.
+Ist „Schwebender Player mit Klangwelle“ (Player-Einstellungen) an, spielt das Video beim
+Verlassen der App (Home, Bild-im-Bild-Knopf) in YTs eigenem schwebenden Fenster weiter
+(`ui/yt/YtFloatingPlayer.kt`) statt im Bild-im-Bild von Android. Grund: Android teilt einer App
+die Lage ihres Bild-im-Bild-Fensters erst nach dem Loslassen mit; während des Ziehens verschiebt
+die System-Shell nur dessen Oberfläche (AOSP, `PipTaskOrganizer.scheduleUserResizePip`). Eine
+Welle in einem eigenen Fenster könnte also nur hinterherspringen. Im eigenen Fenster sind Video
+und Welle eins: Sie bewegen sich in jedem Bild des Displays gemeinsam, mit 60 bis 120 Bildern
+pro Sekunde, je nachdem, was das Display kann (das Fenster wünscht sich die höchste Rate bis
+120 Hz, solange das Video läuft).
+
+- Das Video bleibt im Medien-Dienst von YT; das Fenster übernimmt es mit
+  `PlayerView.switchTargetView` (media3: erst die neue Fläche, dann die alte loslassen, ohne
+  Lücke im Bild) und gibt es beim Zurückkehren genauso zurück.
+- Ziehen verschiebt (beim Loslassen rastet es an der näheren Seite ein, ein Wisch wirft es zur
+  Seite), zwei Finger ändern die Größe, Tippen zeigt Wiedergabe, Öffnen und Schließen,
+  Doppeltippen öffnet YT, auf das ✕ unten ziehen schließt (das Video pausiert).
+- Ist der Schalter aus oder fehlt die Erlaubnis, gilt Androids Bild-im-Bild wie zuvor; die
+  Welle hängt dann als eigenes Fenster an dessen Unterkante (`YtPipVisualizer.kt`, nur Rückfall).
+
+Die Welle (`YtWaveView.kt`, Form in `YtWaveShape.kt`) kommt hinter der Unterkante des Videos
+hervor, läuft an beiden unteren Ecken spitz zu und ist doppelt so dick wie die erste Fassung.
+Sie ist gespiegelt: Bass in der Mitte, höhere Töne weiter außen, Höhen an den Spitzen; ihre
+Tiefe an jeder Stelle folgt dem Band, das dort liegt. Nichts bewegt sich von selbst, derselbe
+Ton gibt immer dasselbe Bild.
+
+Die Analyse (`helpers/YtSpectrum.kt`, im Player abgegriffen in `YtAudioTap.kt`): 2048-Punkte-FFT
+alle 512 Samples mit dem Blackman-Fenster des W3C-AnalyserNode; 16 Bänder gleichmäßig auf der
+ERB-Skala des Gehörs (Glasberg & Moore) von 50 Hz bis 12 kHz, sodass der Sprachbereich die
+meisten Bänder bekommt; jedes Band gegen seinen eigenen jüngsten Höchstwert (½ s gehalten, dann
+24 dB/s fallend, nie mehr als 12 dB über dem Anteil des lautesten Bands; nach dem Vorbild der
+automatischen Empfindlichkeit von Cava), 30 dB Anzeigebereich, Stille unter −70 dB zeigt nichts;
+Anstieg 15 ms, Abfall 60 ms in Stream-Zeit. Jede Analyse trägt ihre Stelle im Ton; das Bild
+nimmt für jeden Frame genau den Moment, der gerade zu hören ist, gemischt aus den zwei nächsten
+Analysen. Wie weit der Ton dem Hören vorausläuft, liest YT am Audiopuffer des Players ab statt
+ihn zu schätzen. JVM-Tests (`app/src/test/.../YtSpectrumTest.kt`, `YtWaveShapeTest.kt`) prüfen
+das mit synthetischem Ton: Sinus, Sweep, Zweiklang, Vokale nach den Formanten von Peterson &
+Barney, Zischlaut, Sprache über Musik, Stille, Einsatzzeit.
 
 Die Erlaubnis „Über anderen Apps einblenden“: Der Schalter geht erst an, wenn sie wirklich
 erteilt ist, und erklärt bis dahin den Weg in einem Dialog. Android 15 und neuer sperren sie für
 Apps aus einer APK-Datei (YT wird so installiert): Der Schalter dort steht auf „Deaktiviert“, ein
-Antippen meldet „App wurde Zugriff verweigert“. Der Dialog nennt dann den Umweg: den Schalter
-einmal antippen, in der App-Info ⋮ → „Eingeschränkte Einstellungen zulassen“, dann einschalten.
-Im Emulator (Android 15, installiert wie aus einer heruntergeladenen Datei) nachgestellt und
-durchgespielt. Fehlt die Erlaubnis später (entzogen, aus einer Sicherung), sagt YT das einmal,
-kurz bevor das Video zu schweben beginnt (Android unterdrückt Hinweise einer App im Hintergrund,
-wenn ihre Benachrichtigungen aus sind), und die Welle erscheint, sobald die Erlaubnis erteilt
-ist, ohne das Fenster zu verlassen. Sie blendet sich beim Zeichnen selbst ein, ohne Animator.
+Antippen meldet „App wurde Zugriff verweigert“. Der Dialog nennt den Umweg: den Schalter einmal
+antippen, in der App-Info ⋮ → „Eingeschränkte Einstellungen zulassen“, dann einschalten. Im
+Emulator (Android 15, installiert wie aus einer heruntergeladenen Datei) nachgestellt und
+durchgespielt.
+
+Grenzen: Ob ein Gerät 120 Hz liefert, entscheiden Display, Energiesparmodus und Temperatur; die
+App kann nur darum bitten. Die Werte der Analyse sind an synthetischem Ton abgestimmt; echte
+Videos können Feinschliff brauchen.
 
 ## Liquid Glass (Glas und Frost)
 
