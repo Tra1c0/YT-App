@@ -75,30 +75,21 @@ START_EXTRAS=()
 # the time on the device, to line up with its log
 mark() { echo "$(timeout 5 adb shell date +%H:%M:%S 2>/dev/null | tr -d '\r') $*"; }
 shot() { dismiss_anr; mark "screenshot $1"; timeout 20 adb exec-out screencap -p > "screens/$1.png" || true; }
-# Android's "… isn't responding" dialog (mostly System UI, on a busy emulator whose input timeout
-# is long, see crash-check.yml) lies over the screen and takes keys like Back: press "Wait"
+# Android's "… isn't responding" dialog lies over the screen and takes keys like Back: press
+# "Wait". uiautomator cannot read the screen while the app hangs, so the button is found from the
+# dialog's frame: "Wait" is the last of its rows (Android 14: title, Close app, Wait).
 dismiss_anr() {
-  local node b
-  timeout 15 adb shell dumpsys window windows 2>/dev/null | grep -a -q "Application Not Responding" || return 0
-  timeout 30 adb shell uiautomator dump /sdcard/anr.xml >/dev/null 2>&1 || return 0
-  node=$(timeout 20 adb exec-out cat /sdcard/anr.xml 2>/dev/null | grep -o '<node [^>]*>' | grep -E 'text="(Wait|Warten)"' | head -n 1)
-  [ -n "$node" ] || return 0
-  b=$(printf '%s' "$node" | sed -E 's/.*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]".*/\1 \2 \3 \4/')
-  set -- $b
-  mark "not-responding dialog: Wait"
-  timeout 10 adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 )) || true
-  sleep 1
+  local title f
+  title=$(timeout 15 adb shell dumpsys window windows 2>/dev/null | grep -a -o "Application Not Responding: [A-Za-z0-9._]*" | head -n 1)
+  [ -n "$title" ] || return 0
+  f=$(frame_of "$title")
+  [ -n "$f" ] || return 0
+  set -- $f
+  [ $(( $4 - $2 )) -gt 40 ] || return 0
+  mark "not-responding dialog ($title): Wait"
+  timeout 10 adb shell input tap $(( $1 + ($3 - $1) * 3 / 10 )) $(( $4 - ($4 - $2) / 5 )) || true
+  sleep 2
 }
-# presses "Wait" on any not-responding dialog during the whole check (see above)
-anr_watch() {
-  while true; do
-    sleep 3
-    timeout 15 adb shell dumpsys window windows 2>/dev/null | grep -a -q "Application Not Responding" && dismiss_anr
-  done
-}
-anr_watch > anr-watch.txt 2>&1 &
-ANR_WATCH=$!
-trap 'kill "$ANR_WATCH" 2>/dev/null || true' EXIT
 # the screen's elements as uiautomator sees them, one node per line
 ui() {
   timeout 30 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
@@ -140,6 +131,16 @@ rawshot() {
   timeout 20 adb exec-out screencap > "screens/$1.raw" || true
   python3 -I scripts/wave-check.py --png "screens/$1.raw" "screens/$1.png" 2>/dev/null || true
 }
+# presses "Wait" on any not-responding dialog during the whole check (see above)
+anr_watch() {
+  while true; do
+    sleep 3
+    timeout 15 adb shell dumpsys window windows 2>/dev/null | grep -a -q "Application Not Responding" && dismiss_anr
+  done
+}
+anr_watch > anr-watch.txt 2>&1 &
+ANR_WATCH=$!
+trap 'kill "$ANR_WATCH" 2>/dev/null || true' EXIT
 # the local test video: into the app's private files after its first start (pm clear wipes them,
 # so once per design), with the owner and SELinux label of the app's own files, so the app reads
 # it like one of its downloads. Needs adb root, which the emulator images allow.
