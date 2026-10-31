@@ -49,6 +49,7 @@ class PlayerSettings : BasePreferenceFragment() {
         // The switch turns on only once that permission exists; until then it explains the way
         // there, Android 15's lock on apps installed from an APK file included.
         pendingWave = savedInstanceState?.getBoolean(STATE_PENDING_WAVE) == true
+        awaitingReturn = savedInstanceState?.getBoolean(STATE_AWAITING_RETURN) == true
         waveSwitch = findPreference<SwitchPreferenceCompat>(YtPipVisualizer.PREF_KEY)?.apply {
             setOnPreferenceChangeListener { _, on ->
                 if (on != true || YtPipVisualizer.allowed(requireContext())) {
@@ -90,6 +91,7 @@ class PlayerSettings : BasePreferenceFragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean(STATE_PENDING_WAVE, pendingWave)
+        outState.putBoolean(STATE_AWAITING_RETURN, awaitingReturn)
     }
 
     /**
@@ -154,5 +156,6 @@ class PlayerSettings : BasePreferenceFragment() {
 
     private companion object {
         const val STATE_PENDING_WAVE = "yt_pending_wave"
+        const val STATE_AWAITING_RETURN = "yt_awaiting_return"
     }
 }

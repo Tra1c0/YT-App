@@ -109,7 +109,7 @@ if [ "${YT_LOCK:-no}" = "yes" ]; then
   shot lock-3-system-yt
   texts 20
   echo "--- the system's switch tapped"
-  tap "Allow display over other apps|Über anderen Apps einblenden zulassen" || true
+  tap "Allow display over other apps|Einblendung über anderen Apps zulassen" || true
   sleep 3
   shot lock-4-restricted
   texts 20
@@ -137,7 +137,7 @@ if [ "${YT_LOCK:-no}" = "yes" ]; then
   sleep 5
   tap "YT" 12 || true
   sleep 4
-  tap "Allow display over other apps|Über anderen Apps einblenden zulassen" || true
+  tap "Allow display over other apps|Einblendung über anderen Apps zulassen" || true
   sleep 3
   shot lock-8-system-on
   texts 12

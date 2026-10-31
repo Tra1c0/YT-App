@@ -271,11 +271,14 @@ wird sie flacher oder bleibt weg.
 
 Die Erlaubnis „Über anderen Apps einblenden“: Der Schalter geht erst an, wenn sie wirklich
 erteilt ist, und erklärt bis dahin den Weg in einem Dialog. Android 15 und neuer sperren sie für
-Apps aus einer APK-Datei (YT wird so installiert) als „Eingeschränkte Einstellung“; der Dialog
-nennt dann den Umweg: den grauen Schalter einmal antippen, in der App-Info ⋮ → „Eingeschränkte
-Einstellungen zulassen“, dann einschalten. Fehlt die Erlaubnis später (entzogen, aus einer
-Sicherung), sagt die Welle das beim Schweben einmal und erscheint, sobald sie erteilt ist, ohne
-das Fenster zu verlassen. Sie blendet sich beim Zeichnen selbst ein, ohne Animator.
+Apps aus einer APK-Datei (YT wird so installiert): Der Schalter dort steht auf „Deaktiviert“, ein
+Antippen meldet „App wurde Zugriff verweigert“. Der Dialog nennt dann den Umweg: den Schalter
+einmal antippen, in der App-Info ⋮ → „Eingeschränkte Einstellungen zulassen“, dann einschalten.
+Im Emulator (Android 15, installiert wie aus einer heruntergeladenen Datei) nachgestellt und
+durchgespielt. Fehlt die Erlaubnis später (entzogen, aus einer Sicherung), sagt YT das einmal,
+kurz bevor das Video zu schweben beginnt (Android unterdrückt Hinweise einer App im Hintergrund,
+wenn ihre Benachrichtigungen aus sind), und die Welle erscheint, sobald die Erlaubnis erteilt
+ist, ohne das Fenster zu verlassen. Sie blendet sich beim Zeichnen selbst ein, ohne Animator.
 
 ## Liquid Glass (Glas und Frost)
 

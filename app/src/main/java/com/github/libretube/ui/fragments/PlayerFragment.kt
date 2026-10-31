@@ -727,6 +727,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
         binding.relPlayerPip.isVisible = isPipAvailable()
 
         binding.relPlayerPip.setOnClickListener {
+            com.github.libretube.ui.yt.YtPipVisualizer.beforePip(requireContext())
             PictureInPictureCompat.enterPictureInPictureMode(requireActivity(), pipParams)
             isEnteringPiPMode = true
         }
@@ -1460,6 +1461,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
 
     fun onUserLeaveHint() {
         if (shouldStartPiP() || com.github.libretube.ui.yt.YtPipVisualizer.testPip) {
+            com.github.libretube.ui.yt.YtPipVisualizer.beforePip(requireContext())
             PictureInPictureCompat.enterPictureInPictureMode(requireActivity(), pipParams)
         }
     }

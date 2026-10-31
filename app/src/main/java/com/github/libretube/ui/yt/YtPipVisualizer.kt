@@ -80,6 +80,18 @@ object YtPipVisualizer {
     fun mayBeRestricted(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
 
     /**
+     * Just before the video starts to float, while YT is still in front: the hint that the
+     * permission is missing. Android drops toasts of an app that is not in front when its
+     * notifications are off, so a hint only from the floating window may never be seen.
+     */
+    fun beforePip(context: Context) {
+        if (told || !enabled() || allowed(context)) return
+        told = true
+        Log.i(TAG, "before pip: permission missing, told")
+        Toast.makeText(context.applicationContext, R.string.yt_pip_visualizer_missing, Toast.LENGTH_LONG).show()
+    }
+
+    /**
      * Shows the wave below the picture-in-picture window of [activity]; [position] is the
      * player's current position in ms (null while paused or unknown), [speed] its playback speed.
      */
@@ -296,8 +308,12 @@ object YtPipVisualizer {
         private var move: (() -> Unit)? = null
         private var drawnOnce = false
 
+        /** Counts the orders; a move already on its way is dropped when a newer order came. */
+        private var order = 0
+
         /** Fades to [target]; a move still waiting is dropped. */
         fun fadeTo(target: Float) {
+            order++
             fadeTarget = target
             move = null
             invalidate()
@@ -305,6 +321,7 @@ object YtPipVisualizer {
 
         /** Fades out, runs [action] (the window moves), then fades back in. */
         fun moveThen(action: () -> Unit) {
+            order++
             move = action
             fadeTarget = 0f
             invalidate()
@@ -320,7 +337,9 @@ object YtPipVisualizer {
             if (fade <= 0f && pending != null) {
                 move = null
                 // after this frame: the window is moved outside of drawing, then the wave returns
+                val given = order
                 post {
+                    if (given != order) return@post
                     pending()
                     fadeTarget = 1f
                     invalidate()
