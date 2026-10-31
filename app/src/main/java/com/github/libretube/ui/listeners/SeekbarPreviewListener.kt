@@ -11,6 +11,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.TimeBar
 import com.github.libretube.databinding.ExoStyledPlayerControlViewBinding
 import com.github.libretube.ui.interfaces.TimeFrameReceiver
+import com.github.libretube.ui.views.DismissableTimeBar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,6 +37,17 @@ class SeekbarPreviewListener(
      * Show a preview of the scrubber position
      */
     override fun onScrubMove(timeBar: TimeBar, position: Long) {
+        // YT: the time magnifier's live picture shows the position itself; the storyboard, coarse
+        // and under the finger up there, steps aside (and loads anew when it comes back)
+        if ((timeBar as? DismissableTimeBar)?.showsLivePicture == true) {
+            prevProcessPreviewJob?.cancel()
+            prevProcessPreviewJob = null
+            lastPreviewPosition = Long.MAX_VALUE
+            playerBinding.previewProgressIndicator.isInvisible = true
+            playerBinding.seekbarPreview.isGone = true
+            return
+        }
+
         playerBinding.seekbarPreviewPosition.text = DateUtils.formatElapsedTime(position / 1000)
 
         // minimum of five seconds of additional seeking in order to show a preview

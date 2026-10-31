@@ -110,12 +110,21 @@ class CustomExoPlayerView(
     private var chaptersBottomSheet: ChaptersBottomSheet? = null
     private var scrubbingTimeBar = false
 
+    // YT: where the time bar is being scrubbed to, for the chapter name (null when not scrubbing)
+    private var scrubPositionMs: Long? = null
+
+    // YT: the controller the playback listener is on, so a new initialize does not add it twice
+    private var listenedPlayer: Player? = null
+
     /**
      * Objects from the parent fragment
      */
 
     private val runnableHandler = Handler(Looper.getMainLooper())
     private var isPlayerLocked: Boolean = false
+
+    /** YT: the controls are locked (the round-12 overlays stay away then). */
+    val playerLocked: Boolean get() = isPlayerLocked
 
     private var resizeModePref: Int
         set(value) {
@@ -176,7 +185,21 @@ class CustomExoPlayerView(
     // if null, use same quality as fullscreen
     private var noFullscreenResolution: Int? = null
 
+    private val playbackListener = object : Player.Listener {
+        override fun onEvents(player: Player, events: Player.Events) {
+            super.onEvents(player, events)
+            this@CustomExoPlayerView.onPlaybackEvents(player, events)
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            super.onIsPlayingChanged(isPlaying)
+            keepScreenOn = isPlaying
+        }
+    }
+
     init {
+        // YT: the time magnifier's lens over the controls
+        binding.exoProgress.lens = binding.ytScrubLens
         brightnessHelper = BrightnessHelper(activity)
         playerGestureController = PlayerGestureController(activity, this)
         audioHelper = AudioHelper(context)
@@ -227,11 +250,14 @@ class CustomExoPlayerView(
             seekBarListener = object : TimeBar.OnScrubListener {
                 override fun onScrubStart(timeBar: TimeBar, position: Long) {
                     cancelHideControllerTask()
+                    scrubPositionMs = position
                 }
 
                 override fun onScrubMove(timeBar: TimeBar, position: Long) {
                     cancelHideControllerTask()
 
+                    // YT: the chapter name follows the scrubbed position, not the playing one
+                    scrubPositionMs = position
                     setCurrentChapterName(forceUpdate = true, enqueueNew = false)
                     scrubbingTimeBar = true
                 }
@@ -239,6 +265,7 @@ class CustomExoPlayerView(
                 override fun onScrubStop(timeBar: TimeBar, position: Long, canceled: Boolean) {
                     enqueueHideControllerTask()
 
+                    scrubPositionMs = null
                     setCurrentChapterName(forceUpdate = true, enqueueNew = false)
                     scrubbingTimeBar = false
                 }
@@ -355,17 +382,12 @@ class CustomExoPlayerView(
             player.togglePlayPauseState()
         }
 
-        player.addListener(object : Player.Listener {
-            override fun onEvents(player: Player, events: Player.Events) {
-                super.onEvents(player, events)
-                this@CustomExoPlayerView.onPlaybackEvents(player, events)
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                super.onIsPlayingChanged(isPlaying)
-                keepScreenOn = isPlaying
-            }
-        })
+        // YT: once per controller (initialize runs again when the page reconnects)
+        if (listenedPlayer !== player) {
+            listenedPlayer?.removeListener(playbackListener)
+            player.addListener(playbackListener)
+            listenedPlayer = player
+        }
 
         binding.playPauseBTN.setImageResource(
             PlayerHelper.getPlayPauseActionIcon(player)
@@ -475,10 +497,12 @@ class CustomExoPlayerView(
         // if the user is scrubbing the time bar, don't update
         if (scrubbingTimeBar && !forceUpdate) return
 
-        val currentIndex = PlayerHelper.getCurrentChapterIndex(player.currentPosition, chapters)
+        // YT: while scrubbing, the chapter under the thumb; the page's chapter list keeps the playing one
+        val scrubbed = scrubPositionMs?.takeIf { scrubbingTimeBar || forceUpdate }
+        val currentIndex = PlayerHelper.getCurrentChapterIndex(scrubbed ?: player.currentPosition, chapters)
         val newChapterName = currentIndex?.let { chapters[it].title.trim() }.orEmpty()
 
-        chaptersViewModel.currentChapterIndex.updateIfChanged(currentIndex ?: -1)
+        if (scrubbed == null) chaptersViewModel.currentChapterIndex.updateIfChanged(currentIndex ?: -1)
 
         // change the chapter name textView text to the chapterName
         if (newChapterName != binding.chapterName.text) {

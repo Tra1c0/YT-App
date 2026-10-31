@@ -25,8 +25,12 @@ enum class YtScrubLevel(
     EIGHTH(0.125, "1/8", "⅛×"),
     FRAME(0.0, "frame", "");
 
-    /** From here on the video itself shows the position (live seeks), not the storyboard. */
-    val livePicture: Boolean get() = ordinal >= QUARTER.ordinal
+    /**
+     * From here on the video itself shows the position (live seeks), not the storyboard: the
+     * finger above the bar would cover the storyboard, and a frozen picture under a moving thumb
+     * would read as a fault.
+     */
+    val livePicture: Boolean get() = ordinal >= HALF.ordinal
 }
 
 /** What one move of the finger did, for the haptics and the lens. */

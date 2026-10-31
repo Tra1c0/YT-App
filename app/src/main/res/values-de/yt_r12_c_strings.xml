@@ -2,4 +2,14 @@
 <!-- YT: round 12, package C (the player gestures). Same keys in the same order in values and values-de. -->
 <resources>
     <string name="yt_r12_c_category">Player-Gesten</string>
+    <string name="yt_r12_c_scrub_frame">Bild</string>
+    <string name="yt_r12_c_scrub_origin">Start</string>
+    <string name="yt_r12_c_scrub_cancel">Loslassen zum Abbrechen</string>
+    <string name="yt_r12_c_return_chip_description">Zurück zu %1$s</string>
+    <string name="yt_r12_c_magnifier_title">Zeit unter der Lupe</string>
+    <string name="yt_r12_c_magnifier_summary">Über der Zeitleiste ziehen: je höher, desto feiner, bis zum einzelnen Bild</string>
+    <string name="yt_r12_c_live_picture_title">Live-Bild beim Spulen</string>
+    <string name="yt_r12_c_live_picture_summary">Beim feinen Spulen zeigt das Video selbst die Stelle</string>
+    <string name="yt_r12_c_return_chip_title">Zurückspulen mit Gedächtnis</string>
+    <string name="yt_r12_c_return_chip_summary">Nach einem Sprung zurück bringt dich ein Chip wieder hin</string>
 </resources>

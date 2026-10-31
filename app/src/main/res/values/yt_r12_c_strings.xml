@@ -2,4 +2,14 @@
 <!-- YT: round 12, package C (the player gestures). Same keys in the same order in values and values-de. -->
 <resources>
     <string name="yt_r12_c_category">Player gestures</string>
+    <string name="yt_r12_c_scrub_frame">Frame</string>
+    <string name="yt_r12_c_scrub_origin">Start</string>
+    <string name="yt_r12_c_scrub_cancel">Release to cancel</string>
+    <string name="yt_r12_c_return_chip_description">Back to %1$s</string>
+    <string name="yt_r12_c_magnifier_title">Time magnifier</string>
+    <string name="yt_r12_c_magnifier_summary">Drag above the time bar: the higher, the finer, down to single frames</string>
+    <string name="yt_r12_c_live_picture_title">Live picture while scrubbing</string>
+    <string name="yt_r12_c_live_picture_summary">When scrubbing finely, the video itself shows the spot</string>
+    <string name="yt_r12_c_return_chip_title">Jump back with memory</string>
+    <string name="yt_r12_c_return_chip_summary">After a jump back, a chip takes you back to where you were</string>
 </resources>

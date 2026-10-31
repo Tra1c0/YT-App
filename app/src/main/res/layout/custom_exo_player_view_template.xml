@@ -133,4 +133,17 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"/>
 
+    <!-- YT: the rewind memory's way back after a jump, below the controls' top bar (the margin
+         follows it at runtime), above the controls in z so the play button never covers it; the
+         padding makes the touch target 48dp tall -->
+    <com.github.libretube.ui.yt.player.YtReturnChipView
+        android:id="@+id/yt_return_chip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="52dp"
+        android:padding="7dp"
+        android:translationZ="2dp"
+        android:visibility="gone" />
+
 </merge>
