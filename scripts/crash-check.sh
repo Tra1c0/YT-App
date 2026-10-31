@@ -3,7 +3,9 @@
 # Run by crash-check.yml. Environment: YT_DESIGN (a key, a comma list, "all" or empty = standard),
 # YT_NIGHT (yes = dark mode), YT_LOCALE (an app locale such as de-DE, API 33+), YT_WAIT (seconds),
 # YT_SIGNIN_PROBE (yes = also open the sign-in window and log what Google shows), YT_SCREENS (yes =
-# per design: screenshot the start, open a video, screenshot the player and the mini player).
+# per design: screenshot the start, open a video, screenshot the player and the mini player),
+# YT_PIP (yes = per design: switch the sound wave on, open a video, go Home into picture-in-picture,
+# log where the wave's window and the floating window are, screenshot).
 set -u
 PKG="app.tra1c0.yt"
 ACTIVITY="com.github.libretube.ui.activities.MainActivity"
@@ -49,6 +51,34 @@ for design in $DESIGNS; do
     timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es yt_design "$design" --ez yt_quiet true || echo "start timed out"
   fi
   sleep "$WAIT"
+  if [ "${YT_PIP:-no}" = "yes" ]; then
+    mkdir -p screens
+    # the permission the switch would ask for, given as the user would give it
+    timeout 20 adb shell appops set "$PKG" SYSTEM_ALERT_WINDOW allow || echo "appops failed"
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es videoId "${YT_VIDEO:-jNQXAC9IVRw}" \
+      --ez yt_quiet true --ez yt_pip_test true || echo "video start timed out"
+    sleep 18
+    timeout 20 adb exec-out screencap -p > "screens/$design-pip-0-player.png" || true
+    timeout 10 adb shell input keyevent KEYCODE_HOME || true
+    sleep 10
+    timeout 20 adb exec-out screencap -p > "screens/$design-pip-1-floating.png" || true
+    echo "::group::$design: picture-in-picture and the wave's window"
+    echo "--- app log"
+    grep -a "YtPipWave" "logcat-$design.txt" | sed 's/^.*YtPipWave *: //' | head -40 || true
+    echo "--- appops"
+    timeout 20 adb shell appops get "$PKG" SYSTEM_ALERT_WINDOW || true
+    echo "--- windows (wave, pip, bars)"
+    timeout 30 adb shell dumpsys window windows > "dumpsys-window-$design.txt" 2>/dev/null || true
+    grep -a -n -E "Window\{|mFrame|frame=|mHasSurface|isOnScreen|mViewVisibility|isVisible|mShownPosition|mAttrs|ty=|fl=|alpha=" "dumpsys-window-$design.txt" \
+      | grep -a -i -B1 -A12 "YT wave" | cut -c1-260 | head -60 || true
+    echo "--- pinned task"
+    timeout 30 adb shell dumpsys activity activities 2>/dev/null | grep -a -i -E "pinned|mode=pinned|bounds=" | cut -c1-200 | head -20 || true
+    timeout 30 adb shell dumpsys window displays 2>/dev/null | grep -a -i -E "pinned|PiP|mStableInsets|cutout|mBaseDisplayInfo" | cut -c1-240 | head -20 || true
+    echo "::endgroup::"
+    # back from the floating window for the next design
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true >/dev/null 2>&1 || true
+    sleep 4
+  fi
   if [ "${YT_SCREENS:-no}" = "yes" ]; then
     # the start, the player with a video, then the player minimized onto the bar
     mkdir -p screens

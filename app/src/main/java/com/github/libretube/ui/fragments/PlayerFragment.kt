@@ -1459,7 +1459,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
     }
 
     fun onUserLeaveHint() {
-        if (shouldStartPiP()) {
+        if (shouldStartPiP() || com.github.libretube.ui.yt.YtPipVisualizer.testPip) {
             PictureInPictureCompat.enterPictureInPictureMode(requireActivity(), pipParams)
         }
     }

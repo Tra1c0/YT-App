@@ -16,6 +16,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -41,6 +42,13 @@ import kotlin.math.sin
  */
 object YtPipVisualizer {
     const val PREF_KEY = "yt_pip_visualizer"
+    private const val TAG = "YtPipWave"
+
+    /**
+     * Emulator test (crash-check.sh, --ez yt_pip_test true): picture-in-picture starts on Home
+     * even without playback, so the wave's window can be checked where no video loads.
+     */
+    var testPip = false
 
     private var wave: WaveView? = null
     private var host: Activity? = null
@@ -56,7 +64,10 @@ object YtPipVisualizer {
      * player's current position in ms (null while paused or unknown), [speed] its playback speed.
      */
     fun show(activity: Activity, position: () -> Long?, speed: () -> Float) {
-        if (!enabled() || !allowed(activity) || wave != null) return
+        val on = enabled()
+        val allowed = allowed(activity)
+        Log.i(TAG, "show: switch=$on permission=$allowed shown=${wave != null} api=${Build.VERSION.SDK_INT}")
+        if (!on || !allowed || wave != null) return
         val app = activity.applicationContext
         val view = WaveView(app, position, speed)
         val params = WindowManager.LayoutParams(
@@ -76,10 +87,12 @@ object YtPipVisualizer {
                 layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
             }
             title = "YT wave"
+            // placed in display coordinates, not inside the system bars
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) fitInsetsTypes = 0
         }
         val added = runCatching {
             app.getSystemService(WindowManager::class.java).addView(view, params)
-        }.isSuccess
+        }.onFailure { Log.w(TAG, "show: window not added", it) }.isSuccess
         if (!added) return
         view.alpha = 0f
         wave = view
@@ -110,10 +123,7 @@ object YtPipVisualizer {
     }
 
     private fun place(activity: Activity, view: WaveView) {
-        val decor = activity.window?.decorView ?: return
-        val location = IntArray(2)
-        decor.getLocationOnScreen(location)
-        val bounds = Rect(location[0], location[1], location[0] + decor.width, location[1] + decor.height)
+        val bounds = pipBounds(activity) ?: return
         if (bounds == lastBounds) return
         lastBounds.set(bounds)
 
@@ -126,6 +136,7 @@ object YtPipVisualizer {
         val height = min(wanted, screen.bottom - top)
         // stashed at the edge, or no room below: no wave
         val visible = bounds.width() > 0 && screen.contains(bounds) && height >= (18 * density)
+        Log.i(TAG, "place: pip=$bounds screen=$screen top=$top height=$height visible=$visible")
         val manager = activity.applicationContext.getSystemService(WindowManager::class.java)
         view.animate().cancel()
         if (!visible) {
@@ -142,6 +153,21 @@ object YtPipVisualizer {
             runCatching { manager.updateViewLayout(view, params) }
             view.animate().alpha(1f).setDuration(320).start()
         }.start()
+    }
+
+    /**
+     * Where the floating window is on the screen: the bounds of the activity's window as the
+     * system reports them (Android 11+), else where its views are drawn.
+     */
+    private fun pipBounds(activity: Activity): Rect? {
+        val decor = activity.window?.decorView ?: return null
+        val location = IntArray(2)
+        decor.getLocationOnScreen(location)
+        val drawn = Rect(location[0], location[1], location[0] + decor.width, location[1] + decor.height)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return drawn
+        val reported = Rect(activity.windowManager.currentWindowMetrics.bounds)
+        if (reported != drawn) Log.i(TAG, "bounds: window=$reported views=$drawn")
+        return if (reported.isEmpty) drawn else reported
     }
 
     private fun screenBounds(activity: Activity): Rect {

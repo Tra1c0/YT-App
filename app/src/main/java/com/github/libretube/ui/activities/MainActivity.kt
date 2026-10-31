@@ -563,6 +563,11 @@ class MainActivity : AbstractPlayerHostActivity() {
     }
 
     private fun loadIntentData() {
+        // YT: emulator test of the wave below picture-in-picture (crash-check.sh)
+        if (com.github.libretube.helpers.YtGuard.isEmulator && intent?.getBooleanExtra("yt_pip_test", false) == true) {
+            com.github.libretube.ui.yt.YtPipVisualizer.testPip = true
+            PreferenceHelper.putBoolean(com.github.libretube.ui.yt.YtPipVisualizer.PREF_KEY, true)
+        }
         // If activity is running in PiP mode, then start it in front.
         if (PictureInPictureCompat.isInPictureInPictureMode(this)) {
             val nIntent = Intent(this, MainActivity::class.java)

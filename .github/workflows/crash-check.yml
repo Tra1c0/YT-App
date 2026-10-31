@@ -35,6 +35,10 @@ on:
         description: "Screenshots per design (start, player, mini player), published as the pre-release screens-<run>"
         type: boolean
         default: false
+      pip:
+        description: "Picture-in-picture test of the sound wave: enters PiP from a video, logs where the wave's window lands, takes screenshots"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -77,6 +81,7 @@ jobs:
           YT_LOCALE: ${{ inputs.locale }}
           YT_SIGNIN_PROBE: ${{ inputs.signin_probe && 'yes' || 'no' }}
           YT_SCREENS: ${{ inputs.screens && 'yes' || 'no' }}
+          YT_PIP: ${{ inputs.pip && 'yes' || 'no' }}
         with:
           api-level: ${{ inputs.api }}
           arch: x86_64
@@ -98,7 +103,7 @@ jobs:
 
       # the screenshots as release files: they can be fetched like the APKs; older sets go
       - name: Publish the screenshots
-        if: always() && inputs.screens
+        if: always() && (inputs.screens || inputs.pip)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
