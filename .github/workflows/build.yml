@@ -197,3 +197,20 @@ jobs:
             YT build ${{ github.run_number }} from commit ${{ github.sha }}.
             Signed with: ${{ env.SIGNED_WITH }}.
             ${{ steps.release.outputs.note }}
+
+      # a branch keeps its last three test builds; older ones go with their tags, so the many
+      # pushes of the round-12 branches do not pile up releases (crash-check fetches its build
+      # when it starts, so a run that is under way keeps working)
+      - name: Remove older test builds of this branch
+        if: github.ref != 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          old=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 300 --json tagName,name \
+            | jq -r --arg branch " of the branch $GITHUB_REF_NAME" \
+              '.[] | select((.tagName | startswith("check-")) and (.name | endswith($branch))) | .tagName' \
+            | sort -t- -k2,2nr | tail -n +4)
+          for tag in $old; do
+            echo "removing the older test build $tag"
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          done
