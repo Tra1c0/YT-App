@@ -141,6 +141,10 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     }
 
     open fun runPlayerCommand(args: Bundle) {
+        // YT: the commands of the round-12 modules come under their own key; a command the
+        // modules do not take, and every upstream command, goes on as before
+        if (args.containsKey(YtServiceModules.KEY) && YtServiceModules.command(this, exoPlayer, args)) return
+
         when {
             args.containsKey(PlayerCommand.SKIP_SILENCE.name) -> exoPlayer?.skipSilenceEnabled =
                 args.getBoolean(PlayerCommand.SKIP_SILENCE.name)
@@ -231,6 +235,10 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
             return
         }
 
+        // YT: a module may hold autoplay back (e.g. once the time box is used up); a video
+        // asked for by its id still plays
+        if (videoId == null && YtServiceModules.holdAutoplay()) return
+
         if (!shouldHandleAutoplay) {
             return
         }
@@ -250,6 +258,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
      */
     @CallSuper
     open fun navigateVideo(videoId: String) {
+        // YT: the modules drop what belonged to the video before (a loop, an end point)
+        YtServiceModules.onNavigate(videoId)
         sponsorBlockSegments = emptyList()
         exoPlayer?.clearMediaItems()
 
@@ -400,6 +410,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
         player.setWakeMode(if (isOfflinePlayer) C.WAKE_MODE_LOCAL else C.WAKE_MODE_NETWORK)
         player.addListener(playerListener)
         this.exoPlayer = player
+        // YT: the modules get the player as soon as it exists
+        YtServiceModules.onPlayer(player, handler)
 
         val forwardingPlayer = MediaSessionForwarder(player)
 
@@ -483,6 +495,9 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
             notificationProvider = null
 
             handler.removeCallbacksAndMessages(null)
+
+            // YT: the modules let go of the player before it is released
+            runCatching { YtServiceModules.release() }
 
             runCatching {
                 exoPlayer?.stop()

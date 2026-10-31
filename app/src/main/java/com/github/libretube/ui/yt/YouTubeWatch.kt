@@ -32,13 +32,20 @@ import com.github.libretube.api.SubscriptionHelper
 import com.github.libretube.api.obj.Streams
 import com.github.libretube.extensions.formatShort
 import com.github.libretube.extensions.toID
+import com.github.libretube.ui.models.CommentsViewModel
+import com.github.libretube.ui.yt.player.YtShareScrubBridge
 import com.github.libretube.util.TextUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** State of the video page that the player fragment updates. */
-class YtWatchController {
+/**
+ * State of the video page that the player fragment updates. [comments] (package E) gives the
+ * page the comments of the video playing.
+ */
+class YtWatchController(
+    val comments: CommentsViewModel? = null,
+) {
     var videoId by mutableStateOf<String?>(null)
     var streams by mutableStateOf<Streams?>(null)
     var chapterIndex by mutableIntStateOf(-1)
@@ -57,6 +64,8 @@ class YtWatchActions(
     val currentPosition: () -> Long = { 0L },
     /** Opens a link or jumps to a timestamp of the description. */
     val onLink: (String) -> Unit = {},
+    /** Dragging the share action onto the timeline (package C); null: share is a plain button. */
+    val shareScrub: YtShareScrubBridge? = null,
 )
 
 private enum class WatchTab { CHAPTERS, COMMENTS, DESCRIPTION }

@@ -56,10 +56,12 @@ import com.github.libretube.R
 import com.github.libretube.api.JsonHelper
 import com.github.libretube.api.obj.ChapterSegment
 import com.github.libretube.api.obj.Segment
+import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.api.obj.Streams
 import com.github.libretube.compat.PictureInPictureCompat
 import com.github.libretube.compat.PictureInPictureParamsCompat
 import com.github.libretube.constants.IntentData
+import com.github.libretube.databinding.ExoStyledPlayerControlViewBinding
 import com.github.libretube.databinding.FragmentPlayerBinding
 import com.github.libretube.db.DatabaseHolder
 import com.github.libretube.enums.FileType
@@ -106,6 +108,10 @@ import com.github.libretube.ui.models.CommentsViewModel
 import com.github.libretube.ui.models.CommonPlayerViewModel
 import com.github.libretube.ui.models.PlayerViewModel
 import com.github.libretube.ui.sheets.CommentsSheet
+import com.github.libretube.ui.yt.YtClock
+import com.github.libretube.ui.yt.YtPlaybackClock
+import com.github.libretube.ui.yt.YtSeekReason
+import com.github.libretube.ui.yt.player.YtPlayerHost
 import com.github.libretube.util.OfflineTimeFrameReceiver
 import com.github.libretube.util.OnlineTimeFrameReceiver
 import com.github.libretube.util.PlayingQueue
@@ -122,7 +128,7 @@ import kotlin.math.absoluteValue
 
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback {
+class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback, YtPlayerHost {
     private var _binding: FragmentPlayerBinding? = null
     val binding get() = _binding!!
 
@@ -354,6 +360,18 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
                 binding.titleTextView.text = ""
             }
         }
+
+        // YT: every seek reaches the shared playback clock (rewind memory, scene comments, loops)
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int
+        ) {
+            super.onPositionDiscontinuity(oldPosition, newPosition, reason)
+            if (reason == Player.DISCONTINUITY_REASON_SEEK) {
+                YtPlaybackClock.onSeek(oldPosition.positionMs, newPosition.positionMs)
+            }
+        }
     }
 
     private val lockedOrientations = listOf(
@@ -411,6 +429,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
         super.onViewCreated(view, savedInstanceState)
         // YT: the mini player takes the form of the design's navigation bar
         com.github.libretube.ui.yt.YtMiniPlayer.attach(this, binding)
+        // YT: the features of round 12 hook into the page, and the shared playback clock reads
+        // this page's controller
+        com.github.libretube.ui.yt.player.YtPlayerModules.onViewCreated(this)
+        YtPlaybackClock.attach(ytClockReader)
 
         // manually apply additional padding for edge-to-edge compatibility
         activity?.getSystemInsets()?.let { systemBars ->
@@ -504,6 +526,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
 
         val onBackPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                // YT: a feature of round 12 may take back first (e.g. to close what it shows)
+                if (com.github.libretube.ui.yt.player.YtPlayerModules.onBack(this@PlayerFragment)) return
                 if (commonPlayerViewModel.isFullscreen.value == true) unsetFullscreen()
                 else {
                     binding.playerMotionLayout.setTransitionDuration(com.github.libretube.ui.yt.YtMiniPlayer.minimizeDuration())
@@ -572,6 +596,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
             playerController.addListener(playerListener)
             connectToPlayerView(playerController)
             updatePlayPauseButton()
+            // YT: the features of round 12 get the connected controller
+            com.github.libretube.ui.yt.player.YtPlayerModules.onController(this, playerController)
 
             if (!startNewSession) {
                 // JSON-encode as work-around for https://github.com/androidx/media/issues/564
@@ -775,6 +801,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
                     if (::playerController.isInitialized) playerController.currentPosition else 0L
                 },
                 onLink = { link -> handleLink(link) },
+                // YT: dragging share onto the timeline, if a feature of round 12 offers it
+                shareScrub = com.github.libretube.ui.yt.player.YtPlayerModules.shareScrub(this),
             ),
         )
         if (ytWatch != null) {
@@ -1160,7 +1188,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
      * You many only call this if the video is of the same type as the type of the currently running
      * video, i.e. either both are online or both are offline.
      */
-    fun playVideo(videoId: String) {
+    override fun playVideo(videoId: String) {
         playerController.sendCustomCommand(
             AbstractPlayerService.runPlayerActionCommand,
             bundleOf(PlayerCommand.PLAY_VIDEO_BY_ID.name to videoId)
@@ -1306,6 +1334,9 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
         getHighlight(viewModel.segments.value.orEmpty())?.let {
             lifecycleScope.launch(Dispatchers.IO) { initializeHighlight(it) }
         }
+
+        // YT: the features of round 12 learn of the video
+        com.github.libretube.ui.yt.player.YtPlayerModules.onVideo(this, videoId, streams)
     }
 
     private suspend fun showRelatedStreams() {
@@ -1595,6 +1626,9 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
     }
 
     override fun onDestroyView() {
+        // YT: the features of round 12 let go of the page while its views still exist
+        com.github.libretube.ui.yt.player.YtPlayerModules.onDestroyView(this)
+        YtPlaybackClock.detach(ytClockReader)
         super.onDestroyView()
         _binding = null
     }
@@ -1609,5 +1643,123 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
 
     override fun isVideoLive(): Boolean {
         return ::streams.isInitialized && streams.isLive
+    }
+
+    // YT: the page as the host of the features of round 12 (YtPlayerHost). Each method does what
+    // the page's own buttons and gestures already do; playVideo and toggleFullscreen are above.
+
+    /** What the shared playback clock reads; null while no controller is connected. */
+    private val ytClockReader: () -> YtClock? = reader@{
+        if (!::playerController.isInitialized || !playerController.isConnected) return@reader null
+        YtClock(
+            videoId = if (::videoId.isInitialized) videoId else null,
+            positionMs = playerController.currentPosition,
+            durationMs = playerController.duration.coerceAtLeast(0L),
+            playing = playerController.isPlaying,
+            speed = playerController.playbackParameters.speed,
+            isLive = ::streams.isInitialized && streams.isLive,
+        )
+    }
+
+    override fun fragment(): Fragment = this
+
+    override fun controller(): MediaController? =
+        if (::playerController.isInitialized) playerController else null
+
+    override fun pageBinding(): FragmentPlayerBinding? = _binding
+
+    override fun controls(): ExoStyledPlayerControlViewBinding? = _binding?.player?.binding
+
+    override fun currentVideoId(): String? = if (::videoId.isInitialized) videoId else null
+
+    override fun currentStreams(): Streams? = if (::streams.isInitialized) streams else null
+
+    override fun playPrev(): Boolean {
+        if (!::playerController.isInitialized) return false
+        // as the previous button of the controls
+        val prev = PlayingQueue.getPrev() ?: return false
+        playVideo(prev)
+        return true
+    }
+
+    override fun playNext(): Boolean {
+        if (!::playerController.isInitialized) return false
+        val next = nextCandidate()?.url?.toID() ?: return false
+        playVideo(next)
+        return true
+    }
+
+    override fun nextCandidate(): StreamItem? {
+        // the queue, as the next button and autoplay go through it
+        PlayingQueue.getNext()?.let { id ->
+            PlayingQueue.getStreams().firstOrNull { it.url?.toID() == id }?.let { return it }
+        }
+        // what autoplay takes once the queue is done (AbstractPlayerService.playNextVideo)
+        if (isOffline || !PlayerHelper.autoPlayEnabled || !PlayerHelper.relatedStreamsEnabled) return null
+        if (!::streams.isInitialized) return null
+        return streams.relatedStreams.firstOrNull { !it.isLive }?.takeIf { it.url != null }
+    }
+
+    override fun minimize() {
+        val page = _binding ?: return
+        if (commonPlayerViewModel.isFullscreen.value == true) unsetFullscreen()
+        // as back does
+        page.playerMotionLayout.setTransitionDuration(com.github.libretube.ui.yt.YtMiniPlayer.minimizeDuration())
+        page.playerMotionLayout.transitionToEnd()
+        baseActivity.minimizePlayerContainerLayout()
+        baseActivity.requestOrientationChange()
+    }
+
+    override fun maximize() {
+        // as a tap on the mini player or a link to the playing video does
+        _binding?.playerMotionLayout?.transitionToStart()
+    }
+
+    override fun close() {
+        if (_binding != null) killPlayerFragment()
+    }
+
+    override fun audioMode() {
+        if (_binding != null && ::playerController.isInitialized) switchToAudioMode()
+    }
+
+    override fun share(seconds: Long?, direct: Boolean) {
+        if (!::streams.isInitialized || !::videoId.isInitialized) return
+        val position = seconds
+            ?: if (::playerController.isInitialized) playerController.currentPosition / 1000 else null
+        if (!direct) {
+            // the dialog of the share button
+            val bundle = bundleOf(
+                IntentData.id to videoId,
+                IntentData.shareObjectType to ShareObjectType.VIDEO,
+                IntentData.shareData to ShareData(
+                    title = streams.title,
+                    previewImageUrl = streams.thumbnailUrl,
+                    currentPosition = position
+                )
+            )
+            val shareDialog = ShareDialog()
+            shareDialog.arguments = bundle
+            shareDialog.show(childFragmentManager, ShareDialog::class.java.name)
+            return
+        }
+        // straight to the system's share sheet, the time in the link
+        val link = "${ShareDialog.YOUTUBE_SHORT_URL}/$videoId" + (position?.let { "?t=$it" } ?: "")
+        val intent = Intent(Intent.ACTION_SEND)
+            .putExtra(Intent.EXTRA_TEXT, link)
+            .putExtra(Intent.EXTRA_TITLE, streams.title)
+            .setType("text/plain")
+        runCatching { startActivity(Intent.createChooser(intent, getString(R.string.shareTo))) }
+    }
+
+    override fun seekTagged(positionMs: Long, reason: YtSeekReason) {
+        if (!::playerController.isInitialized) return
+        YtPlaybackClock.tagNextSeek(reason)
+        playerController.seekTo(positionMs)
+    }
+
+    override fun showControlsPermanently(on: Boolean) {
+        val player = _binding?.player ?: return
+        if (on) player.showControllerPermanently() else player.showController()
     }
 }
