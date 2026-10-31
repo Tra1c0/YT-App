@@ -74,6 +74,10 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 class MainActivity : AbstractPlayerHostActivity() {
     private lateinit var binding: ActivityMainBinding
     private var ytNavState: com.github.libretube.ui.yt.YtNavState? = null
+    // YT: the search callbacks this activity handed to the design screens (YtChrome), so
+    // onDestroy can take them back
+    private var ytOpenSearch: (() -> Unit)? = null
+    private var ytSearchFor: ((String) -> Unit)? = null
 
     lateinit var navController: NavController
     private var startFragmentId = R.id.homeFragment
@@ -235,25 +239,29 @@ class MainActivity : AbstractPlayerHostActivity() {
         // YT: wordmark type and navigation labels follow the selected design
         val ytDesign = com.github.libretube.helpers.YtDesign.current()
         binding.toolbar.setTitleTextAppearance(this, ytDesign.brandTextAppearance)
+        val openSearch: () -> Unit = {
+            if (::searchItem.isInitialized) {
+                searchItem.isVisible = true
+                searchItem.expandActionView()
+            }
+        }
+        ytOpenSearch = openSearch
         com.github.libretube.ui.yt.YtHeader.apply(
             binding.toolbar,
-            onSearch = {
-                if (::searchItem.isInitialized) {
-                    searchItem.isVisible = true
-                    searchItem.expandActionView()
-                }
-            },
+            onSearch = openSearch,
             onMenuItem = { item -> onOptionsItemSelected(item) },
         )
         // YT: a search for a given text from a design screen (e.g. a channel name dropped on a
         // card), the same way as a search query passed to the app
-        com.github.libretube.ui.yt.YtChrome.searchFor = { query ->
+        val searchFor: (String) -> Unit = { query ->
             if (::searchItem.isInitialized && ::searchView.isInitialized) {
                 searchItem.isVisible = true
                 searchItem.expandActionView()
                 searchView.setQuery(query, true)
             }
         }
+        ytSearchFor = searchFor
+        com.github.libretube.ui.yt.YtChrome.searchFor = searchFor
         if (com.github.libretube.ui.yt.YtHeader.active) supportActionBar?.setDisplayShowTitleEnabled(false)
         if (ytDesign.labeledNavigation) {
             binding.bottomNav.labelVisibilityMode =
@@ -314,6 +322,15 @@ class MainActivity : AbstractPlayerHostActivity() {
     override fun onStop() {
         super.onStop()
         com.github.libretube.ui.yt.YtActivityHooks.onStop(this)
+    }
+
+    override fun onDestroy() {
+        // YT: the static search callbacks hold this activity and its toolbar; let go of them,
+        // unless a newer activity has already put its own there
+        val chrome = com.github.libretube.ui.yt.YtChrome
+        if (chrome.openSearch === ytOpenSearch) chrome.openSearch = null
+        if (chrome.searchFor === ytSearchFor) chrome.searchFor = null
+        super.onDestroy()
     }
 
     /**
