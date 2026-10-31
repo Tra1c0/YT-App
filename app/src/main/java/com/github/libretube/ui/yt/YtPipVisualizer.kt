@@ -20,6 +20,8 @@ import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import android.widget.Toast
+import com.github.libretube.R
 import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.helpers.YtAudioTap
 import kotlin.math.PI
@@ -39,6 +41,10 @@ import kotlin.math.sin
  * in the player settings asks for it. The window takes no touches (what lies below stays
  * usable) and exists only while the video floats. Android reports only where the window came
  * to rest after it was dragged, so the wave fades out while it moves and back in below it.
+ *
+ * Android 15 and newer lock that permission for apps installed from an APK file until the user
+ * allows restricted settings in the app's info; without it the wave says so once and keeps
+ * looking while the video floats, so a permission given meanwhile brings it at once.
  */
 object YtPipVisualizer {
     const val PREF_KEY = "yt_pip_visualizer"
@@ -55,9 +61,23 @@ object YtPipVisualizer {
     private val handler = Handler(Looper.getMainLooper())
     private val lastBounds = Rect()
 
+    /** The floating window that waits for the permission, with what its wave would read. */
+    private var waiting: Waiting? = null
+    private class Waiting(val activity: Activity, val position: () -> Long?, val speed: () -> Float)
+
+    /** The missing permission was told once in this run of the app; no toast on every float. */
+    private var told = false
+
     fun enabled(): Boolean = PreferenceHelper.getBoolean(PREF_KEY, false)
 
     fun allowed(context: Context): Boolean = Settings.canDrawOverlays(context)
+
+    /**
+     * Whether Android may lock the permission as a restricted setting: from Android 15 on, for
+     * apps from an APK file or from an installer the system does not trust. An app cannot ask
+     * whether the lock is set, so this only decides whether the way around it is explained.
+     */
+    fun mayBeRestricted(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
 
     /**
      * Shows the wave below the picture-in-picture window of [activity]; [position] is the
@@ -67,12 +87,29 @@ object YtPipVisualizer {
         val on = enabled()
         val allowed = allowed(activity)
         Log.i(TAG, "show: switch=$on permission=$allowed shown=${wave != null} api=${Build.VERSION.SDK_INT}")
-        if (!on || !allowed || wave != null) return
+        if (!on || wave != null) return
         val app = activity.applicationContext
+        if (!allowed) {
+            // the switch is on, the permission is not (taken back, restored from a backup,
+            // or locked by Android): say so once, then look again every second while it floats
+            if (!told) {
+                told = true
+                Toast.makeText(app, R.string.yt_pip_visualizer_missing, Toast.LENGTH_LONG).show()
+            }
+            waiting = Waiting(activity, position, speed)
+            handler.removeCallbacks(retry)
+            handler.postDelayed(retry, RETRY_MS)
+            return
+        }
+        handler.removeCallbacks(retry)
+        waiting = null
         val view = WaveView(app, position, speed)
+        // right where it belongs from the first frame, when the floating window is known already
+        val spot = spot(activity)
+        val shown = spot?.visible == true
         val params = WindowManager.LayoutParams(
-            1,
-            1,
+            if (shown) spot!!.width else 1,
+            if (shown) spot!!.height else 1,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -81,6 +118,10 @@ object YtPipVisualizer {
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
+            if (shown) {
+                x = spot!!.x
+                y = spot.y
+            }
             // touches go through to what lies below only up to this opacity (Android 12+)
             alpha = 0.8f
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -93,22 +134,44 @@ object YtPipVisualizer {
         val added = runCatching {
             app.getSystemService(WindowManager::class.java).addView(view, params)
         }.onFailure { Log.w(TAG, "show: window not added", it) }.isSuccess
+        Log.i(TAG, "show: added=$added at=${spot?.bounds} visible=$shown")
         if (!added) return
-        view.alpha = 0f
         wave = view
         host = activity
         YtAudioTap.listening = true
-        lastBounds.setEmpty()
-        handler.post(follow)
+        if (spot != null) lastBounds.set(spot.bounds) else lastBounds.setEmpty()
+        // the wave fades in by itself as it draws; no animator that could be cut off
+        if (shown) view.fadeTo(1f)
+        handler.postDelayed(follow, FOLLOW_MS)
     }
 
     fun hide() {
+        handler.removeCallbacks(retry)
+        waiting = null
         handler.removeCallbacks(follow)
         YtAudioTap.listening = false
         val view = wave ?: return
         wave = null
         host = null
         runCatching { view.context.getSystemService(WindowManager::class.java).removeViewImmediate(view) }
+    }
+
+    /** Looks again for the permission while the window floats; the wave comes once it is given. */
+    private val retry = object : Runnable {
+        override fun run() {
+            val wait = waiting ?: return
+            val activity = wait.activity
+            if (activity.isFinishing || activity.isDestroyed || !activity.isInPictureInPictureMode) {
+                waiting = null
+                return
+            }
+            if (allowed(activity)) {
+                waiting = null
+                show(activity, wait.position, wait.speed)
+                return
+            }
+            handler.postDelayed(this, RETRY_MS)
+        }
     }
 
     /** Keeps the wave below the window: checks where it is, fades on a move. */
@@ -118,15 +181,15 @@ object YtPipVisualizer {
             val activity = host ?: return hide()
             if (activity.isFinishing || activity.isDestroyed) return hide()
             place(activity, view)
-            handler.postDelayed(this, 200)
+            handler.postDelayed(this, FOLLOW_MS)
         }
     }
 
-    private fun place(activity: Activity, view: WaveView) {
-        val bounds = pipBounds(activity) ?: return
-        if (bounds == lastBounds) return
-        lastBounds.set(bounds)
+    /** Where the wave's window goes for the floating window at [bounds]. */
+    private class Spot(val bounds: Rect, val x: Int, val y: Int, val width: Int, val height: Int, val visible: Boolean)
 
+    private fun spot(activity: Activity, bounds: Rect? = pipBounds(activity)): Spot? {
+        bounds ?: return null
         val screen = screenBounds(activity)
         val density = activity.resources.displayMetrics.density
         // the wave hangs right at the window's lower edge, a little under it, thin as a glow
@@ -136,24 +199,34 @@ object YtPipVisualizer {
         val height = min(wanted, screen.bottom - top)
         // stashed at the edge, or no room below: no wave
         val visible = bounds.width() > 0 && screen.contains(bounds) && height >= (18 * density)
-        Log.i(TAG, "place: pip=$bounds screen=$screen top=$top height=$height visible=$visible")
-        val manager = activity.applicationContext.getSystemService(WindowManager::class.java)
-        view.animate().cancel()
-        if (!visible) {
-            view.animate().alpha(0f).setDuration(150).start()
+        Log.i(TAG, "spot: pip=$bounds screen=$screen top=$top height=$height visible=$visible")
+        return Spot(bounds, bounds.left, top, bounds.width(), height, visible)
+    }
+
+    private fun place(activity: Activity, view: WaveView) {
+        val bounds = pipBounds(activity) ?: return
+        if (bounds == lastBounds) return
+        lastBounds.set(bounds)
+        val spot = spot(activity, bounds) ?: return
+        if (!spot.visible) {
+            view.fadeTo(0f)
             return
         }
+        val manager = activity.applicationContext.getSystemService(WindowManager::class.java)
         // fade out, move, fade in
-        view.animate().alpha(0f).setDuration(if (view.alpha > 0f) 120L else 0L).withEndAction {
-            val params = view.layoutParams as? WindowManager.LayoutParams ?: return@withEndAction
-            params.x = bounds.left
-            params.y = top
-            params.width = bounds.width()
-            params.height = height
+        view.moveThen {
+            val params = view.layoutParams as? WindowManager.LayoutParams ?: return@moveThen
+            params.x = spot.x
+            params.y = spot.y
+            params.width = spot.width
+            params.height = spot.height
             runCatching { manager.updateViewLayout(view, params) }
-            view.animate().alpha(1f).setDuration(320).start()
-        }.start()
+                .onFailure { Log.w(TAG, "place: window not moved", it) }
+        }
     }
+
+    private const val FOLLOW_MS = 200L
+    private const val RETRY_MS = 1000L
 
     /**
      * Where the floating window is on the screen: the bounds of the activity's window as the
@@ -206,6 +279,8 @@ object YtPipVisualizer {
         private val fadeMask = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
         }
+        /** What composes the drawn wave onto the window: its alpha is the fade. */
+        private val layerPaint = Paint()
         private val path = Path()
         private val bands = FloatArray(YtAudioTap.BANDS)
         private val smooth = FloatArray(YtAudioTap.BANDS)
@@ -214,6 +289,44 @@ object YtPipVisualizer {
         private var lastFound = 0L
         private var phase = 0f
         private var lastFrame = 0L
+
+        /** How far the wave shows (0 to 1), where it heads, and a move waiting for it to be gone. */
+        private var fade = 0f
+        private var fadeTarget = 0f
+        private var move: (() -> Unit)? = null
+        private var drawnOnce = false
+
+        /** Fades to [target]; a move still waiting is dropped. */
+        fun fadeTo(target: Float) {
+            fadeTarget = target
+            move = null
+            invalidate()
+        }
+
+        /** Fades out, runs [action] (the window moves), then fades back in. */
+        fun moveThen(action: () -> Unit) {
+            move = action
+            fadeTarget = 0f
+            invalidate()
+        }
+
+        private fun stepFade(dt: Float) {
+            fade = if (fadeTarget > fade) {
+                min(fadeTarget, fade + dt / FADE_IN_S)
+            } else {
+                max(fadeTarget, fade - dt / FADE_OUT_S)
+            }
+            val pending = move
+            if (fade <= 0f && pending != null) {
+                move = null
+                // after this frame: the window is moved outside of drawing, then the wave returns
+                post {
+                    pending()
+                    fadeTarget = 1f
+                    invalidate()
+                }
+            }
+        }
 
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
             val colors = intArrayOf(0xFF4AA8FF.toInt(), 0xFFA35CF5.toInt(), 0xFFF060D0.toInt())
@@ -232,6 +345,18 @@ object YtPipVisualizer {
             val now = System.nanoTime()
             val dt = if (lastFrame == 0L) 0.016f else ((now - lastFrame) / 1e9f).coerceIn(0f, 0.1f)
             lastFrame = now
+            stepFade(dt)
+            val w = width.toFloat()
+            val h = height.toFloat()
+            if (fade <= 0f || w <= 1f || h <= 1f) {
+                // nothing to show: the loop rests until a fade or a move wakes it
+                if (fadeTarget > 0f || move != null) postInvalidateOnAnimation() else lastFrame = 0L
+                return
+            }
+            if (!drawnOnce) {
+                drawnOnce = true
+                Log.i(TAG, "wave: first frame ${width}x$height")
+            }
             readBands()
             // rise fast, fall slowly, as the eye expects of sound
             for (b in bands.indices) {
@@ -244,9 +369,6 @@ object YtPipVisualizer {
             val treble = (smooth[5] + smooth[6] + smooth[7]) / 3f
             phase += dt * (0.6f + 1.6f * middle)
 
-            val w = width.toFloat()
-            val h = height.toFloat()
-            if (w <= 0f || h <= 0f) return
             val mid = h * 0.5f
             // a quiet swing even in silence, so the ribbon never lies flat; never beyond the view
             val a1 = h * (0.08f + 0.22f * bass)
@@ -254,7 +376,8 @@ object YtPipVisualizer {
             val a3 = h * (0.01f + 0.05f * treble)
             val lines = 34
             val segments = 80
-            val layer = canvas.saveLayer(0f, 0f, w, h, null)
+            layerPaint.alpha = (fade * 255).roundToInt().coerceIn(0, 255)
+            val layer = canvas.saveLayer(0f, 0f, w, h, layerPaint)
             // the glow: the middle of the ribbon, wide and faint
             for ((width, alpha) in listOf(7f to 26, 3.5f to 55)) {
                 glow.strokeWidth = width * density
@@ -326,6 +449,8 @@ object YtPipVisualizer {
             /** What the player's speaker buffer holds ahead of what is heard, in ms of playing. */
             const val LEAD_MS = 250f
             const val HOLD_NS = 500_000_000L
+            const val FADE_IN_S = 0.32f
+            const val FADE_OUT_S = 0.12f
         }
     }
 }

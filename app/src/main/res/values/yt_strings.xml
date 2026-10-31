@@ -244,7 +244,13 @@
     <string name="yt_mini_now">Now</string>
     <string name="yt_pip_visualizer">Sound wave below picture-in-picture</string>
     <string name="yt_pip_visualizer_summary">A wave of light below the floating window that moves with the sound. Needs the permission to show over other apps; the wave takes no touches and only shows while the video floats.</string>
-    <string name="yt_pip_visualizer_permission">Allow “Display over other apps” for YT, then come back</string>
+    <string name="yt_pip_visualizer_missing">Sound wave off: the permission “Display over other apps” is missing. Switch the wave on again in YT’s player settings.</string>
+    <string name="yt_pip_visualizer_missing_summary">Off: the permission “Display over other apps” is still missing. Tap to grant it.</string>
+    <string name="yt_pip_visualizer_permission_title">Permission for the sound wave</string>
+    <string name="yt_pip_visualizer_steps">The wave is a small window of its own below picture-in-picture and needs “Display over other apps” for it.\n\n1. Tap “To the permission”.\n2. Tap YT in the list and turn the switch on.\n3. Come back to YT: the switch here then turns on by itself.</string>
+    <string name="yt_pip_visualizer_steps_restricted">The wave is a small window of its own below picture-in-picture and needs “Display over other apps” for it.\n\nTap “To the permission”, tap YT in the list and turn the switch on.\n\nIs the switch grey there (“Restricted setting”)? Android 15 and newer lock it for apps installed from an APK file. Then:\n1. Tap the grey switch once and close the notice; this unlocks the next step.\n2. Come back, tap “App info”, then ⋮ at the top right → “Allow restricted settings”, and confirm.\n3. Again “To the permission” → YT → switch on. Back in YT, the switch here turns on by itself.</string>
+    <string name="yt_pip_visualizer_open_overlay">To the permission</string>
+    <string name="yt_pip_visualizer_open_app_info">App info</string>
     <!-- the video pages of the designs -->
     <string name="yt_watch_more">More</string>
     <string name="yt_watch_less">Less</string>

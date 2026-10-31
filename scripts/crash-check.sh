@@ -5,7 +5,10 @@
 # YT_SIGNIN_PROBE (yes = also open the sign-in window and log what Google shows), YT_SCREENS (yes =
 # per design: screenshot the start, open a video, screenshot the player and the mini player),
 # YT_PIP (yes = per design: switch the sound wave on, open a video, go Home into picture-in-picture,
-# log where the wave's window and the floating window are, screenshot).
+# log where the wave's window and the floating window are, screenshot; for the first design also
+# take the permission back and give it again while the video floats),
+# YT_LOCK (yes = install as from a downloaded APK file, as the user does, and walk through the
+# permission to show over other apps: YT's switch and dialog, Android 15's lock on it, the unlock).
 set -u
 PKG="app.tra1c0.yt"
 ACTIVITY="com.github.libretube.ui.activities.MainActivity"
@@ -17,7 +20,13 @@ DESIGNS="${DESIGNS//,/ }"
 echo "APK: $APK, designs: $DESIGNS, night: ${YT_NIGHT:-no}, locale: ${YT_LOCALE:-device}"
 adb wait-for-device
 adb shell input keyevent 82 || true
-adb install -r "$APK"
+if [ "${YT_LOCK:-no}" = "yes" ]; then
+  # as the system's package installer marks an APK opened from the downloads (PACKAGE_SOURCE_DOWNLOADED_FILE)
+  adb push "$APK" /data/local/tmp/yt.apk >/dev/null
+  adb shell pm install -r --package-source 4 /data/local/tmp/yt.apk
+else
+  adb install -r "$APK"
+fi
 # an overloaded emulator shows "System UI isn't responding" over everything; no use for a check.
 # The setting is read on a configuration change, the user restriction right away.
 adb shell settings put global hide_error_dialogs 1 || true
@@ -30,6 +39,118 @@ if [ -n "${YT_LOCALE:-}" ]; then
 fi
 RETRACE=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/retrace 2>/dev/null | head -n 1)
 crashed=""
+
+# the time on the device, to line up with its log
+mark() { echo "$(timeout 5 adb shell date +%H:%M:%S 2>/dev/null | tr -d '\r') $*"; }
+shot() { mark "screenshot $1"; timeout 20 adb exec-out screencap -p > "screens/$1.png" || true; }
+# the screen's elements as uiautomator sees them, one node per line
+ui() {
+  timeout 30 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
+  timeout 20 adb exec-out cat /sdcard/ui.xml 2>/dev/null | grep -o '<node [^>]*>' || true
+}
+# the texts on the screen, and for a switch whether it is on and usable
+texts() {
+  ui | sed -n -E 's/.*text="([^"]*)".*class="([^"]*)".*checkable="([^"]*)" checked="([^"]*)".*enabled="([^"]*)".*/\1|\2|\3|\4|\5/p' \
+    | awk -F'|' '$3 == "true" { print $1 " [" $2 " checked=" $4 " enabled=" $5 "]"; next } $1 != "" { print $1 }' \
+    | head -n "${1:-30}"
+}
+# taps the first element whose text or description matches (case-insensitive), scrolling down up to $2 times
+tap() {
+  local pattern="$1" tries="${2:-0}" node b
+  for _ in $(seq 0 "$tries"); do
+    node=$(ui | grep -i -E "(text|content-desc)=\"($pattern)\"" | head -n 1)
+    if [ -n "$node" ]; then
+      b=$(printf '%s' "$node" | sed -E 's/.*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]".*/\1 \2 \3 \4/')
+      set -- $b
+      mark "tap \"$pattern\" at $(( ($1 + $3) / 2 )),$(( ($2 + $4) / 2 ))"
+      timeout 10 adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
+      return 0
+    fi
+    timeout 10 adb shell input swipe 540 1700 540 700 400 || true
+    sleep 1
+  done
+  mark "not found: \"$pattern\""
+  return 1
+}
+# back until YT is in front again (at most 5 times)
+back_to_yt() {
+  for _ in 1 2 3 4 5; do
+    timeout 20 adb shell dumpsys activity activities 2>/dev/null | grep -a -m1 "topResumedActivity" | grep -q "$PKG" && return 0
+    timeout 10 adb shell input keyevent KEYCODE_BACK || true
+    sleep 2
+  done
+  return 1
+}
+
+if [ "${YT_LOCK:-no}" = "yes" ]; then
+  mkdir -p screens
+  timeout 20 adb logcat -c || true
+  adb logcat -v threadtime > logcat-lock.txt 2>/dev/null &
+  logpid=$!
+  echo "::group::the permission to show over other apps, installed as from a downloaded file"
+  echo "--- how Android sees the installation"
+  timeout 20 adb shell dumpsys package "$PKG" 2>/dev/null | grep -a -i -E "packageSource|installerPackageName|initiatingPackageName|originatingPackageName" | head -8 || true
+  echo "--- the flags of the lock (Android 15+)"
+  timeout 20 adb shell aflags list 2>/dev/null | grep -a -i -E "extend_ecm|enhanced_confirmation" | head -8 || echo "no aflags"
+  timeout 20 adb shell appops get "$PKG" SYSTEM_ALERT_WINDOW || true
+  echo "--- YT's switch"
+  timeout 30 adb shell am start -n "$PKG/com.github.libretube.ui.activities.SettingsActivity" --es redirect yt_player >/dev/null || true
+  sleep 8
+  tap "Klangwelle unter Bild-im-Bild|Sound wave below picture-in-picture" 10 || true
+  sleep 3
+  shot lock-1-yt-dialog
+  texts 20
+  echo "--- the system's list"
+  tap "Zur Erlaubnis|To the permission" || true
+  sleep 5
+  shot lock-2-system-list
+  tap "YT" 12 || true
+  sleep 4
+  shot lock-3-system-yt
+  texts 20
+  echo "--- the system's switch tapped"
+  tap "Allow display over other apps|Über anderen Apps einblenden zulassen" || true
+  sleep 3
+  shot lock-4-restricted
+  texts 20
+  timeout 10 adb shell input keyevent KEYCODE_BACK || true
+  sleep 2
+  echo "--- back in YT (its dialog again), then the app's info"
+  back_to_yt || mark "YT is not in front"
+  sleep 3
+  shot lock-5-yt-again
+  texts 12
+  tap "App-Info|App info" || true
+  sleep 4
+  tap "More options|Weitere Optionen" || true
+  sleep 2
+  shot lock-6-app-info-menu
+  texts 12
+  tap "Allow restricted settings|Eingeschränkte Einstellungen zulassen" || true
+  sleep 4
+  shot lock-7-allowed
+  texts 12
+  echo "--- the system's switch again"
+  back_to_yt || mark "YT is not in front"
+  sleep 3
+  tap "Zur Erlaubnis|To the permission" || true
+  sleep 5
+  tap "YT" 12 || true
+  sleep 4
+  tap "Allow display over other apps|Über anderen Apps einblenden zulassen" || true
+  sleep 3
+  shot lock-8-system-on
+  texts 12
+  timeout 20 adb shell appops get "$PKG" SYSTEM_ALERT_WINDOW || true
+  echo "--- back in YT: the switch should be on by itself"
+  back_to_yt || mark "YT is not in front"
+  sleep 3
+  shot lock-9-yt-on
+  texts 20
+  kill "$logpid" 2>/dev/null; wait "$logpid" 2>/dev/null
+  grep -a -E "YtPipWave|EnhancedConfirm|ECM|RestrictedSetting" logcat-lock.txt | cut -c1-240 | head -30 || true
+  echo "::endgroup::"
+fi
 for design in $DESIGNS; do
   # the emulator itself can die (its GPU emulation is fragile); that is no crash of the app
   if [ "$(timeout 15 adb get-state 2>/dev/null)" != "device" ]; then
@@ -58,13 +179,33 @@ for design in $DESIGNS; do
     timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es videoId "${YT_VIDEO:-jNQXAC9IVRw}" \
       --ez yt_quiet true --ez yt_pip_test true || echo "video start timed out"
     sleep 18
-    timeout 20 adb exec-out screencap -p > "screens/$design-pip-0-player.png" || true
+    shot "$design-pip-0-player"
+    mark "Home"
     timeout 10 adb shell input keyevent KEYCODE_HOME || true
-    sleep 10
-    timeout 20 adb exec-out screencap -p > "screens/$design-pip-1-floating.png" || true
+    # a cold first start can be slow: several looks, not one
+    sleep 3
+    shot "$design-pip-1-floating-3s"
+    sleep 5
+    shot "$design-pip-2-floating-8s"
+    sleep 7
+    shot "$design-pip-3-floating-15s"
+    if [ "$design" = "${DESIGNS%% *}" ]; then
+      # the permission taken back, PiP anew: a toast, no wave; given while it floats: the wave comes
+      timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true >/dev/null 2>&1 || true
+      sleep 5
+      timeout 20 adb shell appops set "$PKG" SYSTEM_ALERT_WINDOW deny || true
+      mark "Home without the permission"
+      timeout 10 adb shell input keyevent KEYCODE_HOME || true
+      sleep 3
+      shot "$design-pip-4-denied"
+      mark "permission given while floating"
+      timeout 20 adb shell appops set "$PKG" SYSTEM_ALERT_WINDOW allow || true
+      sleep 4
+      shot "$design-pip-5-given"
+    fi
     echo "::group::$design: picture-in-picture and the wave's window"
     echo "--- app log"
-    grep -a "YtPipWave" "logcat-$design.txt" | sed 's/^.*YtPipWave *: //' | head -40 || true
+    grep -a "YtPipWave" "logcat-$design.txt" | sed -E 's/^[0-9-]+ ([0-9:.]+) .*YtPipWave *: /\1 /' | head -60 || true
     echo "--- appops"
     timeout 20 adb shell appops get "$PKG" SYSTEM_ALERT_WINDOW || true
     echo "--- windows (wave, pip, bars)"

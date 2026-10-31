@@ -35,6 +35,12 @@ class SettingsActivity : BaseActivity() {
         if (intent.extras?.getString(REDIRECT_KEY) == REDIRECT_TO_INTENT_SETTINGS) {
             navController.navigate(R.id.action_global_instanceSettings)
         }
+        // YT: emulator test of the sound wave's switch (crash-check.sh): straight to the player settings
+        if (savedInstanceState == null && com.github.libretube.helpers.YtGuard.isEmulator &&
+            intent.extras?.getString(REDIRECT_KEY) == "yt_player"
+        ) {
+            navController.navigate(R.id.action_global_playerSettings)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {

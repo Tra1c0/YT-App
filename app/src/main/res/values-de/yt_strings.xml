@@ -244,7 +244,13 @@
     <string name="yt_mini_now">Jetzt</string>
     <string name="yt_pip_visualizer">Klangwelle unter Bild-im-Bild</string>
     <string name="yt_pip_visualizer_summary">Eine Lichtwelle unter dem schwebenden Fenster, die sich mit dem Ton bewegt. Braucht die Erlaubnis, über anderen Apps einzublenden; die Welle nimmt keine Berührungen an und erscheint nur, solange das Video schwebt.</string>
-    <string name="yt_pip_visualizer_permission">Erlaube „Über anderen Apps einblenden“ für YT und komm dann zurück</string>
+    <string name="yt_pip_visualizer_missing">Klangwelle aus: Die Erlaubnis „Über anderen Apps einblenden“ fehlt. Schalte die Welle in den Player-Einstellungen von YT wieder ein.</string>
+    <string name="yt_pip_visualizer_missing_summary">Aus: Die Erlaubnis „Über anderen Apps einblenden“ fehlt noch. Tippen, um sie zu erteilen.</string>
+    <string name="yt_pip_visualizer_permission_title">Erlaubnis für die Klangwelle</string>
+    <string name="yt_pip_visualizer_steps">Die Welle ist ein eigenes kleines Fenster unter dem Bild-im-Bild und braucht dafür „Über anderen Apps einblenden“.\n\n1. „Zur Erlaubnis“ tippen.\n2. In der Liste YT antippen und den Schalter einschalten.\n3. Zurück zu YT: Der Schalter hier geht dann von selbst an.</string>
+    <string name="yt_pip_visualizer_steps_restricted">Die Welle ist ein eigenes kleines Fenster unter dem Bild-im-Bild und braucht dafür „Über anderen Apps einblenden“.\n\n„Zur Erlaubnis“ tippen, in der Liste YT antippen und den Schalter einschalten.\n\nIst der Schalter dort grau („Eingeschränkte Einstellung“)? Android 15 und neuer sperren ihn für Apps, die aus einer APK-Datei installiert wurden. Dann:\n1. Einmal auf den grauen Schalter tippen und den Hinweis schließen; das schaltet den nächsten Schritt frei.\n2. Zurück, „App-Info“ tippen, oben rechts ⋮ → „Eingeschränkte Einstellungen zulassen“ und bestätigen.\n3. Wieder „Zur Erlaubnis“ → YT → einschalten. Zurück in YT geht der Schalter hier von selbst an.</string>
+    <string name="yt_pip_visualizer_open_overlay">Zur Erlaubnis</string>
+    <string name="yt_pip_visualizer_open_app_info">App-Info</string>
     <!-- the video pages of the designs -->
     <string name="yt_watch_more">Mehr</string>
     <string name="yt_watch_less">Weniger</string>

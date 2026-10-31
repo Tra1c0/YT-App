@@ -269,6 +269,14 @@ in [SICHERHEIT.md](SICHERHEIT.md). Grenzen: Android meldet nur die Endlage des F
 Welle blendet beim Ziehen aus und an der neuen Stelle ein; ist unter dem Fenster kein Platz,
 wird sie flacher oder bleibt weg.
 
+Die Erlaubnis „Über anderen Apps einblenden“: Der Schalter geht erst an, wenn sie wirklich
+erteilt ist, und erklärt bis dahin den Weg in einem Dialog. Android 15 und neuer sperren sie für
+Apps aus einer APK-Datei (YT wird so installiert) als „Eingeschränkte Einstellung“; der Dialog
+nennt dann den Umweg: den grauen Schalter einmal antippen, in der App-Info ⋮ → „Eingeschränkte
+Einstellungen zulassen“, dann einschalten. Fehlt die Erlaubnis später (entzogen, aus einer
+Sicherung), sagt die Welle das beim Schweben einmal und erscheint, sobald sie erteilt ist, ohne
+das Fenster zu verlassen. Sie blendet sich beim Zeichnen selbst ein, ohne Animator.
+
 ## Liquid Glass (Glas und Frost)
 
 Die Glasflächen nutzen Kyants Backdrop-Bibliothek (`third_party/backdrop/`): Unschärfe ab
