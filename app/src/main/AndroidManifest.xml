@@ -22,6 +22,8 @@
     <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS" />
     <!-- YT: only for the sound wave below the picture-in-picture window, off until switched on -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- YT: the designs' own haptic patterns (switch "Eigene Haptik"); no prompt, granted at install -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:name=".LibreTubeApp"
