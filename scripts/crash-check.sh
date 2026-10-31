@@ -588,6 +588,19 @@ for design in $DESIGNS; do
     # why the process went without a Java crash: native signal, low-memory kill, system kill
     echo "--- how the process ended"
     grep -a -E "Fatal signal|SIGSEGV|SIGABRT|SIGBUS|Abort message|backtrace:|#0[0-9] pc|lowmemorykiller|lmkd|Killing [0-9]+:$PKG|$PKG.*(died|crash)|Process $PKG|am_kill|am_proc_died|Out of memory|OutOfMemory|GL error|EGL_BAD|gralloc|ANR in" "logcat-$design.txt" | cut -c1-300 | head -60 || true
+    # an ANR leaves the stacks of the app's threads in /data/anr (readable as root, which the
+    # emulator images allow): where the main thread waited, and what the render thread did
+    timeout 20 adb root >/dev/null 2>&1 || true
+    for f in $(timeout 10 adb shell ls -t /data/anr 2>/dev/null | tr -d '\r' | head -n 4); do
+      timeout 20 adb shell cat "/data/anr/$f" 2>/dev/null > anr-dump.txt || continue
+      grep -q "Cmd line: $PKG" anr-dump.txt || continue
+      echo "--- main thread in /data/anr/$f"
+      awk '/^"main"/{p=1} p{print} p&&/^$/{exit}' anr-dump.txt | head -n 60 | cut -c1-220
+      echo "--- render thread"
+      awk '/^"RenderThread"/{p=1} p{print} p&&/^$/{exit}' anr-dump.txt | head -n 30 | cut -c1-220
+      break
+    done
+    rm -f anr-dump.txt
     echo "--- last lines before the end"
     tail -n 40 "logcat-$design.txt" | cut -c1-300
   fi
