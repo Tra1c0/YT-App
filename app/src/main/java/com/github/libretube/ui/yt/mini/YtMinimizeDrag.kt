@@ -113,6 +113,12 @@ internal class YtMinimizeDrag(
         /** Whether the docked place of a model ([endFrom]) was replaced by the one the page lays out. */
         var learned = false
 
+        /** Someone else took the transition during the release: only the offsets go back to 0. */
+        var yielded = false
+
+        /** Where the release takes the transition (0 or 1). */
+        var endTarget = startProgress
+
         var tx = 0f
         var ty = 0f
         var below = 0f
@@ -177,21 +183,17 @@ internal class YtMinimizeDrag(
                 YtMinimizeModule.landingFromDrag = false
                 return
             }
-            if (target < 0 || !landingChanges) {
-                YtMinimizeModule.landingFromDrag = false
-                return
-            }
-            when (currentId) {
-                R.id.end -> {
-                    haptics.play(YtMinimizeModule.dockTexture?.invoke() ?: DOCK)
-                    log { "minimize end p_end=1" }
-                }
-                R.id.start -> {
-                    haptics.play(OPEN)
-                    log { "minimize end p_end=0" }
-                }
-            }
             YtMinimizeModule.landingFromDrag = false
+            if (target < 0) return
+            val docked = currentId == R.id.end
+            log { "minimize end p_end=${if (docked) 1 else 0}" }
+            // a landing that changes the state (one back to where the drag began plays nothing)
+            if (!landingChanges) return
+            if (docked) {
+                haptics.play(YtMinimizeModule.dockTexture?.invoke() ?: DOCK)
+            } else if (currentId == R.id.start) {
+                haptics.play(OPEN)
+            }
         }
     }
 
@@ -228,7 +230,14 @@ internal class YtMinimizeDrag(
     /** Back or a back swipe begins: a running release lets go of the transition. */
     fun yield() {
         val s = session ?: return
-        if (release == null) return
+        if (release == null || closing) return
+        yieldTo(s)
+    }
+
+    /** The transition is someone else's now; the page's offsets still spring back to 0. */
+    private fun yieldTo(s: Session) {
+        if (s.yielded) return
+        s.yielded = true
         if (s.ownsProgress) {
             s.ownsProgress = false
             landingTarget = -1
@@ -356,7 +365,7 @@ internal class YtMinimizeDrag(
                 if (drawn != s.progress) setProgress(s, drawn)
             }
         } else {
-            drawn = currentEnd(s)
+            drawn = s.endTarget
         }
         val rest = y - s.finger.pointY(drawn)
         s.below = rest
@@ -417,17 +426,11 @@ internal class YtMinimizeDrag(
         else -> Zone.STAY
     }
 
-    /** The end the transition rests at once it is not this gesture's any more. */
-    private fun currentEnd(s: Session): Float = when {
-        landingTarget >= 0 -> landingTarget.toFloat()
-        motion.targetPosition >= 0.5f -> 1f
-        else -> 0f
-    }
-
     // --- letting go
 
     /** Springs the point to [target] (0 open, 1 docked) from the finger's speed, then lets the transition finish. */
     private fun settle(s: Session, y: Float, vx: Float, vy: Float, target: Int) {
+        s.endTarget = target.toFloat()
         if (!s.touched && target.toFloat() == s.startProgress) s.ownsProgress = false
         if (!YtMotionPrefs.enabled) {
             // no animation: straight to the end
@@ -444,6 +447,8 @@ internal class YtMinimizeDrag(
             position = s.tx
             velocity = vx
         }
+        // once someone else has the transition, the page's own offset on its way back to 0
+        var tySpring: YtSpring? = null
         var last = System.nanoTime()
         val callback = object : Choreographer.FrameCallback {
             override fun doFrame(frameTimeNanos: Long) {
@@ -451,17 +456,35 @@ internal class YtMinimizeDrag(
                 val dt = ((frameTimeNanos - last) / 1e9f).coerceIn(0f, MAX_STEP)
                 last = max(last, frameTimeNanos)
                 // someone else set a goal (a tap on a video, back): the transition is theirs
-                if (s.ownsProgress && s.touched &&
-                    abs(motion.targetPosition - s.progress) > 1e-4f && abs(motion.targetPosition - s.previous) > 1e-4f
-                ) {
-                    s.ownsProgress = false
-                    landingTarget = -1
-                    YtMinimizeModule.landingFromDrag = false
+                val goal = motion.targetPosition
+                val ours = when {
+                    // driven by hand: the last value set (or the one before, not drawn yet)
+                    s.ownsProgress && s.touched -> abs(goal - s.progress) <= 1e-4f || abs(goal - s.previous) <= 1e-4f
+                    // not moved yet: still where it rested
+                    s.ownsProgress -> abs(goal - s.startProgress) <= 1e-4f
+                    // handed over: on its way to the release's end
+                    else -> abs(goal - s.endTarget) <= 1e-4f
+                }
+                if (!ours) yieldTo(s)
+                xSpring.step(0f, dt)
+                setSideways(s, xSpring.position)
+                if (s.yielded) {
+                    val back = tySpring ?: YtMinimizeSprings.sideways().apply {
+                        position = s.ty
+                        velocity = ySpring.velocity
+                    }.also { tySpring = it }
+                    back.step(0f, dt)
+                    s.ty = back.position
+                    motion.translationY = back.position
+                    if (back.isAtRest(0f) && xSpring.isAtRest(0f)) {
+                        stop(reset = true)
+                        return
+                    }
+                    choreographer.postFrameCallback(this)
+                    return
                 }
                 ySpring.step(yTarget, dt)
-                xSpring.step(0f, dt)
                 val asked = placeY(s, ySpring.position, dragging = false)
-                setSideways(s, xSpring.position)
                 if (s.ownsProgress) {
                     val arrived = if (target == 1) asked >= 1f - EDGE else asked <= EDGE
                     if (arrived || ySpring.isAtRest(yTarget)) finishTransition(s, target, instant = false)
