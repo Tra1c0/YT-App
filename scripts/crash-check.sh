@@ -73,7 +73,21 @@ START_EXTRAS=()
 
 # the time on the device, to line up with its log
 mark() { echo "$(timeout 5 adb shell date +%H:%M:%S 2>/dev/null | tr -d '\r') $*"; }
-shot() { mark "screenshot $1"; timeout 20 adb exec-out screencap -p > "screens/$1.png" || true; }
+shot() { dismiss_anr; mark "screenshot $1"; timeout 20 adb exec-out screencap -p > "screens/$1.png" || true; }
+# Android's "… isn't responding" dialog (mostly System UI, on a busy emulator whose input timeout
+# is long, see crash-check.yml) lies over the screen and takes keys like Back: press "Wait"
+dismiss_anr() {
+  local node b
+  timeout 15 adb shell dumpsys window windows 2>/dev/null | grep -a -q "Application Not Responding" || return 0
+  timeout 30 adb shell uiautomator dump /sdcard/anr.xml >/dev/null 2>&1 || return 0
+  node=$(timeout 20 adb exec-out cat /sdcard/anr.xml 2>/dev/null | grep -o '<node [^>]*>' | grep -E 'text="(Wait|Warten)"' | head -n 1)
+  [ -n "$node" ] || return 0
+  b=$(printf '%s' "$node" | sed -E 's/.*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]".*/\1 \2 \3 \4/')
+  set -- $b
+  mark "not-responding dialog: Wait"
+  timeout 10 adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 )) || true
+  sleep 1
+}
 # the screen's elements as uiautomator sees them, one node per line
 ui() {
   timeout 30 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
@@ -110,6 +124,7 @@ frame_of() {
 }
 # a raw screenshot (for the pixel check) and a PNG of it (to publish)
 rawshot() {
+  dismiss_anr
   mark "screenshot $1"
   timeout 20 adb exec-out screencap > "screens/$1.raw" || true
   python3 -I scripts/wave-check.py --png "screens/$1.raw" "screens/$1.png" 2>/dev/null || true
@@ -193,7 +208,7 @@ open_online_video() {
 back_to_yt() {
   for _ in 1 2 3 4 5; do
     timeout 20 adb shell dumpsys activity activities 2>/dev/null | grep -a -m1 "topResumedActivity" | grep -q "$PKG" && return 0
-    timeout 10 adb shell input keyevent KEYCODE_BACK || true
+    dismiss_anr; timeout 10 adb shell input keyevent KEYCODE_BACK || true
     sleep 2
   done
   return 1
@@ -230,7 +245,7 @@ if [ "${YT_LOCK:-no}" = "yes" ]; then
   sleep 3
   shot lock-4-restricted
   texts 20
-  timeout 10 adb shell input keyevent KEYCODE_BACK || true
+  dismiss_anr; timeout 10 adb shell input keyevent KEYCODE_BACK || true
   sleep 2
   echo "--- back in YT (its dialog again), then the app's info"
   back_to_yt || mark "YT is not in front"
@@ -534,7 +549,7 @@ for design in $DESIGNS; do
     fi
     sleep 18
     timeout 20 adb exec-out screencap -p > "screens/$design-2-player.png" || true
-    timeout 10 adb shell input keyevent KEYCODE_BACK || true
+    dismiss_anr; timeout 10 adb shell input keyevent KEYCODE_BACK || true
     sleep 5
     timeout 20 adb exec-out screencap -p > "screens/$design-3-mini.png" || true
   fi
