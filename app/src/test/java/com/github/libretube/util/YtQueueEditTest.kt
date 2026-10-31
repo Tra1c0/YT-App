@@ -65,6 +65,30 @@ class YtQueueEditTest {
     }
 
     @Test
+    fun withNothingPlayingEveryItemComesUp() {
+        // a queue put together before playing: no current video
+        val list = mutableListOf("a", "b", "c")
+        assertEquals(-1, YtQueueEdit.anchor(list, currentKey = null, key = key))
+        assertEquals(3, YtQueueEdit.upcoming(list, currentKey = null, key = key))
+        assertEquals(0, YtQueueEdit.upcoming(emptyList<String>(), currentKey = null, key = key))
+        assertEquals(0, YtQueueEdit.insertNext(list, "n", currentKey = null, key = key))
+        assertEquals(listOf("n", "a", "b", "c"), list)
+        assertEquals(0, YtQueueEdit.insertNext(list, "c", currentKey = null, key = key))
+        assertEquals(listOf("c", "n", "a", "b"), list)
+        assertEquals(3, YtQueueEdit.append(list, "c", currentKey = null, key = key))
+        assertEquals(listOf("n", "a", "b", "c"), list)
+    }
+
+    @Test
+    fun upcomingCountsFromTheCurrentVideo() {
+        val list = listOf("a", "cur", "b", "c")
+        assertEquals(2, YtQueueEdit.upcoming(list, currentKey = "cur", key = key))
+        assertEquals(0, YtQueueEdit.upcoming(list, currentKey = "c", key = key))
+        // as PlayingQueue.getNext: a current video not in the queue counts as the first item
+        assertEquals(3, YtQueueEdit.upcoming(list, currentKey = "gone", key = key))
+    }
+
+    @Test
     fun keepLastOfEachDropsTheEarlierCopies() {
         // "play all" of the watch history while A plays: [A] + history [C, B, A]
         val list = mutableListOf("A", "C", "B", "A")

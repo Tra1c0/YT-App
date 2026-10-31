@@ -45,6 +45,8 @@ object PlayingQueue {
         get() = PlayerHelper.repeatMode
         set(value) {
             PlayerHelper.repeatMode = value
+            // YT: under repeat-all the next video wraps around to the first one
+            changed()
         }
 
     private fun clearJobs() {
@@ -163,11 +165,11 @@ object PlayingQueue {
     }
 
     /**
-     * YT: how many videos follow the current one. Unlike [hasNext] it does not wrap around to
-     * the start under repeat-all; never negative.
+     * YT: how many videos follow the current one, all of them while nothing plays. Unlike
+     * [hasNext] it does not wrap around to the start under repeat-all; never negative.
      */
     fun upcomingCount(): Int = synchronized(queue) {
-        YtQueueEdit.upcoming(queue.size, currentIndex())
+        YtQueueEdit.upcoming(queue, currentStream?.url?.toID()) { it.url?.toID() }
     }
 
     /**
@@ -186,9 +188,10 @@ object PlayingQueue {
     }
 
     /**
-     * YT: plays [streamItem] right after the current video, or puts it first into an empty
-     * queue. It is in the queue once (matched by its video id); the current video is never
-     * added again. [addAsNext] stays as it is (it fails on an empty queue).
+     * YT: plays [streamItem] right after the current video, or puts it first while nothing
+     * plays or the queue is empty. It is in the queue once (matched by its video id); the
+     * current video is never added again. [addAsNext] stays as it is (it fails on an empty
+     * queue).
      * @return its index in the queue, or -1 if it was not added
      */
     fun ytInsertNext(streamItem: StreamItem): Int = synchronized(queue) {
