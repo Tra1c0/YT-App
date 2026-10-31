@@ -283,6 +283,18 @@ for design in $DESIGNS; do
     timeout 30 adb shell dumpsys gfxinfo "$PKG" 2>/dev/null | grep -a -E "Total frames|Janky|Window:|---PROFILEDATA" | head -12 || true
     echo "--- the app's own warnings"
     [ -n "${fpid:-}" ] && timeout 20 adb logcat -d --pid="$fpid" "*:W" 2>/dev/null | tail -n 30 | cut -c1-220 || true
+    echo "--- what the main thread was doing, if Android saw it hang (ANR trace)"
+    if timeout 20 adb logcat -d 2>/dev/null | grep -a -q "ANR in app.tra1c0.yt\|ANR in Window.*tra1c0"; then
+      timeout 20 adb root >/dev/null 2>&1 || true
+      sleep 3
+      anr=$(timeout 20 adb shell ls -t /data/anr 2>/dev/null | tr -d '\r' | head -n 1)
+      echo "trace: ${anr:-none}"
+      [ -n "${anr:-}" ] && timeout 20 adb shell cat "/data/anr/$anr" 2>/dev/null \
+        | awk '/^"main"/{p=1} p{print} p&&/^$/{exit}' | head -n 60 | cut -c1-200
+      timeout 20 adb shell cat "/data/anr/$anr" 2>/dev/null | awk '/^"RenderThread"/{p=1} p{print} p&&/^$/{exit}' | head -n 30 | cut -c1-200
+    else
+      echo "no ANR"
+    fi
     echo "--- the system about the app (freezer, kills, windows)"
     timeout 20 adb logcat -d 2>/dev/null | grep -a -i -E "freez|tra1c0|YT player" | grep -a -v -E "YtFloat|YtWave" | tail -n 30 | cut -c1-220 || true
     echo "::endgroup::"
