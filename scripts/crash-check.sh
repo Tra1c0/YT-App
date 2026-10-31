@@ -56,6 +56,8 @@ fi
 # an overloaded emulator shows "System UI isn't responding" over everything; no use for a check.
 # The setting is read on a configuration change, the user restriction right away.
 adb shell settings put global hide_error_dialogs 1 || true
+# the input timeout the emulator was started with (crash-check.yml: ro.hw_timeout_multiplier)
+echo "input timeout multiplier: $(timeout 10 adb shell getprop ro.hw_timeout_multiplier | tr -d '\r')"
 adb shell pm set-user-restriction no_system_error_dialogs 1 || true
 adb shell cmd uimode night yes >/dev/null 2>&1 || true
 adb shell cmd uimode night no >/dev/null 2>&1 || true

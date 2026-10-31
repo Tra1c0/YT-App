@@ -130,7 +130,11 @@ jobs:
           target: google_apis
           profile: pixel_6
           emulator-boot-timeout: 1200
-          emulator-options: -no-window -gpu ${{ inputs.gpu }} -no-snapshot -noaudio -no-boot-anim
+          # the emulator compiles the GPU programs of Glas and Frost (blur, lens) over its slow GL
+          # pipe for seconds, while the app's main thread waits for its render thread; with the
+          # default 5 s input timeout Android kills the app for not responding, which a phone
+          # (milliseconds, programs cached on disk) never sees. A longer timeout lets it finish.
+          emulator-options: -no-window -gpu ${{ inputs.gpu }} -no-snapshot -noaudio -no-boot-anim -prop ro.hw_timeout_multiplier=12
           disable-animations: true
           script: bash scripts/crash-check.sh
 
