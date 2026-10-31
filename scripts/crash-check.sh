@@ -259,7 +259,8 @@ for design in $DESIGNS; do
     timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true >/dev/null 2>&1 || true
     sleep 4
   fi
-  if [ "${YT_FLOAT:-no}" = "yes" ]; then
+  # the floating player once (on the first design): its checks take a few minutes
+  if [ "${YT_FLOAT:-no}" = "yes" ] && [ "$design" = "${DESIGNS%% *}" ]; then
     mkdir -p screens
     float_log() { grep -a -E "YtFloat|YtWave" "logcat-$design.txt" | sed -E 's/^[0-9-]+ ([0-9:.]+) [^:]*: /\1 /' | cut -c1-220; }
     timeout 20 adb shell appops set "$PKG" SYSTEM_ALERT_WINDOW allow || echo "appops failed"
@@ -287,11 +288,14 @@ for design in $DESIGNS; do
     echo "::endgroup::"
     echo "::group::$design: YT's own floating player and the wave"
     read -r l t r b <<< "$(frame_of "YT player")"
-    size=$(float_log | grep -m1 "float added" | sed -E 's/.*video=([0-9]+) x ([0-9]+) strip=([0-9]+).*/\1 \2 \3/')
-    read -r vw vh strip <<< "$size"
+    # the newest size the window logged (added, a drag, a release)
+    float_size() { float_log | grep -E "float (added|drag|released)" | tail -n 1 | sed -E 's/.*video=([0-9]+) x ([0-9]+) strip=([0-9]+).*/\1 \2 \3/'; }
+    read -r vw vh strip <<< "$(float_size)"
     echo "window: ${l:-?} ${t:-?} ${r:-?} ${b:-?}; video ${vw:-?} x ${vh:-?}, strip ${strip:-?}"
-    echo "pinned task (should be none): $(timeout 20 adb shell dumpsys activity activities 2>/dev/null | grep -a -c 'mode=pinned')"
+    pinned=$(timeout 20 adb shell dumpsys activity activities 2>/dev/null | grep -a -c 'mode=pinned' || true)
+    echo "pinned tasks (must be none): ${pinned:-0}"
     float_ok=yes
+    if [ "${pinned:-0}" != "0" ]; then echo "::error::$design: Android's picture-in-picture started as well"; float_ok=no; fi
     if [ -z "${l:-}" ] || [ -z "${vh:-}" ]; then
       echo "::error::$design: YT's floating player did not appear"
       float_ok=no
@@ -314,6 +318,7 @@ for design in $DESIGNS; do
       sleep 2
       read -r al at ar ab <<< "$(frame_of "YT player")"
       rawshot "$design-float-4-released"
+      read -r vw vh strip <<< "$(float_size)"
       echo "--- while dragging (finger down), window at ${ml:-?},${mt:-?}"
       [ -n "${ml:-}" ] && { python3 -I scripts/wave-check.py "screens/$design-float-2-dragging.raw" "$ml" "$mt" "$((mr - ml))" "$vh" "$strip" "$l" "$t" || float_ok=no; }
       echo "--- held at the end of the drag, window at ${hl:-?},${ht:-?}"

@@ -191,6 +191,7 @@ object YtFloatingPlayer {
         var closing = false
         var moved = false
         var aspect = 16f / 9f
+        var pendingAspect: Float? = null
         val area = Rect()
 
         val listener = object : Player.Listener {
@@ -200,7 +201,12 @@ object YtFloatingPlayer {
 
             override fun onVideoSizeChanged(videoSize: VideoSize) {
                 val ratio = ratioOf(videoSize) ?: return
-                if (abs(ratio - aspect) < 0.01f || touch.busy) return
+                if (abs(ratio - aspect) < 0.01f) return
+                // not in the middle of a drag, a pinch or a snap: then, once it ends
+                if (touch.busy) {
+                    pendingAspect = ratio
+                    return
+                }
                 aspect = ratio
                 resize(videoWidth, keepCentre = true)
             }
@@ -359,6 +365,15 @@ object YtFloatingPlayer {
             videoBox.invalidateOutline()
         }
 
+        /** A new video's shape that came during a gesture, once the gesture is over. */
+        fun applyPendingAspect() {
+            val ratio = pendingAspect ?: return
+            if (touch.busy) return
+            pendingAspect = null
+            aspect = ratio
+            resize(videoWidth, keepCentre = true)
+        }
+
         /** A new width (two fingers, or a new video's shape), keeping the window's centre. */
         fun resize(width: Int, keepCentre: Boolean) {
             if (!added) return
@@ -402,7 +417,15 @@ object YtFloatingPlayer {
                 val metrics = android.util.DisplayMetrics()
                 @Suppress("DEPRECATION")
                 manager.defaultDisplay.getRealMetrics(metrics)
-                out.set(0, systemDimension("status_bar_height"), metrics.widthPixels, metrics.heightPixels - systemDimension("navigation_bar_height"))
+                // a phone turned sideways has its navigation bar at the side
+                val sideways = metrics.widthPixels > metrics.heightPixels
+                val bar = if (sideways) systemDimension("navigation_bar_width") else systemDimension("navigation_bar_height")
+                out.set(
+                    0,
+                    systemDimension("status_bar_height"),
+                    metrics.widthPixels - if (sideways) bar else 0,
+                    metrics.heightPixels - if (sideways) 0 else bar,
+                )
             }
         }
 
@@ -575,6 +598,7 @@ object YtFloatingPlayer {
             private var startWidth = 0
             private var velocity: VelocityTracker? = null
             private var snap: ValueAnimator? = null
+            private var interrupted = false
             private var moves = 0
 
             val busy: Boolean get() = dragging || scaling || snap?.isRunning == true
@@ -589,6 +613,8 @@ object YtFloatingPlayer {
                     }
 
                     override fun onDoubleTap(e: MotionEvent): Boolean {
+                        // two quick taps on a button are two presses of it, not "open YT"
+                        if (controls.isVisible && onButton(e)) return true
                         expand()
                         return true
                     }
@@ -607,6 +633,8 @@ object YtFloatingPlayer {
                 if (!dragging && !scaling) taps.onTouchEvent(e)
                 when (e.actionMasked) {
                     MotionEvent.ACTION_DOWN -> {
+                        // a snap cut short is finished on release, unless a drag takes over
+                        interrupted = snap?.isRunning == true
                         snap?.cancel()
                         usableArea(area)
                         downX = e.rawX
@@ -662,6 +690,16 @@ object YtFloatingPlayer {
                             scaling = false
                             // the finger left on the window does not start a drag
                             ignoreRest = true
+                        } else if (dragging) {
+                            // the finger that led the drag went up: the remaining one leads on
+                            // from where it is, without a jump
+                            val stays = if (e.actionIndex == 0) 1 else 0
+                            val offsetX = e.rawX - e.getX(0)
+                            val offsetY = e.rawY - e.getY(0)
+                            downX = e.getX(stays) + offsetX
+                            downY = e.getY(stays) + offsetY
+                            startX = params.x
+                            startY = params.y
                         }
                     }
 
@@ -691,6 +729,7 @@ object YtFloatingPlayer {
                             settle(0f)
                             return true
                         }
+                        if (interrupted) settle(0f)
                     }
                 }
                 return dragging || scaling
@@ -733,6 +772,11 @@ object YtFloatingPlayer {
                         params.y = (fromY + (toY - fromY) * f).roundToInt()
                         update()
                     }
+                    addListener(object : android.animation.AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: android.animation.Animator) {
+                            applyPendingAspect()
+                        }
+                    })
                     start()
                 }
             }
