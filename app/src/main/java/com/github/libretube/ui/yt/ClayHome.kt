@@ -439,6 +439,8 @@ private fun ClayNextCard(
             .padding(start = 15.dp, end = 18.dp, top = 15.dp)
             .fillMaxWidth()
             .height(111.dp)
+            // left hides, right queues: the card leaves a dent in the dough
+            .ytCardSwipe(palette, video, shape, testTag = "yt_card_next")
             .ytSquish(interaction)
             .shadow(10.dp, shape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(shape)

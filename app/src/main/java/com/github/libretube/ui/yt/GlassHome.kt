@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -137,14 +138,14 @@ fun GlassHomeScreen(
                             }
                         }
                     }
-                    items(videos.take(2), key = { "top-" + it.url }) {
-                        GlassVideo(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)))
+                    itemsIndexed(videos.take(2), key = { _, video -> "top-" + video.url }) { index, video ->
+                        GlassVideo(palette, imageLoader, video, index, actions, ytItemMotion().ytEnter(enter, tab + video.url, index))
                     }
                     if (shorts.isNotEmpty() && tab != YT_TAB_LIVE) {
                         item { GlassShorts(palette, imageLoader, shorts, actions) }
                     }
-                    items(videos.drop(2), key = { "more-" + it.url }) {
-                        GlassVideo(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)))
+                    itemsIndexed(videos.drop(2), key = { _, video -> "more-" + video.url }) { index, video ->
+                        GlassVideo(palette, imageLoader, video, index + 2, actions, ytItemMotion().ytEnter(enter, tab + video.url, index + 2))
                     }
                 }
             }
@@ -213,6 +214,7 @@ private fun GlassVideo(
     palette: YtPalette,
     imageLoader: ImageLoader,
     video: StreamItem,
+    index: Int,
     actions: YtHomeActions,
     modifier: Modifier = Modifier,
 ) {
@@ -224,7 +226,16 @@ private fun GlassVideo(
     val haptics = rememberYtHaptics()
     val motion = LocalYtMotion.current
     val lensSize = 104.dp
-    Column(modifier.padding(start = 20.dp, end = 18.dp, bottom = 11.dp)) {
+    // left hides, right queues: a glass drop swells in the gap the video leaves
+    Column(
+        modifier
+            .ytCardSwipe(
+                palette, video, RoundedCornerShape(12.dp),
+                inset = PaddingValues(start = 20.dp, end = 18.dp, bottom = 11.dp),
+                testTag = "yt_card_$index",
+            )
+            .padding(start = 20.dp, end = 18.dp, bottom = 11.dp),
+    ) {
         Box(
             Modifier
                 .fillMaxWidth()

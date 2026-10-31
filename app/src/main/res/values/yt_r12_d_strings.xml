@@ -2,4 +2,53 @@
 <!-- YT: round 12, package D (the home screens). Same keys in the same order in values and values-de. -->
 <resources>
     <string name="yt_r12_d_category">Home</string>
+
+    <!-- card swipe: what the field behind a card says, short -->
+    <string name="yt_home_swipe_queue">To the end</string>
+    <string name="yt_home_swipe_hide">Hide</string>
+    <!-- the same as actions (menus, quick sheet, accessibility) -->
+    <string name="yt_home_action_queue">Add to the end of the queue</string>
+    <string name="yt_home_more_actions">More actions</string>
+    <string name="yt_home_action_hide">Hide video</string>
+
+    <!-- the undo pill -->
+    <string name="yt_home_hidden_done">Video hidden</string>
+    <string name="yt_home_undo">Undo</string>
+    <string name="yt_home_pause_week">Pause channel for 1 week</string>
+    <string name="yt_home_pause_done">%1$s paused for a week</string>
+    <string name="yt_home_pause_ended">%1$s is back</string>
+    <string name="yt_home_pause_end">End pause · %1$d d left</string>
+    <!-- a paused channel's avatar: the days left, short -->
+    <string name="yt_home_pause_days_left">%1$d d left</string>
+    <plurals name="yt_home_pause_days_spoken">
+        <item quantity="one">%1$s, paused, %2$d day left</item>
+        <item quantity="other">%1$s, paused, %2$d days left</item>
+    </plurals>
+
+    <!-- the draft queue while nothing plays -->
+    <string name="yt_home_draft_count">%1$d in the queue</string>
+    <string name="yt_home_draft_play">Play</string>
+    <string name="yt_home_draft_discard">Discard queue</string>
+
+    <!-- settings -->
+    <string name="yt_home_card_swipe">Swipe cards</string>
+    <string name="yt_home_card_swipe_summary">On the home screen: left hides a video for 90 days, right puts it at the end of the queue</string>
+    <string name="yt_home_paused_channels">Paused channels</string>
+    <string name="yt_home_paused_channels_none">No channel is paused. Pause one from a video\'s menu, after hiding a video or with a long press on its avatar.</string>
+    <plurals name="yt_home_paused_channels_count">
+        <item quantity="one">%d channel paused</item>
+        <item quantity="other">%d channels paused</item>
+    </plurals>
+    <string name="yt_home_paused_resume">Resume selected</string>
+    <string name="yt_home_hidden_videos">Hidden videos</string>
+    <string name="yt_home_hidden_videos_none">No video is hidden</string>
+    <plurals name="yt_home_hidden_videos_count">
+        <item quantity="one">%d video hidden from the home screen</item>
+        <item quantity="other">%d videos hidden from the home screen</item>
+    </plurals>
+    <string name="yt_home_hidden_show_all">Show all again</string>
+    <plurals name="yt_home_hidden_show_all_message">
+        <item quantity="one">%d hidden video comes back to the home screen.</item>
+        <item quantity="other">%d hidden videos come back to the home screen.</item>
+    </plurals>
 </resources>

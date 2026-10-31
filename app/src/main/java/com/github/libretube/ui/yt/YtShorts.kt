@@ -118,7 +118,8 @@ object YtShorts {
         val composeView = ComposeView(fragment.requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val feed by viewModel.videoFeed.observeAsState()
+                // hidden videos and paused channels stay off the Shorts too (rememberYtVisible)
+                val feed = rememberYtVisible(viewModel.videoFeed.observeAsState().value)
                 YtTheme(palette) {
                     YtShortsScreen(palette, ImageHelper.loader(), of(feed)) { video ->
                         NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))

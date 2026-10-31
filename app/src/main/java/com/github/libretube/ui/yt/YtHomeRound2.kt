@@ -23,7 +23,6 @@ import com.github.libretube.helpers.ImageHelper
 import com.github.libretube.helpers.NavigationHelper
 import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.helpers.YtDesign
-import com.github.libretube.parcelable.PlayerData
 import com.github.libretube.ui.dialogs.AddToPlaylistDialog
 import com.github.libretube.ui.models.HomeViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -44,21 +43,24 @@ internal fun YtRound2Home(
 ) {
     val palette = design.palette ?: return
     val context = LocalContext.current
-    val feed by viewModel.feed.observeAsState()
+    // hidden videos and paused channels stay off the home (rememberYtVisible)
+    val feed = rememberYtVisible(viewModel.feed.observeAsState().value)
     val trending by viewModel.trending.observeAsState()
-    val continueWatching by viewModel.continueWatching.observeAsState()
+    val continueWatching = rememberYtVisible(viewModel.continueWatching.observeAsState().value)
     val isLoading by viewModel.isLoading.observeAsState(true)
     var tab by rememberSaveable { mutableStateOf(YT_TAB_FOR_YOU) }
     var category by rememberSaveable { mutableStateOf(YT_FILTER_ALL) }
     var reload by remember { mutableIntStateOf(0) }
 
-    val live by produceState<List<StreamItem>?>(null, reload) {
+    val liveLoaded by produceState<List<StreamItem>?>(null, reload) {
         value = loadTrending(context, TrendingCategory.LIVE)
     }
-    val categoryVideos by produceState<List<StreamItem>?>(null, category, reload) {
+    val live = rememberYtVisible(liveLoaded)
+    val categoryLoaded by produceState<List<StreamItem>?>(null, category, reload) {
         value = null
         if (category != YT_FILTER_ALL) value = loadTrending(context, TrendingCategory.valueOf(category))
     }
+    val categoryVideos = rememberYtVisible(categoryLoaded)
     val positions by produceState(emptyMap<String, Long>(), continueWatching) {
         value = withContext(Dispatchers.IO) {
             continueWatching.orEmpty().mapNotNull { video ->
@@ -69,7 +71,8 @@ internal fun YtRound2Home(
     }
 
     val subscriptions = ytPlayable(feed)
-    val trends = ytPlayable(charts ?: trending?.second?.streams)
+    val trendingVisible = rememberYtVisible(trending?.second?.streams)
+    val trends = ytPlayable(charts ?: trendingVisible)
     val forYou = if (subscriptions == null && trends == null) null
     else ytInterleave(subscriptions.orEmpty(), trends.orEmpty())
     val data = YtHomeData(
@@ -87,10 +90,9 @@ internal fun YtRound2Home(
         fragment.activity?.findViewById<BottomNavigationView>(R.id.bottomNav)?.selectedItemId = id
     }
     val actions = YtHomeActions(
-        onOpenVideo = { video -> video.url?.let { NavigationHelper.navigateVideo(context, PlayerData(it.toID())) } },
-        onOpenVideoAt = { video, seconds ->
-            video.url?.let { NavigationHelper.navigateVideo(context, PlayerData(it.toID(), timestamp = seconds)) }
-        },
+        // a tap keeps what the user queued (YtQueue)
+        onOpenVideo = { video -> YtQueue.playKeepingQueue(context, video) },
+        onOpenVideoAt = { video, seconds -> YtQueue.playKeepingQueue(context, video, seconds) },
         onOpenChannel = { video -> NavigationHelper.navigateChannel(context, video.uploaderUrl) },
         onSave = { video ->
             AddToPlaylistDialog().apply {
@@ -106,6 +108,7 @@ internal fun YtRound2Home(
             refresh()
             reload++
         },
+        onShare = { video -> YtHome.shareVideo(fragment, video) },
     )
     val imageLoader = ImageHelper.loader()
 

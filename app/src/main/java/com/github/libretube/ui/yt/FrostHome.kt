@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -190,11 +190,11 @@ fun FrostHomeScreen(
                     }
                     videos.firstOrNull()?.let { first ->
                         item(key = "big-" + first.url) {
-                            Box(Modifier.ytEnter(enter, "big" + first.url, 0)) { FrostBig(palette, imageLoader, first, actions) }
+                            Box(ytItemMotion().ytEnter(enter, "big" + first.url, 0)) { FrostBig(palette, imageLoader, first, actions) }
                         }
                     }
-                    items(videos.drop(1), key = { "row-" + it.url }) {
-                        Box(Modifier.ytEnter(enter, "row" + it.url, videos.indexOf(it))) { FrostRow(palette, imageLoader, it, actions) }
+                    itemsIndexed(videos.drop(1), key = { _, video -> "row-" + video.url }) { index, video ->
+                        Box(ytItemMotion().ytEnter(enter, "row" + video.url, index + 1)) { FrostRow(palette, imageLoader, video, index + 1, actions) }
                     }
                 }
             }
@@ -276,6 +276,8 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
         Modifier
             .fillMaxWidth()
             .aspectRatio(1.35f)
+            // left hides, right queues: the frost clears around the mark in the gap
+            .ytCardSwipe(palette, video, RoundedCornerShape(26.dp), testTag = "yt_card_0")
             .frost(RoundedCornerShape(26.dp), clear = { thaw })
             .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
             .padding(8.dp),
@@ -329,13 +331,14 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
 }
 
 @Composable
-private fun FrostRow(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, actions: YtHomeActions) {
+private fun FrostRow(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, index: Int, actions: YtHomeActions) {
     val press = remember { MutableInteractionSource() }
     val thaw by rememberThaw(press)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .ytCardSwipe(palette, video, RoundedCornerShape(20.dp), testTag = "yt_card_$index")
             .frost(RoundedCornerShape(20.dp), clear = { thaw })
             .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
             .padding(8.dp),

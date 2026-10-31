@@ -274,7 +274,7 @@ fun ShapesHomeScreen(
                 }
             }
             itemsIndexed(videos.drop(1), key = { _, v -> "v-" + v.url }) { index, video ->
-                Box(Modifier.ytEnter(enter, "v" + video.url, index + 3)) {
+                Box(ytItemMotion().ytEnter(enter, "v" + video.url, index + 3)) {
                     ShapesVideo(palette, imageLoader, video, index, actions, turn)
                 }
             }
@@ -433,7 +433,12 @@ private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: Str
         else -> RoundedCornerShape(topStart = 16.dp, topEnd = 60.dp, bottomEnd = 16.dp, bottomStart = 60.dp)
     }
     val tag = listOf(palette.lime, ShapesYellow, palette.pink, palette.lavender)[index % 4]
-    Column(Modifier.clickable { actions.onOpenVideo(video) }) {
+    // left hides, right queues: a cookie turns in the gap, clicking every 30 degrees
+    Column(
+        Modifier
+            .ytCardSwipe(palette, video, shape, testTag = "yt_card_$index")
+            .clickable { actions.onOpenVideo(video) },
+    ) {
         Box(
             Modifier
                 .fillMaxWidth()

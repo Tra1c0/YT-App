@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -160,8 +161,8 @@ fun YouTubeHomeScreen(
                 }
             }
             hero?.let { video ->
-                item {
-                    LargeVideo(palette, imageLoader, video, onOpenVideo, onOpenChannel, { quick = it }, Modifier.ytEnter(enter, "hero" + video.url, 0))
+                item(key = "hero-" + video.url) {
+                    LargeVideo(palette, imageLoader, video, 0, onOpenVideo, onOpenChannel, { quick = it }, ytItemMotion().ytEnter(enter, "hero" + video.url, 0))
                 }
             }
             if (live.isNotEmpty()) {
@@ -179,8 +180,8 @@ fun YouTubeHomeScreen(
             }
             if (rest.isNotEmpty()) {
                 item { SectionTitle(palette, stringResource(R.string.yt_home_more)) }
-                items(rest, key = { it.url!! }) { video ->
-                    LargeVideo(palette, imageLoader, video, onOpenVideo, onOpenChannel, { quick = it }, Modifier.ytEnter(enter, "rest" + video.url, 2 + rest.indexOf(video)))
+                itemsIndexed(rest, key = { _, video -> video.url!! }) { index, video ->
+                    LargeVideo(palette, imageLoader, video, index + 1, onOpenVideo, onOpenChannel, { quick = it }, ytItemMotion().ytEnter(enter, "rest" + video.url, 2 + index))
                 }
             }
         }
@@ -357,6 +358,8 @@ private fun LargeVideo(
     palette: YtPalette,
     imageLoader: ImageLoader,
     video: StreamItem,
+    /** Its place in the list, for the emulator checks. */
+    index: Int,
     onOpenVideo: (StreamItem) -> Unit,
     onOpenChannel: (StreamItem) -> Unit,
     onQuick: (StreamItem) -> Unit,
@@ -366,6 +369,12 @@ private fun LargeVideo(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            // left hides, right queues; the field behind leaves out the gap below the card
+            .ytCardSwipe(
+                palette, video, RoundedCornerShape(14.dp),
+                inset = PaddingValues(start = 4.dp, end = 4.dp, bottom = 16.dp),
+                testTag = "yt_card_$index",
+            )
             .ytPressable(RoundedCornerShape(14.dp), onLongClick = { onQuick(video) }) { onOpenVideo(video) }
             .padding(start = 4.dp, end = 4.dp, bottom = 16.dp),
     ) {

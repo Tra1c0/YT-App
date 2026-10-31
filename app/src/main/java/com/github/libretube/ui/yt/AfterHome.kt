@@ -254,8 +254,14 @@ fun AfterHomeScreen(
                             .padding(start = 16.dp, end = 16.dp, bottom = 6.dp)
                             .ytEnter(enter, "more" + pair.first().url, row),
                     ) {
-                        pair.forEach { video ->
-                            AfterPoster(palette, imageLoader, video, open, Modifier.weight(1f))
+                        pair.forEachIndexed { i, video ->
+                            // the posters of the grid swipe: left hides, right queues (a film strip edge)
+                            AfterPoster(
+                                palette, imageLoader, video, open,
+                                Modifier
+                                    .weight(1f)
+                                    .ytCardSwipe(palette, video, RoundedCornerShape(10.dp), testTag = "yt_card_${row * 2 + i}"),
+                            )
                         }
                         if (pair.size == 1) Spacer(Modifier.weight(1f))
                     }

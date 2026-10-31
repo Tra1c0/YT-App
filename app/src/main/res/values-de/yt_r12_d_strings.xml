@@ -2,4 +2,53 @@
 <!-- YT: round 12, package D (the home screens). Same keys in the same order in values and values-de. -->
 <resources>
     <string name="yt_r12_d_category">Startseite</string>
+
+    <!-- card swipe: what the field behind a card says, short -->
+    <string name="yt_home_swipe_queue">Ans Ende</string>
+    <string name="yt_home_swipe_hide">Ausblenden</string>
+    <!-- the same as actions (menus, quick sheet, accessibility) -->
+    <string name="yt_home_action_queue">Ans Ende der Warteschlange</string>
+    <string name="yt_home_more_actions">Weitere Aktionen</string>
+    <string name="yt_home_action_hide">Video ausblenden</string>
+
+    <!-- the undo pill -->
+    <string name="yt_home_hidden_done">Video ausgeblendet</string>
+    <string name="yt_home_undo">Rückgängig</string>
+    <string name="yt_home_pause_week">Kanal 1 Woche pausieren</string>
+    <string name="yt_home_pause_done">%1$s für eine Woche pausiert</string>
+    <string name="yt_home_pause_ended">%1$s ist wieder da</string>
+    <string name="yt_home_pause_end">Pause beenden · noch %1$d T.</string>
+    <!-- a paused channel's avatar: the days left, short -->
+    <string name="yt_home_pause_days_left">noch %1$d T.</string>
+    <plurals name="yt_home_pause_days_spoken">
+        <item quantity="one">%1$s, pausiert, noch %2$d Tag</item>
+        <item quantity="other">%1$s, pausiert, noch %2$d Tage</item>
+    </plurals>
+
+    <!-- the draft queue while nothing plays -->
+    <string name="yt_home_draft_count">%1$d in der Warteschlange</string>
+    <string name="yt_home_draft_play">Abspielen</string>
+    <string name="yt_home_draft_discard">Warteschlange verwerfen</string>
+
+    <!-- settings -->
+    <string name="yt_home_card_swipe">Karten wischen</string>
+    <string name="yt_home_card_swipe_summary">Auf der Startseite: nach links blendet ein Video für 90 Tage aus, nach rechts kommt es ans Ende der Warteschlange</string>
+    <string name="yt_home_paused_channels">Pausierte Kanäle</string>
+    <string name="yt_home_paused_channels_none">Kein Kanal ist pausiert. Pausieren geht im Menü eines Videos, nach dem Ausblenden oder mit langem Druck auf das Kanalbild.</string>
+    <plurals name="yt_home_paused_channels_count">
+        <item quantity="one">%d Kanal pausiert</item>
+        <item quantity="other">%d Kanäle pausiert</item>
+    </plurals>
+    <string name="yt_home_paused_resume">Auswahl fortsetzen</string>
+    <string name="yt_home_hidden_videos">Ausgeblendete Videos</string>
+    <string name="yt_home_hidden_videos_none">Kein Video ist ausgeblendet</string>
+    <plurals name="yt_home_hidden_videos_count">
+        <item quantity="one">%d Video auf der Startseite ausgeblendet</item>
+        <item quantity="other">%d Videos auf der Startseite ausgeblendet</item>
+    </plurals>
+    <string name="yt_home_hidden_show_all">Alle wieder zeigen</string>
+    <plurals name="yt_home_hidden_show_all_message">
+        <item quantity="one">%d ausgeblendetes Video erscheint wieder auf der Startseite.</item>
+        <item quantity="other">%d ausgeblendete Videos erscheinen wieder auf der Startseite.</item>
+    </plurals>
 </resources>

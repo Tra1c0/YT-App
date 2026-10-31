@@ -54,6 +54,12 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -141,7 +147,7 @@ fun KieselHomeScreen(
         LazyColumn(Modifier.fillMaxSize()) {
             item {
                 if (reminders.isNotEmpty()) {
-                    KieselReminder(reminders, remaining, actions, Modifier.padding(start = 18.dp, end = 18.dp, top = 6.dp))
+                    KieselReminder(palette, reminders, remaining, actions, Modifier.padding(start = 18.dp, end = 18.dp, top = 6.dp))
                 }
             }
             item {
@@ -200,7 +206,7 @@ fun KieselHomeScreen(
             if (more.isNotEmpty()) {
                 item { KieselSection(stringResource(R.string.yt_kiesel_more), null, Modifier.padding(top = 22.dp)) }
                 itemsIndexed(more, key = { _, v -> "row" + v.url }) { index, video ->
-                    KieselRow(video, imageLoader, actions, Modifier.ytEnter(enter, "row" + video.url, index))
+                    KieselRow(palette, video, index, imageLoader, actions, ytItemMotion().ytEnter(enter, "row" + video.url, index))
                 }
             }
             item {
@@ -244,7 +250,13 @@ private fun KieselSection(title: String, onAll: (() -> Unit)?, modifier: Modifie
  * away (1:1, the finger's flick decides) brings the next card forward.
  */
 @Composable
-private fun KieselReminder(videos: List<StreamItem>, remaining: (StreamItem) -> Long, actions: YtHomeActions, modifier: Modifier = Modifier) {
+private fun KieselReminder(
+    palette: YtPalette,
+    videos: List<StreamItem>,
+    remaining: (StreamItem) -> Long,
+    actions: YtHomeActions,
+    modifier: Modifier = Modifier,
+) {
     val motion = LocalYtMotion.current
     val haptics = rememberYtHaptics()
     val scope = rememberCoroutineScope()
@@ -265,11 +277,41 @@ private fun KieselReminder(videos: List<StreamItem>, remaining: (StreamItem) -> 
     val back = videos[(index + 1) % videos.size]
     val colors = listOf(KieselPeach, KieselLavender)
     val leaveSpec = ytFinite(spring<Float>(dampingRatio = 0.9f, stiffness = 320f))
+    var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val queueLabel = stringResource(R.string.yt_home_action_queue)
+    val hideLabel = stringResource(R.string.yt_home_action_hide)
+    // the swipe has a meaning now: to the left the card is hidden, to the right it goes to the
+    // end of the queue; either way the next card comes forward
+    fun leave(way: Int, velocity: Float) {
+        val card = front
+        val from = coords?.takeIf { it.isAttached }?.boundsInWindow()?.translate(swipe.offset.value, 0f)
+        scope.launch {
+            if (way > 0) ytQueueCard(palette, card, from, velocity, haptics, motion, ytSwipeTexture(palette, queue = true))
+            swipe.offset.animateTo(way * width * 1.3f, leaveSpec)
+            // a hidden card leaves the stack by itself, the next one takes its place
+            if (way < 0) ytHideVideo(card) else index++
+            swipe.offset.snapTo(0f)
+        }
+    }
     Box(
         modifier
             .fillMaxWidth()
             .height(96.dp)
-            .onSizeChanged { width = it.width },
+            .onSizeChanged { width = it.width }
+            .onPlaced { coords = it }
+            .semantics {
+                customActions = listOf(
+                    CustomAccessibilityAction(queueLabel) {
+                        ytQueueVideo(front)
+                        index++
+                        true
+                    },
+                    CustomAccessibilityAction(hideLabel) {
+                        ytHideVideo(front)
+                        true
+                    },
+                )
+            },
     ) {
         // the next card behind, turned a little; it straightens and comes forward with the swipe
         KieselReminderFace(
@@ -301,12 +343,8 @@ private fun KieselReminder(videos: List<StreamItem>, remaining: (StreamItem) -> 
                     translationY = -6.dp.toPx() * lift - (1f - fan.value) * 16.dp.toPx()
                     alpha = (0.4f + fan.value).coerceAtMost(1f)
                 }
-                .ytSwipe(swipe, (width * 0.3f).coerceAtLeast(120f), direction = 0, haptics = haptics, enabled = videos.size > 1, settle = false) { way ->
-                    scope.launch {
-                        swipe.offset.animateTo(way * width * 1.3f, leaveSpec)
-                        index++
-                        swipe.offset.snapTo(0f)
-                    }
+                .ytSwipe(swipe, (width * 0.3f).coerceAtLeast(120f), direction = 0, haptics = haptics, enabled = videos.isNotEmpty(), settle = false) { way ->
+                    leave(way, if (way > 0) 1600f else -1600f)
                 }
                 .clickable(interactionSource = press, indication = null) { actions.onOpenVideo(front) },
         )
@@ -547,12 +585,21 @@ private fun KieselCardItem(video: StreamItem, imageLoader: ImageLoader, color: C
 
 /** A white row: channel, title and channel name, bookmark. */
 @Composable
-private fun KieselRow(video: StreamItem, imageLoader: ImageLoader, actions: YtHomeActions, modifier: Modifier = Modifier) {
+private fun KieselRow(
+    palette: YtPalette,
+    video: StreamItem,
+    index: Int,
+    imageLoader: ImageLoader,
+    actions: YtHomeActions,
+    modifier: Modifier = Modifier,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .padding(horizontal = 18.dp, vertical = 5.dp)
             .fillMaxWidth()
+            // left hides, right queues: a lavender or peach capsule grows out of the gap
+            .ytCardSwipe(palette, video, RoundedCornerShape(18.dp), testTag = "yt_card_$index")
             .ytPressable(RoundedCornerShape(18.dp), squish = true) { actions.onOpenVideo(video) }
             .background(KieselCard)
             .padding(10.dp),
@@ -660,7 +707,8 @@ private fun KieselChannelPanel(
                     .ytEnter(enter, video.uploaderUrl ?: index, index + 1)
                     .padding(bottom = 10.dp)
                     .fillMaxWidth()
-                    .ytPressable(RoundedCornerShape(18.dp), squish = true) { actions.onOpenChannel(video) }
+                    // a long press pauses the channel for a week (or ends its pause)
+                    .ytPressable(RoundedCornerShape(18.dp), squish = true, onLongClick = { ytTogglePause(video) }) { actions.onOpenChannel(video) }
                     .background(KieselCream)
                     .padding(horizontal = 12.dp, vertical = 11.dp),
             ) {

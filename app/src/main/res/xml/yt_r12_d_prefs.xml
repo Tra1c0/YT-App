@@ -6,6 +6,27 @@
 
     <PreferenceCategory
         app:key="yt_r12_d_category"
-        app:title="@string/yt_r12_d_category" />
+        app:title="@string/yt_r12_d_category">
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_swipe_gesture"
+            android:summary="@string/yt_home_card_swipe_summary"
+            app:defaultValue="true"
+            app:key="yt_card_swipe"
+            app:title="@string/yt_home_card_swipe" />
+
+        <com.github.libretube.ui.yt.feed.YtPausedChannelsPreference
+            android:icon="@drawable/ic_yt_pause_week"
+            app:key="yt_paused_channels_list"
+            app:persistent="false"
+            app:title="@string/yt_home_paused_channels" />
+
+        <com.github.libretube.ui.yt.feed.YtHiddenVideosPreference
+            android:icon="@drawable/ic_yt_hide"
+            app:key="yt_hidden_videos_list"
+            app:persistent="false"
+            app:title="@string/yt_home_hidden_videos" />
+
+    </PreferenceCategory>
 
 </PreferenceScreen>

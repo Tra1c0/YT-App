@@ -5,13 +5,9 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
-import kotlin.math.roundToInt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -58,6 +55,7 @@ import coil3.compose.AsyncImage
 import com.github.libretube.R
 import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.extensions.toID
+import com.github.libretube.ui.yt.feed.YtPauseRules
 
 const val SIDE_TAB_FOR_YOU = "FOR_YOU"
 const val SIDE_TAB_PEOPLE = "PEOPLE"
@@ -157,9 +155,9 @@ fun SideHomeScreen(
                         }
                     }
                 }
-                items(posts, key = { it.url!! }) { post ->
-                    Column(Modifier.ytEnter(enter, post.url!!, posts.indexOf(post))) {
-                        SidePost(palette, imageLoader, post, post.url.toID() in hearts, actions)
+                itemsIndexed(posts, key = { _, post -> post.url!! }) { index, post ->
+                    Column(ytItemMotion().ytEnter(enter, post.url!!, index)) {
+                        SidePost(palette, imageLoader, post, index, post.url.toID() in hearts, actions)
                         SideDivider(palette)
                     }
                 }
@@ -231,37 +229,20 @@ private fun SidePost(
     palette: YtPalette,
     imageLoader: ImageLoader,
     post: StreamItem,
+    index: Int,
     hearted: Boolean,
     actions: SideFeedActions,
 ) {
     val haptics = rememberYtHaptics()
     var menu by remember { mutableStateOf(false) }
-    // swipe the post to the right to heart it: a heart grows at the left as the post follows
-    val swipe = rememberYtSwipe()
-    val threshold = with(LocalDensity.current) { 90.dp.toPx() }
     // double tap on the picture: a big heart pops over it
     var pops by remember { mutableIntStateOf(0) }
-    Box {
-        Icon(
-            painterResource(if (hearted) R.drawable.ic_yt_heart else R.drawable.ic_yt_heart_fill),
-            contentDescription = null,
-            tint = palette.accent,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 24.dp)
-                .size(32.dp)
-                .graphicsLayer {
-                    val p = (swipe.offset.value / threshold).coerceIn(0f, 1.3f)
-                    alpha = (p * 2f).coerceAtMost(1f)
-                    val scale = 0.5f + 0.55f * p
-                    scaleX = scale
-                    scaleY = scale
-                },
-        )
+    val pause = rememberPauseOf(post)
+    // swiped to the left the post hides, to the right it goes to the end of the queue; the
+    // heart it used to give stays on the double tap, the heart button and the menu
     Column(
         Modifier
-            .offset { IntOffset(swipe.offset.value.roundToInt(), 0) }
-            .ytSwipe(swipe, threshold, direction = 1, haptics = haptics) { actions.onToggleHeart(post) }
+            .ytCardSwipe(palette, post, RectangleShape, testTag = "yt_card_$index")
             .background(palette.background)
             .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 14.dp),
     ) {
@@ -323,6 +304,31 @@ private fun SidePost(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.share)) },
                         onClick = { menu = false; actions.onShare(post) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.yt_side_heart)) },
+                        onClick = {
+                            menu = false
+                            if (!hearted) haptics.confirm()
+                            actions.onToggleHeart(post)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.yt_home_action_queue)) },
+                        onClick = { menu = false; ytQueueVideo(post) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.yt_home_action_hide)) },
+                        onClick = { menu = false; ytHideVideo(post) },
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                if (pause == null) stringResource(R.string.yt_home_pause_week)
+                                else stringResource(R.string.yt_home_pause_end, YtPauseRules.daysLeft(pause.untilMillis, System.currentTimeMillis())),
+                            )
+                        },
+                        onClick = { menu = false; ytTogglePause(post) },
                     )
                 }
             }
@@ -467,7 +473,6 @@ private fun SidePost(
                 )
             }
         }
-    }
     }
 }
 

@@ -1,10 +1,15 @@
 package com.github.libretube.ui.yt
 
+import android.content.Context
 import android.content.Intent
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -12,7 +17,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
@@ -53,143 +60,14 @@ object YtHome {
         val design = YtDesign.current()
         if (design == YtDesign.STANDARD) return false
 
+        // the queued cards' tokens fly above the player and the bar
+        (fragment.activity as? ComponentActivity)?.let(YtFlightLayer::attach)
         val composeView = ComposeView(fragment.requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val feed by viewModel.feed.observeAsState()
-                val trending by viewModel.trending.observeAsState()
-                val isLoading by viewModel.isLoading.observeAsState(true)
-                var filter by remember { mutableStateOf(YT_FILTER_ALL) }
-                var movoTab by remember { mutableStateOf(MOVO_TAB_DISCOVER) }
-                // charts to discover: without subscriptions the home would otherwise be nearly empty
-                val discovery = YtDiscovery.rememberVideos()
-                val charts = discovery?.takeIf { it.isNotEmpty() } ?: trending?.second?.streams
-                val refreshAll = {
-                    refresh()
-                    YtDiscovery.refresh(context)
-                }
-
-                if (design.hasShortsTab || design == YtDesign.KIESEL) {
-                    YtRound2Home(fragment, design, viewModel, refreshAll, charts)
-                } else if (design == YtDesign.SIDE) {
-                    var sideTab by remember { mutableStateOf(SIDE_TAB_FOR_YOU) }
-                    var hearts by remember { mutableStateOf(YtHearts.all()) }
-                    YtTheme(YtPalettes.Side) {
-                        SideHomeScreen(
-                            palette = YtPalettes.Side,
-                            imageLoader = ImageHelper.loader(),
-                            forYou = charts ?: feed,
-                            people = feed,
-                            tab = sideTab,
-                            hearts = hearts,
-                            isLoading = isLoading,
-                            onSelectTab = { sideTab = it },
-                            onRefresh = refreshAll,
-                            actions = SideFeedActions(
-                                onOpenVideo = { video ->
-                                    NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
-                                },
-                                onOpenChannel = { video ->
-                                    NavigationHelper.navigateChannel(context, video.uploaderUrl)
-                                },
-                                onBookmark = { video ->
-                                    AddToPlaylistDialog().apply {
-                                        arguments = bundleOf(IntentData.videoInfo to video)
-                                    }.show(fragment.childFragmentManager, AddToPlaylistDialog::class.java.name)
-                                },
-                                onShare = { video -> shareVideo(fragment, video) },
-                                onToggleHeart = { video -> hearts = YtHearts.toggle(video.url!!.toID()) },
-                                onPost = { showPostDialog(fragment) },
-                            ),
-                        )
-                    }
-                } else if (design == YtDesign.AFTER) {
-                    val continueWatching by viewModel.continueWatching.observeAsState()
-                    var afterTab by remember { mutableStateOf(AFTER_TAB_SELECTION) }
-                    var reload by remember { mutableIntStateOf(0) }
-                    // "Filme" and "Live" load their trending category directly, so the
-                    // trending category chosen elsewhere in the app stays untouched.
-                    val tabVideos by produceState<List<StreamItem>?>(null, afterTab, reload) {
-                        value = null
-                        if (afterTab == AFTER_TAB_SELECTION) return@produceState
-                        val region = PreferenceHelper.getTrendingRegion(context)
-                        value = withContext(Dispatchers.IO) {
-                            runCatching {
-                                MediaServiceRepository.instance
-                                    .getTrending(region, TrendingCategory.valueOf(afterTab))
-                            }.getOrDefault(emptyList())
-                        }
-                    }
-                    val selection = afterTab == AFTER_TAB_SELECTION
-                    YtTheme(YtPalettes.After) {
-                        AfterHomeScreen(
-                            palette = YtPalettes.After,
-                            imageLoader = ImageHelper.loader(),
-                            videos = if (selection) {
-                                feed?.takeIf { videos -> videos.any { !it.isShort } } ?: charts
-                            } else tabVideos,
-                            continueWatching = continueWatching,
-                            tab = afterTab,
-                            isLoading = if (selection) isLoading else tabVideos == null,
-                            onSelectTab = { afterTab = it },
-                            onRefresh = { if (selection) refreshAll() else reload++ },
-                            onOpenVideo = { video ->
-                                NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
-                            },
-                            onShowAll = {
-                                fragment.activity?.findViewById<BottomNavigationView>(R.id.bottomNav)
-                                    ?.selectedItemId = R.id.libraryFragment
-                            },
-                        )
-                    }
-                } else if (design == YtDesign.MOVO) {
-                    YtTheme(YtPalettes.Movo) {
-                        MovoHomeScreen(
-                            palette = YtPalettes.Movo,
-                            imageLoader = ImageHelper.loader(),
-                            discover = charts,
-                            following = feed,
-                            tab = movoTab,
-                            isLoading = isLoading,
-                            onSelectTab = { movoTab = it },
-                            onRefresh = refreshAll,
-                            onOpenVideo = { video ->
-                                NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
-                            },
-                            onSave = { video -> saveVideo(fragment, video) },
-                        )
-                    }
-                } else YtTheme(YtPalettes.YouTube) {
-                    YouTubeHomeScreen(
-                        palette = YtPalettes.YouTube,
-                        imageLoader = ImageHelper.loader(),
-                        feed = feed,
-                        // "Alle": subscriptions, or the mixed charts; a topic: its chart
-                        trending = if (filter == YT_FILTER_ALL) charts else trending?.second?.streams,
-                        categories = MediaServiceRepository.instance.getTrendingCategories(),
-                        selectedFilter = filter,
-                        isLoading = isLoading,
-                        onSelectFilter = { key ->
-                            filter = key
-                            if (key != YT_FILTER_ALL) {
-                                PreferenceHelper.putString(PreferenceKeys.TRENDING_CATEGORY, key)
-                                refresh()
-                            }
-                        },
-                        onRefresh = refreshAll,
-                        onOpenVideo = { video ->
-                            NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
-                        },
-                        onOpenChannel = { video ->
-                            NavigationHelper.navigateChannel(context, video.uploaderUrl)
-                        },
-                        onShowAllLive = {
-                            fragment.activity?.findViewById<BottomNavigationView>(R.id.bottomNav)
-                                ?.selectedItemId = R.id.trendsFragment
-                        },
-                        onSave = { video -> saveVideo(fragment, video) },
-                        onShare = { video -> shareVideo(fragment, video) },
-                    )
+                Box(Modifier.fillMaxSize().ytTestRoot()) {
+                    Screen(fragment, design, viewModel, refresh)
+                    design.palette?.let { palette -> YtTheme(palette) { YtHomePills(palette) } }
                 }
             }
         }
@@ -200,13 +78,153 @@ object YtHome {
         return true
     }
 
+    /** Opens [video], keeping what the user queued (YtQueue). */
+    private fun open(context: Context, video: StreamItem) = YtQueue.playKeepingQueue(context, video)
+
+    @Composable
+    private fun Screen(fragment: Fragment, design: YtDesign, viewModel: HomeViewModel, refresh: () -> Unit) {
+        val context = LocalContext.current
+        // hidden videos and paused channels stay off the home (rememberYtVisible)
+        val feed = rememberYtVisible(viewModel.feed.observeAsState().value)
+        val trending by viewModel.trending.observeAsState()
+        val isLoading by viewModel.isLoading.observeAsState(true)
+        var filter by remember { mutableStateOf(YT_FILTER_ALL) }
+        var movoTab by remember { mutableStateOf(MOVO_TAB_DISCOVER) }
+        // charts to discover: without subscriptions the home would otherwise be nearly empty
+        val discovery = YtDiscovery.rememberVideos()
+        val trendingStreams = rememberYtVisible(trending?.second?.streams)
+        val charts = rememberYtVisible(discovery?.takeIf { it.isNotEmpty() }) ?: trendingStreams
+        val refreshAll = {
+            refresh()
+            YtDiscovery.refresh(context)
+        }
+
+        if (design.hasShortsTab || design == YtDesign.KIESEL) {
+            YtRound2Home(fragment, design, viewModel, refreshAll, charts)
+        } else if (design == YtDesign.SIDE) {
+            var sideTab by remember { mutableStateOf(SIDE_TAB_FOR_YOU) }
+            var hearts by remember { mutableStateOf(YtHearts.all()) }
+            YtTheme(YtPalettes.Side) {
+                SideHomeScreen(
+                    palette = YtPalettes.Side,
+                    imageLoader = ImageHelper.loader(),
+                    forYou = charts ?: feed,
+                    people = feed,
+                    tab = sideTab,
+                    hearts = hearts,
+                    isLoading = isLoading,
+                    onSelectTab = { sideTab = it },
+                    onRefresh = refreshAll,
+                    actions = SideFeedActions(
+                        onOpenVideo = { video -> open(context, video) },
+                        onOpenChannel = { video ->
+                            NavigationHelper.navigateChannel(context, video.uploaderUrl)
+                        },
+                        onBookmark = { video ->
+                            AddToPlaylistDialog().apply {
+                                arguments = bundleOf(IntentData.videoInfo to video)
+                            }.show(fragment.childFragmentManager, AddToPlaylistDialog::class.java.name)
+                        },
+                        onShare = { video -> shareVideo(fragment, video) },
+                        onToggleHeart = { video -> hearts = YtHearts.toggle(video.url!!.toID()) },
+                        onPost = { showPostDialog(fragment) },
+                    ),
+                )
+            }
+        } else if (design == YtDesign.AFTER) {
+            val continueWatching = rememberYtVisible(viewModel.continueWatching.observeAsState().value)
+            var afterTab by remember { mutableStateOf(AFTER_TAB_SELECTION) }
+            var reload by remember { mutableIntStateOf(0) }
+            // "Filme" and "Live" load their trending category directly, so the
+            // trending category chosen elsewhere in the app stays untouched.
+            val tabLoaded by produceState<List<StreamItem>?>(null, afterTab, reload) {
+                value = null
+                if (afterTab == AFTER_TAB_SELECTION) return@produceState
+                val region = PreferenceHelper.getTrendingRegion(context)
+                value = withContext(Dispatchers.IO) {
+                    runCatching {
+                        MediaServiceRepository.instance
+                            .getTrending(region, TrendingCategory.valueOf(afterTab))
+                    }.getOrDefault(emptyList())
+                }
+            }
+            val tabVideos = rememberYtVisible(tabLoaded)
+            val selection = afterTab == AFTER_TAB_SELECTION
+            YtTheme(YtPalettes.After) {
+                AfterHomeScreen(
+                    palette = YtPalettes.After,
+                    imageLoader = ImageHelper.loader(),
+                    videos = if (selection) {
+                        feed?.takeIf { videos -> videos.any { !it.isShort } } ?: charts
+                    } else tabVideos,
+                    continueWatching = continueWatching,
+                    tab = afterTab,
+                    isLoading = if (selection) isLoading else tabVideos == null,
+                    onSelectTab = { afterTab = it },
+                    onRefresh = { if (selection) refreshAll() else reload++ },
+                    onOpenVideo = { video -> open(context, video) },
+                    onShowAll = {
+                        fragment.activity?.findViewById<BottomNavigationView>(R.id.bottomNav)
+                            ?.selectedItemId = R.id.libraryFragment
+                    },
+                )
+            }
+        } else if (design == YtDesign.MOVO) {
+            YtTheme(YtPalettes.Movo) {
+                MovoHomeScreen(
+                    palette = YtPalettes.Movo,
+                    imageLoader = ImageHelper.loader(),
+                    discover = charts,
+                    following = feed,
+                    tab = movoTab,
+                    isLoading = isLoading,
+                    onSelectTab = { movoTab = it },
+                    onRefresh = refreshAll,
+                    onOpenVideo = { video -> open(context, video) },
+                    onSave = { video -> saveVideo(fragment, video) },
+                    onShare = { video -> shareVideo(fragment, video) },
+                    onOpenChannel = { video -> NavigationHelper.navigateChannel(context, video.uploaderUrl) },
+                )
+            }
+        } else YtTheme(YtPalettes.YouTube) {
+            YouTubeHomeScreen(
+                palette = YtPalettes.YouTube,
+                imageLoader = ImageHelper.loader(),
+                feed = feed,
+                // "Alle": subscriptions, or the mixed charts; a topic: its chart
+                trending = if (filter == YT_FILTER_ALL) charts else trendingStreams,
+                categories = MediaServiceRepository.instance.getTrendingCategories(),
+                selectedFilter = filter,
+                isLoading = isLoading,
+                onSelectFilter = { key ->
+                    filter = key
+                    if (key != YT_FILTER_ALL) {
+                        PreferenceHelper.putString(PreferenceKeys.TRENDING_CATEGORY, key)
+                        refresh()
+                    }
+                },
+                onRefresh = refreshAll,
+                onOpenVideo = { video -> open(context, video) },
+                onOpenChannel = { video ->
+                    NavigationHelper.navigateChannel(context, video.uploaderUrl)
+                },
+                onShowAllLive = {
+                    fragment.activity?.findViewById<BottomNavigationView>(R.id.bottomNav)
+                        ?.selectedItemId = R.id.trendsFragment
+                },
+                onSave = { video -> saveVideo(fragment, video) },
+                onShare = { video -> shareVideo(fragment, video) },
+            )
+        }
+    }
+
     private fun saveVideo(fragment: Fragment, video: StreamItem) {
         AddToPlaylistDialog().apply {
             arguments = bundleOf(IntentData.videoInfo to video)
         }.show(fragment.childFragmentManager, AddToPlaylistDialog::class.java.name)
     }
 
-    private fun shareVideo(fragment: Fragment, video: StreamItem) {
+    internal fun shareVideo(fragment: Fragment, video: StreamItem) {
         val link = "https://youtu.be/" + (video.url ?: return).toID()
         val intent = Intent(Intent.ACTION_SEND)
             .setType("text/plain")
