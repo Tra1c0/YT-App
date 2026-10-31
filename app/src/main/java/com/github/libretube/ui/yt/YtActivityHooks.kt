@@ -1,0 +1,17 @@
+package com.github.libretube.ui.yt
+
+import android.os.Bundle
+import com.github.libretube.ui.activities.MainActivity
+
+/**
+ * YT: the main activity's lifecycle for the features of round 12. Package D fills it (the intent
+ * chooser on a cold start and after 30 minutes away); empty, it changes nothing.
+ */
+object YtActivityHooks {
+    /** At the end of onCreate, once the screens are set up (not when it finished early). */
+    fun onCreate(activity: MainActivity, savedInstanceState: Bundle?) {}
+
+    fun onStart(activity: MainActivity) {}
+
+    fun onStop(activity: MainActivity) {}
+}

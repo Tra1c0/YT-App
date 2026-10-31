@@ -43,6 +43,11 @@
         android:id="@+id/sponsorBlockSettings"
         android:name="com.github.libretube.ui.preferences.SponsorBlockSettings"
         android:label="@string/sponsorblock" />
+    <!-- YT: gestures and haptics of round 12 -->
+    <fragment
+        android:id="@+id/ytInteractionSettings"
+        android:name="com.github.libretube.ui.preferences.YtInteractionSettings"
+        android:label="@string/yt_interaction" />
 
     <action
         android:id="@+id/action_global_generalSettings"
@@ -103,6 +108,14 @@
     <action
         android:id="@+id/action_global_sponsorBlockSettings"
         app:destination="@id/sponsorBlockSettings"
+        app:enterAnim="@animator/nav_default_enter_anim"
+        app:exitAnim="@animator/nav_default_exit_anim"
+        app:popEnterAnim="@animator/nav_default_pop_enter_anim"
+        app:popExitAnim="@animator/nav_default_pop_exit_anim" />
+
+    <action
+        android:id="@+id/action_global_ytInteractionSettings"
+        app:destination="@id/ytInteractionSettings"
         app:enterAnim="@animator/nav_default_enter_anim"
         app:exitAnim="@animator/nav_default_exit_anim"
         app:popEnterAnim="@animator/nav_default_pop_enter_anim"

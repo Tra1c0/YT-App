@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: "Gesten & Interaktion". The haptics live here; each feature package of round 12 adds its
+     own section from yt_r12_<package>_prefs.xml (YtInteractionSettings). -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:key="yt_interaction_general"
+        app:title="@string/yt_interaction">
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_yt_vibration"
+            android:summary="@string/yt_haptics_summary"
+            app:defaultValue="true"
+            app:key="yt_haptics"
+            app:title="@string/yt_haptics" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

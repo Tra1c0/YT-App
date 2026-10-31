@@ -17,6 +17,13 @@
             app:summary="@string/player_summary"
             app:title="@string/player" />
 
+        <!-- YT: gestures and haptics of round 12 -->
+        <Preference
+            android:icon="@drawable/ic_swipe_gesture"
+            app:key="yt_interaction"
+            app:summary="@string/yt_interaction_summary"
+            app:title="@string/yt_interaction" />
+
         <Preference
             android:icon="@drawable/ic_block"
             app:key="sponsorblock"

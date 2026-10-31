@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: settings of package B (minimizing under the finger), a section of "Gesten & Interaktion". Hidden while
+     it holds no setting. -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:key="yt_r12_b_category"
+        app:title="@string/yt_r12_b_category" />
+
+</PreferenceScreen>
