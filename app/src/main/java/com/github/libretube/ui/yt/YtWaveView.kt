@@ -6,8 +6,6 @@ import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
 import android.graphics.Shader
 import android.util.Log
 import android.view.View
@@ -73,12 +71,6 @@ class YtWaveView(
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
     }
-    private val fadeMask = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
-    }
-
-    /** Composes the drawn wave onto the window: its alpha is the fade. */
-    private val layerPaint = Paint()
     private val path = Path()
     private val player = Path()
 
@@ -150,13 +142,6 @@ class YtWaveView(
         val stops = floatArrayOf(0f, 0.45f, 1f)
         line.shader = LinearGradient(0f, edge, 0f, deepest, colors, stops, Shader.TileMode.CLAMP)
         glow.shader = LinearGradient(0f, edge - 4 * density, 0f, deepest, colors, stops, Shader.TileMode.CLAMP)
-        // the pointed ends fade into what lies around
-        fadeMask.shader = LinearGradient(
-            0f, 0f, w, 0f,
-            intArrayOf(0x00000000, 0xFF000000.toInt(), 0xFF000000.toInt(), 0x00000000),
-            floatArrayOf(0f, 0.03f, 0.97f, 1f),
-            Shader.TileMode.CLAMP,
-        )
     }
 
     private fun stepFade(dt: Float) {
@@ -210,8 +195,8 @@ class YtWaveView(
             }
         }
 
-        layerPaint.alpha = (fade * 255).roundToInt().coerceIn(0, 255)
-        val layer = canvas.saveLayer(0f, 0f, w, h, layerPaint)
+        // no offscreen layer (cheap at 120 frames a second): the fade goes into each stroke
+        val saved = canvas.save()
         if (clipPlayer) {
             player.rewind()
             player.addRoundRect(0f, edge - h - r, w, edge, r, r, Path.Direction.CW)
@@ -220,7 +205,7 @@ class YtWaveView(
         // the glow along the edge, where the ribbon comes out from behind the player
         for ((width, alpha) in GLOW) {
             glow.strokeWidth = width * density
-            glow.alpha = alpha
+            glow.alpha = (alpha * fade).roundToInt()
             path.rewind()
             for (s in 0..SEGMENTS) {
                 val x = w * s / SEGMENTS
@@ -233,7 +218,7 @@ class YtWaveView(
         val behind = density
         for (i in 0 until LINES) {
             val c = i / (LINES - 1f)
-            line.alpha = (230 - 140 * c).roundToInt()
+            line.alpha = ((230 - 140 * c) * fade).roundToInt()
             path.rewind()
             for (s in 0..SEGMENTS) {
                 val u = s / SEGMENTS.toFloat()
@@ -242,8 +227,7 @@ class YtWaveView(
             }
             canvas.drawPath(path, line)
         }
-        canvas.drawRect(0f, 0f, w, h, fadeMask)
-        canvas.restoreToCount(layer)
+        canvas.restoreToCount(saved)
 
         // paused and settled: no need to draw the same picture again
         resting = !playing && shown.max() < 0.005f && fade == fadeTarget && move == null

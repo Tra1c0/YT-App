@@ -326,9 +326,12 @@ for design in $DESIGNS; do
       off=$(( 24 * ${dp:-420} / 160 ))
       ax=$(( (al + ar) / 2 )); ay=$(( at + vh / 2 ))
       timeout 10 adb shell input tap "$ax" "$ay" || true
+      # the controls hide after 3 s; a slow emulator takes a while to show them, so no
+      # screenshot in between (it would cost that time)
       sleep 1
-      shot "$design-float-5-controls"
       timeout 10 adb shell input tap "$((al + off))" "$((at + off))" || true
+      sleep 1
+      shot "$design-float-5-after-open"
       sleep 5
       shot "$design-float-6-back-in-app"
       if [ -n "$(frame_of "YT player")" ]; then echo "::error::$design: the floating player stayed after opening the app"; float_ok=no; fi

@@ -100,6 +100,9 @@ object YtFloatingPlayer {
 
     val isShowing: Boolean get() = shown != null
 
+    /** Floating, and not on its way back into the app. */
+    val isFloating: Boolean get() = shown?.closing == false
+
     /** The wave is switched on and YT may show over other apps: float in YT's own window. */
     fun wanted(context: Context): Boolean =
         YtPipVisualizer.enabled() && Settings.canDrawOverlays(context)
@@ -109,7 +112,8 @@ object YtFloatingPlayer {
      * False when the window could not be added; then the caller uses picture-in-picture.
      */
     fun show(activity: Activity, controller: MediaController, from: PlayerView, offline: Boolean): Boolean {
-        if (shown != null) return true
+        // a window still handing the video back (the app was left again at once): finish that first
+        shown?.let { if (it.closing) it.close(pause = false) else return true }
         if (!wanted(activity)) return false
         val floating = runCatching { Floating(activity, controller, from, offline) }
             .onFailure { Log.w(TAG, "show: not built", it) }
@@ -121,10 +125,10 @@ object YtFloatingPlayer {
 
     /**
      * Back in the app: the video returns to [to] as soon as its surface is ready, then the window
-     * goes. Nothing happens when nothing floats.
+     * goes and [done] runs. Nothing happens when nothing floats.
      */
-    fun returnTo(to: PlayerView) {
-        shown?.returnTo(to)
+    fun returnTo(to: PlayerView, done: () -> Unit = {}) {
+        shown?.returnTo(to, done)
     }
 
     /** Closes the window; [pause] stops the video too (the ✕), else it plays on in the app. */
@@ -221,6 +225,8 @@ object YtFloatingPlayer {
             override fun run() {
                 // the media service stopped (e.g. from its notification): nothing left to show
                 if (!controller.isConnected) return close(pause = false)
+                // the permission was taken back: Android hides the window, so the video stops too
+                if (!Settings.canDrawOverlays(app)) return close(pause = true)
                 handler.postDelayed(this, CHECK_MS)
             }
         }
@@ -459,12 +465,13 @@ object YtFloatingPlayer {
             runCatching { app.startActivity(intent) }.onFailure { Log.w(TAG, "expand: not opened", it) }
         }
 
-        fun returnTo(to: PlayerView) {
+        fun returnTo(to: PlayerView, done: () -> Unit) {
             if (closing) return
             page = WeakReference(to)
             if (!moved) {
                 // the video never left the page: just go
                 close(pause = false)
+                done()
                 return
             }
             closing = true
@@ -475,7 +482,12 @@ object YtFloatingPlayer {
                 moved = false
                 Log.i(TAG, "surface→page")
                 // a frame or two for the page's picture, then the window goes
-                root.postOnAnimation { root.postOnAnimation { remove() } }
+                root.postOnAnimation {
+                    root.postOnAnimation {
+                        remove()
+                        done()
+                    }
+                }
             }
         }
 

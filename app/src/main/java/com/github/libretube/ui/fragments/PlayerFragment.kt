@@ -87,6 +87,7 @@ import com.github.libretube.services.AbstractPlayerService
 import com.github.libretube.services.OfflinePlayerService
 import com.github.libretube.services.OnlinePlayerService
 import com.github.libretube.ui.activities.AbstractPlayerHostActivity
+import com.github.libretube.ui.activities.MainActivity
 import com.github.libretube.ui.activities.NoInternetActivity
 import com.github.libretube.ui.adapters.VideoCardsAdapter
 import com.github.libretube.ui.base.BaseActivity
@@ -982,8 +983,15 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
         // re-enable and load video stream
         setVideoTrackTypeDisabled(false)
 
-        // YT: back from YT's own floating window: the video returns to this page
-        _binding?.let { com.github.libretube.ui.yt.YtFloatingPlayer.returnTo(it.player) }
+        // YT: back from YT's own floating window: the video returns to this page; a turn of
+        // the screen that came meanwhile is applied once it is back
+        _binding?.let {
+            com.github.libretube.ui.yt.YtFloatingPlayer.returnTo(it.player) {
+                if (_binding != null && isResumed) restartActivityIfNeeded()
+            }
+        }
+        // YT: the sound wave may have been switched on or off meanwhile (auto-enter PiP follows)
+        runCatching { PictureInPictureCompat.setPictureInPictureParams(requireActivity(), pipParams) }
     }
 
     private fun setAutoPlayCountdownEnabled(enabled: Boolean) {
@@ -1480,11 +1488,19 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
         }
     }
 
-    /** YT: floats the video in YT's own window (sound wave on); false when it does not. */
-    private fun floatOnOwn(): Boolean {
+    /**
+     * YT: whether leaving the app floats the video in YT's own window (sound wave on, overlay
+     * allowed). Only from the main screen: it hands Home to this page and can reopen it; the
+     * offline screen keeps Android's picture-in-picture.
+     */
+    private fun floatsOnOwn(): Boolean {
         val context = context ?: return false
-        if (_binding == null || !::playerController.isInitialized) return false
-        if (!com.github.libretube.ui.yt.YtFloatingPlayer.wanted(context)) return false
+        return activity is MainActivity && com.github.libretube.ui.yt.YtFloatingPlayer.wanted(context)
+    }
+
+    /** YT: floats the video in YT's own window; false when it does not (then PiP as before). */
+    private fun floatOnOwn(): Boolean {
+        if (_binding == null || !::playerController.isInitialized || !floatsOnOwn()) return false
         return com.github.libretube.ui.yt.YtFloatingPlayer.show(requireActivity(), playerController, binding.player, isOffline)
     }
 
@@ -1500,7 +1516,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
                     )
                 )
                 // YT: with the sound wave on, YT floats in its own window instead (onUserLeaveHint)
-                .setAutoEnterEnabled(isPlaying && !com.github.libretube.ui.yt.YtFloatingPlayer.wanted(requireContext()))
+                .setAutoEnterEnabled(isPlaying && !floatsOnOwn())
                 .apply {
                     if (isPlaying) {
                         setAspectRatio(playerController.videoSize)
@@ -1552,7 +1568,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback 
             // If in PiP mode, orientation is given as landscape.
             PictureInPictureCompat.isInPictureInPictureMode(requireActivity()) ||
             // YT: the page is behind YT's own floating window
-            com.github.libretube.ui.yt.YtFloatingPlayer.isShowing
+            com.github.libretube.ui.yt.YtFloatingPlayer.isFloating
         ) {
             return
         }
