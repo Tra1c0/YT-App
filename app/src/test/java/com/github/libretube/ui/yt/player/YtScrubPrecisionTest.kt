@@ -137,12 +137,25 @@ class YtScrubPrecisionTest {
         assertEquals(100_000.0, e.positionMs, 0.001)
         assertNull(e.seekTarget())
         assertEquals(-1, e.move(10f, 0f).magnet)
-        assertEquals(113_000L, e.seekTarget())
-        // and back: the magnet holds it exactly at the start
+        // out of the hold it goes on from the start, without jumping by the magnet's radius
+        assertEquals(107_000L, e.seekTarget())
+        // and back: the magnet pulls it in and holds it exactly at the start
         assertEquals(1, e.move(-12f, 0f).magnet)
         assertEquals(100_000.0, e.positionMs, 0.001)
         assertNull(e.seekTarget())
         assertEquals(100_000L, e.liveTarget())
+    }
+
+    @Test
+    fun theMagnetLetsGoWithoutAJump() {
+        val e = started(startMs = 100_000, originMs = 100_000)
+        e.move(4f, 0f)
+        assertEquals(100_000.0, e.positionMs, 0.001)
+        e.move(4f, 0f)
+        // never more than the finger's own step (4 px = 4 s here) away from where it was
+        assertEquals(102_000.0, e.positionMs, 0.001)
+        e.move(4f, 0f)
+        assertEquals(106_000.0, e.positionMs, 0.001)
     }
 
     @Test
@@ -151,9 +164,12 @@ class YtScrubPrecisionTest {
         assertTrue(e.atOrigin)
         e.move(0f, 150f)
         assertTrue(e.atOrigin)
-        // finer now: the position goes on from the start itself
+        // finer now: the position goes on from the start itself, past the (finer) magnet
         e.move(100f, 150f)
-        assertEquals(112_500.0, e.positionMs, 0.001)
+        assertEquals(111_750.0, e.positionMs, 0.001)
+        // and from there by the deltas, without a jump
+        e.move(8f, 150f)
+        assertEquals(112_750.0, e.positionMs, 0.001)
     }
 
     @Test

@@ -384,7 +384,8 @@ class CustomExoPlayerView(
 
         // YT: once per controller (initialize runs again when the page reconnects)
         if (listenedPlayer !== player) {
-            listenedPlayer?.removeListener(playbackListener)
+            // the old controller may be released already
+            runCatching { listenedPlayer?.removeListener(playbackListener) }
             player.addListener(playbackListener)
             listenedPlayer = player
         }

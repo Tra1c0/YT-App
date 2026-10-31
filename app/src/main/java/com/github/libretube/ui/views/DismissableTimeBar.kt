@@ -73,6 +73,9 @@ open class DismissableTimeBar(
     private var lensDy = 0f
     private var withHours = false
 
+    // the lens says "Start" only once the scrub came back there, not while it leaves it
+    private var leftOrigin = false
+
     // as PlayerControlView sets them
     private var barDurationMs: Long = C.TIME_UNSET
     private var barPositionMs: Long = 0L
@@ -221,6 +224,7 @@ open class DismissableTimeBar(
         withHours = duration >= HOUR_MS
         lastX = initialX
         lastHapticAt = 0L
+        leftOrigin = !engine.atOrigin
 
         // super draws the thumb: a DOWN at the bar's centre starts its scrub (inside its seek bounds)
         toSuper(MotionEvent.ACTION_DOWN, xFor(engine.positionMs), event.eventTime)
@@ -251,6 +255,7 @@ open class DismissableTimeBar(
             reportedMs = shown
             listeners.forEach { it.onScrubMove(this, shown) }
         }
+        if (!engine.atOrigin) leftOrigin = true
         feel(step)
         live.update(engine.level, engine.liveTarget())
         lens?.update(
@@ -261,7 +266,7 @@ open class DismissableTimeBar(
             engine.pxPerMs,
             engine.frameMs,
             engine.frameOffset,
-            engine.atOrigin,
+            engine.atOrigin && leftOrigin,
             engine.cancelling,
             withHours,
         )

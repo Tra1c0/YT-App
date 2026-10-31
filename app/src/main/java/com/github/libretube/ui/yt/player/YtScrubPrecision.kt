@@ -96,6 +96,7 @@ class YtScrubPrecision(
     private var frameBase = 0L
     private var frameRestPx = 0f
     private var atLimit = false
+    private var magnetArmed = true
     private var boundariesMs = LongArray(0)
 
     /** The position the bar shows, in ms (the start while cancelling or at it). */
@@ -140,6 +141,7 @@ class YtScrubPrecision(
         level = YtScrubLevel.FULL
         cancelling = false
         atLimit = false
+        magnetArmed = true
         frameRestPx = 0f
         // the scrub may begin above the bar already (an upward first move)
         val first = levelFor(heightPx, YtScrubLevel.FULL)
@@ -191,6 +193,15 @@ class YtScrubPrecision(
             val wanted = rawMs + dxPx / widthPx * durationMs * level.factor
             rawMs = wanted.coerceIn(0.0, durationMs.toDouble())
             limit = wanted != rawMs
+            // out of the magnet's hold: on from the start itself, without jumping by its radius;
+            // it pulls again only once the position was really away from the start
+            val radius = magnetRadiusMs()
+            val off = rawMs - originMs
+            if (wasOrigin && abs(off) > radius) {
+                rawMs = originMs + if (off > 0) off - radius else off + radius
+                magnetArmed = false
+            }
+            if (!magnetArmed && abs(rawMs - originMs) > radius) magnetArmed = true
         }
         val limitHit = limit && !atLimit
         atLimit = limit
@@ -243,10 +254,11 @@ class YtScrubPrecision(
 
     private fun maxFrame(): Long = floor(durationMs / frameMs).toLong().coerceAtLeast(0L)
 
+    private fun magnetRadiusMs(): Double = magnetPx / widthPx * durationMs * level.factor
+
     private fun inMagnet(): Boolean {
         if (level == YtScrubLevel.FRAME) return frameIndex == (originMs / frameMs).roundToLong()
-        val radiusMs = magnetPx / widthPx * durationMs * level.factor
-        return abs(rawMs - originMs) <= radiusMs
+        return magnetArmed && abs(rawMs - originMs) <= magnetRadiusMs()
     }
 
     private fun crossed(fromMs: Double, toMs: Double): Boolean {
