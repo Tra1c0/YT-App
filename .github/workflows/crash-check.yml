@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       build:
-        description: "Build number of the release to test (e.g. 33)"
+        description: "Release to test: a build number (33 = build-33) or a full tag (check-12-abc1234)"
         required: true
       design:
         description: "Designs to start: a key (youtube, movo, after, side, clay, editorial, glass, pop, shapes, frost, kiesel, standard), a comma list, or all"
@@ -47,6 +47,23 @@ on:
         description: "Install as from a downloaded APK file and walk through the permission to show over other apps (Android 15's lock on it), with screenshots"
         type: boolean
         default: false
+      # round 12; GitHub allows 25 inputs here (since December 2025, before 10)
+      gestures:
+        description: "Gesture checks per design: runs scripts/gestures/a.sh … e.sh with the animations on, screenshots published"
+        type: boolean
+        default: false
+      test_video:
+        description: "Put the local test video (scripts/fixtures/yt-test.mp4, 3 min, frame number burned in) on the device and open it per design; the screens then show it instead of the online video"
+        type: boolean
+        default: false
+      video:
+        description: "Online video id for the player screens (empty = jNQXAC9IVRw)"
+        required: false
+        default: ""
+      wait:
+        description: "Seconds to wait after each start (empty = 20)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -65,13 +82,24 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # a number is a build of main (build-<n>), anything else a full tag (check-<n>-<commit> of a branch)
       - name: Download the build
         env:
           GH_TOKEN: ${{ github.token }}
+          YT_BUILD: ${{ inputs.build }}
         run: |
+          case "$YT_BUILD" in
+            *[!0-9]*) tag="$YT_BUILD" ;;
+            "") echo "::error::No build given"; exit 1 ;;
+            *) tag="build-$YT_BUILD" ;;
+          esac
+          if ! printf '%s' "$tag" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+            echo "::error::\"$YT_BUILD\" is neither a build number nor a release tag"; exit 1
+          fi
+          echo "YT_TAG=$tag" >> "$GITHUB_ENV"
           mkdir -p apk
-          gh release download "build-${{ inputs.build }}" --pattern '*.apk' --dir apk --repo "$GITHUB_REPOSITORY"
-          gh release download "build-${{ inputs.build }}" --pattern 'mapping.txt' --dir apk --repo "$GITHUB_REPOSITORY" || true
+          gh release download "$tag" --pattern '*.apk' --dir apk --repo "$GITHUB_REPOSITORY"
+          gh release download "$tag" --pattern 'mapping.txt' --dir apk --repo "$GITHUB_REPOSITORY" || true
           ls -la apk
 
       - name: Set up JDK 17
@@ -92,6 +120,10 @@ jobs:
           YT_PIP: ${{ inputs.pip && 'yes' || 'no' }}
           YT_LOCK: ${{ inputs.lock && 'yes' || 'no' }}
           YT_FLOAT: ${{ inputs.float && 'yes' || 'no' }}
+          YT_GESTURES: ${{ inputs.gestures && 'yes' || 'no' }}
+          YT_TEST_VIDEO: ${{ inputs.test_video && 'yes' || 'no' }}
+          YT_VIDEO: ${{ inputs.video }}
+          YT_WAIT: ${{ inputs.wait }}
         with:
           api-level: ${{ inputs.api }}
           arch: x86_64
@@ -106,7 +138,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: logcat-build-${{ inputs.build }}-${{ inputs.design }}-${{ inputs.night && 'night' || 'day' }}
+          name: logcat-${{ env.YT_TAG }}-${{ inputs.design }}-${{ inputs.night && 'night' || 'day' }}
           path: |
             logcat-*.txt
             crash-*.txt
@@ -114,7 +146,7 @@ jobs:
 
       # the screenshots as release files: they can be fetched like the APKs; older sets go
       - name: Publish the screenshots
-        if: always() && (inputs.screens || inputs.pip || inputs.lock || inputs.float)
+        if: always() && (inputs.screens || inputs.pip || inputs.lock || inputs.float || inputs.gestures || inputs.test_video)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -125,5 +157,5 @@ jobs:
             gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
           done
           gh release create "screens-${{ github.run_number }}" screens/*.png --repo "$GITHUB_REPOSITORY" \
-            --prerelease --title "Screenshots ${{ github.run_number }} (build ${{ inputs.build }})" \
-            --notes "Emulator screenshots of build ${{ inputs.build }}: designs ${{ inputs.design }}, dark mode ${{ inputs.night }}."
+            --prerelease --title "Screenshots ${{ github.run_number }} ($YT_TAG)" \
+            --notes "Emulator screenshots of $YT_TAG: designs ${{ inputs.design }}, dark mode ${{ inputs.night }}."
