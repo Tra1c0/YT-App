@@ -286,10 +286,9 @@ object YtMiniSpecs {
         joint = YtMiniJoint.STACK, start = 14, height = 60, radius = 0,
         thumbWidth = 44, thumbHeight = 44, thumbStart = 10, thumbRadius = 0, peekGrowth = 2.0f,
     )
-    val GLASS = YtMiniSpec(
-        joint = YtMiniJoint.STACK, start = 13, end = 11, height = 62, radius = 29,
-        thumbWidth = 88, thumbHeight = 50, thumbStart = 7, thumbRadius = 16, peekGrowth = 2.3f,
-    )
+    // the Mint reference: a wide strip in one glass slab with the bar; its own layout
+    // (YtGlassLayout), these are the measures the shared code reads
+    val GLASS = YtGlassLayout.spec
     val POP = YtMiniSpec(
         joint = YtMiniJoint.TUCK, start = 18, navTop = 12, overlap = 4, height = 60, radius = 30,
         thumbWidth = 84, thumbHeight = 48, thumbStart = 6, thumbRadius = 24, peekGrowth = 1.6f,

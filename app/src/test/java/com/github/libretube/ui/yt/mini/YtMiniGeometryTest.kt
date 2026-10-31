@@ -8,6 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class YtMiniGeometryTest {
+    // Glas lays out its own strip (YtGlassLayoutTest)
     private val designs = mapOf(
         "youtube" to YtMiniSpecs.YOUTUBE,
         "movo" to YtMiniSpecs.MOVO,
@@ -15,7 +16,6 @@ class YtMiniGeometryTest {
         "side" to YtMiniSpecs.SIDE,
         "clay" to YtMiniSpecs.CLAY,
         "editorial" to YtMiniSpecs.EDITORIAL,
-        "glass" to YtMiniSpecs.GLASS,
         "pop" to YtMiniSpecs.POP,
         "shapes" to YtMiniSpecs.SHAPES,
         "frost" to YtMiniSpecs.frost(4),
@@ -134,14 +134,14 @@ class YtMiniGeometryTest {
     @Test
     fun theFingerFindsThePartsOfThePreview() {
         val d = 3f
-        val p = YtMiniLayout.peek(YtMiniSpecs.GLASS, 369 * d, d, true)
+        val p = YtMiniLayout.peek(YtMiniSpecs.YOUTUBE, 369 * d, d, true)
         assertEquals(YtMiniTarget.PILL, YtMiniLayout.target(p, p.pill.centerX, p.pill.centerY, 0f))
         assertEquals(YtMiniTarget.NEXT, YtMiniLayout.target(p, p.next!!.centerX, p.next!!.centerY, 0f))
         assertEquals(YtMiniTarget.NONE, YtMiniLayout.target(p, p.player.centerX, p.player.centerY, 0f))
         // a little grace around the targets
         assertEquals(YtMiniTarget.PILL, YtMiniLayout.target(p, p.pill.right + 4 * d, p.pill.centerY, 6 * d))
         assertEquals(YtMiniTarget.NONE, YtMiniLayout.target(p, p.pill.right + 4 * d, p.pill.centerY, 0f))
-        val none = YtMiniLayout.peek(YtMiniSpecs.GLASS, 369 * d, d, false)
+        val none = YtMiniLayout.peek(YtMiniSpecs.YOUTUBE, 369 * d, d, false)
         assertEquals(YtMiniTarget.NONE, YtMiniLayout.target(none, p.next!!.centerX, p.next!!.centerY, 0f))
     }
 
