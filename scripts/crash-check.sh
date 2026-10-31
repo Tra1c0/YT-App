@@ -180,6 +180,10 @@ for design in $DESIGNS; do
   fi
   # a fresh start: no settings, no saved crash, as after an installation
   timeout 60 adb shell pm clear "$PKG" >/dev/null || echo "pm clear timed out"
+  # pm clear also forgets the app's own language; set it again
+  if [ -n "${YT_LOCALE:-}" ]; then
+    timeout 20 adb shell cmd locale set-app-locales "$PKG" --user current --locales "$YT_LOCALE" >/dev/null 2>&1 || true
+  fi
   # pm clear ends the old process on its own time; a start right after it can be swept away
   sleep 3
   timeout 20 adb logcat -c || true
