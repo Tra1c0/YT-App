@@ -11,6 +11,10 @@ import com.github.libretube.extensions.toID
 import com.github.libretube.helpers.PlayerHelper
 import com.github.libretube.util.PlayingQueue.queueMode
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import java.util.Collections
 
 object PlayingQueue {
@@ -19,6 +23,16 @@ object PlayingQueue {
     private var currentStream: StreamItem? = null
 
     private val queueJobs = mutableListOf<Job>()
+
+    private val changes = MutableStateFlow(0)
+
+    /**
+     * YT: counts the changes of the queue (and of its current video), so a screen can follow
+     * it, e.g. the next video shown by the mini player.
+     */
+    val revision: StateFlow<Int> = changes.asStateFlow()
+
+    private fun changed() = changes.update { it + 1 }
 
     /**
      * Current use case of the queue. Do NOT add any offline videos while the [queueMode] is online
@@ -44,6 +58,7 @@ object PlayingQueue {
         clearJobs()
         queue.clear()
         currentStream = null
+        changed()
     }
 
     /**
@@ -69,12 +84,14 @@ object PlayingQueue {
             queue.remove(stream)
             queue.add(stream)
         }
+        changed()
     }
 
     fun addAsNext(streamItem: StreamItem) = synchronized(queue) {
         if (currentStream == streamItem) return
         if (queue.contains(streamItem)) queue.remove(streamItem)
         queue.add(currentIndex() + 1, streamItem)
+        changed()
     }
 
     // return the next item, or if repeating enabled and no video left, the first one of the queue
@@ -105,6 +122,7 @@ object PlayingQueue {
         currentStream = streamItem
 
         if (!contains(streamItem)) add(streamItem)
+        changed()
     }
 
     fun isNotEmpty() = queue.isNotEmpty()
@@ -131,16 +149,46 @@ object PlayingQueue {
     fun setStreams(streams: List<StreamItem>) = synchronized(queue) {
         queue.clear()
 
-        queue.addAll(streams)
+        queue.addAll(streams).also { changed() }
     }
 
     fun remove(index: Int) = synchronized(queue) {
         queue.removeAt(index)
+        changed()
         return@synchronized
     }
 
     fun move(from: Int, to: Int) = synchronized(queue) {
-        queue.move(from, to)
+        queue.move(from, to).also { changed() }
+    }
+
+    /**
+     * YT: how many videos follow the current one. Unlike [hasNext] it does not wrap around to
+     * the start under repeat-all; never negative.
+     */
+    fun upcomingCount(): Int = synchronized(queue) {
+        YtQueueEdit.upcoming(queue.size, currentIndex())
+    }
+
+    /**
+     * YT: plays [streamItem] right after the current video, or puts it first into an empty
+     * queue. It is in the queue once (matched by its video id); the current video is never
+     * added again. [addAsNext] stays as it is (it fails on an empty queue).
+     * @return its index in the queue, or -1 if it was not added
+     */
+    fun ytInsertNext(streamItem: StreamItem): Int = synchronized(queue) {
+        YtQueueEdit.insertNext(queue, streamItem, currentStream?.url?.toID()) { it.url?.toID() }
+            .also { if (it >= 0) changed() }
+    }
+
+    /**
+     * YT: puts [streamItem] at the end of the queue (also of an empty one). It is in the queue
+     * once (matched by its video id); the current video is never added again.
+     * @return its index in the queue, or -1 if it was not added
+     */
+    fun ytAppend(streamItem: StreamItem): Int = synchronized(queue) {
+        YtQueueEdit.append(queue, streamItem, currentStream?.url?.toID()) { it.url?.toID() }
+            .also { if (it >= 0) changed() }
     }
 
     /**
@@ -171,6 +219,7 @@ object PlayingQueue {
             // re-add the stream to the end of the queue
             updateCurrent(currentStream)
         }
+        changed()
     }
 
     private suspend fun fetchMoreFromPlaylist(
