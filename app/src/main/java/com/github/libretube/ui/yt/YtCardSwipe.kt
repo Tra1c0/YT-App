@@ -264,9 +264,11 @@ fun Modifier.ytCardSwipe(
         }
     }
 
-    fun arm(side: Int) {
+    fun arm(side: Int, feel: Boolean = true) {
         if (side == state.armed) return
-        if (side != 0) haptics.play(look.arm) else haptics.threshold(false)
+        if (feel) {
+            if (side != 0) haptics.play(look.arm) else haptics.threshold(false)
+        }
         state.armed = side
         scope.launch {
             val target = if (side != 0) 1f else 0f
@@ -336,7 +338,8 @@ fun Modifier.ytCardSwipe(
             }
             val velocity = if (lifted) tracker.calculateVelocity().x else 0f
             val way = if (lifted) YtSwipePhysics.decide(state.offset.value, velocity, threshold) else 0
-            arm(0)
+            // letting go: the commit (or nothing) is felt, not the threshold left behind
+            arm(0, feel = false)
             state.detents = 0
             when (way) {
                 -1 -> hide(velocity, animate = true)
