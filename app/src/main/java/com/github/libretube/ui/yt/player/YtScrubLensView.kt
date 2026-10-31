@@ -66,10 +66,11 @@ class YtScrubLensView @JvmOverloads constructor(
     private val frameWord = context.getString(R.string.yt_r12_c_scrub_frame)
     private val originWord = context.getString(R.string.yt_r12_c_scrub_origin)
     private val cancelText = context.getString(R.string.yt_r12_c_scrub_cancel)
+    // the marks of the levels: on the ladder, and the lens's lead ([YtScrubLevel] order from ½ on)
     private val ladderLabels = arrayOf(
-        YtScrubLevel.HALF.glyph,
-        YtScrubLevel.QUARTER.glyph,
-        YtScrubLevel.EIGHTH.glyph,
+        context.getString(R.string.yt_r12_c_level_half),
+        context.getString(R.string.yt_r12_c_level_quarter),
+        context.getString(R.string.yt_r12_c_level_eighth),
         frameWord,
     )
     private val ladderLabelWidths = FloatArray(ladderLabels.size)
@@ -186,7 +187,7 @@ class YtScrubLensView @JvmOverloads constructor(
             }
 
             level != YtScrubLevel.FULL -> {
-                lead = level.glyph
+                lead = ladderLabels[level.ordinal - 1]
                 val decimals = YtScrubPrecision.decimalsFor(1.0 / pxPerMs)
                 rest = " · " + YtScrubPrecision.formatTime(positionMs, decimals, withHours)
             }

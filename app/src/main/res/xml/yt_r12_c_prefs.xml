@@ -19,7 +19,7 @@
             android:icon="@drawable/ic_video"
             android:summary="@string/yt_r12_c_live_picture_summary"
             app:defaultValue="true"
-            app:dependency="yt_scrub_magnifier"
+            android:dependency="yt_scrub_magnifier"
             app:key="yt_scrub_live_picture"
             app:title="@string/yt_r12_c_live_picture_title" />
 

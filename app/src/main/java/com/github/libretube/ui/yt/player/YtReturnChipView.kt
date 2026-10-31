@@ -156,6 +156,9 @@ class YtReturnChipView @JvmOverloads constructor(
         return super.onTouchEvent(event)
     }
 
+    // the click itself comes from View.onTouchEvent (and from accessibility through here)
+    override fun performClick(): Boolean = super.performClick()
+
     override fun getAccessibilityClassName(): CharSequence = Button::class.java.name
 
     override fun onDraw(canvas: Canvas) {

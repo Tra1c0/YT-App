@@ -2,6 +2,9 @@
 <!-- YT: round 12, package C (the player gestures). Same keys in the same order in values and values-de. -->
 <resources>
     <string name="yt_r12_c_category">Player-Gesten</string>
+    <string name="yt_r12_c_level_half">½×</string>
+    <string name="yt_r12_c_level_quarter">¼×</string>
+    <string name="yt_r12_c_level_eighth">⅛×</string>
     <string name="yt_r12_c_scrub_frame">Bild</string>
     <string name="yt_r12_c_scrub_origin">Start</string>
     <string name="yt_r12_c_scrub_cancel">Loslassen zum Abbrechen</string>

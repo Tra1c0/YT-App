@@ -16,14 +16,12 @@ enum class YtScrubLevel(
     val factor: Double,
     /** The name in the log of the emulator checks. */
     val logName: String,
-    /** The mark in the lens and on the ladder ([FRAME] has a word instead, from the strings). */
-    val glyph: String,
 ) {
-    FULL(1.0, "1/1", "1×"),
-    HALF(0.5, "1/2", "½×"),
-    QUARTER(0.25, "1/4", "¼×"),
-    EIGHTH(0.125, "1/8", "⅛×"),
-    FRAME(0.0, "frame", "");
+    FULL(1.0, "1/1"),
+    HALF(0.5, "1/2"),
+    QUARTER(0.25, "1/4"),
+    EIGHTH(0.125, "1/8"),
+    FRAME(0.0, "frame");
 
     /**
      * From here on the video itself shows the position (live seeks), not the storyboard: the
