@@ -13,7 +13,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -45,9 +44,11 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.lifecycleScope
+import com.github.libretube.ui.yt.mini.ytDockedBar
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
@@ -374,15 +375,9 @@ private fun FloatingNav(
     onSelect: (Int) -> Unit,
 ) {
     val style = remember(design) { style(design, palette) }
-    // a mini player set on the bar: the bar squares its top corners, both are one surface
-    val top by animateDpAsState(
-        if (YtDock.docked && YtMiniPlayer.stacks(design)) 0.dp else style.radius,
-        ytStateSpec(),
-        label = "navDock",
-    )
-    // a spring may swing past zero; a corner below zero ends the app
-    val topCorner = top.coerceIn(0.dp, style.radius)
-    val shape = RoundedCornerShape(topStart = topCorner, topEnd = topCorner, bottomEnd = style.radius, bottomStart = style.radius)
+    // a mini player set on the bar: the bar squares its top corners as it docks, both are one
+    // surface
+    val stacks = remember(design) { YtMiniPlayer.stacks(design) }
     Box(
         Modifier
             .fillMaxWidth()
@@ -393,9 +388,7 @@ private fun FloatingNav(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(style.height)
-                .clip(shape)
-                .background(style.container)
-                .border(1.dp, style.border, shape),
+                .ytDockedBar(style.radius, stacks, SolidColor(style.container), style.border),
         ) {
             items.forEach { item ->
                 NavTab(

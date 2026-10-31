@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -59,6 +60,7 @@ import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.libretube.R
+import com.github.libretube.ui.yt.mini.ytDockedBar
 import kotlinx.coroutines.launch
 import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.LaunchedEffect
@@ -275,9 +277,7 @@ fun EditorialNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
 
 @Composable
 fun GlassNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
-    val top by animateDpAsState(if (YtDock.docked) 0.dp else 30.dp, ytStateSpec(), label = "glassDock")
-    // a spring may swing past zero; a corner below zero ends the app
-    val shape = RoundedCornerShape(topStart = top.coerceIn(0.dp, 30.dp), topEnd = top.coerceIn(0.dp, 30.dp), bottomEnd = 30.dp, bottomStart = 30.dp)
+    // a mini player set on the bar: the bar squares its top corners as it docks
     Box(
         Modifier
             .fillMaxWidth()
@@ -289,10 +289,14 @@ fun GlassNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
             modifier = Modifier
                 .fillMaxWidth()
                 .height(59.dp)
-                .shadow(8.dp, shape, clip = false, ambientColor = Color(0x405C8C85), spotColor = Color(0x405C8C85))
-                .clip(shape)
-                .background(Brush.verticalGradient(listOf(Color(0x8CFFFFFF), Color(0x52FFFFFF))))
-                .border(1.dp, Color(0xCCFFFFFF), shape)
+                .ytDockedBar(
+                    radius = 30.dp,
+                    stacks = true,
+                    fill = Brush.verticalGradient(listOf(Color(0x8CFFFFFF), Color(0x52FFFFFF))),
+                    border = Color(0xCCFFFFFF),
+                    shadow = 8.dp,
+                    shadowColor = Color(0x405C8C85),
+                )
                 .padding(horizontal = 6.dp),
         ) {
             items.forEach { item ->
@@ -577,8 +581,7 @@ fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
 
 @Composable
 fun FrostNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
-    val top by animateDpAsState(if (YtDock.docked) 0.dp else 32.dp, ytStateSpec(), label = "frostDock")
-    val bar = RoundedCornerShape(topStart = top.coerceIn(0.dp, 32.dp), topEnd = top.coerceIn(0.dp, 32.dp), bottomEnd = 32.dp, bottomStart = 32.dp)
+    // a mini player set on the bar: the bar squares its top corners as it docks
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -586,9 +589,7 @@ fun FrostNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
             modifier = Modifier
                 .padding(top = 6.dp, bottom = 12.dp)
                 .height(60.dp)
-                .shadow(12.dp, bar, clip = false)
-                .clip(bar)
-                .background(Color(0xF21F2A26))
+                .ytDockedBar(radius = 32.dp, stacks = true, fill = SolidColor(Color(0xF21F2A26)), shadow = 12.dp)
                 .padding(horizontal = 6.dp),
         ) {
             items.forEach { item ->

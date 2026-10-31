@@ -1,8 +1,8 @@
 package com.github.libretube.ui.yt
 
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.runtime.getValue
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,6 +55,7 @@ import androidx.compose.ui.util.lerp
 import com.github.libretube.helpers.YtDesign
 import com.github.libretube.ui.yt.liquid.DampedDragAnimation
 import com.github.libretube.ui.yt.liquid.InteractiveHighlight
+import com.github.libretube.ui.yt.mini.ytDockTop
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
@@ -70,6 +71,7 @@ import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
 import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.math.roundToInt
 
 /*
  * YT: the liquid glass navigation of Glas and Frost. The bar is real glass over the screen
@@ -278,10 +280,13 @@ fun LiquidNav(
         }
         val glassOk = isRenderEffectSupported()
         val barShape = RoundedCornerShape(50)
-        // a mini player set on the bar: the glass squares its top corners, both are one pane
-        val dockTop by animateDpAsState(if (YtDock.docked) 0.dp else look.barHeight / 2, ytStateSpec(), label = "liquidDock")
-        // a spring may swing past zero; a corner below zero ends the app
-        val top = dockTop.coerceIn(0.dp, look.barHeight / 2)
+        // a mini player set on the bar: the glass squares its top corners as it docks, both are
+        // one pane. The backdrop takes its outline from composition, so the corner composes
+        // again, but only when it changes by a whole pixel
+        val roundPx = with(density) { (look.barHeight / 2).toPx() }
+        val stacks = remember(design) { YtMiniPlayer.stacks(design) }
+        val dockTopPx by remember(roundPx, stacks) { derivedStateOf { ytDockTop(roundPx, stacks).roundToInt() } }
+        val top = with(density) { dockTopPx.toDp() }.coerceIn(0.dp, look.barHeight / 2)
         val surfaceShape = RoundedCornerShape(
             topStart = top,
             topEnd = top,
