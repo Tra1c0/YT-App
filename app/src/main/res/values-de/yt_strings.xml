@@ -244,7 +244,7 @@
     <string name="yt_mini_now">Jetzt</string>
     <string name="yt_pip_visualizer">Klangwelle unter Bild-im-Bild</string>
     <string name="yt_pip_visualizer_summary">Eine Lichtwelle unter dem schwebenden Fenster, die sich mit dem Ton bewegt. Braucht die Erlaubnis, über anderen Apps einzublenden; die Welle nimmt keine Berührungen an und erscheint nur, solange das Video schwebt.</string>
-    <string name="yt_pip_visualizer_missing">Klangwelle aus: Die Erlaubnis „Über anderen Apps einblenden“ fehlt. Schalte die Welle in den Player-Einstellungen von YT wieder ein.</string>
+    <string name="yt_pip_visualizer_missing">Klangwelle aus: Erlaubnis „Über anderen Apps einblenden“ fehlt</string>
     <string name="yt_pip_visualizer_missing_summary">Aus: Die Erlaubnis „Über anderen Apps einblenden“ fehlt noch. Tippen, um sie zu erteilen.</string>
     <string name="yt_pip_visualizer_permission_title">Erlaubnis für die Klangwelle</string>
     <string name="yt_pip_visualizer_steps">Die Welle ist ein eigenes kleines Fenster unter dem Bild-im-Bild und braucht dafür „Über anderen Apps einblenden“.\n\n1. „Zur Erlaubnis“ tippen.\n2. In der Liste YT antippen und den Schalter einschalten.\n3. Zurück zu YT: Der Schalter hier geht dann von selbst an.</string>

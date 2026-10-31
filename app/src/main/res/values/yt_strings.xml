@@ -244,7 +244,7 @@
     <string name="yt_mini_now">Now</string>
     <string name="yt_pip_visualizer">Sound wave below picture-in-picture</string>
     <string name="yt_pip_visualizer_summary">A wave of light below the floating window that moves with the sound. Needs the permission to show over other apps; the wave takes no touches and only shows while the video floats.</string>
-    <string name="yt_pip_visualizer_missing">Sound wave off: the permission “Display over other apps” is missing. Switch the wave on again in YT’s player settings.</string>
+    <string name="yt_pip_visualizer_missing">Sound wave off: “Display over other apps” is not allowed</string>
     <string name="yt_pip_visualizer_missing_summary">Off: the permission “Display over other apps” is still missing. Tap to grant it.</string>
     <string name="yt_pip_visualizer_permission_title">Permission for the sound wave</string>
     <string name="yt_pip_visualizer_steps">The wave is a small window of its own below picture-in-picture and needs “Display over other apps” for it.\n\n1. Tap “To the permission”.\n2. Tap YT in the list and turn the switch on.\n3. Come back to YT: the switch here then turns on by itself.</string>

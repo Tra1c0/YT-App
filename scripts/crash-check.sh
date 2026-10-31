@@ -20,12 +20,22 @@ DESIGNS="${DESIGNS//,/ }"
 echo "APK: $APK, designs: $DESIGNS, night: ${YT_NIGHT:-no}, locale: ${YT_LOCALE:-device}"
 adb wait-for-device
 adb shell input keyevent 82 || true
+SDK=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
+if [ "${YT_LOCK:-no}" = "yes" ] && [ "${SDK:-0}" -lt 35 ]; then
+  echo "::warning::The lock walk needs Android 15 (API 35) or newer; this emulator has API $SDK, so it is skipped"
+  YT_LOCK=no
+fi
 if [ "${YT_LOCK:-no}" = "yes" ]; then
   # as the system's package installer marks an APK opened from the downloads (PACKAGE_SOURCE_DOWNLOADED_FILE)
   adb push "$APK" /data/local/tmp/yt.apk >/dev/null
   adb shell pm install -r --package-source 4 /data/local/tmp/yt.apk
 else
   adb install -r "$APK"
+fi
+# an installation that failed would show as crashes in every design
+if ! timeout 20 adb shell pm path "$PKG" >/dev/null 2>&1; then
+  echo "::error::YT is not installed; nothing to check"
+  exit 2
 fi
 # an overloaded emulator shows "System UI isn't responding" over everything; no use for a check.
 # The setting is read on a configuration change, the user restriction right away.
@@ -145,10 +155,21 @@ if [ "${YT_LOCK:-no}" = "yes" ]; then
   echo "--- back in YT: the switch should be on by itself"
   back_to_yt || mark "YT is not in front"
   sleep 3
+  # the switch sits low in the list; a little further up, so it is on the screen
+  timeout 10 adb shell input swipe 540 1600 540 900 400 || true
+  sleep 2
   shot lock-9-yt-on
-  texts 20
+  texts 80 | grep -A2 -E "^(Klangwelle unter Bild-im-Bild|Sound wave below picture-in-picture)$" || echo "the wave's switch is not on the screen"
   kill "$logpid" 2>/dev/null; wait "$logpid" 2>/dev/null
-  grep -a -E "YtPipWave|EnhancedConfirm|ECM|RestrictedSetting" logcat-lock.txt | cut -c1-240 | head -30 || true
+  grep -a -E "YtPipWave|ENHANCED_CONFIRMATION|SHOW_ECM" logcat-lock.txt | cut -c1-240 | head -30 || true
+  # a crash of YT on the way counts like one in a design
+  awk -v pkg="Process: $PKG," '
+    function flush() { if (keep) print block; block = ""; keep = 0; n = 0 }
+    /FATAL EXCEPTION/ { flush(); block = $0; n = 1; next }
+    n > 0 && n < 160 { block = block "\n" $0; n++; if (index($0, pkg)) keep = 1 }
+    END { flush() }
+  ' logcat-lock.txt | head -400 > crash-lock.txt || true
+  if [ -s crash-lock.txt ]; then head -60 crash-lock.txt; crashed="$crashed lock"; else rm -f crash-lock.txt; fi
   echo "::endgroup::"
 fi
 for design in $DESIGNS; do

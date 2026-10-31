@@ -88,7 +88,12 @@ object YtPipVisualizer {
         if (told || !enabled() || allowed(context)) return
         told = true
         Log.i(TAG, "before pip: permission missing, told")
-        Toast.makeText(context.applicationContext, R.string.yt_pip_visualizer_missing, Toast.LENGTH_LONG).show()
+        tell(context)
+    }
+
+    /** The hint in the language of YT's screens (the activity's), short enough for two lines. */
+    private fun tell(context: Context) {
+        Toast.makeText(context.applicationContext, context.getString(R.string.yt_pip_visualizer_missing), Toast.LENGTH_LONG).show()
     }
 
     /**
@@ -106,7 +111,7 @@ object YtPipVisualizer {
             // or locked by Android): say so once, then look again every second while it floats
             if (!told) {
                 told = true
-                Toast.makeText(app, R.string.yt_pip_visualizer_missing, Toast.LENGTH_LONG).show()
+                tell(activity)
             }
             waiting = Waiting(activity, position, speed)
             handler.removeCallbacks(retry)
