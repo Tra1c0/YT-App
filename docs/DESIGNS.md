@@ -301,9 +301,17 @@ antippen, in der App-Info ⋮ → „Eingeschränkte Einstellungen zulassen“, 
 Emulator (Android 15, installiert wie aus einer heruntergeladenen Datei) nachgestellt und
 durchgespielt.
 
+Die Welle wird auf der CPU in ein eigenes Bild gezeichnet, das die GPU nur noch platziert. Grund:
+Ein Stack-Dump im Emulator zeigte, dass die GPU-Programme für die geflochtenen Linien beim ersten
+Zeichnen gebaut werden, genau wenn das Fenster beim Verlassen der App erscheint; der Render-Thread
+der App war damit Sekunden beschäftigt, und Android wartete beim Anhalten des App-Bildschirms
+darauf (einmal bis zum „App reagiert nicht“). Mit dem CPU-Bild trat das nicht mehr auf.
+
 Grenzen: Ob ein Gerät 120 Hz liefert, entscheiden Display, Energiesparmodus und Temperatur; die
 App kann nur darum bitten. Die Werte der Analyse sind an synthetischem Ton abgestimmt; echte
-Videos können Feinschliff brauchen.
+Videos können Feinschliff brauchen. Beim Übergeben des Videos ins Fenster wartet media3 synchron
+auf die Mediensitzung (bis zu 3 s); im langsamen Emulator war das spürbar, auf einem Handy sollte
+es Millisekunden dauern (nicht gemessen).
 
 ## Liquid Glass (Glas und Frost)
 
