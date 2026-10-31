@@ -15,6 +15,14 @@ d_home() {
   sleep "${YT_WAIT:-20}"
 }
 
+# taps the element with resource-id (test tag) $1; status 1 if it is not on screen
+d_tap() {
+  local at
+  at=$(center_of "$1\$") || return 1
+  # shellcheck disable=SC2086 # "x y"
+  timeout 10 adb shell input tap $at || true
+}
+
 # "x y w" of the first home card on screen: the second if there is one, else the first
 d_card() {
   local b l t r bt
@@ -46,8 +54,9 @@ d_checks() {
   rawshot "$design-d-2-undo"
   expect_log YtHidden 'hide id='
   expect_log YtHaptic 'swipe_hide_'
-  if bounds_of 'yt_undo_pill$' >/dev/null; then
-    tap 'Rückgängig|Undo' && expect_log YtHidden 'unhide id='
+  # the pill's actions are tagged (yt_undo_action, yt_pause_action)
+  if d_tap yt_undo_action; then
+    expect_log YtHidden 'unhide id='
   else
     d_fail "no undo pill after the swipe"
   fi
@@ -57,12 +66,10 @@ d_checks() {
   log_mark
   card=$(d_card) && read -r x y w <<< "$card"
   SHOT_STEPS="8" drag "$x" "$y" $(( x + reach )) "$y" 8 "$design-d-3-queue"
-  sleep 1.5
+  sleep 2
   rawshot "$design-d-4-draft"
   expect_log YtQueue 'draft n=1'
-  if bounds_of 'yt_draft_pill$' >/dev/null; then
-    tap 'Warteschlange verwerfen|Discard queue'
-  else
+  if ! d_tap yt_draft_discard; then
     d_fail "no draft pill after the swipe"
   fi
   sleep 1
@@ -79,7 +86,8 @@ d_checks() {
       sleep 0.3
       rawshot "$design-d-5-token"
       expect_log YtQueue 'append pos=|draft n='
-      tap 'Warteschlange verwerfen|Discard queue' >/dev/null || true
+      sleep 2
+      d_tap yt_draft_discard >/dev/null || true
     else
       d_fail "no home card under the mini player"
     fi

@@ -261,10 +261,10 @@ private fun UndoPill(look: PillLook, entry: YtUndoEntry) {
                 )
                 Dot(look)
             }
-            PillAction(look, stringResource(R.string.yt_home_undo), first = message == null) { YtUndo.undo(entry) }
+            PillAction(look, stringResource(R.string.yt_home_undo), "yt_undo_action", first = message == null) { YtUndo.undo(entry) }
             if (entry.kind == YtUndoKind.HIDDEN && entry.video?.uploaderName != null) {
                 Dot(look)
-                PillAction(look, stringResource(R.string.yt_home_pause_week)) { YtUndo.pauseChannel(entry) }
+                PillAction(look, stringResource(R.string.yt_home_pause_week), "yt_pause_action") { YtUndo.pauseChannel(entry) }
             }
         }
     }
@@ -310,12 +310,13 @@ private fun DraftPill(look: PillLook, count: Int) {
                     .semantics { liveRegion = LiveRegionMode.Polite },
             )
             Dot(look)
-            PillAction(look, stringResource(R.string.yt_home_draft_play)) { YtQueue.playDraft(context) }
+            PillAction(look, stringResource(R.string.yt_home_draft_play), "yt_draft_play") { YtQueue.playDraft(context) }
             Icon(
                 painterResource(R.drawable.ic_close),
                 contentDescription = stringResource(R.string.yt_home_draft_discard),
                 tint = look.text.copy(alpha = 0.7f),
                 modifier = Modifier
+                    .testTag("yt_draft_discard")
                     .padding(start = 2.dp)
                     .clip(CircleShape)
                     .clickable { YtQueue.clearDraft() }
@@ -364,11 +365,12 @@ private fun PillRow(look: PillLook, modifier: Modifier, content: @Composable () 
 }
 
 @Composable
-private fun PillAction(look: PillLook, label: String, first: Boolean = false, onClick: () -> Unit) {
+private fun PillAction(look: PillLook, label: String, tag: String, first: Boolean = false, onClick: () -> Unit) {
     val text = if (look.uppercase) label.uppercase() else label
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
+            .testTag(tag)
             .padding(start = if (first) 6.dp else 0.dp)
             .heightIn(min = 44.dp)
             .clip(look.actionShape)
@@ -379,6 +381,7 @@ private fun PillAction(look: PillLook, label: String, first: Boolean = false, on
             text = text,
             color = look.action,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             style = look.style(FontWeight.Bold).copy(textDecoration = look.actionDecoration),
             modifier = Modifier
                 .then(
@@ -386,7 +389,7 @@ private fun PillAction(look: PillLook, label: String, first: Boolean = false, on
                         Modifier
                             .clip(look.actionShape)
                             .background(look.actionFill)
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
                     } else {
                         Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
                     },
@@ -449,7 +452,7 @@ private fun pillLook(palette: YtPalette): PillLook {
         YtSignature.EDITORIAL -> PillLook(
             surface = flat(RectangleShape, Color.Black, Color(0x40000000)),
             text = Color.White, action = Color.White, font = YtFonts.plexMono,
-            size = 12.sp, uppercase = true, letterSpacing = 1.5.sp,
+            size = 11.sp, uppercase = true, letterSpacing = 1.sp,
             actionShape = RectangleShape, actionDecoration = TextDecoration.Underline,
         )
         YtSignature.GLASS -> PillLook(
@@ -470,7 +473,7 @@ private fun pillLook(palette: YtPalette): PillLook {
         )
         YtSignature.KIESEL -> PillLook(
             surface = flat(RoundedCornerShape(50), KieselInk, Color(0x400E0E0E)),
-            text = KieselCream, action = KieselInk, font = YtFonts.jakarta,
+            text = KieselCream, action = KieselInk, font = YtFonts.jakarta, size = 12.5.sp,
             actionFill = KieselLavender,
         )
     }

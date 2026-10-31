@@ -743,7 +743,9 @@ object YtFlightLayer {
     private const val TAG = "yt_flight_layer"
 
     private val flights = mutableStateListOf<YtFlight>()
-    private var live = false
+
+    /** Layers in a window right now (a recreated activity can briefly have two). */
+    private var live = 0
 
     /** Adds the layer to [activity]'s content; once per activity, only for the designs. */
     fun attach(activity: ComponentActivity) {
@@ -772,11 +774,12 @@ object YtFlightLayer {
         host.addView(layer, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         host.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {
-                live = true
+                live++
             }
 
             override fun onViewDetachedFromWindow(v: View) {
-                live = false
+                live = (live - 1).coerceAtLeast(0)
+                if (live > 0) return
                 // whatever was still flying lands at once, so the counts stay right
                 flights.toList().forEach { it.land() }
                 flights.clear()
@@ -787,7 +790,7 @@ object YtFlightLayer {
 
     /** Lets [flight] fly, or land at once when there is no motion or no layer. */
     internal fun launch(flight: YtFlight, fly: Boolean) {
-        if (fly && live && flight.from != null) flights += flight else flight.land()
+        if (fly && live > 0 && flight.from != null) flights += flight else flight.land()
     }
 
     private class Host(context: Context) : FrameLayout(context) {
