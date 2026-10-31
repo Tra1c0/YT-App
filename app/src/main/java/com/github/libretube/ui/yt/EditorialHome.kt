@@ -106,9 +106,6 @@ fun EditorialHomeScreen(
         }
     }
 
-    // the dots of an entry open the quick actions; saving (MERKEN) moved there from the swipe
-    var quick by remember { mutableStateOf<StreamItem?>(null) }
-    Box(Modifier.fillMaxSize()) {
     YtRefreshBox(
         palette = palette,
         isRefreshing = data.isLoading && source != null,
@@ -176,25 +173,15 @@ fun EditorialHomeScreen(
                 }
             }
             itemsIndexed(videos.take(3), key = { _, v -> "top-" + v.url }) { index, video ->
-                EditorialItem(palette, imageLoader, index + 1, video, actions, { quick = it }, ytItemMotion().ytEnter(enter, tab + video.url, index))
+                EditorialItem(palette, imageLoader, index + 1, video, actions, ytItemMotion().ytEnter(enter, tab + video.url, index))
             }
             if (shorts.isNotEmpty() && tab != YT_TAB_LIVE) {
                 item { EditorialShorts(palette, imageLoader, shorts, actions) }
             }
             itemsIndexed(videos.drop(3), key = { _, v -> "more-" + v.url }) { index, video ->
-                EditorialItem(palette, imageLoader, index + 4, video, actions, { quick = it }, ytItemMotion().ytEnter(enter, tab + video.url, index + 3))
+                EditorialItem(palette, imageLoader, index + 4, video, actions, ytItemMotion().ytEnter(enter, tab + video.url, index + 3))
             }
         }
-    }
-    YtQuickSheet(
-        palette = palette,
-        imageLoader = imageLoader,
-        video = quick,
-        onDismiss = { quick = null },
-        onSave = actions.onSave,
-        onShare = actions.onShare,
-        onChannel = actions.onOpenChannel,
-    )
     }
 }
 
@@ -296,7 +283,6 @@ private fun EditorialItem(
     number: Int,
     video: StreamItem,
     actions: YtHomeActions,
-    onQuick: (StreamItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // print proof: the black-and-white picture takes on its colors while it is pressed
@@ -308,7 +294,7 @@ private fun EditorialItem(
         label = "editorialColor",
     )
     // pushed either way, the entry slides off a black slip: AUSBLENDEN to the left, ANS ENDE
-    // to the right (ytCardSwipe); MERKEN moved to the dots
+    // to the right (ytCardSwipe); MERKEN moved to the dots (quick actions)
     Column(
         modifier
             .ytCardSwipe(palette, video, RectangleShape, inset = PaddingValues(end = 16.dp), testTag = "yt_card_${number - 1}")
@@ -388,7 +374,7 @@ private fun EditorialItem(
                 tint = palette.text,
                 modifier = Modifier
                     .size(22.dp)
-                    .clickable { onQuick(video) },
+                    .clickable { actions.onQuick(video) },
             )
         }
         Box(

@@ -1,5 +1,7 @@
 package com.github.libretube.ui.yt
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -9,6 +11,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -85,6 +88,7 @@ internal fun YtRound2Home(
     )
 
     val haptics = rememberYtHaptics()
+    var quick by remember { mutableStateOf<StreamItem?>(null) }
 
     fun selectTab(id: Int) {
         fragment.activity?.findViewById<BottomNavigationView>(R.id.bottomNav)?.selectedItemId = id
@@ -109,10 +113,12 @@ internal fun YtRound2Home(
             reload++
         },
         onShare = { video -> YtHome.shareVideo(fragment, video) },
+        onQuick = { quick = it },
     )
     val imageLoader = ImageHelper.loader()
 
     YtTheme(palette) {
+        Box(Modifier.fillMaxSize()) {
         when (design) {
             YtDesign.CLAY -> ClayHomeScreen(palette, imageLoader, data, actions)
             YtDesign.EDITORIAL -> EditorialHomeScreen(
@@ -153,6 +159,16 @@ internal fun YtRound2Home(
                 actions = actions,
             )
             else -> Unit
+        }
+        YtQuickSheet(
+            palette = palette,
+            imageLoader = imageLoader,
+            video = quick,
+            onDismiss = { quick = null },
+            onSave = actions.onSave,
+            onShare = actions.onShare,
+            onChannel = actions.onOpenChannel,
+        )
         }
     }
 }

@@ -358,11 +358,11 @@ private fun GlassVideo(
             }
             Icon(
                 painterResource(R.drawable.ic_yt_dots_vertical),
-                contentDescription = null,
+                contentDescription = stringResource(R.string.yt_home_more_actions),
                 tint = palette.text,
                 modifier = Modifier
                     .size(22.dp)
-                    .clickable { actions.onSave(video) },
+                    .clickable { actions.onQuick(video) },
             )
         }
     }

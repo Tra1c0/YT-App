@@ -2,7 +2,9 @@ package com.github.libretube.ui.yt
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -268,6 +270,7 @@ private fun FrostStat(palette: YtPalette, label: String, value: Int?, tag: Strin
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, actions: YtHomeActions) {
     val press = remember { MutableInteractionSource() }
@@ -279,7 +282,13 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
             // left hides, right queues: the frost clears around the mark in the gap
             .ytCardSwipe(palette, video, RoundedCornerShape(26.dp), testTag = "yt_card_0")
             .frost(RoundedCornerShape(26.dp), clear = { thaw })
-            .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
+            // a long press opens the quick actions (also hide and queue without swiping)
+            .combinedClickable(
+                interactionSource = press,
+                indication = LocalIndication.current,
+                onLongClickLabel = stringResource(R.string.yt_home_more_actions),
+                onLongClick = { actions.onQuick(video) },
+            ) { actions.onOpenVideo(video) }
             .padding(8.dp),
     ) {
         YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)))
@@ -330,6 +339,7 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FrostRow(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, index: Int, actions: YtHomeActions) {
     val press = remember { MutableInteractionSource() }
@@ -340,7 +350,13 @@ private fun FrostRow(palette: YtPalette, imageLoader: ImageLoader, video: Stream
             .fillMaxWidth()
             .ytCardSwipe(palette, video, RoundedCornerShape(20.dp), testTag = "yt_card_$index")
             .frost(RoundedCornerShape(20.dp), clear = { thaw })
-            .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
+            // a long press opens the quick actions (also hide and queue without swiping)
+            .combinedClickable(
+                interactionSource = press,
+                indication = LocalIndication.current,
+                onLongClickLabel = stringResource(R.string.yt_home_more_actions),
+                onLongClick = { actions.onQuick(video) },
+            ) { actions.onOpenVideo(video) }
             .padding(8.dp),
     ) {
         YtLargeThumbnail(

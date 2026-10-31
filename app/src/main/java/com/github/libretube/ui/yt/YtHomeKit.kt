@@ -67,6 +67,11 @@ class YtHomeActions(
     val onOpenVideoAt: (StreamItem, Long) -> Unit = { video, _ -> onOpenVideo(video) },
     /** Shares the link of a video (the quick sheet of the designs that have one). */
     val onShare: (StreamItem) -> Unit = {},
+    /**
+     * Opens the quick actions of a video (save, share, channel, queue, hide, pause): the way to
+     * everything the card swipes do without swiping.
+     */
+    val onQuick: (StreamItem) -> Unit = {},
 )
 
 /** Videos that can be played as a regular video: no Shorts, nothing upcoming, with a URL. */

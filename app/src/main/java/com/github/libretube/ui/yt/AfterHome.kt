@@ -95,6 +95,9 @@ fun AfterHomeScreen(
     onRefresh: () -> Unit,
     onOpenVideo: (StreamItem) -> Unit,
     onShowAll: () -> Unit,
+    onSave: (StreamItem) -> Unit = {},
+    onShare: (StreamItem) -> Unit = {},
+    onOpenChannel: (StreamItem) -> Unit = {},
 ) {
     val playable = videos.orEmpty()
         .filter { !it.isShort && !it.isUpcoming && it.url != null }
@@ -141,6 +144,9 @@ fun AfterHomeScreen(
         }
     }
 
+    // a long press on a poster opens the quick actions (also hide and queue without swiping)
+    var quick by remember { mutableStateOf<StreamItem?>(null) }
+    Box(Modifier.fillMaxSize()) {
     YtRefreshBox(
         palette = palette,
         isRefreshing = isLoading && videos != null,
@@ -261,6 +267,7 @@ fun AfterHomeScreen(
                                 Modifier
                                     .weight(1f)
                                     .ytCardSwipe(palette, video, RoundedCornerShape(10.dp), testTag = "yt_card_${row * 2 + i}"),
+                                onQuick = { quick = it },
                             )
                         }
                         if (pair.size == 1) Spacer(Modifier.weight(1f))
@@ -268,6 +275,16 @@ fun AfterHomeScreen(
                 }
             }
         }
+    }
+    YtQuickSheet(
+        palette = palette,
+        imageLoader = imageLoader,
+        video = quick,
+        onDismiss = { quick = null },
+        onSave = onSave,
+        onShare = onShare,
+        onChannel = onOpenChannel,
+    )
     }
 }
 
@@ -530,11 +547,12 @@ private fun AfterPoster(
     video: StreamItem,
     onOpenVideo: (StreamItem) -> Unit,
     modifier: Modifier = Modifier,
+    onQuick: ((StreamItem) -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
             .aspectRatio(177f / 105f)
-            .ytPressable(RoundedCornerShape(10.dp)) { onOpenVideo(video) }
+            .ytPressable(RoundedCornerShape(10.dp), onLongClick = onQuick?.let { quick -> { quick(video) } }) { onOpenVideo(video) }
             .background(palette.surface),
     ) {
         AsyncImage(

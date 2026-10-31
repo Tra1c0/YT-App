@@ -2,7 +2,9 @@ package com.github.libretube.ui.yt
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -424,6 +426,7 @@ fun WavyProgress(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, index: Int, actions: YtHomeActions, turn: () -> Float) {
     // alternating corners give each card its own shape
@@ -437,7 +440,11 @@ private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: Str
     Column(
         Modifier
             .ytCardSwipe(palette, video, shape, testTag = "yt_card_$index")
-            .clickable { actions.onOpenVideo(video) },
+            // a long press opens the quick actions (also hide and queue without swiping)
+            .combinedClickable(
+                onLongClickLabel = stringResource(R.string.yt_home_more_actions),
+                onLongClick = { actions.onQuick(video) },
+            ) { actions.onOpenVideo(video) },
     ) {
         Box(
             Modifier

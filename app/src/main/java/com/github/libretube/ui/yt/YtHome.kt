@@ -166,6 +166,9 @@ object YtHome {
                         fragment.activity?.findViewById<BottomNavigationView>(R.id.bottomNav)
                             ?.selectedItemId = R.id.libraryFragment
                     },
+                    onSave = { video -> saveVideo(fragment, video) },
+                    onShare = { video -> shareVideo(fragment, video) },
+                    onOpenChannel = { video -> NavigationHelper.navigateChannel(context, video.uploaderUrl) },
                 )
             }
         } else if (design == YtDesign.MOVO) {

@@ -490,11 +490,11 @@ private fun ClayNextCard(
                 )
                 Icon(
                     painterResource(R.drawable.ic_yt_dots_vertical),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.yt_home_more_actions),
                     tint = palette.text,
                     modifier = Modifier
                         .size(18.dp)
-                        .clickable { actions.onSave(video) },
+                        .clickable { actions.onQuick(video) },
                 )
             }
             Text(

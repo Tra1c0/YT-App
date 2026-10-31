@@ -600,7 +600,8 @@ private fun KieselRow(
             .fillMaxWidth()
             // left hides, right queues: a lavender or peach capsule grows out of the gap
             .ytCardSwipe(palette, video, RoundedCornerShape(18.dp), testTag = "yt_card_$index")
-            .ytPressable(RoundedCornerShape(18.dp), squish = true) { actions.onOpenVideo(video) }
+            // a long press opens the quick actions (also hide and queue without swiping)
+            .ytPressable(RoundedCornerShape(18.dp), squish = true, onLongClick = { actions.onQuick(video) }) { actions.onOpenVideo(video) }
             .background(KieselCard)
             .padding(10.dp),
     ) {
