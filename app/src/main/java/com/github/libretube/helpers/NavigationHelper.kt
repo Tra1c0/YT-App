@@ -64,8 +64,9 @@ object NavigationHelper {
             if (playerData.isOffline != isOffline || playerData.videoId == null) return@runOnPlayerFragment false
 
             try {
-                // YT: with keepQueue the queue the caller set up stays (play all, queued cards)
-                if (!playerData.keepQueue) PlayingQueue.clearAfterCurrent()
+                // YT: with keepQueue the queue the caller set up stays (play all, queued cards);
+                // only the old queue's fetches stop, and each video is in it once
+                if (playerData.keepQueue) PlayingQueue.ytKeepQueue() else PlayingQueue.clearAfterCurrent()
                 this.playVideo(playerData.videoId.toID())
 
                 if (audioOnlyPlayerRequested) {
@@ -91,7 +92,7 @@ object NavigationHelper {
             if (playerData.isOffline != isOffline || playerData.videoId == null) return@runOnAudioPlayerFragment false
 
             // YT: with keepQueue the queue the caller set up stays, as in the video player
-            if (!playerData.keepQueue) PlayingQueue.clearAfterCurrent()
+            if (playerData.keepQueue) PlayingQueue.ytKeepQueue() else PlayingQueue.clearAfterCurrent()
             this.playNextVideo(playerData.videoId.toID())
 
             if (!audioOnlyPlayerRequested && !audioOnlyMode) {

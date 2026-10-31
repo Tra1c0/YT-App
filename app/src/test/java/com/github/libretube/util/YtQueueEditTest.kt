@@ -65,6 +65,25 @@ class YtQueueEditTest {
     }
 
     @Test
+    fun keepLastOfEachDropsTheEarlierCopies() {
+        // "play all" of the watch history while A plays: [A] + history [C, B, A]
+        val list = mutableListOf("A", "C", "B", "A")
+        assertEquals(true, YtQueueEdit.keepLastOfEach(list, key))
+        assertEquals(listOf("C", "B", "A"), list)
+
+        val more = mutableListOf("P", "A", "X", "Y", "Z", "Y", "A")
+        assertEquals(true, YtQueueEdit.keepLastOfEach(more, key))
+        assertEquals(listOf("P", "X", "Z", "Y", "A"), more)
+
+        // items without an id stay, a list without copies is left alone
+        val noIds = mutableListOf("", "a", "", "b")
+        assertEquals(false, YtQueueEdit.keepLastOfEach(noIds, key))
+        assertEquals(listOf("", "a", "", "b"), noIds)
+        val empty = mutableListOf<String>()
+        assertEquals(false, YtQueueEdit.keepLastOfEach(empty, key))
+    }
+
+    @Test
     fun aCurrentVideoNotInTheQueueCountsAsTheFirst() {
         // as PlayingQueue.currentIndex: not found means index 0
         assertEquals(0, YtQueueEdit.currentIndex(listOf("a", "b"), "gone", key))

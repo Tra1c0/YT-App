@@ -171,6 +171,21 @@ object PlayingQueue {
     }
 
     /**
+     * YT: what a caller that set up the queue itself (PlayerData.keepQueue) gets instead of
+     * [clearAfterCurrent] while a player runs. The previous queue's background fetches stop
+     * (they would add the rest of the old playlist or channel to this queue), and each video is
+     * in the queue once, the copy added last staying. Without that, "play all" of the watch
+     * history adds the playing video a second time, and [currentIndex] then finds the first
+     * copy, so the queue starts over and over.
+     */
+    fun ytKeepQueue() {
+        clearJobs()
+        synchronized(queue) {
+            if (YtQueueEdit.keepLastOfEach(queue) { it.url?.toID() }) changed()
+        }
+    }
+
+    /**
      * YT: plays [streamItem] right after the current video, or puts it first into an empty
      * queue. It is in the queue once (matched by its video id); the current video is never
      * added again. [addAsNext] stays as it is (it fails on an empty queue).
