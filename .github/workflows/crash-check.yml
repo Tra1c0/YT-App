@@ -23,6 +23,10 @@ on:
         description: "Android API level of the emulator"
         required: false
         default: "34"
+      target:
+        description: "System image: google_apis (with Google Play services) or default (plain Android, much lighter on the emulator)"
+        required: false
+        default: "google_apis"
       gpu:
         description: "Emulator GPU mode: swiftshader_indirect (host, fast) or guest (software in the guest, robust)"
         required: false
@@ -127,7 +131,7 @@ jobs:
         with:
           api-level: ${{ inputs.api }}
           arch: x86_64
-          target: google_apis
+          target: ${{ inputs.target }}
           profile: pixel_6
           emulator-boot-timeout: 1200
           emulator-options: -no-window -gpu ${{ inputs.gpu }} -no-snapshot -noaudio -no-boot-anim
