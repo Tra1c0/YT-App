@@ -146,13 +146,46 @@ push_test_video() {
   TEST_VIDEO="$dir/yt-test.mp4"
 }
 # opens the test video the way the downloads screen opens a downloaded one (YtTestHooks, emulator
-# only); further extras for the hooks may follow, e.g. --ei yt_queue_test 3 or --el yt_seek_test 60000
+# only); further extras for the hooks may follow, e.g. --ei yt_queue_test 3 or --el yt_seek_test 60000.
+# Returns once the app logs "test hooks done" (the video plays, the extras ran), at most
+# OPEN_WAIT s (default 60). Status 1 if there is no test video, the app logs that it failed, or
+# it logs nothing at all within 15 s: a build without the hooks (main before round 12) ignores
+# the parameter, so the callers then go on without the test video.
 # shellcheck disable=SC2120 # the gesture checks pass extras
 open_test_video() {
+  local log="logcat-${design:-standard}.txt" from waited=0 lines failed
   if [ -z "$TEST_VIDEO" ]; then mark "no test video on the device"; return 1; fi
+  from=$(wc -l < "$log" 2>/dev/null || echo 0)
   mark "open the test video $*"
   timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true ${START_EXTRAS[@]+"${START_EXTRAS[@]}"} \
     --es yt_test_video "$TEST_VIDEO" "$@" >/dev/null || echo "test video start timed out"
+  while :; do
+    lines=$(tail -n +"$((from + 1))" "$log" 2>/dev/null | grep -a -E " [IW] YtTest *: " || true)
+    if printf '%s\n' "$lines" | grep -a -q -E " I YtTest *: test hooks done"; then
+      mark "test video ready"
+      return 0
+    fi
+    failed=$(printf '%s\n' "$lines" | grep -a -E " W YtTest *: test video" | tail -n 1 | sed -E 's/^.* W YtTest *: //')
+    if [ -n "$failed" ]; then
+      mark "test video failed: $(printf '%s' "$failed" | cut -c1-160)"
+      return 1
+    fi
+    if [ -z "$lines" ] && [ "$waited" -ge 15 ]; then
+      mark "the app logs nothing about the test video (a build without YtTestHooks?)"
+      return 1
+    fi
+    if [ "$waited" -ge "${OPEN_WAIT:-60}" ]; then
+      mark "test video not ready after $waited s"
+      return 1
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+}
+# the online video in the player, as the screens did before the test video
+open_online_video() {
+  timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es videoId "${YT_VIDEO:-jNQXAC9IVRw}" --ez yt_quiet true \
+    || echo "video start timed out"
 }
 # back until YT is in front again (at most 5 times)
 back_to_yt() {
@@ -275,8 +308,12 @@ for design in $DESIGNS; do
     # with the screens the video opens there (after the start screen's shot); otherwise here,
     # so the gesture checks begin with it
     if [ -n "$TEST_VIDEO" ] && [ "${YT_SCREENS:-no}" != "yes" ]; then
+      # a build without the hooks gets the online video, so the gesture checks start in the player
       # shellcheck disable=SC2119
-      open_test_video
+      if ! open_test_video; then
+        echo "::warning::$design: the test video did not open; the online video instead"
+        open_online_video
+      fi
       sleep 15
       shot "$design-0-test-video"
     fi
@@ -483,13 +520,15 @@ for design in $DESIGNS; do
     mkdir -p screens
     timeout 20 adb exec-out screencap -p > "screens/$design-1-start.png" || true
     # straight to the running main screen (a link would start it anew, with the welcome sheet);
-    # the local test video when there is one, since online videos do not play in the emulator
-    if [ -n "$TEST_VIDEO" ]; then
-      # shellcheck disable=SC2119
-      open_test_video
+    # the local test video when there is one, since online videos do not play in the emulator;
+    # the online one when it does not open (a build without the hooks), so the shots still show
+    # the player and the mini player instead of the home screen and the launcher
+    # shellcheck disable=SC2119
+    if [ -n "$TEST_VIDEO" ] && open_test_video; then
+      :
     else
-      timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es videoId "${YT_VIDEO:-jNQXAC9IVRw}" --ez yt_quiet true \
-        || echo "video start timed out"
+      [ -n "$TEST_VIDEO" ] && echo "::warning::$design: the test video did not open; the online video instead"
+      open_online_video
     fi
     sleep 18
     timeout 20 adb exec-out screencap -p > "screens/$design-2-player.png" || true

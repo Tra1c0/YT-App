@@ -6,6 +6,10 @@
 # work sourced from there. The scripts share its shell: no exit (return ends a script), no
 # set -e, no ::group:: (the checks of a design already are one group).
 #
+#   open_test_video [am extras]     (crash-check.sh) opens the test video with further extras,
+#                                   e.g. --ei yt_queue_test 3 --el yt_seek_test 300000; returns
+#                                   once the app logs "test hooks done" (the queue is filled, the
+#                                   seek made), status 1 if it did not open
 #   anim_on / anim_off              the three animation scales to 1 or 0
 #   bounds_of <regex> [n]           "l t r b" of the n-th (default first) element whose
 #                                   resource-id, content-desc or text matches (awk regex, so ^ and
