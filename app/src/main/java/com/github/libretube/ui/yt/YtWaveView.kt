@@ -98,6 +98,15 @@ class YtWaveView(
     private var countFrom = 0L
     private var counted = 0
 
+    init {
+        // drawn by the CPU into the view's own picture, which the GPU then only places: the
+        // braided lines would otherwise need the GPU's path programs, built the first time
+        // they are drawn; that build stalls the app's render thread, and with it the stop of
+        // the app's screen right as the user leaves it (seen as seconds in the emulator). The
+        // wave is small, so drawing it on the CPU takes about a millisecond.
+        setLayerType(LAYER_TYPE_SOFTWARE, null)
+    }
+
     /** Fades to [target]; a move still waiting is dropped. */
     fun fadeTo(target: Float) {
         order++
