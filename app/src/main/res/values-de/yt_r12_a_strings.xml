@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: round 12, package A (the mini player of each design). Same keys in the same order in values and values-de. -->
+<resources>
+    <string name="yt_r12_a_category">Miniplayer</string>
+</resources>
