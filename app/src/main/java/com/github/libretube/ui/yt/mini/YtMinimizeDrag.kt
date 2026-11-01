@@ -612,6 +612,7 @@ internal class YtMinimizeDrag(
         if (p < LEARN_FROM || p >= 1f) return
         val now = boxOf(s.tracked)
         val start = s.finger.start
+        if (!YtRestGeometry.currentSample(now, start, s.finger.end, p, s.previous)) return
         val end = YtBox(
             start.left + (now.left - start.left) / p,
             start.top + (now.top - start.top) / p,

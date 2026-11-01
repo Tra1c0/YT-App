@@ -2,6 +2,13 @@ package com.github.libretube.ui.yt.mini
 
 /** MotionLayout publishes endpoint progress before all child rectangles reach that endpoint. */
 internal object YtRestGeometry {
+    /** A sibling's layout callback may still expose the tracked view from the previous frame. */
+    fun currentSample(actual: YtBox, start: YtBox, model: YtBox, progress: Float, previous: Float): Boolean {
+        fun error(expected: YtBox): Float = kotlin.math.abs(actual.left - expected.left) +
+            kotlin.math.abs(actual.top - expected.top) + kotlin.math.abs(actual.right - expected.right) + kotlin.math.abs(actual.bottom - expected.bottom)
+        return progress == previous || error(start.lerp(model, progress)) <= error(start.lerp(model, previous))
+    }
+
     fun valid(
         player: YtBox,
         box: YtBox,

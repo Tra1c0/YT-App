@@ -770,6 +770,10 @@ for design in $DESIGNS; do
   grep -c "FATAL EXCEPTION" "logcat-$design.txt" | xargs -I{} echo "fatal exceptions of any process in the log: {}"
   grep -a -A2 "FATAL EXCEPTION" "logcat-$design.txt" | grep -a "Process:" | sed 's/^.*Process: /  crashed: /' | cut -c1-120 | sort | uniq -c || true
   if [ -s "crash-$design.txt" ] || [ "$state" != "running" ]; then crashed="$crashed $design"; fi
+  if grep -a -q 'PipMenuActivityController.startMenuActivity' "logcat-$design.txt" && grep -a -q 'File descriptors passed in Intent' "logcat-$design.txt"; then
+    echo "::error::$design: PiP action icons crashed the Android system menu"
+    crashed="$crashed $design-pip-menu"
+  fi
   anrs=$(grep -a -c "ANR in $PKG" "logcat-$design.txt" || true)
   if [ "${anrs:-0}" -gt 0 ]; then
     echo "::error::$design: Android reported $anrs app hang(s)"

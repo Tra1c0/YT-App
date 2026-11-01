@@ -7,6 +7,7 @@ import android.content.pm.ActivityInfo
 import android.content.res.Resources
 import android.net.Uri
 import android.os.Looper
+import android.os.Build
 import android.util.Base64
 import android.util.Log
 import android.view.accessibility.CaptioningManager
@@ -382,7 +383,11 @@ object PlayerHelper {
         return RemoteActionCompat(icon, text, text, pendingIntent)
     }
 
-    private fun seekIconWithSpeed(resources: Resources, @DrawableRes resourceId: Int): IconCompat {
+    private fun seekIconWithSpeed(context: Context, @DrawableRes resourceId: Int): IconCompat {
+        // Oreo's PiP menu passes actions in an Intent, which rejects bitmap-backed file
+        // descriptors. Resource icons keep its system controls usable on Android 8.
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1) return IconCompat.createWithResource(context, resourceId)
+        val resources = context.resources
         val textSize = 15 * resources.displayMetrics.density
         val bitmap = ResourcesCompat.getDrawable(resources, resourceId, null)!!.toBitmap()
         ImageHelper.insertText(bitmap, seekIncrement.div(1000).toString(), 0.5f, 0.65f, textSize)
@@ -403,7 +408,7 @@ object PlayerHelper {
 
         val rewindAction = getRemoteAction(
             activity,
-            seekIconWithSpeed(activity.resources, R.drawable.ic_rewind),
+            seekIconWithSpeed(activity, R.drawable.ic_rewind),
             R.string.rewind,
             PlayerEvent.Rewind
         )
@@ -424,7 +429,7 @@ object PlayerHelper {
 
         val forwardAction = getRemoteAction(
             activity,
-            seekIconWithSpeed(activity.resources, R.drawable.ic_forward),
+            seekIconWithSpeed(activity, R.drawable.ic_forward),
             R.string.forward,
             PlayerEvent.Forward
         )

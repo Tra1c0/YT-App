@@ -1074,12 +1074,13 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
 
         if (::playerController.isInitialized && playerController.isConnected) {
             playerController.removeListener(playerListener)
-            playerController.pause()
-
-            playerController.sendCustomCommand(
-                AbstractPlayerService.stopServiceCommand,
-                Bundle.EMPTY
-            )
+            if (activity?.isChangingConfigurations != true && !viewModel.isOrientationChangeInProgress) {
+                playerController.pause()
+                playerController.sendCustomCommand(
+                    AbstractPlayerService.stopServiceCommand,
+                    Bundle.EMPTY
+                )
+            }
             playerController.release()
         }
 

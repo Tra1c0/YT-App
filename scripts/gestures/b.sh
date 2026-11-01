@@ -14,6 +14,8 @@
 
 b_checks() {
   local size h x0 y0 mx my mid
+  # Exercise the very first drag too, before a previous docking has calibrated its endpoint.
+  timeout 20 adb shell am force-stop "$PKG" || true
   if ! open_test_video; then
     gesture_fail "B: no test video for the minimize checks"
     return 0
