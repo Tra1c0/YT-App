@@ -79,6 +79,7 @@ import com.github.libretube.api.obj.Streams
 import com.github.libretube.extensions.formatShort
 import com.github.libretube.extensions.toID
 import com.github.libretube.helpers.YtDesign
+import com.github.libretube.ui.yt.player.ytShareScrubSource
 import com.github.libretube.util.HtmlParser
 import com.github.libretube.util.LinkHandler
 import com.github.libretube.util.TextUtils
@@ -148,9 +149,11 @@ private fun rememberBasics(streams: Streams, actions: YtWatchActions): WatchBasi
         R.drawable.ic_like,
         if (streams.likes > 0) streams.likes.formatShort() else stringResource(R.string.yt_watch_like),
     ) {}
+    val shareGesture = Modifier.ytShareScrubSource(actions.shareScrub)
     val list = buildList {
         add(WatchAction(R.drawable.ic_playlist_add, stringResource(R.string.yt_watch_save), actions.onSave))
-        add(WatchAction(R.drawable.ic_share, stringResource(R.string.share), actions.onShare))
+        // held and dragged onto the time bar, it shares from the second it is let go at
+        add(WatchAction(R.drawable.ic_share, stringResource(R.string.share), actions.onShare).also { it.gesture = shareGesture })
         if (!streams.isLive) add(WatchAction(R.drawable.ic_download, stringResource(R.string.yt_watch_download), actions.onDownload))
         add(WatchAction(R.drawable.ic_headphones, stringResource(R.string.yt_watch_audio), actions.onAudioOnly))
     }
@@ -488,6 +491,7 @@ private fun YouTubePage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBa
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = mod
+                    .then(action.gesture)
                     .ytPressable(RoundedCornerShape(16.dp)) { action.onClick() }
                     .background(palette.surface)
                     .padding(vertical = 10.dp),
@@ -636,6 +640,7 @@ private fun ClayPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasic
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = mod
+                    .then(action.gesture)
                     .shadow(8.dp, shape, clip = false, ambientColor = Color(0x66B07A66), spotColor = Color(0x80B07A66))
                     .ytPressable(shape, squish = true) { action.onClick() }
                     .background(color)
@@ -716,6 +721,7 @@ private fun EditorialPage(palette: YtPalette, b: WatchBasics, controller: YtWatc
                     if (c > 0) Box(Modifier.padding(vertical = 10.dp).width(1.dp).height(38.dp).background(rule))
                     Column(
                         Modifier
+                            .then(action.gesture)
                             .weight(1f)
                             .clickable(onClick = action.onClick)
                             .padding(horizontal = 6.dp, vertical = 9.dp),
@@ -850,6 +856,7 @@ private fun PanePage(
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
+                            .then(action.gesture)
                             .size(if (frost) 50.dp else 54.dp)
                             .glassPane(CircleShape, frost)
                             .clip(CircleShape)
@@ -954,6 +961,7 @@ private fun PopPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = mod
+                    .then(action.gesture)
                     .rotate(if (i % 2 == 0) -2f else 2f)
                     .ytPressable(shape, squish = true) { action.onClick() }
                     .background(PopBlobs[i % PopBlobs.size])
@@ -1013,6 +1021,7 @@ private fun ShapesPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
+                            .then(action.gesture)
                             .size(54.dp)
                             .ytPressable(shapes[i % shapes.size]) { action.onClick() }
                             .background(colors[i % colors.size]),
@@ -1080,6 +1089,7 @@ private fun KieselPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
                 modifier = mod
+                    .then(action.gesture)
                     .ytPressable(RoundedCornerShape(50), squish = true) { action.onClick() }
                     .background(colors[i % colors.size])
                     .padding(vertical = 12.dp, horizontal = 10.dp),

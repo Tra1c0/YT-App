@@ -331,4 +331,15 @@
 
     </LinearLayout>
 
+    <!-- YT: the time magnifier's lens and level lines while the time bar is scrubbed; above
+         the controls (the time bar has translationZ 10dp), takes no touches -->
+    <com.github.libretube.ui.yt.player.YtScrubLensView
+        android:id="@+id/yt_scrub_lens"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:translationZ="12dp" />
+
 </merge>

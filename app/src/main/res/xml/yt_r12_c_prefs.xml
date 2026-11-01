@@ -1,11 +1,96 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- YT: settings of package C (the player gestures), a section of "Gesten & Interaktion". Hidden while
-     it holds no setting. -->
+     it holds no setting. Read when a gesture begins (YtPlayerGesturePrefs). -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
         app:key="yt_r12_c_category"
-        app:title="@string/yt_r12_c_category" />
+        app:title="@string/yt_r12_c_category">
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_frame"
+            android:summary="@string/yt_r12_c_magnifier_summary"
+            app:defaultValue="true"
+            app:key="yt_scrub_magnifier"
+            app:title="@string/yt_r12_c_magnifier_title" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_video"
+            android:summary="@string/yt_r12_c_live_picture_summary"
+            app:defaultValue="true"
+            android:dependency="yt_scrub_magnifier"
+            app:key="yt_scrub_live_picture"
+            app:title="@string/yt_r12_c_live_picture_title" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_rewind"
+            android:summary="@string/yt_r12_c_return_chip_summary"
+            app:defaultValue="true"
+            app:key="yt_return_chip"
+            app:title="@string/yt_r12_c_return_chip_title" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_repeat"
+            android:summary="@string/yt_r12_c_loop_hold_summary"
+            app:defaultValue="true"
+            app:key="yt_loop_hold"
+            app:title="@string/yt_r12_c_loop_hold_title" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_arrow_up_down"
+            android:summary="@string/yt_r12_c_hold_summary"
+            app:defaultValue="true"
+            app:key="yt_hold"
+            app:title="@string/yt_r12_c_hold_title" />
+
+        <ListPreference
+            android:icon="@drawable/yt_r12_c_ic_arrow_up"
+            android:dependency="yt_hold"
+            app:defaultValue="fullscreen"
+            app:entries="@array/yt_r12_c_hold_entries"
+            app:entryValues="@array/yt_r12_c_hold_values"
+            app:key="yt_hold_up"
+            app:title="@string/yt_r12_c_hold_up_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:icon="@drawable/ic_arrow_down"
+            android:dependency="yt_hold"
+            app:defaultValue="minimize"
+            app:entries="@array/yt_r12_c_hold_entries"
+            app:entryValues="@array/yt_r12_c_hold_values"
+            app:key="yt_hold_down"
+            app:title="@string/yt_r12_c_hold_down_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:icon="@drawable/yt_r12_c_ic_arrow_left"
+            android:dependency="yt_hold"
+            app:defaultValue="chapter_prev"
+            app:entries="@array/yt_r12_c_hold_entries"
+            app:entryValues="@array/yt_r12_c_hold_values"
+            app:key="yt_hold_left"
+            app:title="@string/yt_r12_c_hold_left_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:icon="@drawable/ic_arrow_right"
+            android:dependency="yt_hold"
+            app:defaultValue="chapter_next"
+            app:entries="@array/yt_r12_c_hold_entries"
+            app:entryValues="@array/yt_r12_c_hold_values"
+            app:key="yt_hold_right"
+            app:title="@string/yt_r12_c_hold_right_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_share"
+            android:summary="@string/yt_r12_c_share_drag_summary"
+            app:defaultValue="true"
+            app:key="yt_share_drag"
+            app:title="@string/yt_r12_c_share_drag_title" />
+
+    </PreferenceCategory>
 
 </PreferenceScreen>

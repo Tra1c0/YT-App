@@ -133,4 +133,40 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"/>
 
+    <!-- YT: the rewind memory's way back after a jump, below the controls' top bar (the margin
+         follows it at runtime), above the controls in z so the play button never covers it; the
+         padding makes the touch target 48dp tall -->
+    <com.github.libretube.ui.yt.player.YtReturnChipView
+        android:id="@+id/yt_return_chip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="52dp"
+        android:padding="7dp"
+        android:translationZ="2dp"
+        android:visibility="gone" />
+
+    <!-- YT: the explanation loop's chip (pass, pause ring, end), top left below the controls'
+         top bar (the margin follows it at runtime), the same height as the return chip -->
+    <com.github.libretube.ui.yt.player.YtLoopChipView
+        android:id="@+id/yt_loop_chip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="6dp"
+        android:layout_marginTop="52dp"
+        android:padding="7dp"
+        android:translationZ="2dp"
+        android:visibility="gone" />
+
+    <!-- YT: the compass of hold and drag on the video, over everything while a finger holds;
+         invisible at rest (not gone), so it knows its size when a hold begins -->
+    <com.github.libretube.ui.yt.player.YtHoldCompassView
+        android:id="@+id/yt_hold_compass"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:translationZ="3dp"
+        android:visibility="invisible" />
+
 </merge>

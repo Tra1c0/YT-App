@@ -81,6 +81,7 @@ import com.github.libretube.ui.sheets.PlayingQueueSheet
 import com.github.libretube.ui.sheets.SleepTimerSheet
 import com.github.libretube.ui.sheets.StatsSheet
 import com.github.libretube.ui.tools.SleepTimer
+import com.github.libretube.ui.yt.player.YtHoldDirection
 import com.github.libretube.util.PlayingQueue
 import java.util.Locale
 import kotlin.math.ceil
@@ -110,12 +111,46 @@ class CustomExoPlayerView(
     private var chaptersBottomSheet: ChaptersBottomSheet? = null
     private var scrubbingTimeBar = false
 
+    // YT: where the time bar is being scrubbed to, for the chapter name (null when not scrubbing)
+    private var scrubPositionMs: Long? = null
+
+    // YT: the controller the playback listener is on, so a new initialize does not add it twice
+    private var listenedPlayer: Player? = null
+
     /**
      * Objects from the parent fragment
      */
 
     private val runnableHandler = Handler(Looper.getMainLooper())
     private var isPlayerLocked: Boolean = false
+
+    /** YT: the controls are locked (the round-12 overlays stay away then). */
+    val playerLocked: Boolean get() = isPlayerLocked
+
+    /** YT: opens the explanation loop's sheet (YtLoopController sets it); null: no entry in the options. */
+    var ytLoopEntry: (() -> Unit)? = null
+
+    /** YT: what the options say about the explanation loop ("1:23 – 1:45", "Aus"). */
+    var ytLoopSummary: (() -> String?)? = null
+
+    /** YT: hold and drag on the video (YtHoldGesture sets it); null: a long press only plays faster, if that is on. */
+    var ytHold: HoldDrag? = null
+
+    // YT: a hold of ytHold runs, and the long press plays faster meanwhile
+    private var ytHolding = false
+    private var fastForwarding = false
+
+    /** YT: what CustomExoPlayerView tells hold and drag (all px, in this view). */
+    interface HoldDrag {
+        /** A hold began at [x], [y]; [fastForward]: it plays faster meanwhile. False: not this time. */
+        fun begin(x: Float, y: Float, fastForward: Boolean): Boolean
+
+        /** The finger is at [dx], [dy] from where it held; true once it left the centre (the faster play ends then). */
+        fun move(dx: Float, dy: Float): Boolean
+
+        /** Lifted at [dx], [dy], or [cancelled] (taken away, or a second finger). */
+        fun end(dx: Float, dy: Float, cancelled: Boolean)
+    }
 
     private var resizeModePref: Int
         set(value) {
@@ -176,7 +211,21 @@ class CustomExoPlayerView(
     // if null, use same quality as fullscreen
     private var noFullscreenResolution: Int? = null
 
+    private val playbackListener = object : Player.Listener {
+        override fun onEvents(player: Player, events: Player.Events) {
+            super.onEvents(player, events)
+            this@CustomExoPlayerView.onPlaybackEvents(player, events)
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            super.onIsPlayingChanged(isPlaying)
+            keepScreenOn = isPlaying
+        }
+    }
+
     init {
+        // YT: the time magnifier's lens over the controls
+        binding.exoProgress.lens = binding.ytScrubLens
         brightnessHelper = BrightnessHelper(activity)
         playerGestureController = PlayerGestureController(activity, this)
         audioHelper = AudioHelper(context)
@@ -227,11 +276,14 @@ class CustomExoPlayerView(
             seekBarListener = object : TimeBar.OnScrubListener {
                 override fun onScrubStart(timeBar: TimeBar, position: Long) {
                     cancelHideControllerTask()
+                    scrubPositionMs = position
                 }
 
                 override fun onScrubMove(timeBar: TimeBar, position: Long) {
                     cancelHideControllerTask()
 
+                    // YT: the chapter name follows the scrubbed position, not the playing one
+                    scrubPositionMs = position
                     setCurrentChapterName(forceUpdate = true, enqueueNew = false)
                     scrubbingTimeBar = true
                 }
@@ -239,6 +291,7 @@ class CustomExoPlayerView(
                 override fun onScrubStop(timeBar: TimeBar, position: Long, canceled: Boolean) {
                     enqueueHideControllerTask()
 
+                    scrubPositionMs = null
                     setCurrentChapterName(forceUpdate = true, enqueueNew = false)
                     scrubbingTimeBar = false
                 }
@@ -355,17 +408,13 @@ class CustomExoPlayerView(
             player.togglePlayPauseState()
         }
 
-        player.addListener(object : Player.Listener {
-            override fun onEvents(player: Player, events: Player.Events) {
-                super.onEvents(player, events)
-                this@CustomExoPlayerView.onPlaybackEvents(player, events)
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                super.onIsPlayingChanged(isPlaying)
-                keepScreenOn = isPlaying
-            }
-        })
+        // YT: once per controller (initialize runs again when the page reconnects)
+        if (listenedPlayer !== player) {
+            // the old controller may be released already
+            runCatching { listenedPlayer?.removeListener(playbackListener) }
+            player.addListener(playbackListener)
+            listenedPlayer = player
+        }
 
         binding.playPauseBTN.setImageResource(
             PlayerHelper.getPlayPauseActionIcon(player)
@@ -475,10 +524,12 @@ class CustomExoPlayerView(
         // if the user is scrubbing the time bar, don't update
         if (scrubbingTimeBar && !forceUpdate) return
 
-        val currentIndex = PlayerHelper.getCurrentChapterIndex(player.currentPosition, chapters)
+        // YT: while scrubbing, the chapter under the thumb; the page's chapter list keeps the playing one
+        val scrubbed = scrubPositionMs?.takeIf { scrubbingTimeBar || forceUpdate }
+        val currentIndex = PlayerHelper.getCurrentChapterIndex(scrubbed ?: player.currentPosition, chapters)
         val newChapterName = currentIndex?.let { chapters[it].title.trim() }.orEmpty()
 
-        chaptersViewModel.currentChapterIndex.updateIfChanged(currentIndex ?: -1)
+        if (scrubbed == null) chaptersViewModel.currentChapterIndex.updateIfChanged(currentIndex ?: -1)
 
         // change the chapter name textView text to the chapterName
         if (newChapterName != binding.chapterName.text) {
@@ -587,7 +638,25 @@ class CustomExoPlayerView(
         }
     }
 
-    fun getOptionsMenuItems(): List<BottomSheetItem> = listOf(
+    fun getOptionsMenuItems(): List<BottomSheetItem> = ytOptionsMenuItems() + listOfNotNull(ytLoopMenuItem())
+
+    // YT: the explanation loop, after the upstream options
+    private fun ytLoopMenuItem(): BottomSheetItem? {
+        val open = ytLoopEntry ?: return null
+        return BottomSheetItem(
+            context.getString(R.string.yt_r12_c_loop_title),
+            R.drawable.ic_repeat,
+            { ytLoopSummary?.invoke() },
+        ) { open() }
+    }
+
+    /** YT: the controls stay while an explanation loop is marked on the time bar, then hide as after a scrub. */
+    fun ytHoldControls(hold: Boolean) {
+        cancelHideControllerTask()
+        if (!hold) enqueueHideControllerTask()
+    }
+
+    private fun ytOptionsMenuItems(): List<BottomSheetItem> = listOf(
         BottomSheetItem(
             context.getString(R.string.repeat_mode),
             R.drawable.ic_repeat,
@@ -1308,15 +1377,41 @@ class CustomExoPlayerView(
         subtitleView?.setBottomPaddingFraction(SubtitleView.DEFAULT_BOTTOM_PADDING_FRACTION)
     }
 
-    override fun onLongPress() {
-        if (!PlayerHelper.longPressFastForward) return
+    override fun onLongPress(x: Float, y: Float) {
+        val fastForward = startFastForward()
+        val hold = ytHold
+        // YT: in fullscreen not at the left and right edge, where the system's back gesture lives
+        val edge = isFullscreen() &&
+            YtHoldDirection.inEdge(x, width.toFloat(), YtHoldDirection.EDGE_DP * resources.displayMetrics.density)
+        ytHolding = hold != null && !edge && hold.begin(x, y, fastForward)
+        // YT: the page's drag to minimize and its scroll views must not take this finger now
+        // (not in the mini player, whose own long press must still reach the page)
+        if (ytHolding || (fastForward && useController)) parent?.requestDisallowInterceptTouchEvent(true)
+    }
+
+    override fun onLongPressDrag(dx: Float, dy: Float) {
+        if (!ytHolding) return
+        // YT: holding still plays faster; once the finger goes for a target, the normal speed is back
+        if (ytHold?.move(dx, dy) == true) endFastForward()
+    }
+
+    override fun onLongPressEnd(dx: Float, dy: Float, cancelled: Boolean) {
+        if (ytHolding) ytHold?.end(dx, dy, cancelled)
+        ytHolding = false
+        endFastForward()
+    }
+
+    // true while it plays faster for the long press (the setting is on)
+    private fun startFastForward(): Boolean {
+        if (!PlayerHelper.longPressFastForward) return false
 
         backgroundBinding.fastForwardView.isVisible = true
-        val player = player ?: return
+        fastForwarding = true
+        val player = player ?: return true
 
         // using the fast forward action wouldn't change anything in this case
         if (player.playbackParameters.speed >= PlayerHelper.MAXIMUM_PLAYBACK_SPEED) {
-            return
+            return true
         }
 
         // backup current playback speed in order to restore it
@@ -1328,10 +1423,12 @@ class CustomExoPlayerView(
             PlayerHelper.MAXIMUM_PLAYBACK_SPEED
         )
         player.playbackParameters = PlaybackParameters(newSpeed, player.playbackParameters.pitch)
+        return true
     }
 
-    override fun onLongPressEnd() {
-        if (!PlayerHelper.longPressFastForward) return
+    private fun endFastForward() {
+        if (!fastForwarding) return
+        fastForwarding = false
 
         backgroundBinding.fastForwardView.isGone = true
 
@@ -1340,6 +1437,53 @@ class CustomExoPlayerView(
             player.playbackParameters = PlaybackParameters(it, player.playbackParameters.pitch)
         }
         rememberedPlaybackSpeed = null
+    }
+
+    /** YT: the double tap's seek with its overlay, for hold and drag. */
+    fun ytSeekStep(forward: Boolean) {
+        if (forward) forward() else rewind()
+    }
+
+    /** YT: captions off if they are on, else on in the preferred language; says what it did. */
+    fun ytToggleCaptions(): String {
+        val player = player ?: return context.getString(R.string.yt_r12_c_hold_captions_none)
+        if (PlayerHelper.getCurrentPlayedCaptionFormat(player) != null) {
+            updateCurrentSubtitle(null)
+            playerViewModel?.currentCaptionId = null
+            return context.getString(R.string.yt_r12_c_hold_captions_off)
+        }
+        val captions = PlayerHelper.getCaptionTracks(player)
+        val pick = captions.firstOrNull { it.language == PlayerHelper.defaultSubtitleCode }
+            ?: captions.firstOrNull { it.roleFlags != PlayerHelper.ROLE_FLAG_AUTO_GEN_SUBTITLE }
+            ?: captions.firstOrNull()
+            ?: return context.getString(R.string.yt_r12_c_hold_captions_none)
+        updateCurrentSubtitle(pick.id)
+        playerViewModel?.currentCaptionId = pick.id
+        val language = Locale.forLanguageTag(pick.language.orEmpty()).getDisplayLanguage(Locale.getDefault())
+        return language.ifEmpty { context.getString(R.string.yt_r12_c_hold_captions_on) }
+    }
+
+    /** YT: zoom if it fits, fit if it zooms (as a pinch, without its switch); says which. */
+    fun ytToggleZoom(): String {
+        return if (resizeMode != AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
+            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                subtitleView?.setBottomPaddingFraction(SUBTITLE_BOTTOM_PADDING_FRACTION)
+            }
+            context.getString(R.string.resize_mode_zoom)
+        } else {
+            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+            subtitleView?.setBottomPaddingFraction(SubtitleView.DEFAULT_BOTTOM_PADDING_FRACTION)
+            context.getString(R.string.resize_mode_fit)
+        }
+    }
+
+    /** YT: the name of the chapter at [positionMs], or null without chapters. */
+    fun ytChapterTitle(positionMs: Long): String? {
+        if (!::chaptersViewModel.isInitialized) return null
+        val chapters = chaptersViewModel.chapters
+        if (chapters.isEmpty()) return null
+        return PlayerHelper.getCurrentChapterIndex(positionMs, chapters)?.let { chapters[it].title.trim() }
     }
 
     override fun onFullscreenChange(isFullscreen: Boolean) {

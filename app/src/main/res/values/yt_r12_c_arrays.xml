@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: round 12, package C: the actions of hold and drag on the video, in the order of
+     YtHoldAction (the values are what the settings store). -->
+<resources>
+    <string-array name="yt_r12_c_hold_entries">
+        <item>@string/yt_r12_c_hold_none</item>
+        <item>@string/yt_r12_c_hold_play_pause</item>
+        <item>@string/yt_r12_c_hold_seek_back</item>
+        <item>@string/yt_r12_c_hold_seek_forward</item>
+        <item>@string/yt_r12_c_hold_chapter_prev</item>
+        <item>@string/yt_r12_c_hold_chapter_next</item>
+        <item>@string/yt_r12_c_hold_speed_up</item>
+        <item>@string/yt_r12_c_hold_speed_down</item>
+        <item>@string/yt_r12_c_hold_speed_reset</item>
+        <item>@string/yt_r12_c_hold_captions</item>
+        <item>@string/yt_r12_c_hold_zoom</item>
+        <item>@string/yt_r12_c_hold_repeat</item>
+        <item>@string/yt_r12_c_hold_sleep_timer</item>
+        <item>@string/yt_r12_c_hold_lock</item>
+        <item>@string/yt_r12_c_hold_queue</item>
+        <item>@string/yt_r12_c_hold_chapters</item>
+        <item>@string/yt_r12_c_hold_loop_last</item>
+        <item>@string/yt_r12_c_hold_return_point</item>
+        <item>@string/yt_r12_c_hold_minimize_entry</item>
+        <item>@string/yt_r12_c_hold_pip</item>
+        <item>@string/yt_r12_c_hold_audio</item>
+        <item>@string/yt_r12_c_hold_screenshot</item>
+        <item>@string/yt_r12_c_hold_share</item>
+        <item>@string/yt_r12_c_hold_save</item>
+        <item>@string/yt_r12_c_hold_comments</item>
+        <item>@string/yt_r12_c_hold_fullscreen_toggle</item>
+    </string-array>
+    <string-array name="yt_r12_c_hold_values" translatable="false">
+        <item>none</item>
+        <item>play_pause</item>
+        <item>seek_back</item>
+        <item>seek_forward</item>
+        <item>chapter_prev</item>
+        <item>chapter_next</item>
+        <item>speed_up</item>
+        <item>speed_down</item>
+        <item>speed_reset</item>
+        <item>captions</item>
+        <item>zoom</item>
+        <item>repeat</item>
+        <item>sleep_timer</item>
+        <item>lock</item>
+        <item>queue</item>
+        <item>chapters</item>
+        <item>loop_last</item>
+        <item>return_point</item>
+        <item>minimize</item>
+        <item>pip</item>
+        <item>audio</item>
+        <item>screenshot</item>
+        <item>share</item>
+        <item>save</item>
+        <item>comments</item>
+        <item>fullscreen</item>
+    </string-array>
+</resources>

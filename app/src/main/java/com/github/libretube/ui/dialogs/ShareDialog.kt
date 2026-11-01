@@ -90,8 +90,9 @@ class ShareDialog : DialogFragment() {
             if (timeStamp == null) {
                 lifecycleScope.launch(Dispatchers.IO) {
                     runCatching {
+                        // YT: ms to seconds (it divided by 10000, a tenth of the time)
                         val timeStamp = UserDataRepositoryHelper.userDataRepository.getFromWatchHistory(id)
-                            ?.metadata?.positionMillis?.div(10000) ?: return@runCatching
+                            ?.metadata?.positionMillis?.div(1000) ?: return@runCatching
                         withContext(Dispatchers.Main) {
                             binding.timeStamp.setText(timeStamp.toString())
                         }

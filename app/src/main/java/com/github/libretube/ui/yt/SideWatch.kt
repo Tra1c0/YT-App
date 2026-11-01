@@ -70,6 +70,7 @@ import com.github.libretube.ui.yt.scene.YtSceneUi
 import com.github.libretube.ui.yt.scene.rememberYtSceneUi
 import com.github.libretube.ui.yt.scene.sceneCaption
 import com.github.libretube.ui.yt.scene.ytSceneReveal
+import com.github.libretube.ui.yt.player.ytShareScrubSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -195,6 +196,8 @@ fun SideWatchDetails(
                 contentDescription = stringResource(R.string.share),
                 tint = palette.text,
                 modifier = Modifier
+                    // YT: held and dragged onto the time bar, it shares from that second
+                    .ytShareScrubSource(actions.shareScrub)
                     .clip(CircleShape)
                     .clickable(onClick = actions.onShare)
                     .padding(8.dp)
