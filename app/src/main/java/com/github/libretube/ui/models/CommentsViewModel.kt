@@ -21,9 +21,15 @@ class CommentsViewModel : ViewModel() {
     private var lastOpenedCommentRepliesId: String? = null
     val videoIdLiveData = MutableLiveData<String>()
 
+    /**
+     * YT: the comments of the video playing, fetched once for the sheet, the Side and Movo pages
+     * and the scene index, and what the scene lets them show (comments follow the scene).
+     */
+    val scene = CommentScene(viewModelScope)
+
     val commentsLiveData = videoIdLiveData.switchMap {
         Pager(PagingConfig(pageSize = 20, enablePlaceholders = false)) {
-            CommentPagingSource(it) {
+            CommentPagingSource(it, scene.cache) {
                 _commentCountLiveData.updateIfChanged(it)
             }
         }.liveData
