@@ -35,6 +35,8 @@ Der dreiminütige lokale Testfilm, feste Feed-Metadaten und Kommentar-Fixtures m
 
 Der einmalige Android-Hinweis zum Vollbild gilt im Emulator als bereits bestätigt. App-Fehlerdialoge bleiben eingeschaltet; ein App-ANR bleibt ein fehlgeschlagener Test. Schnelle Eingaben tragen gleichmäßig verteilte Ereigniszeitstempel, auch wenn der Emulator die Übermittlung verzögert.
 
+Die Positionsprüfung beim Verkleinern misst nach `dispatchDraw`: MotionLayout aktualisiert dort die gezeichnete Geometrie. Ein vorheriger `OnPreDraw`-Wert mischt bei verschachtelten Layouts alte und neue Positionen. Die zulässige Abweichung bleibt acht Pixel. Der Eingabetreiber betreibt auch einen Main-Looper für die Accessibility-Rückrufe unter Android 16.
+
 Ein fehlender Prüfgegenstand zählt als Fehler. „Kein Player gefunden“ oder eine fehlende Testdatei dürfen keinen grünen Gestentest ergeben. App-Abstürze, fehlgeschlagene Gesten und ANRs werden getrennt ausgegeben. App-Hänger sind Fehler; vorhandene Thread-Dumps werden für die Diagnose gesammelt.
 
 ## Läufe und Diagnose

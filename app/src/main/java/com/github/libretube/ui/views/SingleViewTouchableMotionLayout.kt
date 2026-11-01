@@ -2,6 +2,7 @@ package com.github.libretube.ui.views
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.GestureDetector
@@ -74,6 +75,9 @@ class SingleViewTouchableMotionLayout(context: Context, attributeSet: AttributeS
 
         /** [vx], [vy] in px per second; [cancelled] for CANCEL. */
         fun onRelease(e: MotionEvent, vx: Float, vy: Float, cancelled: Boolean)
+
+        /** After both nested MotionLayouts have applied the geometry actually drawn. */
+        fun onFrameDrawn() {}
     }
 
     /** YT: who has the current gesture. */
@@ -131,6 +135,11 @@ class SingleViewTouchableMotionLayout(context: Context, attributeSet: AttributeS
     private var activeMini: MiniTouch? = null
     private var activeDrag: MinimizeDrag? = null
     private var velocityTracker: VelocityTracker? = null
+
+    override fun dispatchDraw(canvas: Canvas) {
+        super.dispatchDraw(canvas)
+        minimizeDrag?.onFrameDrawn()
+    }
 
     init {
         super.setTransitionListener(object : TransitionAdapter() {

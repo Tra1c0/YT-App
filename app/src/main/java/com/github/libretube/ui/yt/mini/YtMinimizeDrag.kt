@@ -4,7 +4,6 @@ import android.os.SystemClock
 import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewTreeObserver
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.constraintlayout.motion.widget.TransitionAdapter
 import androidx.constraintlayout.motion.widget.YtMotionAccess
@@ -125,8 +124,7 @@ internal class YtMinimizeDrag(
         var below = 0f
         var zone = Zone.STAY
 
-        // the frame check of the emulator runs: what the page shows now and what it showed
-        var shown: FloatArray? = null
+        // The latest finger target, checked against the geometry actually drawn.
         var placed: FloatArray? = null
         var maxError = 0f
         var frames = 0
@@ -205,9 +203,10 @@ internal class YtMinimizeDrag(
         learnEnd()
     }
 
-    private val frameCheck = ViewTreeObserver.OnPreDrawListener {
-        checkFrame()
-        true
+    private var checkingFrames = false
+
+    override fun onFrameDrawn() {
+        if (checkingFrames) checkFrame()
     }
 
     fun attach() {
@@ -316,7 +315,7 @@ internal class YtMinimizeDrag(
             "minimize grab from=${if (fromMini) "mini" else "full"} p0=${r3(p)} u=${r2(u)} v=${r2(v)} " +
                 "start=${boxText(g.start)} end=${boxText(g.end)} endFrom=${g.endFrom} curve=${r1(g.curve.end)}"
         }
-        if (YtTestHooks.gestureLog) motion.viewTreeObserver.addOnPreDrawListener(frameCheck)
+        checkingFrames = YtTestHooks.gestureLog
         move(s, e.rawX - offX, e.rawY - offY, dragging = true)
     }
 
@@ -701,27 +700,20 @@ internal class YtMinimizeDrag(
     // --- the emulator runs' check that the point really is under the finger
 
     private fun removeFrameCheck() {
-        val observer = motion.viewTreeObserver
-        if (observer.isAlive) observer.removeOnPreDrawListener(frameCheck)
+        checkingFrames = false
     }
 
     private fun checkFrame() {
         val s = session ?: return
-        val shown = s.shown
         val placed = s.placed ?: return
-        s.shown = placed
-        if (shown == null) return
-        // the page lays out the progress set for this frame at its draw, after this; so what it
-        // shows now is the last frame's layout with this frame's offsets. Compared both ways, so
-        // an early layout pass (which shows this frame's already) is no error either
+        // MotionLayout interpolates in dispatchDraw, after OnPreDraw. Measure after the
+        // actual draw so parent translation and child bounds belong to the same frame.
         s.tracked.getLocationInWindow(at)
         val x = at[0] + s.finger.u * s.tracked.width
         val y = at[1] + s.finger.v * s.tracked.height
-        val lastFrame = y - placed[3] + shown[3] - shown[1]
-        val thisFrame = y - placed[1]
-        val error = if (abs(lastFrame) <= abs(thisFrame)) lastFrame else thisFrame
+        val error = y - placed[1]
         val sideways = x - placed[0]
-        val banded = shown[4] != 0f || placed[4] != 0f
+        val banded = placed[4] != 0f
         if (!banded) {
             s.maxError = max(s.maxError, abs(error))
             s.frames++
