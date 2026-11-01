@@ -20,7 +20,7 @@ import kotlin.math.min
 enum class YtMiniJoint { STACK, BULGE, TUCK }
 
 /** A rectangle in px, left to right, in the coordinates of the player's box (main_container). */
-data class YtBox(val left: Float, val top: Float, val right: Float, val bottom: Float) {
+data class YtMiniBox(val left: Float, val top: Float, val right: Float, val bottom: Float) {
     val width: Float get() = right - left
     val height: Float get() = bottom - top
     val centerX: Float get() = (left + right) / 2f
@@ -29,15 +29,15 @@ data class YtBox(val left: Float, val top: Float, val right: Float, val bottom: 
     fun contains(x: Float, y: Float): Boolean = x >= left && x <= right && y >= top && y <= bottom
 
     /** True if the two share an area (touching edges do not count). */
-    fun overlaps(other: YtBox): Boolean =
+    fun overlaps(other: YtMiniBox): Boolean =
         left < other.right && other.left < right && top < other.bottom && other.top < bottom
 
-    fun inflate(by: Float) = YtBox(left - by, top - by, right + by, bottom + by)
+    fun inflate(by: Float) = YtMiniBox(left - by, top - by, right + by, bottom + by)
 
-    fun offset(dx: Float, dy: Float) = YtBox(left + dx, top + dy, right + dx, bottom + dy)
+    fun offset(dx: Float, dy: Float) = YtMiniBox(left + dx, top + dy, right + dx, bottom + dy)
 
     /** The same box seen in a box [width] wide that is laid out right to left. */
-    fun mirror(width: Float) = YtBox(width - right, top, width - left, bottom)
+    fun mirror(width: Float) = YtMiniBox(width - right, top, width - left, bottom)
 }
 
 /**
@@ -88,11 +88,11 @@ data class YtMiniGeometry(
     /** The body's edges (inset from the box for BULGE). */
     val bodyStart: Float,
     val bodyEnd: Float,
-    val player: YtBox,
-    val play: YtBox?,
-    val close: YtBox?,
+    val player: YtMiniBox,
+    val play: YtMiniBox?,
+    val close: YtMiniBox?,
     /** Title and channel. */
-    val text: YtBox,
+    val text: YtMiniBox,
     val margins: YtMiniMargins,
 )
 
@@ -123,12 +123,12 @@ data class YtMiniMargins(
  */
 data class YtMiniPeekGeometry(
     val boxHeight: Float,
-    val player: YtBox,
-    val title: YtBox,
+    val player: YtMiniBox,
+    val title: YtMiniBox,
     /** Letting go here toggles play and pause. */
-    val pill: YtBox,
+    val pill: YtMiniBox,
     /** Letting go here plays the next video; null when there is none. */
-    val next: YtBox?,
+    val next: YtMiniBox?,
 )
 
 /** What the finger is over in the preview. */
@@ -151,7 +151,7 @@ object YtMiniLayout {
     const val PEEK_PICTURE_SHARE = 0.56f
 
     /** [box] in a box [boxWidth] wide, mirrored if [rtl]. */
-    fun directed(box: YtBox, boxWidth: Float, rtl: Boolean): YtBox = if (rtl) box.mirror(boxWidth) else box
+    fun directed(box: YtMiniBox, boxWidth: Float, rtl: Boolean): YtMiniBox = if (rtl) box.mirror(boxWidth) else box
 
     /** The docked player of [spec] in a box [boxWidth] px wide, with [density] px per dp. */
     fun rest(spec: YtMiniSpec, boxWidth: Float, density: Float): YtMiniGeometry {
@@ -162,19 +162,19 @@ object YtMiniLayout {
         val bodyEnd = boxWidth - spec.body * d
         val thumbTop = (content - spec.thumbHeight * d) / 2f
         val thumbLeft = bodyStart + spec.thumbStart * d
-        val player = YtBox(thumbLeft, thumbTop, thumbLeft + spec.thumbWidth * d, thumbTop + spec.thumbHeight * d)
+        val player = YtMiniBox(thumbLeft, thumbTop, thumbLeft + spec.thumbWidth * d, thumbTop + spec.thumbHeight * d)
 
         val button = BUTTON * d
         val buttonTop = (content - button) / 2f
         val close = if (spec.close) {
             val right = bodyEnd - CLOSE_END * d
-            YtBox(right - button, buttonTop, right, buttonTop + button)
+            YtMiniBox(right - button, buttonTop, right, buttonTop + button)
         } else {
             null
         }
         val play = if (spec.play) {
             val right = close?.let { it.left - BUTTON_GAP * d } ?: (bodyEnd - CLOSE_END * d)
-            YtBox(right - button, buttonTop, right, buttonTop + button)
+            YtMiniBox(right - button, buttonTop, right, buttonTop + button)
         } else {
             null
         }
@@ -184,7 +184,7 @@ object YtMiniLayout {
             close != null -> close.left - 4f * d
             else -> bodyEnd - CLOSE_END * d
         }
-        val text = YtBox(player.right + TEXT_GAP * d, 0f, max(textEnd, player.right + TEXT_GAP * d), content)
+        val text = YtMiniBox(player.right + TEXT_GAP * d, 0f, max(textEnd, player.right + TEXT_GAP * d), content)
 
         val margins = YtMiniMargins(
             boxStart = if (spec.width != null) 0f else spec.start * d,
@@ -224,22 +224,22 @@ object YtMiniLayout {
     fun peek(spec: YtMiniSpec, boxWidth: Float, density: Float, hasNext: Boolean): YtMiniPeekGeometry {
         val d = density
         val pad = max(spec.thumbStart, PEEK_PAD) * d
-        val inner = YtBox(spec.body * d, 0f, boxWidth - spec.body * d, 0f)
+        val inner = YtMiniBox(spec.body * d, 0f, boxWidth - spec.body * d, 0f)
         val growth = spec.peekGrowth.coerceIn(1f, 3f)
         // the picture keeps its cut; it leaves room for the title and the pill beside it
         val most = ((inner.width - 2f * pad) * PEEK_PICTURE_SHARE).coerceAtLeast(1f)
         val width = min(spec.thumbWidth * growth * d, most)
         val height = width * spec.thumbHeight / spec.thumbWidth.coerceAtLeast(1)
 
-        val next = if (hasNext) YtBox(inner.left + pad, pad, inner.right - pad, pad + PEEK_ROW * d) else null
+        val next = if (hasNext) YtMiniBox(inner.left + pad, pad, inner.right - pad, pad + PEEK_ROW * d) else null
         val top = (next?.bottom ?: 0f) + pad
-        val player = YtBox(inner.left + pad, top, inner.left + pad + width, top + height)
+        val player = YtMiniBox(inner.left + pad, top, inner.left + pad + width, top + height)
         val columnLeft = player.right + TEXT_GAP * d
         val columnRight = max(inner.right - pad, columnLeft)
         val pillHeight = PEEK_PILL * d
         val pillWidth = min(PEEK_PILL_WIDTH * d, columnRight - columnLeft)
-        val pill = YtBox(columnLeft, player.bottom - pillHeight, columnLeft + pillWidth, player.bottom)
-        val title = YtBox(columnLeft, player.top, columnRight, max(player.top, pill.top - 4f * d))
+        val pill = YtMiniBox(columnLeft, player.bottom - pillHeight, columnLeft + pillWidth, player.bottom)
+        val title = YtMiniBox(columnLeft, player.top, columnRight, max(player.top, pill.top - 4f * d))
         val rest = (spec.height + spec.overlap) * d
         val box = max(rest, player.bottom + pad + spec.overlap * d)
         return YtMiniPeekGeometry(box, player, title, pill, next)

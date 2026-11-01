@@ -17,14 +17,14 @@ data class YtGlassRest(
     val boxWidth: Float,
     val boxHeight: Float,
     /** The video strip (R.id.player). */
-    val picture: YtBox,
+    val picture: YtMiniBox,
     /** Where the tab row's rim lies over the strip (box y). */
     val rim: Float,
-    val handle: YtBox,
-    val prev: YtBox,
-    val next: YtBox,
+    val handle: YtMiniBox,
+    val prev: YtMiniBox,
+    val next: YtMiniBox,
     /** The room of "Titel · Kanal": between the buttons, its foot above the rim. */
-    val title: YtBox,
+    val title: YtMiniBox,
 )
 
 /**
@@ -36,14 +36,14 @@ data class YtGlassOver(
     val height: Float,
     /** The tab row's rim over the strip's foot. */
     val rim: Float,
-    val prev: YtBox,
-    val next: YtBox,
+    val prev: YtMiniBox,
+    val next: YtMiniBox,
     /** The most the title may take (between the buttons) and its foot. */
     val titleLeft: Float,
     val titleRight: Float,
     val titleBottom: Float,
     /** The next video's row and the "Wiedergabe" pill where the preview has them at rest. */
-    val row: YtBox,
+    val row: YtMiniBox,
     val pillCenterY: Float,
     val pillCenterYWithoutRow: Float,
 )
@@ -112,16 +112,16 @@ object YtGlassLayout {
     fun rest(boxWidth: Float, density: Float): YtGlassRest {
         val d = density
         val boxHeight = boxHeight(d)
-        val picture = YtBox(INSET * d, PICTURE_TOP * d, boxWidth - INSET * d, boxHeight)
+        val picture = YtMiniBox(INSET * d, PICTURE_TOP * d, boxWidth - INSET * d, boxHeight)
         val rim = boxHeight - RIM * d
-        val handle = YtBox(
+        val handle = YtMiniBox(
             boxWidth / 2f - HANDLE_WIDTH * d / 2f,
             HANDLE_TOP * d,
             boxWidth / 2f + HANDLE_WIDTH * d / 2f,
             (HANDLE_TOP + HANDLE_HEIGHT) * d,
         )
         val over = over(picture.width, picture.height, d)
-        val title = YtBox(over.titleLeft, over.titleBottom - TITLE_HEIGHT * d, over.titleRight, over.titleBottom)
+        val title = YtMiniBox(over.titleLeft, over.titleBottom - TITLE_HEIGHT * d, over.titleRight, over.titleBottom)
         return YtGlassRest(
             boxWidth = boxWidth,
             boxHeight = boxHeight,
@@ -144,12 +144,12 @@ object YtGlassLayout {
         val r = BUTTON * d / 2f
         val prevX = BUTTON_INSET * d + r
         val nextX = width - BUTTON_INSET * d - r
-        val prev = YtBox(prevX - r, centerY - r, prevX + r, centerY + r)
-        val next = YtBox(nextX - r, centerY - r, nextX + r, centerY + r)
+        val prev = YtMiniBox(prevX - r, centerY - r, prevX + r, centerY + r)
+        val next = YtMiniBox(nextX - r, centerY - r, nextX + r, centerY + r)
         val titleLeft = prev.right + TITLE_SIDE_GAP * d
         val titleRight = max(titleLeft, next.left - TITLE_SIDE_GAP * d)
         val rowBottom = rim - ROW_GAP * d
-        val row = YtBox(ROW_INSET * d, rowBottom - ROW * d, max(ROW_INSET * d, width - ROW_INSET * d), rowBottom)
+        val row = YtMiniBox(ROW_INSET * d, rowBottom - ROW * d, max(ROW_INSET * d, width - ROW_INSET * d), rowBottom)
         val pill = PILL * d / 2f
         return YtGlassOver(
             width = width,
@@ -174,18 +174,18 @@ object YtGlassLayout {
     fun peek(boxWidth: Float, density: Float, hasNext: Boolean): YtMiniPeekGeometry {
         val d = density
         val boxHeight = peekBoxHeight(d)
-        val picture = YtBox(INSET * d, PICTURE_TOP * d, boxWidth - INSET * d, boxHeight)
+        val picture = YtMiniBox(INSET * d, PICTURE_TOP * d, boxWidth - INSET * d, boxHeight)
         val over = over(picture.width, picture.height, d)
         val centerY = picture.top + if (hasNext) over.pillCenterY else over.pillCenterYWithoutRow
         val hitWidth = min(PILL_HIT_WIDTH * d, picture.width)
-        val pill = YtBox(
+        val pill = YtMiniBox(
             boxWidth / 2f - hitWidth / 2f,
             centerY - PILL_HIT_HEIGHT * d / 2f,
             boxWidth / 2f + hitWidth / 2f,
             centerY + PILL_HIT_HEIGHT * d / 2f,
         )
         // what the eye sees of the pill (the title morphs into it)
-        val title = YtBox(boxWidth / 2f - 60f * d, centerY - PILL * d / 2f, boxWidth / 2f + 60f * d, centerY + PILL * d / 2f)
+        val title = YtMiniBox(boxWidth / 2f - 60f * d, centerY - PILL * d / 2f, boxWidth / 2f + 60f * d, centerY + PILL * d / 2f)
         val next = if (hasNext) over.row.offset(picture.left, picture.top) else null
         return YtMiniPeekGeometry(boxHeight, picture, title, pill, next)
     }

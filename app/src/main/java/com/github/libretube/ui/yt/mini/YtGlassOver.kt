@@ -521,7 +521,7 @@ internal fun GlassOverlay(scene: YtMiniScene) {
         val o = YtGlassLayout.over(w.toFloat(), h.toFloat(), density)
         space.over = o
         val full = Constraints.fixed(w, h)
-        fun fixed(box: YtBox) = Constraints.fixed(box.width.roundToInt().coerceAtLeast(0), box.height.roundToInt().coerceAtLeast(0))
+        fun fixed(box: YtMiniBox) = Constraints.fixed(box.width.roundToInt().coerceAtLeast(0), box.height.roundToInt().coerceAtLeast(0))
         val placed = measurables.map { measurable ->
             when (measurable.layoutId) {
                 "prev" -> measurable.measure(fixed(o.prev)) to o.prev

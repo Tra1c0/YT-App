@@ -247,7 +247,7 @@ object YtMiniParts {
      * rest, left to right; centered in it).
      */
     @Composable
-    fun Drop(scene: YtMiniScene, style: Style, anchor: YtBox, outline: ((Size) -> Path)?) {
+    fun Drop(scene: YtMiniScene, style: Style, anchor: YtMiniBox, outline: ((Size) -> Path)?) {
         val density = LocalDensity.current.density
         if (outline != null) {
             Canvas(Modifier.fillMaxSize().clearAndSetSemantics {}) {

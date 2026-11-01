@@ -102,7 +102,7 @@ class YtGlassLayoutTest {
         }
     }
 
-    private fun assertNotNullBox(box: YtBox?): YtBox {
+    private fun assertNotNullBox(box: YtMiniBox?): YtMiniBox {
         assertNotNull(box)
         return box!!
     }

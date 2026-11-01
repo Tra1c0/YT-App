@@ -99,10 +99,12 @@ a_glass_checks() {
   expect_log YtMini 'play toggled'
   expect_log YtHaptic 'mini_peek_full_glass'
 
-  # hold, move onto the next video's row, let go: it plays
+  # hold, move onto the next video's row, let go: it plays. The press starts on the strip's foot
+  # under the tab row's rim: the row grows over the strip's middle, and a part that grew under
+  # the resting finger does not act until the finger moved onto it from elsewhere
   row=$(( b - $(dp 40) ))
   log_mark
-  finger_down "$x" "$(( y - $(dp 6) ))"
+  finger_down "$x" "$(( b - $(dp 3) ))"
   sleep 1.6
   finger_move "$(( x + $(dp 30) ))" "$row"
   sleep 0.3
