@@ -59,6 +59,7 @@ class YtHoldCompassView @JvmOverloads constructor(
     private val knobY = YtSpring(0f)
     private val result = YtSpring(0f)
     private val emphasis = YtHoldDir.entries.associateWith { YtSpring(0f) }
+    private val springs = listOf(presence, focus, centreShown, knobX, knobY, result) + emphasis.values
 
     // the layout of one show, relative to the centre
     private var cx = 0f
@@ -136,7 +137,7 @@ class YtHoldCompassView @JvmOverloads constructor(
             intArrayOf(SCRIM_CENTRE, SCRIM_MID, Color.TRANSPARENT), floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP,
         )
 
-        for (spring in listOf(presence, focus, centreShown, knobX, knobY, result) + emphasis.values) {
+        for (spring in springs) {
             spring.stiffness = style.stiffness
             spring.dampingRatio = style.damping
         }
@@ -324,7 +325,7 @@ class YtHoldCompassView @JvmOverloads constructor(
         if (resultText != null && now >= resultUntil) to(result, 0f)
 
         var moving = false
-        for (spring in listOf(presence, focus, centreShown, knobX, knobY, result) + emphasis.values) {
+        for (spring in springs) {
             moving = spring.step(dt) or moving
         }
         val shown = presence.value.coerceIn(0f, 1f)
