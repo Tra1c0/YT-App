@@ -94,14 +94,16 @@ public final class YtInput {
             float endX = Float.parseFloat(words[3]), endY = Float.parseFloat(words[4]);
             int duration = Math.max(16, Math.min(1000, Integer.parseInt(words[5])));
             long start = SystemClock.uptimeMillis();
-            touch(MotionEvent.ACTION_DOWN, x, y, false);
+            touchAt(MotionEvent.ACTION_DOWN, x, y, false, start);
             int steps = Math.max(4, duration / 8);
             for (int i = 1; i <= steps; i++) {
                 long wait = start + duration * i / steps - SystemClock.uptimeMillis();
                 if (wait > 0) SystemClock.sleep(wait);
-                touch(MotionEvent.ACTION_MOVE, x + (endX - x) * i / steps, y + (endY - y) * i / steps, false);
+                touchAt(MotionEvent.ACTION_MOVE, x + (endX - x) * i / steps, y + (endY - y) * i / steps, false, start + duration * i / steps);
             }
-            touch(MotionEvent.ACTION_UP, endX, endY);
+            long upAt = start + duration + 1;
+            if (upAt > SystemClock.uptimeMillis()) SystemClock.sleep(upAt - SystemClock.uptimeMillis());
+            touchAt(MotionEvent.ACTION_UP, endX, endY, true, upAt);
         } else if ("START".equals(words[0]) && words.length == 5) {
             touch(MotionEvent.ACTION_DOWN, x, y, false);
             touch(MotionEvent.ACTION_MOVE, Float.parseFloat(words[3]), Float.parseFloat(words[4]));
@@ -126,7 +128,10 @@ public final class YtInput {
     }
 
     private void touch(int action, float x, float y, boolean sync) {
-        long now = SystemClock.uptimeMillis();
+        touchAt(action, x, y, sync, SystemClock.uptimeMillis());
+    }
+
+    private void touchAt(int action, float x, float y, boolean sync, long now) {
         if (action == MotionEvent.ACTION_DOWN) {
             if (downTime != 0) touch(MotionEvent.ACTION_CANCEL, lastX, lastY);
             downTime = now;

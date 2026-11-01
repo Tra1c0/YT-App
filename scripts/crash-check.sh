@@ -37,6 +37,8 @@ if ! [[ "${YT_FONT_SCALE:-1.0}" =~ ^(1(\.[0-9]+)?|2(\.0+)?)$ ]]; then
   exit 2
 fi
 adb shell settings put system font_scale "${YT_FONT_SCALE:-1.0}"
+# A one-time Android tutorial is outside the app and otherwise covers the fullscreen controls.
+adb shell settings put secure immersive_mode_confirmations confirmed
 for scale in window_animation_scale transition_animation_scale animator_duration_scale; do
   if [ "${YT_MOTION:-yes}" = yes ]; then value=1; else value=0; fi
   adb shell settings put global "$scale" "$value"
@@ -102,7 +104,7 @@ dismiss_anr() {
   title=$(timeout 15 adb shell dumpsys window windows 2>/dev/null | grep -a -o "Application Not Responding: [A-Za-z0-9._]*" | head -n 1)
   [ -n "$title" ] || return 0
   other=${title#Application Not Responding: }
-  if [ -n "$other" ] && [ "$other" != "$PKG" ]; then
+  if [ -n "$other" ] && [ "$other" != "$PKG" ] && [ "$other" != system ]; then
     mark "not-responding dialog ($title): stopping $other"
     timeout 10 adb shell am force-stop "$other" || true
     sleep 1

@@ -33,6 +33,8 @@ Auf Arbeitsbranches laufen zunächst A–E für YouTube neu und Glas. Mit `full_
 
 Der dreiminütige lokale Testfilm, feste Feed-Metadaten und Kommentar-Fixtures machen die Bedienprüfungen unabhängig von wechselnden YouTube-Charts. Die Testparameter akzeptiert die App ausschließlich auf dem Android-Emulator. Reale Netzwerkwiedergabe ist davon getrennt zu prüfen.
 
+Der einmalige Android-Hinweis zum Vollbild gilt im Emulator als bereits bestätigt. App-Fehlerdialoge bleiben eingeschaltet; ein App-ANR bleibt ein fehlgeschlagener Test. Schnelle Eingaben tragen gleichmäßig verteilte Ereigniszeitstempel, auch wenn der Emulator die Übermittlung verzögert.
+
 Ein fehlender Prüfgegenstand zählt als Fehler. „Kein Player gefunden“ oder eine fehlende Testdatei dürfen keinen grünen Gestentest ergeben. App-Abstürze, fehlgeschlagene Gesten und ANRs werden getrennt ausgegeben. App-Hänger sind Fehler; vorhandene Thread-Dumps werden für die Diagnose gesammelt.
 
 ## Läufe und Diagnose
