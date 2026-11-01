@@ -136,17 +136,25 @@ object YtLoopModule : YtServiceModule {
         if (abs(current - loop.speed) > SPEED_EPSILON) exo.setPlaybackSpeed(loop.speed)
         speedApplied = loop.speed
 
+        // the same loop changed (an end moved, a setting) counts on; another passage starts anew
         val existing = loopRun
-        val run = existing ?: YtLoopRun(loop)
+        val same = existing != null && loop.aMs < existing.loop.bMs && loop.bMs > existing.loop.aMs
+        val heldAtB = existing?.pausing == true
+        val run = if (same && existing != null) existing else YtLoopRun(loop)
         loopRun = run
         // new settings without the pause it holds for: the next pass starts now
-        val action = if (existing != null) existing.update(loop) else YtLoopAction.NONE
+        val action = if (same && existing != null) existing.update(loop) else YtLoopAction.NONE
         armMessage(exo, loop.bMs)
 
         // a loop starts at A unless the video is in it already
         val position = exo.currentPosition
         val inside = position >= loop.aMs && position < loop.bMs - NEAR_B_MS
         if (action == YtLoopAction.NONE && !run.pausing && !inside) seekToA(exo, loop)
+        // a new passage while the old one held at B for its pause: it plays on at once
+        if (!same && heldAtB) {
+            handler?.removeCallbacks(pauseOver)
+            exo.play()
+        }
         publish()
         YtTestHooks.log(LOG_TAG) {
             "set a=${loop.aMs} b=${loop.bMs} speed=${loop.speed} pause=${loop.pauseMs} " +

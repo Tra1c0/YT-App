@@ -122,12 +122,12 @@ class YtLoopChipView @JvmOverloads constructor(
         if (!showing && visibility != VISIBLE) {
             appear.snapTo(0f)
             press.snapTo(1f)
+            lastFrameAt = 0L
         }
         showing = true
         visibility = VISIBLE
         isEnabled = true
         if (YtPlayerHudStyle.motion) appear.animateTo(1f) else appear.snapTo(1f)
-        lastFrameAt = 0L
         if (widthChanged) requestLayout() else measureIfWider()
         invalidate()
     }
