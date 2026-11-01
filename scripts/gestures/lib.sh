@@ -60,6 +60,10 @@ anim_on() { mark "animations on"; anim_scales 1; sleep 1; }
 anim_off() { mark "animations off"; anim_scales 0; }
 
 bounds_of() {
+  if [ "${YT_INPUT_READY:-no}" = yes ]; then
+    driver_find "$@"
+    return
+  fi
   ui | RE="$1" N="${2:-1}" awk '
     # the value of one attribute of the node on this line ("" when it has none)
     function attr(name) {

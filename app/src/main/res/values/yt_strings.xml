@@ -254,7 +254,7 @@
     <!-- the video pages of the designs -->
     <string name="yt_watch_more">More</string>
     <string name="yt_watch_less">Less</string>
-    <string name="yt_watch_open_comments">Tap to read and write</string>
+    <string name="yt_watch_open_comments">Read comments and explore timestamps</string>
     <string name="yt_watch_views_label">Views</string>
     <string name="yt_watch_likes_label">Likes</string>
     <string name="yt_watch_uploaded_label">Uploaded</string>

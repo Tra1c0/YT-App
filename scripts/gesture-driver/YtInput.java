@@ -15,6 +15,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
+import java.util.regex.Pattern;
 import org.xmlpull.v1.XmlSerializer;
 
 /**
@@ -28,6 +30,8 @@ public final class YtInput {
     private final UiAutomation automation;
     private long downTime;
     private float lastX, lastY;
+    private Pattern findPattern;
+    private int findRemaining;
 
     private YtInput(UiAutomation automation) { this.automation = automation; }
 
@@ -54,11 +58,14 @@ public final class YtInput {
             String command;
             while ((command = input.readLine()) != null) {
                 if ("QUIT".equals(command)) break;
+                int separator = command.indexOf(' ');
+                if (separator < 1) continue;
+                String request = command.substring(0, separator);
                 try {
-                    String result = driver.command(command);
-                    reply("OK", result);
+                    String result = driver.command(command.substring(separator + 1));
+                    reply(request, "OK", result);
                 } catch (Exception e) {
-                    reply("ERR", e.toString());
+                    reply(request, "ERR", e.toString());
                 }
             }
         } finally {
@@ -70,30 +77,37 @@ public final class YtInput {
         }
     }
 
-    private static void reply(String status, String value) {
-        System.out.println("YTINPUT " + status + " " + Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8)));
+    private static void reply(String request, String status, String value) {
+        System.out.println("YTINPUT " + request + " " + status + " " + Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8)));
         System.out.flush();
     }
 
     private String command(String line) throws Exception {
         String[] words = line.trim().split("\\s+");
         if ("DUMP".equals(words[0])) return dump();
+        if ("FIND".equals(words[0]) && words.length == 3) {
+            return find(new String(Base64.getDecoder().decode(words[1]), StandardCharsets.UTF_8), Integer.parseInt(words[2]));
+        }
         if (words.length < 3) throw new IllegalArgumentException("Expected a touch and x y");
         float x = Float.parseFloat(words[1]), y = Float.parseFloat(words[2]);
         if ("START".equals(words[0]) && words.length == 5) {
-            touch(MotionEvent.ACTION_DOWN, x, y);
+            touch(MotionEvent.ACTION_DOWN, x, y, false);
             touch(MotionEvent.ACTION_MOVE, Float.parseFloat(words[3]), Float.parseFloat(words[4]));
         } else if ("DOWN".equals(words[0])) touch(MotionEvent.ACTION_DOWN, x, y);
         else if ("MOVE".equals(words[0])) touch(MotionEvent.ACTION_MOVE, x, y);
         else if ("UP".equals(words[0])) touch(MotionEvent.ACTION_UP, x, y);
         else if ("TAP".equals(words[0])) {
-            touch(MotionEvent.ACTION_DOWN, x, y);
+            touch(MotionEvent.ACTION_DOWN, x, y, false);
             touch(MotionEvent.ACTION_UP, x, y);
         } else throw new IllegalArgumentException("Unknown command " + words[0]);
         return "";
     }
 
     private void touch(int action, float x, float y) {
+        touch(action, x, y, true);
+    }
+
+    private void touch(int action, float x, float y, boolean sync) {
         long now = SystemClock.uptimeMillis();
         if (action == MotionEvent.ACTION_DOWN) {
             if (downTime != 0) touch(MotionEvent.ACTION_CANCEL, lastX, lastY);
@@ -102,7 +116,7 @@ public final class YtInput {
         MotionEvent event = MotionEvent.obtain(downTime, now, action, x, y, 0);
         event.setSource(InputDevice.SOURCE_TOUCHSCREEN);
         try {
-            if (!automation.injectInputEvent(event, true)) throw new IllegalStateException("Input was rejected");
+            if (!automation.injectInputEvent(event, sync)) throw new IllegalStateException("Input was rejected");
         } finally {
             event.recycle();
             lastX = x;
@@ -112,22 +126,91 @@ public final class YtInput {
     }
 
     private String dump() throws Exception {
+        // Older Android versions have no clearCache(), and refresh on the accessibility events.
+        try { UiAutomation.class.getMethod("clearCache").invoke(automation); }
+        catch (NoSuchMethodException ignored) { }
         AccessibilityNodeInfo root = automation.getRootInActiveWindow();
         if (root == null) throw new IllegalStateException("No active window");
         StringWriter writer = new StringWriter();
         XmlSerializer xml = Xml.newSerializer();
         xml.setOutput(writer);
         xml.startTag("", "hierarchy");
-        try { node(xml, root, 0); } finally { root.recycle(); }
+        Rect viewport = new Rect();
+        root.getBoundsInScreen(viewport);
+        try { node(xml, root, 0, viewport); } finally { root.recycle(); }
         xml.endTag("", "hierarchy");
         xml.flush();
         return writer.toString();
     }
 
-    private void node(XmlSerializer xml, AccessibilityNodeInfo node, int depth) throws Exception {
+    /** Find one target without serializing the whole, constantly changing screen. */
+    private String find(String expression, int nth) {
+        AccessibilityNodeInfo root = automation.getRootInActiveWindow();
+        if (root == null) return "NOT_FOUND";
+        findPattern = Pattern.compile(expression);
+        findRemaining = Math.max(1, nth);
+        Rect viewport = new Rect();
+        root.getBoundsInScreen(viewport);
+        try {
+            // Platform views (player, time bar, transient chips) have a direct ID query.
+            java.util.regex.Matcher nativeId = Pattern.compile("^(?:id/)?([A-Za-z0-9_]+)\\$$").matcher(expression);
+            if (nativeId.matches() && root.getPackageName() != null) {
+                String id = root.getPackageName() + ":id/" + nativeId.group(1);
+                List<AccessibilityNodeInfo> matches = root.findAccessibilityNodeInfosByViewId(id);
+                String result = null;
+                for (AccessibilityNodeInfo match : matches) {
+                    try {
+                        if (result == null && match.refresh() && match.isVisibleToUser()) {
+                            Rect box = visibleBounds(match, viewport);
+                            if (!box.isEmpty() && --findRemaining == 0) result = coordinates(box);
+                        }
+                    } finally { match.recycle(); }
+                }
+                if (result != null) return result;
+                findRemaining = Math.max(1, nth);
+            }
+            String result = findNode(root, viewport, 0);
+            return result == null ? "NOT_FOUND" : result;
+        } finally { root.recycle(); }
+    }
+
+    private String findNode(AccessibilityNodeInfo node, Rect clip, int depth) {
+        if (depth > 80) return null;
+        Rect bounds = visibleBounds(node, clip);
+        if (bounds.isEmpty()) return null;
+        if ((findPattern.matcher(value(node.getViewIdResourceName())).find()
+                || findPattern.matcher(value(node.getText())).find()
+                || findPattern.matcher(value(node.getContentDescription())).find()) && --findRemaining == 0) {
+            return coordinates(bounds);
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            AccessibilityNodeInfo child = node.getChild(i);
+            if (child == null) continue;
+            try {
+                if (!child.isVisibleToUser()) continue;
+                String result = findNode(child, node.isScrollable() ? bounds : clip, depth + 1);
+                if (result != null) return result;
+            } finally { child.recycle(); }
+        }
+        return null;
+    }
+
+    private static Rect visibleBounds(AccessibilityNodeInfo node, Rect clip) {
+        Rect box = new Rect();
+        node.getBoundsInScreen(box);
+        if (!box.intersect(clip)) box.setEmpty();
+        return box;
+    }
+
+    private static String coordinates(Rect box) {
+        return box.left + " " + box.top + " " + box.right + " " + box.bottom;
+    }
+
+    private void node(XmlSerializer xml, AccessibilityNodeInfo node, int depth, Rect clip) throws Exception {
         if (depth > 80) return;
         Rect bounds = new Rect();
         node.getBoundsInScreen(bounds);
+        if (!bounds.intersect(clip)) bounds.setEmpty();
         xml.startTag("", "node");
         xml.attribute("", "text", value(node.getText()));
         xml.attribute("", "content-desc", value(node.getContentDescription()));
@@ -141,7 +224,7 @@ public final class YtInput {
         for (int i = 0; i < node.getChildCount(); i++) {
             AccessibilityNodeInfo child = node.getChild(i);
             if (child == null) continue;
-            try { if (child.isVisibleToUser()) node(xml, child, depth + 1); }
+            try { if (child.isVisibleToUser()) node(xml, child, depth + 1, node.isScrollable() ? bounds : clip); }
             finally { child.recycle(); }
         }
         xml.endTag("", "node");

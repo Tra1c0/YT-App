@@ -115,6 +115,9 @@ jobs:
           rm -f en.txt de.txt
           [ "$failed" = 0 ] || { echo "::error::The English and German YT strings differ (see above)"; exit 1; }
 
+      - name: Test the input driver protocol
+        run: bash scripts/tests/gesture-driver-protocol.sh
+
       - name: Run all app unit tests
         run: ./gradlew :app:testReleaseUnitTest --no-daemon --console=plain
 

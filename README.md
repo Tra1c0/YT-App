@@ -1,53 +1,54 @@
 # YT
 
-Eigene YouTube-App für Android: werbefrei, ohne Google-Konto, mit eigenem Design und eigenen Funktionen.
+Eigene YouTube-App für Android 8 und neuer, mit zwölf Ansichten, eigener Warteschlange und lokalen Feed-Regeln. Ohne Google-Konto nutzbar.
 
-YT basiert auf [LibreTube](https://github.com/libre-tube/LibreTube) (GPLv3) und übernimmt dessen
-Fixes regelmäßig. Alles, was YT gegenüber LibreTube ändert, steht in [MODIFICATIONS.md](MODIFICATIONS.md).
-Das ursprüngliche LibreTube-README liegt unter [README.LibreTube.md](README.LibreTube.md).
+YT basiert auf [LibreTube](https://github.com/libre-tube/LibreTube) (GPLv3). Änderungen am Fork stehen in [MODIFICATIONS.md](MODIFICATIONS.md); das ursprüngliche README liegt unter [README.LibreTube.md](README.LibreTube.md).
 
-## Installieren
+## Installieren und aktualisieren
 
-1. Unter **Releases** die neueste `YT-….apk` herunterladen.
-2. Auf dem Handy öffnen und die Installation aus dieser Quelle erlauben.
-3. Neue Builds installieren sich über die alte Version; Einstellungen und Abos bleiben.
-   Das klappt nur, wenn alle Builds mit dem persönlichen Schlüssel signiert sind (siehe unten).
+1. Im Browser mit dem GitHub-Konto anmelden, das Zugriff auf dieses private Repository hat.
+2. Unter [Releases → Latest](https://github.com/Tra1c0/YT-App/releases/latest) die `YT-….apk` herunterladen und öffnen.
+3. Falls Android danach fragt, der verwendeten Download-App die Installation erlauben.
 
-YT hat eine eigene Paket-ID (`app.tra1c0.yt`) und läuft deshalb neben YouTube, dem gepatchten
-YouTube und LibreTube.
+Updates über die vorhandene App installieren. Paket-ID `app.tra1c0.yt` und persönlicher Signaturschlüssel bleiben gleich; Einstellungen, Abos, Playlists und Verlauf bleiben erhalten. YT kann neben YouTube und LibreTube installiert sein.
 
-**Abos übernehmen:** In Google Takeout „YouTube und YouTube Music“ → nur „Abos“ exportieren,
-dann in YT unter Einstellungen → Sichern und Wiederherstellen die CSV-Datei importieren.
+**In der App:** Einstellungen → **Updates auf GitHub** öffnet die Release-Seite. Für das private Repository erfolgt der Download über die GitHub-Sitzung des Browsers; Zugangsdaten werden dafür nicht in der APK gespeichert.
 
-## Signaturschlüssel
+Als **Pre-release** markierte `check-…`-Builds sind Vorschauen. Die Release-Notizen nennen, welche Prüfungen bestanden wurden. Stabile `build-…`-Versionen werden erst nach den vollständigen Prüfungen veröffentlicht.
 
-Android installiert ein Update nur, wenn es mit demselben Schlüssel signiert ist wie die installierte
-App. Der persönliche Schlüssel liegt deshalb **nicht** im Repo, sondern in zwei Repository-Secrets
-(Settings → Secrets and variables → Actions):
+## Funktionen und Bedienung
 
-| Secret | Inhalt |
-| --- | --- |
-| `YT_KEYSTORE_BASE64` | Der Keystore (PKCS12, Alias `yt`) als Base64-Text |
-| `YT_KEYSTORE_PASSWORD` | Das Passwort des Keystores |
+- **Design:** Standard, YouTube neu, Movo, After, Side, Clay, Editorial, Glas, Pop, Formen, Frost und Kiesel. Wechsel unter Einstellungen → Design. Schriftgröße und reduzierte Animationen respektieren die Android-Einstellungen. Glas nutzt bei Software-Grafik, wenig Arbeitsspeicher oder Energiesparbetrieb eine leichtere Darstellung.
+- **Player:** Vollbild, Bild-in-Bild, Hintergrundwiedergabe, Downloads, Wischgesten, präzises Spulen, Rücksprung-Chip und Wiederholung einer markierten Passage. Gesten und Haptik sind unter **Gesten & Interaktion** einstellbar.
+- **Warteschlange:** Videos als Nächstes oder am Ende einfügen; ohne laufenden Player zunächst sammeln. Die gestalteten Feeds bieten Kartenwischen, Rückgängig und Ziehen auf den Miniplayer. Die Standardansicht behält ihre klassischen Kartenmenüs.
+- **Feed:** Die gestalteten Startseiten bieten Interessenwahl, Feed-Regler und ein optionales Zeitbudget. Die Sortierung erfolgt lokal auf dem Handy.
+- **Kommentare:** Lesen, Zeitmarken anspringen, Szenenfilter und optionaler Spoilerschutz. Notizen in Side werden lokal gespeichert.
+- **Daten übernehmen:** Einstellungen → Sichern und Wiederherstellen; Google-Takeout-Abos als CSV oder den vorhandenen Konto-/Takeout-Import verwenden. Details: [Konto und Import](docs/KONTO.md).
 
-Fehlen die Secrets, signiert der Build mit einem Wegwerf-Schlüssel. So eine APK lässt sich installieren,
-aber nicht als Update über einen anderen Build.
+## Builds und Prüfungen
 
-## Bauen
+GitHub Actions baut eine APK und prüft genau dieses Artefakt vor der Veröffentlichung. Branch-Builds prüfen zunächst YouTube neu und Glas. **Run workflow → Full validation** prüft alle zwölf Ansichten und die Android-Kompatibilität; auf `main` ist diese Prüfung automatisch verpflichtend.
 
-Jeder Push auf `main` baut in GitHub Actions eine Release-APK und veröffentlicht sie als
-Release `build-<Nummer>`. Lokal: `./gradlew assembleRelease` (JDK 17, Android SDK).
+Prüfumfang, Testdaten und Fehlersuche: [Release-Prüfungen](docs/RELEASE-CHECKS.md).
 
-## Upstream-Fixes übernehmen
+Lokal mit JDK 17 und Android SDK 36:
 
-```bash
-git remote add upstream https://github.com/libre-tube/LibreTube.git   # einmalig
+```sh
+./gradlew :app:testReleaseUnitTest assembleRelease
+```
+
+Die APK liegt unter `app/build/outputs/apk/release/`. Ein lokal ohne persönlichen Schlüssel gebautes APK verwendet die Debug-Signatur und aktualisiert keine persönlich signierte Installation.
+
+## Signatur und Upstream
+
+Die CI verwendet den vorhandenen Keystore aus dem Repository-Secret `YT_SIGNING`. Die älteren Secrets `YT_KEYSTORE_BASE64` und `YT_KEYSTORE_PASSWORD` werden weiterhin unterstützt. Der Keystore gehört nicht in den Quellcode. Details zur einmaligen Einrichtung: [Installation](docs/INSTALLATION.md).
+
+Upstream-Fixes weiter aus LibreTube übernehmen:
+
+```sh
+git remote add upstream https://github.com/libre-tube/LibreTube.git
 git fetch upstream master
 git merge upstream/master
 ```
 
-Konflikte sind vor allem in `app/build.gradle.kts`, den Workflows und diesem README zu erwarten.
-
-## Lizenz
-
-GNU General Public License v3.0 oder später, wie LibreTube. Siehe [LICENSE](LICENSE).
+Lizenz: GNU GPLv3 oder später, siehe [LICENSE](LICENSE).

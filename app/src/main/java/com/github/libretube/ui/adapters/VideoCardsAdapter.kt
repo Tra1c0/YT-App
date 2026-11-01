@@ -8,6 +8,8 @@ import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
 import com.github.libretube.api.SponsorBlockLabelHelper
 import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.constants.IntentData
@@ -27,7 +29,6 @@ import com.github.libretube.ui.sheets.VideoOptionsBottomSheet
 import com.github.libretube.ui.viewholders.VideoCardsViewHolder
 import com.github.libretube.util.DeArrowUtil
 import com.github.libretube.util.TextUtils
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,7 +43,7 @@ class VideoCardsAdapter(private val columnWidthDp: Float? = null) :
     fun removeItemById(videoId: String) {
         val index = currentList.indexOfFirst {
             it.url?.toID() == videoId
-        }.takeIf { it > 0 } ?: return
+        }.takeIf { it >= 0 } ?: return
         val updatedList = currentList.toMutableList().also {
             it.removeAt(index)
         }
@@ -65,8 +66,10 @@ class VideoCardsAdapter(private val columnWidthDp: Float? = null) :
 
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: VideoCardsViewHolder, position: Int) {
-        val video = getItem(holder.bindingAdapterPosition)
+        holder.metadataJob?.cancel()
+        val video = getItem(position)
         val videoId = video.url.orEmpty().toID()
+        holder.boundVideoId = videoId
 
         val context = (holder.trendingRowBinding ?: holder.allCaughtUpBinding)!!.root.context
         val activity = (context as BaseActivity)
@@ -119,7 +122,8 @@ class VideoCardsAdapter(private val columnWidthDp: Float? = null) :
                     VideoOptionsBottomSheet.VIDEO_OPTIONS_SHEET_REQUEST_KEY,
                     activity
                 ) { _, _ ->
-                    notifyItemChanged(position)
+                    val current = currentList.indexOfFirst { it.url?.toID() == videoId }
+                    if (current >= 0) notifyItemChanged(current)
                 }
                 val sheet = VideoOptionsBottomSheet()
                 sheet.arguments = bundleOf(IntentData.streamItem to video)
@@ -129,10 +133,11 @@ class VideoCardsAdapter(private val columnWidthDp: Float? = null) :
 
             // always hide the icon, to avoid issues where the icon is recycled and shown until the web requests succeeds
             sponsorBadgeCard.isVisible = false
-            CoroutineScope(Dispatchers.IO).launch {
+            holder.metadataJob = activity.lifecycleScope.launch(Dispatchers.IO) {
                 if (PlayerHelper.sponsorBlockEnabled) {
                     val sponsor = SponsorBlockLabelHelper.getVideoLabels(videoId)
                     withContext(Dispatchers.Main) {
+                        if (holder.boundVideoId != videoId || holder.bindingAdapterPosition == RecyclerView.NO_POSITION) return@withContext
                         val category = sponsor?.segments?.firstOrNull()?.category
                         sponsorBadgeCard.isVisible = category != null
                         SponsorBlockLabelHelper.categoryIcon(category)?.let {
@@ -148,12 +153,20 @@ class VideoCardsAdapter(private val columnWidthDp: Float? = null) :
 
                 DeArrowUtil.deArrowVideoId(videoId)?.let { (title, thumbnail) ->
                     withContext(Dispatchers.Main) {
+                        if (holder.boundVideoId != videoId || holder.bindingAdapterPosition == RecyclerView.NO_POSITION) return@withContext
                         if (title != null) this@apply.textViewTitle.text = title
                         if (thumbnail != null) ImageHelper.loadImage(thumbnail, this@apply.thumbnail)
                     }
                 }
             }
         }
+    }
+
+    override fun onViewRecycled(holder: VideoCardsViewHolder) {
+        holder.metadataJob?.cancel()
+        holder.metadataJob = null
+        holder.boundVideoId = null
+        super.onViewRecycled(holder)
     }
 
     companion object {

@@ -148,6 +148,16 @@ texts() {
 tap() {
   local pattern="$1" tries="${2:-0}" node b
   for _ in $(seq 0 "$tries"); do
+    if [ "${YT_INPUT_READY:-no}" = yes ]; then
+      if b=$(driver_find "^($pattern)$"); then
+        set -- $b
+        driver_command TAP $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
+        return
+      fi
+      timeout 10 adb shell input swipe 540 1700 540 700 400 || true
+      sleep 0.5
+      continue
+    fi
     node=$(ui | grep -i -E "(text|content-desc)=\"($pattern)\"" | head -n 1)
     if [ -n "$node" ]; then
       b=$(printf '%s' "$node" | sed -E 's/.*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]".*/\1 \2 \3 \4/')

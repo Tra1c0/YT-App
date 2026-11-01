@@ -369,7 +369,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         ) {
             super.onPositionDiscontinuity(oldPosition, newPosition, reason)
             if (reason == Player.DISCONTINUITY_REASON_SEEK) {
-                YtPlaybackClock.onSeek(oldPosition.positionMs, newPosition.positionMs)
+                YtPlaybackClock.onSeek(ytClockReader, oldPosition.positionMs, newPosition.positionMs)
             }
         }
     }
@@ -576,7 +576,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         toggleVideoInfoVisibility(false)
     }
 
+    private var controllerRequest = 0L
+
     private fun attachToPlayerService(playerData: PlayerData, startNewSession: Boolean) {
+        val request = ++controllerRequest
         val (serviceClass, args) = if (isOffline) {
             val isNoInternet = activity is NoInternetActivity
 
@@ -596,17 +599,19 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
             requireContext(),
             serviceClass,
             if (startNewSession) args else Bundle.EMPTY,
-        ) {
-            if (_binding == null) {
-                playerController.sendCustomCommand(
-                    AbstractPlayerService.stopServiceCommand,
-                    Bundle.EMPTY
-                )
-                playerController.release()
+        ) { controller ->
+            if (_binding == null || request != controllerRequest) {
+                // Release this connection, not the field (which may be uninitialized or
+                // belong to a newer request). A stale page does not own the shared service.
+                controller.release()
                 return@startMediaService
             }
 
-            playerController = it
+            if (::playerController.isInitialized && playerController !== controller) {
+                playerController.removeListener(playerListener)
+                playerController.release()
+            }
+            playerController = controller
             playerController.addListener(playerListener)
             connectToPlayerView(playerController)
             updatePlayPauseButton()
@@ -1640,6 +1645,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
     }
 
     override fun onDestroyView() {
+        controllerRequest++
         // YT: the features of round 12 let go of the page while its views still exist
         com.github.libretube.ui.yt.player.YtPlayerModules.onDestroyView(this)
         YtPlaybackClock.detach(ytClockReader)

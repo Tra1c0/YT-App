@@ -96,6 +96,7 @@ object YtPlaybackClock {
 
     /** The player page hands over how to read its controller (null while none is connected). */
     fun attach(reader: () -> YtClock?) {
+        if (source !== reader) tag = null
         source = reader
         read()
     }
@@ -104,6 +105,7 @@ object YtPlaybackClock {
     fun detach(reader: () -> YtClock?) {
         if (source !== reader) return
         source = null
+        tag = null
         state.value = YtClock()
     }
 
@@ -120,7 +122,9 @@ object YtPlaybackClock {
     }
 
     /** Called by the player page for every seek the controller reports. */
-    fun onSeek(fromMs: Long, toMs: Long) {
+    fun onSeek(reader: () -> YtClock?, fromMs: Long, toMs: Long) {
+        // A late callback from the previous page must not update the new video's features.
+        if (source !== reader) return
         val reason = tag?.takeIf { System.nanoTime() - tagAtNs <= TAG_VALID_NS } ?: YtSeekReason.OTHER
         tag = null
         seekEvents.tryEmit(YtSeek(fromMs, toMs, reason))

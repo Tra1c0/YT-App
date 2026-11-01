@@ -76,7 +76,28 @@ d_swipe() {
 
 d_checks() {
   local card x y w reach bar h lens sx sy mini mx my
-  d_home
+  d_home || return 1
+  # Standard deliberately retains LibreTube's classic horizontal shelves, not the
+  # eleven custom feeds' swipe cards. Exercise its real equivalent, the card menu.
+  if [ "${design:-}" = standard ]; then
+    if card=$(center_of 'id/thumbnail$'); then
+      read -r x y <<< "$card"
+      finger_down "$x" "$y"
+      sleep 0.9
+      finger_up "$x" "$y"
+      gesture_checks=$((gesture_checks + 1))
+      if bounds_of '^(Im Hintergrund abspielen|Play in background)$' >/dev/null; then
+        echo 'OK standard d: classic feed card actions are reachable'
+        rawshot "$design-d-card-actions"
+      else
+        d_fail 'classic card menu did not open'
+      fi
+      timeout 10 adb shell input keyevent KEYCODE_BACK || true
+    else
+      d_fail 'no classic feed card after loading the fixture'
+    fi
+    return
+  fi
   log_mark
   if ! card=$(d_card); then
     d_fail "no home card on screen (yt_card_*)"

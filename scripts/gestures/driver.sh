@@ -9,6 +9,7 @@ driver_start() {
   exec {YT_INPUT_READ}<&"${YT_INPUT[0]}"
   exec {YT_INPUT_WRITE}>&"${YT_INPUT[1]}"
   while IFS= read -r -t 20 -u "$YT_INPUT_READ" line; do
+    line=${line%$'\r'}
     [ "$line" = 'YTINPUT READY' ] && return 0
   done
   echo 'UI driver did not start; see input-driver.log' >&2
@@ -16,16 +17,21 @@ driver_start() {
 }
 
 driver_command() {
-  local line result
-  printf '%s\n' "$*" >&"$YT_INPUT_WRITE" || return 1
-  while IFS= read -r -t 10 -u "$YT_INPUT_READ" line; do
+  local line result request="${BASHPID}_${RANDOM}_${RANDOM}" driver_timeout=20 deadline remaining
+  [ "$1" != DUMP ] || driver_timeout=40
+  deadline=$((SECONDS + driver_timeout))
+  printf '%s %s\n' "$request" "$*" >&"$YT_INPUT_WRITE" || return 1
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    remaining=$((deadline - SECONDS))
+    IFS= read -r -t "$remaining" -u "$YT_INPUT_READ" line || break
+    line=${line%$'\r'}
     case "$line" in
-      'YTINPUT OK '*)
-        result=${line#YTINPUT OK }
+      "YTINPUT $request OK "*)
+        result=${line#"YTINPUT $request OK "}
         [ -z "$result" ] || printf '%s' "$result" | base64 -d
         return 0 ;;
-      'YTINPUT ERR '*)
-        printf '%s' "${line#YTINPUT ERR }" | base64 -d >&2
+      "YTINPUT $request ERR "*)
+        printf '%s' "${line#"YTINPUT $request ERR "}" | base64 -d >&2
         printf '\n' >&2
         return 1 ;;
     esac
@@ -41,4 +47,18 @@ driver_stop() {
     exec {YT_INPUT_READ}<&-
   fi
   [ -z "${YT_INPUT_PID_SAVED:-}" ] || kill "$YT_INPUT_PID_SAVED" 2>/dev/null || true
+}
+
+driver_find() {
+  local found attempt encoded
+  encoded=$(printf '%s' "$1" | base64 -w0)
+  for attempt in 1 2 3 4; do
+    found=$(driver_command FIND "$encoded" "${2:-1}") || return 1
+    if [[ "$found" =~ ^-?[0-9]+\ -?[0-9]+\ -?[0-9]+\ -?[0-9]+$ ]]; then
+      printf '%s\n' "$found"
+      return 0
+    fi
+    sleep 0.2
+  done
+  return 1
 }
