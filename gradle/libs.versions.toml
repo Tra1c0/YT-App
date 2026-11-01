@@ -9,6 +9,8 @@ kotlin = "2.3.21"
 ksp = "2.3.5"
 lifecycle = "2.10.0"
 constraintlayout = "2.2.1"
+# YT: springs of the mini player's preview (shipped with material already, declared since the app uses it)
+dynamicanimation = "1.1.0"
 loggingInterceptor = "5.3.2"
 material = "1.14.0"
 navigation = "2.9.8"
@@ -44,6 +46,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 androidx-core = { group = "androidx.core", name = "core", version.ref = "core" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+androidx-dynamicanimation = { group = "androidx.dynamicanimation", name = "dynamicanimation", version.ref = "dynamicanimation" }
 androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
 androidx-fragment = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragment" }
 junit = { module = "junit:junit", version.ref = "junit" }

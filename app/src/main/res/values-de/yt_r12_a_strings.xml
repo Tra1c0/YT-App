@@ -2,4 +2,16 @@
 <!-- YT: round 12, package A (the mini player of each design). Same keys in the same order in values and values-de. -->
 <resources>
     <string name="yt_r12_a_category">Miniplayer</string>
+    <string name="yt_mini_peek">Vorschau beim Gedrückthalten</string>
+    <string name="yt_mini_peek_summary">Bild des angedockten Players gedrückt halten: größer, mit dem nächsten Video</string>
+    <string name="yt_mini_peek_playing">Wiedergabe</string>
+    <string name="yt_mini_peek_paused">Pausiert</string>
+    <string name="yt_mini_peek_next">Als Nächstes</string>
+    <string name="yt_mini_drop_next">Als Nächstes</string>
+    <string name="yt_mini_drop_end">Am Ende · Nr. %1$d</string>
+    <string name="yt_mini_a11y_play_pause">Wiedergabe oder Pause</string>
+    <string name="yt_mini_a11y_play_next">Nächstes Video abspielen</string>
+    <string name="yt_mini_a11y_prev">Vorheriges Video abspielen</string>
+    <string name="yt_mini_glass_prev">Vorheriges Video</string>
+    <string name="yt_mini_glass_next">Nächstes Video</string>
 </resources>

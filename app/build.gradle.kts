@@ -161,6 +161,7 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.dynamicanimation)
     implementation(libs.androidx.fragment)
     implementation(libs.androidx.media3.transformer)
     implementation(libs.androidx.navigation.fragment)

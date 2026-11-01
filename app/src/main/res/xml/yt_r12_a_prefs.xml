@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- YT: settings of package A (the mini player of each design), a section of "Gesten & Interaktion". Hidden while
-     it holds no setting. -->
+<!-- YT: settings of package A (the mini player of each design), a section of "Gesten & Interaktion". -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
         app:key="yt_r12_a_category"
-        app:title="@string/yt_r12_a_category" />
+        app:title="@string/yt_r12_a_category">
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_play"
+            android:summary="@string/yt_mini_peek_summary"
+            app:defaultValue="true"
+            app:key="yt_mini_peek"
+            app:title="@string/yt_mini_peek" />
+
+    </PreferenceCategory>
 
 </PreferenceScreen>
