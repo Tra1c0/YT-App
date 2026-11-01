@@ -30,13 +30,18 @@ object YtIntentTrigger {
     /** The intent already looked at; a link only blocks when it is new. */
     private var seenIntent: Intent? = null
 
+    /** False until the first onStart of this process: a cold start asks after a minute away. */
+    private var started = false
+
     fun mode(): YtIntentAsk.Mode = YtIntentAsk.Mode.of(PreferenceHelper.getString(ASK_KEY, YtIntentAsk.Mode.AFTER_30.key))
 
     fun onStart(activity: MainActivity) {
         if (visible) return
         visible = true
+        val cold = !started
+        started = true
         val lastStop = PreferenceHelper.getLong(LAST_STOP_KEY, 0L).takeIf { it > 0L }
-        activity.window.decorView.postDelayed({ decide(activity, lastStop) }, SETTLE_MS)
+        activity.window.decorView.postDelayed({ decide(activity, lastStop, cold) }, SETTLE_MS)
     }
 
     fun onStop(activity: MainActivity) {
@@ -47,15 +52,15 @@ object YtIntentTrigger {
         YtFeedUi.chooser = false
     }
 
-    private fun decide(activity: MainActivity, lastStop: Long?) {
+    private fun decide(activity: MainActivity, lastStop: Long?, cold: Boolean) {
         if (activity.isFinishing || activity.isDestroyed || !visible) return
         if (YtGuard.isEmulator) return
         val intent = activity.intent
         val fresh = intent != null && intent !== seenIntent
         seenIntent = intent
         val blocked = (fresh && opensSomething(intent)) || playerOpen(activity) || !onHome(activity)
-        val ask = YtIntentAsk.shouldAsk(mode(), System.currentTimeMillis(), lastStop, blocked)
-        YtTestHooks.log("YtIntent") { "decide ask=$ask blocked=$blocked mode=${mode()}" }
+        val ask = YtIntentAsk.shouldAsk(mode(), System.currentTimeMillis(), lastStop, blocked, coldStart = cold)
+        YtTestHooks.log("YtIntent") { "decide ask=$ask blocked=$blocked cold=$cold mode=${mode()}" }
         if (ask) YtFeedUi.chooser = true
     }
 

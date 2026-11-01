@@ -711,16 +711,20 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
                 }
                 .pointerInput(max) {
                     var last = weight
+                    // where the finger holds the knob, kept here: the snaps below land a frame
+                    // later, so fill.value lags behind the events
+                    var pos = 0f
                     detectHorizontalDragGestures(
                         onDragStart = { offset ->
                             dragging = true
-                            last = fill.value.roundToInt()
+                            last = current
+                            pos = (offset.x / width * max).coerceIn(0f, max.toFloat())
                             haptics.grab()
-                            scope.launch { fill.snapTo((offset.x / width * max).coerceIn(0f, max.toFloat())) }
+                            scope.launch { fill.snapTo(pos) }
                         },
                         onDragEnd = {
                             dragging = false
-                            val step = fill.value.roundToInt().coerceIn(0, max)
+                            val step = pos.roundToInt().coerceIn(0, max)
                             haptics.release()
                             set(step)
                             scope.launch { if (motion) fill.animateTo(step.toFloat(), spring(dampingRatio = 0.7f, stiffness = 520f)) else fill.snapTo(step.toFloat()) }
@@ -731,14 +735,15 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
                         },
                     ) { change, amount ->
                         change.consume()
-                        val raw = fill.value + amount / width * max
+                        pos += amount / width * max
+                        val raw = pos
                         // past the ends it pulls like a rubber band
                         val shown = when {
                             raw < 0f -> -ytRubberBand(-raw, max.toFloat()) * 0.3f
                             raw > max -> max + ytRubberBand(raw - max, max.toFloat()) * 0.3f
                             else -> raw
                         }
-                        scope.launch { fill.snapTo(if (raw in 0f..max.toFloat()) raw else shown) }
+                        scope.launch { fill.snapTo(shown) }
                         val step = raw.roundToInt().coerceIn(0, max)
                         if (step != last) {
                             last = step

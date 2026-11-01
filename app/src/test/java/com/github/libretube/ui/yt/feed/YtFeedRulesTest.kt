@@ -81,6 +81,18 @@ class YtFeedRulesTest {
     }
 
     @Test
+    fun aColdStartAsksAfterAMinute() {
+        val after = YtIntentAsk.Mode.AFTER_30
+        val now = 10_000_000L
+        assertTrue(YtIntentAsk.shouldAsk(after, now, now - 5 * 60_000, blocked = false, coldStart = true))
+        // back from a share sheet that let the process go
+        assertFalse(YtIntentAsk.shouldAsk(after, now, now - 20_000, blocked = false, coldStart = true))
+        assertFalse(YtIntentAsk.shouldAsk(YtIntentAsk.Mode.NEVER, now, now - 5 * 60_000, blocked = false, coldStart = true))
+        assertFalse(YtIntentAsk.shouldAsk(after, now, null, blocked = false, coldStart = true))
+        assertFalse(YtIntentAsk.shouldAsk(after, now, now - 5 * 60_000, blocked = true, coldStart = true))
+    }
+
+    @Test
     fun `always skips a short trip, never never asks, the first start is the welcome's`() {
         val now = 10_000_000L
         assertFalse(YtIntentAsk.shouldAsk(YtIntentAsk.Mode.ALWAYS, now, now - 20_000, blocked = false))

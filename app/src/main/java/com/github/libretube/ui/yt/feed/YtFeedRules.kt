@@ -191,12 +191,14 @@ object YtIntentAsk {
      * Whether to ask. [lastStopMs] is when the app last went to the background (null: never, the
      * first start after the installation, where the welcome sheet speaks); [blocked] is true with
      * yt_quiet, a link or search the app was opened with, or a player open over the screen.
+     * [coldStart] is the first start of the app's process: it asks after a minute away, as
+     * "Immer" does.
      */
-    fun shouldAsk(mode: Mode, nowMs: Long, lastStopMs: Long?, blocked: Boolean): Boolean {
+    fun shouldAsk(mode: Mode, nowMs: Long, lastStopMs: Long?, blocked: Boolean, coldStart: Boolean = false): Boolean {
         if (mode == Mode.NEVER || blocked || lastStopMs == null) return false
         val away = nowMs - lastStopMs
         // a clock set back counts as away
         if (away < 0) return true
-        return away >= if (mode == Mode.ALWAYS) ALWAYS_MIN_AWAY_MS else AWAY_MS
+        return away >= if (mode == Mode.ALWAYS || coldStart) ALWAYS_MIN_AWAY_MS else AWAY_MS
     }
 }
