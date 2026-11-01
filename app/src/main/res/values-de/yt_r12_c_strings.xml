@@ -93,4 +93,7 @@
     <string name="yt_r12_c_hold_no_return">Kein Rücksprungpunkt</string>
     <string name="yt_r12_c_hold_unavailable">Hier nicht verfügbar</string>
     <string name="yt_r12_c_hold_loop_off">Schleife beendet</string>
+    <string name="yt_r12_c_share_mark">Teilen</string>
+    <string name="yt_r12_c_share_drag_title">Ab einer Sekunde teilen</string>
+    <string name="yt_r12_c_share_drag_summary">Teilen halten und auf die Zeitleiste ziehen; wo du loslässt, beginnt der Link</string>
 </resources>

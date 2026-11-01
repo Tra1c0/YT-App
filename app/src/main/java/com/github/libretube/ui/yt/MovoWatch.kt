@@ -48,6 +48,7 @@ import com.github.libretube.api.SubscriptionHelper
 import com.github.libretube.api.obj.Comment
 import com.github.libretube.extensions.formatShort
 import com.github.libretube.extensions.toID
+import com.github.libretube.ui.yt.player.ytShareScrubSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -172,7 +173,11 @@ fun MovoWatchDetails(
             Spacer(Modifier.width(18.dp))
             RoundAction(palette, R.drawable.ic_bookmark_outlined, stringResource(R.string.yt_movo_save), actions.onSave)
             Spacer(Modifier.width(16.dp))
-            RoundAction(palette, R.drawable.ic_share, stringResource(R.string.share), actions.onShare)
+            // YT: held and dragged onto the time bar, it shares from that second
+            RoundAction(
+                palette, R.drawable.ic_share, stringResource(R.string.share), actions.onShare,
+                gesture = Modifier.ytShareScrubSource(actions.shareScrub),
+            )
         }
 
         if (streams.chapters.isNotEmpty()) {
@@ -316,10 +321,16 @@ fun MovoWatchDetails(
 }
 
 @Composable
-private fun RoundAction(palette: YtPalette, @DrawableRes icon: Int, label: String, onClick: () -> Unit) {
+private fun RoundAction(
+    palette: YtPalette,
+    @DrawableRes icon: Int,
+    label: String,
+    onClick: () -> Unit,
+    gesture: Modifier = Modifier,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier.then(gesture).clickable(onClick = onClick),
     ) {
         Box(
             contentAlignment = Alignment.Center,

@@ -13,6 +13,7 @@ object YtPlayerGesturePrefs {
     const val HOLD_DOWN = "yt_hold_down"
     const val HOLD_LEFT = "yt_hold_left"
     const val HOLD_RIGHT = "yt_hold_right"
+    const val SHARE_DRAG = "yt_share_drag"
 
     /** The time magnifier: finer the higher the finger above the time bar. */
     val magnifier: Boolean get() = PreferenceHelper.getBoolean(MAGNIFIER, true)
@@ -28,6 +29,9 @@ object YtPlayerGesturePrefs {
 
     /** Hold and drag on the video runs the action set for the direction. */
     val hold: Boolean get() = PreferenceHelper.getBoolean(HOLD, true)
+
+    /** Holding Share and dragging it onto the time bar shares from that second. */
+    val shareDrag: Boolean get() = PreferenceHelper.getBoolean(SHARE_DRAG, true)
 
     /** What hold and drag towards [dir] does. */
     fun holdAction(dir: YtHoldDir): YtHoldAction {

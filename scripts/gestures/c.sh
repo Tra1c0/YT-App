@@ -3,8 +3,8 @@
 # The player gestures: scrubbing, the return point, the loop, the compass, sharing a moment.
 # Sourced by crash-check.sh once per design with YT_GESTURES=yes ($design is the design); the
 # helpers are in lib.sh. So far the time magnifier (levels, frames, cancelling), the rewind
-# memory's chip, the explanation loop (marked on the time bar) and hold and drag on the video
-# (its compass, in the page and in fullscreen); each check opens the test video anew (the app's parameters are in
+# memory's chip, the explanation loop (marked on the time bar), hold and drag on the video
+# (its compass, in the page and in fullscreen) and sharing onto the timeline; each check opens the test video anew (the app's parameters are in
 # YtPlayerGestureTestHooks).
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh" || return 0
@@ -198,6 +198,53 @@ c_checks() {
     else
       c_verdict FAIL "hold and drag in fullscreen" "no player on the screen"
     fi
+  fi
+
+  # 7. sharing onto the timeline: hold Share, let go short of the bar (nothing), then drag it
+  # onto the bar, up into the finer levels, and let go there (the system's share sheet)
+  log_mark
+  if b=$(c_open_with_bar --el yt_seek_test 60000); then
+    read -r l t r bt <<< "$b"
+    if xy=$(center_of '^(Share|Teilen)$'); then
+      read -r x y <<< "$xy"
+      bt=$(( (t + bt) / 2 ))
+      # half way up: still below the zone
+      finger_down "$x" "$y"
+      sleep 0.9
+      for i in 1 2 3; do finger_move "$x" $(( y - (y - bt) * i / 8 )); done
+      finger_up "$x" $(( y - (y - bt) * 3 / 8 ))
+      expect_log YtShare 'share begin'
+      EXPECT_WAIT=4 expect_log YtShare 'share cancelled'
+      sleep 1
+      # onto the bar at 40 %, then up for the finer levels
+      log_mark
+      up=$(dp 100)
+      step=$(( l + (r - l) * 4 / 10 ))
+      finger_down "$x" "$y"
+      sleep 0.9
+      for i in 1 2 3 4 5 6 7 8; do finger_move $(( x + (step - x) * i / 8 )) $(( y - (y - bt) * i / 8 )); done
+      for i in 1 2 3; do finger_move $(( step + i * 20 )) $(( bt - up * i / 3 )); done
+      rawshot "$design-c-8-share"
+      finger_up $(( step + 60 )) $(( bt - up ))
+      expect_log YtShare 'share pin at=[0-9]+ '
+      expect_log YtShare 'level=1/[248] '
+      expect_log YtShare 'share end t=[0-9]+ '
+      EXPECT_WAIT=4 expect_log YtShare 'share t=[0-9]+'
+      sleep 2
+      rest=$(timeout 10 adb shell dumpsys activity activities 2>/dev/null | grep -a -E 'mResumedActivity|topResumedActivity' | head -n 2 | tr -s ' ' | cut -c1-200)
+      if printf '%s' "$rest" | grep -q -i 'chooser\|resolver'; then
+        c_verdict OK "share sheet" "$rest"
+      else
+        c_verdict FAIL "share sheet" "${rest:-no resumed activity}"
+      fi
+      rawshot "$design-c-9-share-sheet"
+      timeout 10 adb shell input keyevent KEYCODE_BACK || true
+      sleep 1
+    else
+      c_verdict FAIL "share onto the timeline" "no Share action on the screen"
+    fi
+  else
+    mark "c: no test video or no time bar, the share check is skipped"
   fi
 }
 

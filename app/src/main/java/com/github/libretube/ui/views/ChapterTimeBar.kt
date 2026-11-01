@@ -113,6 +113,8 @@ class ChapterTimeBar(
                 canvas.drawCircle(x, cy, r, ghostRing)
             }
         }
+        // the share drag's pin above everything
+        drawSharePin(canvas)
     }
 
     private fun Long.toLength(): Int {

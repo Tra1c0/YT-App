@@ -118,6 +118,9 @@ class YtScrubLensView @JvmOverloads constructor(
      */
     var markLabel: String? = null
 
+    /** With [markLabel]: the time in whole seconds on every level (a share link). Until [end]. */
+    var markWholeSeconds = false
+
     fun begin(style: YtPlayerHudStyle, barCenterY: Float, lineHeights: FloatArray, levels: Boolean) {
         this.style = style
         this.barCenterY = barCenterY
@@ -181,12 +184,13 @@ class YtScrubLensView @JvmOverloads constructor(
                 rest = cancelText
             }
 
-            // marking an end of the explanation loop: which end, always with its time
+            // marking an end of the explanation loop (or a share's second): which, always with its time
             markLabel != null -> {
                 lead = markLabel.orEmpty()
-                val decimals = when (level) {
-                    YtScrubLevel.FULL -> 0
-                    YtScrubLevel.FRAME -> 3
+                val decimals = when {
+                    markWholeSeconds -> 0
+                    level == YtScrubLevel.FULL -> 0
+                    level == YtScrubLevel.FRAME -> 3
                     else -> YtScrubPrecision.decimalsFor(1.0 / pxPerMs)
                 }
                 val levelPart = if (level == YtScrubLevel.FULL) "" else " · " + ladderLabels[level.ordinal - 1]
@@ -260,6 +264,7 @@ class YtScrubLensView @JvmOverloads constructor(
     fun end() {
         if (!active) return
         active = false
+        markWholeSeconds = false
         if (YtPlayerHudStyle.motion) appear.animateTo(0f) else appear.snapTo(0f)
         invalidate()
     }

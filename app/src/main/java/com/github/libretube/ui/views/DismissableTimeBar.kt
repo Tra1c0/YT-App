@@ -2,10 +2,14 @@ package com.github.libretube.ui.views
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.ViewConfiguration
+import androidx.core.graphics.ColorUtils
 import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -25,6 +29,8 @@ import com.github.libretube.ui.yt.player.YtScrubLevel
 import com.github.libretube.ui.yt.player.YtScrubLive
 import com.github.libretube.ui.yt.player.YtScrubPrecision
 import com.github.libretube.ui.yt.player.YtScrubStep
+import com.github.libretube.ui.yt.player.YtSharePlan
+import com.github.libretube.ui.yt.player.YtSpring
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
@@ -42,6 +48,10 @@ import kotlin.math.roundToLong
  * It also marks the explanation loop ([loopMarks]): a long press without moving sets A where it
  * presses, dragging on sets B with the same levels; a drag that starts on an end of the running
  * loop moves that end. Marking never seeks; the page makes the loop of it.
+ *
+ * And it takes a share drag ([shareMove]): the share action of the page, dragged onto the bar,
+ * puts a pin where the finger points, with the same levels (in whole seconds, no frames) and the
+ * storyboard; letting go there gives the second the link starts at ([shareEnd]).
  */
 @UnstableApi
 open class DismissableTimeBar(
@@ -108,6 +118,21 @@ open class DismissableTimeBar(
     private var markEditing = false
     private var pendingHandle = HANDLE_NONE
     private val longPress = Runnable { onLongPress() }
+
+    // YT: the running share drag's pin (null outside of one), with the same levels
+    private var share: YtScrubPrecision? = null
+    private var shareSecond = -1L
+    private var sharePinMs = -1L
+    private var shareStyle: YtPlayerHudStyle? = null
+    private val sharePresence = YtSpring(0f)
+    private val shareLit = YtSpring(0f)
+    private var shareFrameAt = 0L
+    private val sharePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val shareRing = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+
+    /** YT: whether a share drag's finger is over the bar's zone now (letting go there shares). */
+    var shareInZone: Boolean = false
+        private set
 
     // as PlayerControlView sets them
     private var barDurationMs: Long = C.TIME_UNSET
@@ -233,6 +258,8 @@ open class DismissableTimeBar(
     }
 
     override fun onDetachedFromWindow() {
+        // a share drag cut off shares nothing
+        if (share != null) shareEnd(cancelled = true)
         // a loop mark cut off changes nothing
         removeCallbacks(longPress)
         if (mark != null) {
@@ -259,7 +286,7 @@ open class DismissableTimeBar(
     private fun beginScrub(event: MotionEvent): Boolean {
         val duration = barDurationMs
         val width = progressWidthPx()
-        if (!isEnabled || duration <= 0L || width <= 0f) return false
+        if (!isEnabled || duration <= 0L || width <= 0f || share != null) return false
 
         val player = exoPlayer
         val origin = player?.currentPosition?.takeIf { it >= 0L } ?: barPositionMs
@@ -372,7 +399,7 @@ open class DismissableTimeBar(
 
     // YT: the hold went on without moving: A is where it pressed, dragging on sets B
     private fun onLongPress() {
-        if (!waitingForDrag || mark != null || scrub != null || !mayMark()) return
+        if (!waitingForDrag || mark != null || scrub != null || share != null || !mayMark()) return
         waitingForDrag = false
         if (!beginMark(initialX, initialY, editing = false)) parent?.requestDisallowInterceptTouchEvent(false)
     }
@@ -490,6 +517,207 @@ open class DismissableTimeBar(
         }
         YtTestHooks.log(LOOP_LOG_TAG) { "mark end fixed=$markFixedMs to=${target ?: "none"} editing=$editing" }
         invalidate()
+    }
+
+    /**
+     * YT: the share drag's finger is at ([x], [y]) in this view's px. Once it reaches the zone (the
+     * bar and the picture above it) the pin comes where it points; from then on only its
+     * horizontal moves count, finer the higher it is, so the pin never jumps.
+     */
+    fun shareMove(x: Float, y: Float) {
+        if (scrub != null || mark != null) return
+        locateLens()
+        val zone = inShareZone(x, y)
+        val engine = share
+        if (engine == null) {
+            if (zone) beginShare(x, y)
+            return
+        }
+        val dx = x - lastX
+        lastX = x
+        val step = engine.move(dx, heightAbove(y))
+        if (zone != shareInZone) {
+            shareInZone = zone
+            // in and out of the zone always answer: letting go there shares, outside it does not
+            haptics?.threshold(zone)
+            lastHapticAt = SystemClock.uptimeMillis()
+            animateShareLit()
+            YtTestHooks.log(SHARE_LOG_TAG) { "zone=${if (zone) "in" else "out"}" }
+        }
+        val second = YtSharePlan.seconds(engine.positionMs, engine.durationMs)
+        if (second != shareSecond) {
+            shareSecond = second
+            sharePinMs = second * 1000L
+            listeners.forEach { it.onScrubMove(this, sharePinMs) }
+            // a tick per second, as the link counts them
+            feelShare(step, second = true)
+        } else {
+            feelShare(step, second = false)
+        }
+        updateShareLens(x, y)
+        if (step.levelChanged) {
+            YtTestHooks.log(SHARE_LOG_TAG) { "level=${engine.level.logName} t=$second" }
+        }
+        invalidate()
+    }
+
+    /**
+     * YT: the share drag ends; the second to share from if the finger let go in the zone (and
+     * not [cancelled]), else null. The pin fades either way.
+     */
+    fun shareEnd(cancelled: Boolean): Long? {
+        val engine = share ?: return null
+        val seconds = if (!cancelled && shareInZone) YtSharePlan.seconds(engine.positionMs, engine.durationMs) else null
+        share = null
+        shareInZone = false
+        haptics = null
+        // a share is no seek: the listeners hear a scrub that changed nothing
+        listeners.forEach { it.onScrubStop(this, engine.originMs, true) }
+        lens?.end()
+        if (YtPlayerHudStyle.motion) {
+            sharePresence.animateTo(0f)
+            shareLit.animateTo(0f)
+        } else {
+            sharePresence.snapTo(0f)
+            shareLit.snapTo(0f)
+        }
+        shareFrameAt = 0L
+        YtTestHooks.log(SHARE_LOG_TAG) {
+            "share end t=${seconds ?: "none"} level=${engine.level.logName} cancelled=$cancelled"
+        }
+        invalidate()
+        return seconds
+    }
+
+    private fun beginShare(x: Float, y: Float): Boolean {
+        val duration = barDurationMs
+        val width = progressWidthPx()
+        val player = exoPlayer
+        if (duration <= 0L || width <= 0f || player?.isCurrentMediaItemLive == true) return false
+        val origin = player?.currentPosition?.takeIf { it >= 0L } ?: barPositionMs
+        val levels = YtPlayerGesturePrefs.magnifier
+        val lines = YtSharePlan.levelLines(levelLines())
+        val engine = YtScrubPrecision(
+            levelStartsPx = lines,
+            hysteresisPx = HYSTERESIS_DP * density,
+            framePx = FRAME_DP * density,
+            // the second playing now pulls the pin in, as it is the one most often shared
+            magnetPx = MAGNET_DP * density,
+            // the zone decides about letting go, not the height
+            cancelBelowPx = Float.MAX_VALUE,
+            levels = levels,
+        )
+        // the pin comes where the finger points; from there only the deltas count
+        val startMs = ((x - progressLeftPx()) / width * duration).toLong().coerceIn(0L, duration)
+        engine.start(startMs, origin, duration, width, frameMs(player), heightAbove(y), chapterStartsMs())
+        share = engine
+        shareInZone = true
+        lastX = x
+        lastHapticAt = SystemClock.uptimeMillis()
+        withHours = duration >= HOUR_MS
+        haptics = YtHaptics.of(this).also { it.threshold(true) }
+        val style = YtPlayerHudStyle.current(context)
+        shareStyle = style
+        for (spring in arrayOf(sharePresence, shareLit)) {
+            spring.stiffness = style.stiffness
+            spring.dampingRatio = style.damping
+        }
+        if (YtPlayerHudStyle.motion) sharePresence.animateTo(1f) else sharePresence.snapTo(1f)
+        animateShareLit()
+        shareFrameAt = 0L
+        shareSecond = YtSharePlan.seconds(engine.positionMs, duration)
+        sharePinMs = shareSecond * 1000L
+
+        lens?.markLabel = context.getString(R.string.yt_r12_c_share_mark)
+        lens?.markWholeSeconds = true
+        lens?.begin(style, height / 2f + lensDy, lines, levels)
+        listeners.forEach { it.onScrubStart(this, sharePinMs) }
+        listeners.forEach { it.onScrubMove(this, sharePinMs) }
+        updateShareLens(x, y)
+        YtTestHooks.log(SHARE_LOG_TAG) { "share pin at=$startMs origin=${engine.originMs} duration=$duration t=$shareSecond" }
+        invalidate()
+        return true
+    }
+
+    // the zone: across the bar and a little beyond, from the top of the picture to a little below the bar
+    private fun inShareZone(x: Float, y: Float): Boolean {
+        val top = if (lens != null) -lensDy else -height * SHARE_TOP_BARS
+        return YtSharePlan.inZone(
+            x - progressLeftPx(),
+            y,
+            progressWidthPx(),
+            height / 2f,
+            top,
+            SHARE_SIDE_DP * density,
+            SHARE_BELOW_DP * density,
+        )
+    }
+
+    private fun animateShareLit() {
+        val target = if (shareInZone) 1f else 0f
+        if (YtPlayerHudStyle.motion) shareLit.animateTo(target) else shareLit.snapTo(target)
+    }
+
+    private fun updateShareLens(x: Float, y: Float) {
+        val engine = share ?: return
+        lens?.update(
+            x + lensDx,
+            y + lensDy,
+            engine.level,
+            engine.positionMs,
+            engine.pxPerMs,
+            engine.frameMs,
+            0L,
+            false,
+            !shareInZone,
+            withHours,
+        )
+    }
+
+    // a second, a level, a chapter: one small answer at most every 30 ms, a chapter always firmer
+    private fun feelShare(step: YtScrubStep, second: Boolean) {
+        val haptics = haptics ?: return
+        if (!shareInZone) return
+        val now = SystemClock.uptimeMillis()
+        val small = second || step.levelChanged || step.magnet > 0 || step.limit
+        if (!step.chapter && !small) return
+        if (now - lastHapticAt < HAPTIC_GAP_MS) return
+        lastHapticAt = now
+        if (step.chapter) haptics.segment() else haptics.detent()
+    }
+
+    /**
+     * YT: the share drag's pin: a stem across the bar with a head on it in the design's accent,
+     * dimmed while the finger is outside the zone. ChapterTimeBar calls it above its breaks.
+     */
+    protected fun drawSharePin(canvas: Canvas) {
+        val now = SystemClock.uptimeMillis()
+        val dt = if (shareFrameAt == 0L) 0f else (now - shareFrameAt) / 1000f
+        shareFrameAt = now
+        val moving = sharePresence.step(dt) or shareLit.step(dt)
+        val presence = sharePresence.value.coerceIn(0f, 1.2f)
+        val style = shareStyle
+        val ms = sharePinMs
+        // still fading in (or out): the next frame comes even if nothing shows yet
+        if (moving) postInvalidateOnAnimation() else if (presence <= 0.001f) shareFrameAt = 0L
+        if (style == null || ms < 0L || presence <= 0.001f) return
+        val x = xOf(ms)
+        if (x != null) {
+            val lit = shareLit.value.coerceIn(0f, 1f)
+            val alpha = presence.coerceAtMost(1f) * (0.45f + 0.55f * lit)
+            val cy = height / 2f
+            val accent = ColorUtils.setAlphaComponent(style.accent, 255)
+            sharePaint.color = ColorUtils.setAlphaComponent(accent, (255 * alpha).toInt())
+            val stem = SHARE_STEM_DP * density
+            val stemTop = paddingTop.toFloat().coerceAtMost(cy - 6f * density)
+            canvas.drawRoundRect(x - stem / 2f, stemTop, x + stem / 2f, height.toFloat(), stem / 2f, stem / 2f, sharePaint)
+            // the head grows out of the bar as it comes
+            val r = SHARE_HEAD_DP * density * presence
+            canvas.drawCircle(x, cy, r, sharePaint)
+            shareRing.strokeWidth = 2f * density
+            shareRing.color = ColorUtils.setAlphaComponent(Color.WHITE, (0xF2 * alpha).toInt())
+            canvas.drawCircle(x, cy, r, shareRing)
+        }
     }
 
     /** YT: while a loop mark runs, its range as [from, to] in ms (for the band), else null. */
@@ -624,6 +852,15 @@ open class DismissableTimeBar(
     companion object {
         private const val LOG_TAG = "YtScrub"
         private const val LOOP_LOG_TAG = "YtLoop"
+        private const val SHARE_LOG_TAG = "YtShare"
+
+        // the share zone: beyond the bar's ends, below its centre; without a lens the picture's
+        // height is not known, so as many bar heights above it
+        private const val SHARE_SIDE_DP = 24f
+        private const val SHARE_BELOW_DP = 48f
+        private const val SHARE_TOP_BARS = 12f
+        private const val SHARE_STEM_DP = 2f
+        private const val SHARE_HEAD_DP = 7f
 
         // a still hold this long on the bar marks a loop's A
         private const val LOOP_HOLD_MS = 450L

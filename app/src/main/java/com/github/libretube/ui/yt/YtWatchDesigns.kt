@@ -92,7 +92,13 @@ import kotlin.math.roundToInt
 /** A backdrop behind the video page of the glass designs, for the glass pieces to look through. */
 internal val LocalWatchBackdrop = staticCompositionLocalOf<Backdrop?> { null }
 
-internal class WatchAction(@DrawableRes val icon: Int, val label: String, val onClick: () -> Unit)
+internal class WatchAction(@DrawableRes val icon: Int, val label: String, val onClick: () -> Unit) {
+    /**
+     * More gestures of the action, applied outside its own click (sharing onto the timeline on
+     * the share action; nothing on the others).
+     */
+    var gesture: Modifier = Modifier
+}
 
 /** The gradient behind the shared screens of the glass designs; ends in the background color. */
 internal fun ytGlassScreenColors(palette: YtPalette): List<Color> =
@@ -490,6 +496,7 @@ private fun PillActions(palette: YtPalette, actions: List<WatchAction>, modifier
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
+                    .then(action.gesture)
                     .ytPressScale(press)
                     .ytSurface(palette, ytPillShape(palette))
                     .clickable(interactionSource = press, indication = LocalIndication.current) {
@@ -535,6 +542,7 @@ private fun AfterActions(palette: YtPalette, actions: List<WatchAction>, modifie
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier
+                            .then(action.gesture)
                             .weight(1f)
                             .fillMaxHeight()
                             .drawBehind { drawRect(palette.accent, alpha = 0.18f * glow) }
@@ -575,6 +583,7 @@ private fun ClayActions(palette: YtPalette, actions: List<WatchAction>, modifier
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
+                        .then(action.gesture)
                         .size(54.dp)
                         .ytSquish(press)
                         .shadow(8.dp, CircleShape, ambientColor = ClayShadow, spotColor = ClayShadow)
@@ -621,6 +630,7 @@ private fun EditorialActions(palette: YtPalette, actions: List<WatchAction>, mod
                 color = if (pressed) palette.background else palette.text,
                 style = mono,
                 modifier = Modifier
+                    .then(action.gesture)
                     .background(if (pressed) palette.text else Color.Transparent)
                     .clickable(interactionSource = press, indication = null) {
                         haptics.tick()
@@ -656,6 +666,7 @@ private fun GlassActions(palette: YtPalette, actions: List<WatchAction>, modifie
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
+                    .then(action.gesture)
                     .weight(1f)
                     .fillMaxHeight()
                     .ytPressScale(own)
@@ -688,6 +699,7 @@ private fun PopActions(palette: YtPalette, actions: List<WatchAction>, modifier:
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
+                        .then(action.gesture)
                         .size(56.dp)
                         .ytJelly(taps % 2 == 0, amount = 0.14f)
                         .ytSquish(press)
@@ -739,6 +751,7 @@ private fun ShapesActions(palette: YtPalette, actions: List<WatchAction>, modifi
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
+                        .then(action.gesture)
                         .size(54.dp)
                         .graphicsLayer { rotationZ = spin }
                         .clip(shapes[i % shapes.size])
@@ -790,6 +803,7 @@ private fun FrostActions(palette: YtPalette, actions: List<WatchAction>, modifie
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
+                        .then(action.gesture)
                         .size(52.dp)
                         .frostGlass(backdrop, CircleShape) { thaw }
                         .clickable(interactionSource = press, indication = LocalIndication.current) {
@@ -827,6 +841,7 @@ private fun KieselActions(actions: List<WatchAction>, modifier: Modifier) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
+                    .then(action.gesture)
                     .ytPressable(RoundedCornerShape(50), squish = true) {
                         haptics.tick()
                         action.onClick()

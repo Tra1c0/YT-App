@@ -84,6 +84,13 @@
             app:title="@string/yt_r12_c_hold_right_title"
             app:useSimpleSummaryProvider="true" />
 
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_share"
+            android:summary="@string/yt_r12_c_share_drag_summary"
+            app:defaultValue="true"
+            app:key="yt_share_drag"
+            app:title="@string/yt_r12_c_share_drag_title" />
+
     </PreferenceCategory>
 
 </PreferenceScreen>

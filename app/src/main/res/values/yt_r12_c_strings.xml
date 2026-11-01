@@ -93,4 +93,7 @@
     <string name="yt_r12_c_hold_no_return">No return point</string>
     <string name="yt_r12_c_hold_unavailable">Not available here</string>
     <string name="yt_r12_c_hold_loop_off">Loop ended</string>
+    <string name="yt_r12_c_share_mark">Share</string>
+    <string name="yt_r12_c_share_drag_title">Share from a second</string>
+    <string name="yt_r12_c_share_drag_summary">Hold Share and drag it onto the time bar; where you let go, the link starts</string>
 </resources>
