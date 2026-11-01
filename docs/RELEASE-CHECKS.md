@@ -40,5 +40,6 @@ Ein fehlender Prüfgegenstand zählt als Fehler. „Kein Player gefunden“ oder
 - **Automatisch:** Push auf `main` oder `r12/**`; PR nach `main` baut und prüft ohne Veröffentlichung.
 - **Vollständig:** Actions → Build YT → Run workflow → `Full validation` aktivieren.
 - **Vorhandenes Release prüfen:** Actions → Crash check → Run workflow; Buildnummer oder vollständigen Release-Tag und gewünschte Designs angeben. Damit lässt sich auch eine ältere APK mit aktuellen Diagnoseskripten untersuchen; dieser manuelle Lauf ersetzt nicht die Prüfung des Veröffentlichungslaufs.
+- **Fehler gezielt untersuchen:** Statt eines Releases kann `source_run` die Actions-Laufnummer einer bereits gebauten APK nennen. `suites=b` prüft beispielsweise nur die Verkleinerung, `suites=abcde` alle Gesten. Der Lauf protokolliert Binär- und Skript-Commit getrennt und veröffentlicht nichts. Die automatische Release-Prüfung verwendet weiterhin den eigenen Build und alle fünf Pakete.
 
 Die Artefakte enthalten Testberichte, Logcat, Screenshots und gegebenenfalls ANR- sowie Update-Berichte. Für visuelle Vergleiche denselben Testfilm, dasselbe Design, dieselbe Schriftgröße und denselben Bildschirmzustand verwenden. Emulator-Screenshots belegen die Darstellung; sie ersetzen keine Messung der Bildrate auf einem Handy.

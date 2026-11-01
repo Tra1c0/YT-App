@@ -40,6 +40,9 @@ on:
       gestures:
         type: boolean
         default: true
+      suites:
+        type: string
+        default: abcde
       test_video:
         type: boolean
         default: true
@@ -68,7 +71,13 @@ on:
     inputs:
       build:
         description: "Release to test: a build number (33 = build-33) or a full tag (check-12-abc1234)"
-        required: true
+        required: false
+      source_run:
+        description: "Alternatively: Actions run ID containing a built APK (diagnostics only)"
+        required: false
+      suites:
+        description: "Gesture suites to diagnose (a, b, c, d, e); full check = abcde"
+        default: abcde
       design:
         description: "Designs to start: a key (youtube, movo, after, side, clay, editorial, glass, pop, shapes, frost, kiesel, standard), a comma list, or all"
         required: false
@@ -140,6 +149,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   emulator:
@@ -166,6 +176,35 @@ jobs:
           name: ${{ inputs.artifact_name }}
           path: apk
 
+      - name: Find the diagnostic build artifact
+        id: diagnostic
+        if: inputs.source_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.source_run }}
+        run: |
+          [[ "$SOURCE_RUN" =~ ^[0-9]+$ ]] || exit 2
+          name=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN/artifacts" --jq '[.artifacts[] | select(.name | startswith("yt-build-"))] | max_by(.created_at) | .name')
+          [ -n "$name" ] && [ "$name" != null ]
+          echo "artifact=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Download the diagnostic APK
+        if: inputs.source_run != ''
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{ steps.diagnostic.outputs.artifact }}
+          path: apk
+          run-id: ${{ inputs.source_run }}
+          github-token: ${{ github.token }}
+
+      - name: Identify the diagnostic binary
+        if: inputs.source_run != ''
+        run: |
+          (cd apk && sha256sum -c VALIDATION_SHA256SUMS)
+          binary=$(jq -r .commit apk/build.json)
+          echo "YT_TAG=diagnostic-${binary::7}" >> "$GITHUB_ENV"
+          echo "Diagnostic binary: $binary; scripts: $GITHUB_SHA. This manual run does not publish an APK."
+
       - name: Check artifact provenance
         if: inputs.artifact_name != ''
         env:
@@ -179,7 +218,7 @@ jobs:
           cp apk/yt-input.jar build/gesture-driver/
 
       - name: Download the build
-        if: inputs.artifact_name == ''
+        if: inputs.artifact_name == '' && inputs.source_run == ''
         env:
           GH_TOKEN: ${{ github.token }}
           YT_BUILD: ${{ inputs.build }}
@@ -232,6 +271,7 @@ jobs:
           YT_LOCK: ${{ inputs.lock && 'yes' || 'no' }}
           YT_FLOAT: ${{ inputs.float && 'yes' || 'no' }}
           YT_GESTURES: ${{ inputs.gestures && 'yes' || 'no' }}
+          YT_SUITES: ${{ inputs.suites }}
           YT_TEST_VIDEO: ${{ inputs.test_video && 'yes' || 'no' }}
           YT_VIDEO: ${{ inputs.video }}
           YT_WAIT: ${{ inputs.wait }}

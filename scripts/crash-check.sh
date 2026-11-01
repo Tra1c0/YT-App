@@ -26,6 +26,10 @@ case "${YT_VIDEO:-}" in *[!A-Za-z0-9_-]*) echo "::warning::YT_VIDEO=$YT_VIDEO is
 DESIGNS="${YT_DESIGN:-standard}"
 [ "$DESIGNS" = "all" ] && DESIGNS="standard youtube movo after side clay editorial glass pop shapes frost kiesel"
 DESIGNS="${DESIGNS//,/ }"
+if ! [[ "${YT_SUITES:-abcde}" =~ ^[a-e]+$ ]]; then
+  echo '::error::Gesture suites must contain only a, b, c, d or e'
+  exit 2
+fi
 echo "APK: $APK, designs: $DESIGNS, night: ${YT_NIGHT:-no}, locale: ${YT_LOCALE:-device}"
 adb wait-for-device
 if ! [[ "${YT_FONT_SCALE:-1.0}" =~ ^(1(\.[0-9]+)?|2(\.0+)?)$ ]]; then
@@ -699,7 +703,9 @@ for design in $DESIGNS; do
     . scripts/gestures/lib.sh
     anim_on
     # shellcheck source=/dev/null
-    for f in scripts/gestures/[a-e].sh; do
+    suites="${YT_SUITES:-abcde}"
+    for ((suite=0; suite<${#suites}; suite++)); do
+      f="scripts/gestures/${suites:suite:1}.sh"
       before_checks=$gesture_checks
       . "$f"
       if [ "$gesture_checks" = "$before_checks" ]; then
