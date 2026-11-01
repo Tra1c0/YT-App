@@ -6,6 +6,15 @@
 
     <PreferenceCategory
         app:key="yt_r12_b_category"
-        app:title="@string/yt_r12_b_category" />
+        app:title="@string/yt_r12_b_category">
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_drag"
+            android:summary="@string/yt_minimize_follow_summary"
+            app:defaultValue="true"
+            app:key="yt_minimize_follow"
+            app:title="@string/yt_minimize_follow" />
+
+    </PreferenceCategory>
 
 </PreferenceScreen>

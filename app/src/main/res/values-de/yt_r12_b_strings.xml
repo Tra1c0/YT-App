@@ -2,4 +2,6 @@
 <!-- YT: round 12, package B (minimizing under the finger). Same keys in the same order in values and values-de. -->
 <resources>
     <string name="yt_r12_b_category">Minimieren</string>
+    <string name="yt_minimize_follow">Video folgt dem Finger</string>
+    <string name="yt_minimize_follow_summary">Nach unten gezogen schrumpft das Video unter dem Finger auf die Leiste, nach oben gezogen öffnet sich der Miniplayer genauso. Aus: klassisch minimieren</string>
 </resources>

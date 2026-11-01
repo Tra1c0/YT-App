@@ -4,12 +4,16 @@
 
     <!-- Reminder: Update the logic to dynamically set the bottom bar height
      in MainActivity.kt when updating this! -->
+    <!-- YT: linear, and the container's way in straight lines (curveFit linear), so the drag under
+         the finger (YtMinimizeDrag, YtContainerCurve) knows where the container is at each
+         progress: an eased transition would keep its easing for every later progress set by hand. -->
     <Transition
         android:id="@+id/bottom_bar_transition"
         motion:constraintSetEnd="@+id/end"
         motion:constraintSetStart="@id/start"
         motion:duration="10"
-        motion:layoutDuringTransition="honorRequest">
+        motion:layoutDuringTransition="honorRequest"
+        motion:motionInterpolator="linear">
         <KeyFrameSet>
             <KeyAttribute
                 android:translationY="0dp"
@@ -33,11 +37,13 @@
 
             <KeyAttribute
                 android:translationY="0dp"
+                motion:curveFit="linear"
                 motion:framePosition="35"
                 motion:motionTarget="@+id/container" />
 
             <KeyAttribute
                 android:translationY="-80dp"
+                motion:curveFit="linear"
                 motion:framePosition="100"
                 motion:motionTarget="@+id/container" />
         </KeyFrameSet>

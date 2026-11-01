@@ -22,10 +22,17 @@
                 motion:framePosition="95"
                 motion:motionTarget="@+id/title_textView" />
         </KeyFrameSet>
+        <!-- YT: the classic drag, used where the drag under the finger (YtMinimizeDrag) is off or
+             cannot run. dragScale 1 says what it does (MotionLayout 2.2 maps the finger 1:1 to the
+             anchor anyway); the release keeps the finger's speed with continuousVelocity: the spring
+             mode starts its spring at rest (SpringStopEngine never takes the velocity it is given),
+             which would stop a flick dead before it springs. -->
         <OnSwipe
+            motion:autoCompleteMode="continuousVelocity"
             motion:dragDirection="dragDown"
-            motion:dragScale="6"
+            motion:dragScale="1"
             motion:maxAcceleration="40"
+            motion:onTouchUp="autoComplete"
             motion:touchAnchorId="@+id/main_container"
             motion:touchAnchorSide="bottom" />
     </Transition>
