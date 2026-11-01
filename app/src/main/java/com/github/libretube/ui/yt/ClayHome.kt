@@ -441,6 +441,8 @@ private fun ClayNextCard(
             .height(111.dp)
             // left hides, right queues: the card leaves a dent in the dough
             .ytCardSwipe(palette, video, shape, testTag = "yt_card_next")
+            // held: the dough puffs up and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, shape, onRelease = { actions.onQuick(video) })
             .ytSquish(interaction)
             .shadow(10.dp, shape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(shape)

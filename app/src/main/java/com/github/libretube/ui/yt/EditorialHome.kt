@@ -298,6 +298,8 @@ private fun EditorialItem(
     Column(
         modifier
             .ytCardSwipe(palette, video, RectangleShape, inset = PaddingValues(end = 16.dp), testTag = "yt_card_${number - 1}")
+            // held: a hard frame, then it drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, RectangleShape, inset = PaddingValues(end = 16.dp), onRelease = { actions.onQuick(video) })
             .background(palette.background)
             .padding(start = 17.dp, end = 16.dp, top = 10.dp),
     ) {

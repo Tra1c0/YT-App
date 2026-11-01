@@ -51,4 +51,10 @@
         <item quantity="one">%d hidden video comes back to the home screen.</item>
         <item quantity="other">%d hidden videos come back to the home screen.</item>
     </plurals>
+
+    <!-- dragging: a card onto the mini player, the search icon onto a card -->
+    <string name="yt_home_search">Search</string>
+    <string name="yt_home_search_channel">Search %1$s</string>
+    <string name="yt_home_drag">Drag cards and search</string>
+    <string name="yt_home_drag_summary">Hold a card and drag it onto the mini player: it plays next, or goes to the end once others wait. Hold the search icon and drag it onto a card to search for its channel</string>
 </resources>

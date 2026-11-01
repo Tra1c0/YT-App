@@ -153,6 +153,8 @@ fun FrostHomeScreen(
                                 .fillMaxWidth()
                                 .height(46.dp)
                                 .frost(RoundedCornerShape(23.dp))
+                                // held: a frosted lens lifts off and drags onto a card to search its channel
+                                .ytSearchDragSource(palette)
                                 .clickable(onClick = actions.onSearch)
                                 .padding(horizontal = 6.dp),
                         ) {
@@ -281,14 +283,10 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
             .aspectRatio(1.35f)
             // left hides, right queues: the frost clears around the mark in the gap
             .ytCardSwipe(palette, video, RoundedCornerShape(26.dp), testTag = "yt_card_0")
+            // held: lifts and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, RoundedCornerShape(26.dp), onRelease = { actions.onQuick(video) })
             .frost(RoundedCornerShape(26.dp), clear = { thaw })
-            // a long press opens the quick actions (also hide and queue without swiping)
-            .combinedClickable(
-                interactionSource = press,
-                indication = LocalIndication.current,
-                onLongClickLabel = stringResource(R.string.yt_home_more_actions),
-                onLongClick = { actions.onQuick(video) },
-            ) { actions.onOpenVideo(video) }
+            .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
             .padding(8.dp),
     ) {
         YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)))
@@ -349,14 +347,10 @@ private fun FrostRow(palette: YtPalette, imageLoader: ImageLoader, video: Stream
         modifier = Modifier
             .fillMaxWidth()
             .ytCardSwipe(palette, video, RoundedCornerShape(20.dp), testTag = "yt_card_$index")
+            // held: lifts and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, RoundedCornerShape(20.dp), onRelease = { actions.onQuick(video) })
             .frost(RoundedCornerShape(20.dp), clear = { thaw })
-            // a long press opens the quick actions (also hide and queue without swiping)
-            .combinedClickable(
-                interactionSource = press,
-                indication = LocalIndication.current,
-                onLongClickLabel = stringResource(R.string.yt_home_more_actions),
-                onLongClick = { actions.onQuick(video) },
-            ) { actions.onOpenVideo(video) }
+            .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
             .padding(8.dp),
     ) {
         YtLargeThumbnail(

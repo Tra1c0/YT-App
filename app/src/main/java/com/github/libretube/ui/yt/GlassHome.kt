@@ -71,6 +71,13 @@ import coil3.compose.AsyncImage
 import com.github.libretube.R
 import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.extensions.formatShort
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.runtime.rememberCoroutineScope
+import com.github.libretube.ui.yt.feed.YtDragRules
 
 private val GlassShadow = Color(0x405C8C85)
 
@@ -160,6 +167,8 @@ fun GlassHomeScreen(
                     .fillMaxWidth()
                     .height(38.dp)
                     .liquidGlass(screen, RoundedCornerShape(19.dp), Color(0x80FFFFFF), GlassShadow, swell = { searchSwell })
+                    // held: a glass lens lifts off the pill and drags onto a card to search its channel
+                    .ytSearchDragSource(palette)
                     .clickable(interactionSource = searchPress, indication = null, onClick = actions.onSearch)
                     .padding(horizontal = 16.dp),
             ) {
@@ -226,6 +235,11 @@ private fun GlassVideo(
     val haptics = rememberYtHaptics()
     val motion = LocalYtMotion.current
     val lensSize = 104.dp
+    // dragged past the edge of the picture, the magnifier becomes the ghost for the mini player
+    val dragOn = remember { YtHomeDragPrefs.enabled }
+    val picture = remember { YtCoords() }
+    val scope = rememberCoroutineScope()
+    val view = LocalView.current
     // left hides, right queues: a glass drop swells in the gap the video leaves
     Column(
         modifier
@@ -234,6 +248,7 @@ private fun GlassVideo(
                 inset = PaddingValues(start = 20.dp, end = 18.dp, bottom = 11.dp),
                 testTag = "yt_card_$index",
             )
+            .ytDropTarget(palette, video, RoundedCornerShape(12.dp), inset = PaddingValues(start = 20.dp, end = 18.dp, bottom = 11.dp))
             .padding(start = 20.dp, end = 18.dp, bottom = 11.dp),
     ) {
         Box(
@@ -244,19 +259,52 @@ private fun GlassVideo(
                 .clip(RoundedCornerShape(12.dp))
                 .background(palette.lime)
                 .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
-                .pointerInput(motion) {
-                    if (!motion) return@pointerInput
+                .onGloballyPositioned { picture.coords = it }
+                .pointerInput(motion, dragOn) {
+                    if (!motion && !dragOn) return@pointerInput
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
+                        if (YtDrag.session != null) return@awaitEachGesture
                         val hold = awaitLongPressOrCancellation(down.id) ?: return@awaitEachGesture
                         hold.consume()
                         haptics.tick()
-                        magnifier = hold.position
-                        drag(hold.id) { change ->
-                            change.consume()
-                            magnifier = change.position
+                        val units: Density = this
+                        val width = size.width.toFloat()
+                        val height = size.height.toFloat()
+                        val margin = 24.dp.toPx()
+                        val half = lensSize.toPx() / 2f
+                        val screen = Size(view.rootView.width.toFloat(), view.rootView.height.toFloat())
+                        // the loupe follows the finger but stays inside the picture
+                        fun follow(at: Offset) {
+                            if (!motion) return
+                            val (x, y) = YtDragRules.loupe(at.x, at.y, width, height)
+                            magnifier = Offset(x, y)
                         }
-                        magnifier = null
+                        follow(hold.position)
+                        var dragging = false
+                        var released = false
+                        try {
+                            released = drag(hold.id) { change ->
+                                change.consume()
+                                val coords = picture.coords?.takeIf { it.isAttached }
+                                val at = change.position
+                                if (!dragging && dragOn && coords != null && YtDragRules.leftPicture(at.x, at.y, width, height, margin)) {
+                                    // past the edge: the lens lets go of the picture and carries its frame on
+                                    val (x, y) = YtDragRules.loupe(at.x, at.y, width, height)
+                                    val lens = coords.localToWindow(Offset(x, y))
+                                    dragging = YtCardDrag.begin(scope, palette, video, Rect(lens, half), lens, motion)
+                                    if (dragging) magnifier = null
+                                }
+                                if (dragging && coords != null) {
+                                    YtCardDrag.move(scope, coords.localToWindow(at), haptics, units, screen)
+                                } else if (!dragging) {
+                                    follow(at)
+                                }
+                            }
+                        } finally {
+                            magnifier = null
+                            if (dragging) YtCardDrag.end(scope, haptics, screen, cancelled = !released)
+                        }
                     }
                 },
         ) {

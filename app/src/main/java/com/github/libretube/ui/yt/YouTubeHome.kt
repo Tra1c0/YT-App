@@ -375,7 +375,13 @@ private fun LargeVideo(
                 inset = PaddingValues(start = 4.dp, end = 4.dp, bottom = 16.dp),
                 testTag = "yt_card_$index",
             )
-            .ytPressable(RoundedCornerShape(14.dp), onLongClick = { onQuick(video) }) { onOpenVideo(video) }
+            // held: lifts, and drags onto the mini player; let go unmoved: the quick sheet
+            .ytHomeCard(
+                palette, video, RoundedCornerShape(14.dp),
+                inset = PaddingValues(start = 4.dp, end = 4.dp, bottom = 16.dp),
+                onRelease = { onQuick(video) },
+            )
+            .ytPressable(RoundedCornerShape(14.dp)) { onOpenVideo(video) }
             .padding(start = 4.dp, end = 4.dp, bottom = 16.dp),
     ) {
         Box {

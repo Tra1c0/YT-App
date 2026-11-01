@@ -51,4 +51,10 @@
         <item quantity="one">%d ausgeblendetes Video erscheint wieder auf der Startseite.</item>
         <item quantity="other">%d ausgeblendete Videos erscheinen wieder auf der Startseite.</item>
     </plurals>
+
+    <!-- dragging: a card onto the mini player, the search icon onto a card -->
+    <string name="yt_home_search">Suchen</string>
+    <string name="yt_home_search_channel">%1$s suchen</string>
+    <string name="yt_home_drag">Karten und Suche ziehen</string>
+    <string name="yt_home_drag_summary">Karte halten und auf den Miniplayer ziehen: Sie kommt als Nächstes, oder ans Ende, wenn schon andere warten. Die Lupe halten und auf eine Karte ziehen, um nach ihrem Kanal zu suchen</string>
 </resources>

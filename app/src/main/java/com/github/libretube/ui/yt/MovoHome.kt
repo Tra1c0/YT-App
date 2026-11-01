@@ -283,7 +283,9 @@ private fun MovoCard(
         modifier = modifier
             .ytRecede(video.url)
             .ytTilt()
-            .ytPressable(RoundedCornerShape(16.dp), onLongClick = { onQuick(video) }) { onOpenVideo(video) }
+            // held: lifts off the mosaic and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, RoundedCornerShape(16.dp), onRelease = { onQuick(video) })
+            .ytPressable(RoundedCornerShape(16.dp)) { onOpenVideo(video) }
             .background(color),
     ) {
         AsyncImage(

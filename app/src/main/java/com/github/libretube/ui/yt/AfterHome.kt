@@ -552,7 +552,9 @@ private fun AfterPoster(
     Box(
         modifier = modifier
             .aspectRatio(177f / 105f)
-            .ytPressable(RoundedCornerShape(10.dp), onLongClick = onQuick?.let { quick -> { quick(video) } }) { onOpenVideo(video) }
+            // held: the poster lifts and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, RoundedCornerShape(10.dp), onRelease = onQuick?.let { quick -> { quick(video) } })
+            .ytPressable(RoundedCornerShape(10.dp)) { onOpenVideo(video) }
             .background(palette.surface),
     ) {
         AsyncImage(

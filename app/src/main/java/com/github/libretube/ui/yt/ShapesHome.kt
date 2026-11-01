@@ -173,6 +173,8 @@ fun ShapesHomeScreen(
                                 .height(46.dp)
                                 .clip(RoundedCornerShape(23.dp))
                                 .background(palette.surface)
+                                // held: the cookie lens lifts off and drags onto a card to search its channel
+                                .ytSearchDragSource(palette)
                                 .clickable(onClick = actions.onSearch)
                                 .padding(horizontal = 14.dp),
                         ) {
@@ -440,11 +442,9 @@ private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: Str
     Column(
         Modifier
             .ytCardSwipe(palette, video, shape, testTag = "yt_card_$index")
-            // a long press opens the quick actions (also hide and queue without swiping)
-            .combinedClickable(
-                onLongClickLabel = stringResource(R.string.yt_home_more_actions),
-                onLongClick = { actions.onQuick(video) },
-            ) { actions.onOpenVideo(video) },
+            // held: lifts and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, shape, onRelease = { actions.onQuick(video) })
+            .clickable { actions.onOpenVideo(video) },
     ) {
         Box(
             Modifier

@@ -226,7 +226,6 @@ private fun PopFeature(
 ) {
     val card = FeatureShape(smallFraction = 0.06f, largeFraction = 0.165f)
     // a long press opens the quick actions (also hide and queue without swiping)
-    val moreActions = stringResource(R.string.yt_home_more_actions)
     // held, the card inflates a little like a balloon and pops back when let go
     val scope = rememberCoroutineScope()
     val motion = LocalYtMotion.current
@@ -237,6 +236,8 @@ private fun PopFeature(
             .fillMaxWidth()
             // left hides, right queues: a blob inflates where the card was
             .ytCardSwipe(palette, video, card, testTag = "yt_card_0")
+            // held: the balloon lifts and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, card, onRelease = { actions.onQuick(video) })
             .graphicsLayer {
                 val scale = 1f + 0.05f * inflate.value
                 scaleX = scale
@@ -246,7 +247,7 @@ private fun PopFeature(
             .shadow(6.dp, card, clip = false, ambientColor = PopShadow, spotColor = PopShadow)
             .clip(card)
             .background(PopYellow)
-            .combinedClickable(onLongClickLabel = moreActions, onLongClick = { actions.onQuick(video) }) { actions.onOpenVideo(video) }
+            .clickable { actions.onOpenVideo(video) }
             .padding(start = 8.dp, end = 6.dp, top = 10.dp, bottom = 12.dp),
     ) {
         Box(
@@ -387,17 +388,17 @@ private fun PopListCard(
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(22.dp)
-    val moreActions = stringResource(R.string.yt_home_more_actions)
     Row(
         modifier = modifier
             .padding(start = 14.dp, end = 14.dp, top = 12.dp)
             .fillMaxWidth()
             .height(99.dp)
             .ytCardSwipe(palette, video, shape, testTag = "yt_card_$index")
+            .ytHomeCard(palette, video, shape, onRelease = { actions.onQuick(video) })
             .shadow(4.dp, shape, clip = false, ambientColor = PopShadow, spotColor = PopShadow)
             .clip(shape)
             .background(palette.surface)
-            .combinedClickable(onLongClickLabel = moreActions, onLongClick = { actions.onQuick(video) }) { actions.onOpenVideo(video) }
+            .clickable { actions.onOpenVideo(video) }
             .padding(start = 8.dp, top = 7.5.dp, bottom = 7.5.dp, end = 6.dp),
     ) {
         Box(

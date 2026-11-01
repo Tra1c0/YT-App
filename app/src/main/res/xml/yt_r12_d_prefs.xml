@@ -15,6 +15,13 @@
             app:key="yt_card_swipe"
             app:title="@string/yt_home_card_swipe" />
 
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_queue"
+            android:summary="@string/yt_home_drag_summary"
+            app:defaultValue="true"
+            app:key="yt_home_drag"
+            app:title="@string/yt_home_drag" />
+
         <com.github.libretube.ui.yt.feed.YtPausedChannelsPreference
             android:icon="@drawable/ic_yt_pause_week"
             app:key="yt_paused_channels_list"

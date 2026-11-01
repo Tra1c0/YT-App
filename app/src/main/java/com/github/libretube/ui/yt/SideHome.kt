@@ -243,6 +243,8 @@ private fun SidePost(
     Column(
         Modifier
             .ytCardSwipe(palette, post, RectangleShape, testTag = "yt_card_$index")
+            // held: drags onto the mini player; let go unmoved: the post's menu
+            .ytHomeCard(palette, post, RectangleShape, onRelease = { menu = true })
             .background(palette.background)
             .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 14.dp),
     ) {
