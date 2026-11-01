@@ -29,18 +29,46 @@ d_home() {
 
 # taps the element with resource-id (test tag) $1; status 1 if it is not on screen
 d_tap() {
-  local at
-  at=$(center_of "$1\$") || return 1
-  # shellcheck disable=SC2086 # "x y"
-  timeout 10 adb shell input tap $at || true
+  local at attempt size width height
+  for ((attempt=0; attempt<=${2:-0}; attempt++)); do
+    if at=$(center_of "$1\$"); then
+      # shellcheck disable=SC2086 # "x y"
+      driver_command TAP $at
+      return
+    fi
+    [ "$attempt" -lt "${2:-0}" ] || break
+    size=$(screen_size)
+    read -r width height <<< "$size"
+    driver_command FLING $((width/2)) $((height*3/4)) $((width/2)) $((height/3)) 500
+    sleep 0.3
+  done
+  return 1
 }
 
 # "x y w" of the first home card on screen: the second if there is one, else the first
 d_card() {
-  local b l t r bt
-  b=$(bounds_of 'yt_card_1$') || b=$(bounds_of 'yt_card_0$') || b=$(bounds_of 'yt_card_next$') || return 1
-  read -r l t r bt <<< "$b"
-  echo "$(( (l + r) / 2 )) $(( (t + bt) / 2 )) $(( r - l ))"
+  local b l t r bt nav limit size width height tag attempt
+  size=$(screen_size)
+  read -r width height <<< "$size"
+  limit=$((height - $(dp 100)))
+  if nav=$(bounds_of 'id/bottomNav$'); then
+    read -r _ limit _ _ <<< "$nav"
+    limit=$((limit - $(dp 12)))
+  fi
+  for attempt in 1 2 3; do
+    for tag in yt_card_1 yt_card_0 yt_card_next; do
+      b=$(bounds_of "$tag\$") || continue
+      read -r l t r bt <<< "$b"
+      [ "$t" -ge "$(dp 72)" ] || t=$(dp 72)
+      [ "$bt" -le "$limit" ] || bt=$limit
+      [ "$((bt-t))" -ge "$(dp 64)" ] || continue
+      echo "$(( (l+r)/2 )) $(( (t+bt)/2 )) $((r-l))"
+      return 0
+    done
+    driver_command FLING $((width/2)) $((limit - $(dp 40))) $((width/2)) "$(dp 160)" 450 || return 1
+    sleep 0.5
+  done
+  return 1
 }
 
 d_fail() {
@@ -110,7 +138,6 @@ d_checks() {
   # left: the card follows the finger off a field, flies out, the undo pill comes
   d_swipe "$x" "$y" $(( -reach )) "$design-d-1-hide" YtHidden 'hide id='
   sleep 1
-  rawshot "$design-d-2-undo"
   expect_log YtHidden 'hide id='
   expect_log YtHaptic 'swipe_hide_'
   # the pill's actions are tagged (yt_undo_action, yt_pause_action)
@@ -119,6 +146,7 @@ d_checks() {
   else
     d_fail "no undo pill after the swipe"
   fi
+  rawshot "$design-d-2-restored"
   sleep 1
 
   # right while nothing plays: into the draft, its pill comes
@@ -135,10 +163,10 @@ d_checks() {
 
   # held and dragged onto the bar while nothing plays: into the draft (the bar takes the drop)
   log_mark
-  if card=$(d_card) && bar=$(screen_size); then
+  if card=$(d_card) && bar=$(center_of 'id/bottomNav$'); then
     read -r x y w <<< "$card"
     read -r _ h <<< "$bar"
-    SHOT_STEPS="6" hold_drag "$x" "$y" "$x" $(( h - $(dp 40) )) 10 "$design-d-6-lift"
+    SHOT_STEPS="6" hold_drag "$x" "$y" "$x" "$h" 10 "$design-d-6-lift"
     sleep 1
     expect_log YtDrag 'lift id='
     expect_log YtDrag 'drop bar|back'
@@ -238,7 +266,7 @@ d_checks() {
     if bounds_of 'yt_feed_sheet$' >/dev/null; then
       rawshot "$design-d-15-feed"
       expect_log YtFeed 'sheet open'
-      if d_tap yt_feed_weight_music_more; then
+      if d_tap yt_feed_weight_music_more 2; then
         sleep 1
         expect_log YtFeed 'rules saved'
         shot "$design-d-16-feed-weight"

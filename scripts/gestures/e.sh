@@ -6,7 +6,7 @@
 #
 # The test video has no comments, so the check brings five (YtSceneTestHooks): one at 0:10, one at
 # 1:30, one at 2:40, one without a time and a viewer timeline (0:00 / 0:45 / 1:30 / 2:15). With
-# spoiler protection at the start, those at 1:30 and 2:40 are hidden (blurred, before Android 12
+# spoiler protection at the start, all three future comments are hidden (blurred, before Android 12
 # the pill "Spoiler bei …"). A seek to 1:40 reveals nothing at once; after 5 s of playback there
 # the mark follows and only 2:40 stays hidden. Then the chip "Diese Stelle" shows the scene.
 # The video starts at 0:00 (yt_seek_test 0): an earlier run left a saved position, which would count as seen.
@@ -37,7 +37,7 @@ e_checks() {
   expect_log YtScene 'comments sheet opened=true'
   sleep 3
   rawshot "$design-e-1-blur"
-  EXPECT_WAIT=8 expect_log YtScene 'hidden=2 of 5'
+  EXPECT_WAIT=8 expect_log YtScene 'hidden=3 of 5'
 
   # a jump forward reveals nothing by itself, 5 s of playback there do
   log_mark

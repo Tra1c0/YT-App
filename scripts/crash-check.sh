@@ -165,7 +165,7 @@ tap() {
   local pattern="$1" tries="${2:-0}" node b
   for _ in $(seq 0 "$tries"); do
     if [ "${YT_INPUT_READY:-no}" = yes ]; then
-      if b=$(driver_find "^($pattern)$"); then
+      if b=$(driver_find "(?i)^($pattern)$"); then
         set -- $b
         driver_command TAP $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
         return
