@@ -186,6 +186,22 @@ class YtGlassLayoutTest {
         }
     }
 
+    @Test
+    fun theSlabGrowsFromNothingWithoutAStep() {
+        val top = 6f * d
+        assertEquals(0f, YtGlassMath.slabGrowth(0f, top), 0f)
+        // docked: the player's extent above the navigation view plus the bar's top margin
+        assertEquals(78f * d + top, YtGlassMath.slabGrowth(78f * d, top), 0.01f)
+        var last = 0f
+        for (i in 1..400) {
+            val v = YtGlassMath.slabGrowth(i * 0.25f, top)
+            assertTrue(v > last)
+            // never more than twice the step: no jump near the start
+            assertTrue(v - last <= 0.5f + 0.01f)
+            last = v
+        }
+    }
+
     /** Every char 1 unit wide: fits when at most [room] chars. */
     private fun fits(room: Int): (String) -> Boolean = { it.length <= room }
 

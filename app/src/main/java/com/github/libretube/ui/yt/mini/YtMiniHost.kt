@@ -134,6 +134,7 @@ class YtMiniHost private constructor(
     private fun attach() {
         hosts[motion] = this
         YtMiniPlayer.keepDock()
+        scene.surface = { binding.player.videoSurfaceView }
         if (!design.classic) shape()
 
         // behind the picture: inside the box, which draws before the player view
@@ -266,7 +267,9 @@ class YtMiniHost private constructor(
                     // only on the page: moved into the fullscreen or picture-in-picture window,
                     // the video keeps square corners
                     val radius = if (view.parent === motion) thumbRadius * YtDock.progress else 0f
-                    outline.setRoundRect(0, 0, view.width, view.height, radius)
+                    // top corners only: the rect reaches past the foot, so the foot stays square
+                    val below = if (design.roundsTopOnly) radius.roundToInt() + 1 else 0
+                    outline.setRoundRect(0, 0, view.width, view.height + below, radius)
                 }
             }
             binding.player.clipToOutline = true
@@ -436,6 +439,19 @@ class YtMiniHost private constructor(
         if (scene.next != null) {
             actions += ViewCompat.addAccessibilityAction(target, context.getString(R.string.yt_mini_a11y_play_next)) { _, _ ->
                 playNext()
+            }
+        }
+        // designs without the buttons (Glas): the previous video and closing, without a gesture
+        if (scene.hasPrev && !design.classic && !design.spec.play) {
+            actions += ViewCompat.addAccessibilityAction(target, context.getString(R.string.yt_mini_a11y_prev)) { _, _ ->
+                scene.onPrev()
+                true
+            }
+        }
+        if (!design.classic && !design.spec.close) {
+            actions += ViewCompat.addAccessibilityAction(target, context.getString(R.string.tooltip_close)) { _, _ ->
+                scene.onClose()
+                true
             }
         }
     }

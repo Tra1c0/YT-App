@@ -204,6 +204,11 @@ object YtNav {
             }
         }
         backdrop?.let { bar.viewTreeObserver.addOnPreDrawListener(it.preDrawListener) }
+        // the Glas bar grows upward into the slab behind the docked player, above its own view
+        bar.clipChildren = false
+        bottomNav.clipChildren = false
+        bottomNav.clipToPadding = false
+        (bottomNav.parent as? ViewGroup)?.clipChildren = false
         bottomNav.addView(
             bar,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT),

@@ -11,4 +11,7 @@
     <string name="yt_mini_drop_end">At the end · No. %1$d</string>
     <string name="yt_mini_a11y_play_pause">Play or pause</string>
     <string name="yt_mini_a11y_play_next">Play the next video</string>
+    <string name="yt_mini_a11y_prev">Play the previous video</string>
+    <string name="yt_mini_glass_prev">Previous video</string>
+    <string name="yt_mini_glass_next">Next video</string>
 </resources>

@@ -79,6 +79,22 @@ class YtMiniViews(
 }
 
 /**
+ * How near a dragged video is to the docked player, 0 (none, or far) to 1 (over it): its pointer
+ * approaching within 80 dp ([density] px per dp) counts up to 0.6, the drop target taking it is 1.
+ * Read it in draw and layout lambdas; the Glas bar reads it too (its slab is the player's glass).
+ */
+fun ytMiniHover(density: Float): Float {
+    if (YtDock.hover || YtDrag.hoverKey == YtDrag.MINI) return 1f
+    val session = YtDrag.session
+    val bounds = YtDrag.miniBounds
+    if (session == null || bounds == null || session.kind != YtDragKind.VIDEO) return 0f
+    val p = session.pointer
+    return 0.6f * YtMiniDockMath.nearness(
+        p.x, p.y, bounds.left.toFloat(), bounds.top.toFloat(), bounds.right.toFloat(), bounds.bottom.toFloat(), 80f * density,
+    )
+}
+
+/**
  * YT: what the composables of a design's mini player get. The per-frame values are lambdas, to be
  * read in draw and layout lambdas (graphicsLayer {}, drawBehind {}, Modifier.layout {}), never in
  * composition, so the player draws again but does not compose again while it moves. The other
@@ -107,22 +123,10 @@ class YtMiniScene(
      * How near a dragged video is, 0 (none, or far) to 1 (over the player): its pointer
      * approaching within 80 dp counts up to 0.6, the drop target taking it is 1.
      */
-    val hover: () -> Float = {
-        if (YtDock.hover || YtDrag.hoverKey == YtDrag.MINI) {
-            1f
-        } else {
-            val session = YtDrag.session
-            val bounds = YtDrag.miniBounds
-            if (session == null || bounds == null || session.kind != YtDragKind.VIDEO) {
-                0f
-            } else {
-                val p = session.pointer
-                0.6f * YtMiniDockMath.nearness(
-                    p.x, p.y, bounds.left.toFloat(), bounds.top.toFloat(), bounds.right.toFloat(), bounds.bottom.toFloat(), 80f * density,
-                )
-            }
-        }
-    }
+    val hover: () -> Float = { ytMiniHover(density) }
+
+    /** The video's SurfaceView (the Glas colour bleed copies its frames), or null. */
+    var surface: () -> View? = { null }
 
     /** Title, channel and position, polled while the player is shown. */
     var info by mutableStateOf(YtMiniInfo.EMPTY)
@@ -186,6 +190,9 @@ abstract class YtMiniDesign(val design: YtDesign) {
 
     /** True where the player has no play button: a double tap on the picture toggles play. */
     open val takesDoubleTap: Boolean get() = !spec.play
+
+    /** True where the picture rounds only its top corners (Glas: its foot tucks under the bar). */
+    open val roundsTopOnly: Boolean get() = false
 
     /** Whether a long press on the picture opens the preview. */
     open val peeks: Boolean get() = true

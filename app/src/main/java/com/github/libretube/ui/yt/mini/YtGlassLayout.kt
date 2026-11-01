@@ -265,6 +265,17 @@ object YtGlassMath {
         return lerp(barRadius, slabRadius, smoothstep(0f, slabRadius, extent))
     }
 
+    /**
+     * How far the slab reaches above the bar's own glass, in px: the player's extent above the
+     * navigation view ([slabPx], YtDock.slabPx) plus the bar's top margin [top], which the slab
+     * takes in over its first [top] px, so it starts from nothing without a step.
+     */
+    fun slabGrowth(slabPx: Float, top: Float): Float {
+        if (slabPx <= 0f) return 0f
+        if (top <= 0f) return slabPx
+        return slabPx + top * (slabPx / top).coerceAtMost(1f)
+    }
+
     /** How strongly the tab row's rim shows over the slab: only with the slab risen. */
     fun plateRim(extent: Float, barRadius: Float): Float = smoothstep(0f, barRadius, extent)
 

@@ -13,6 +13,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -134,5 +136,20 @@ class YtMiniBleed {
         const val BLUR_RADIUS = 2
         const val SATURATION = 1.25f
         const val KEEP = 0.45f
+    }
+}
+
+/** The bleed's bitmap as an ImageBitmap, wrapped once per bitmap (the bleed keeps two). */
+internal class YtBleedImage {
+    private var bitmap: Bitmap? = null
+    private var image: ImageBitmap? = null
+
+    fun of(source: Bitmap?): ImageBitmap? {
+        if (source == null || source.isRecycled) return null
+        if (source !== bitmap) {
+            bitmap = source
+            image = source.asImageBitmap()
+        }
+        return image
     }
 }

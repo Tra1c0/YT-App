@@ -56,4 +56,74 @@ a_checks() {
   fi
 }
 
+# Glas, the Mint reference: no play or close button; a double tap toggles play (the glass glyph
+# flashes), the preview's pill toggles on release, its row plays the next video, the glass
+# arrows play the previous and next video. Positions from the docked strip: the strip's foot
+# stays on the bar while it grows 2.3 times (YtGlassLayout).
+a_glass_checks() {
+  [ "${design:-}" = glass ] || return 0
+  local box l t r b x y pill row arrow
+  if ! box=$(bounds_of 'id/player$'); then
+    mark "a-glass: no picture of the mini player on screen"
+    return 0
+  fi
+  read -r l t r b <<< "$box"
+  x=$(( (l + r) / 2 ))
+  y=$(( (t + b) / 2 ))
+  expect_log YtHaptic 'mini_dock_glass'
+
+  log_mark
+  timeout 10 adb shell "input tap $x $y; input tap $x $y" || true
+  sleep 0.15
+  rawshot "$design-a-glass-1-flash"
+  sleep 1
+  expect_log YtMini 'play toggled'
+  expect_log YtHaptic 'mini_play_glass'
+  # back to playing for the rest
+  timeout 10 adb shell "input tap $x $y; input tap $x $y" || true
+  sleep 1.2
+
+  # hold, move onto the pill ("Wiedergabe"), let go: play toggles
+  pill=$(( b - $(dp 89) ))
+  log_mark
+  finger_down "$x" "$y"
+  sleep 1.6
+  rawshot "$design-a-glass-2-peek"
+  finger_move "$x" "$(( (y + pill) / 2 ))"
+  finger_move "$x" "$pill"
+  sleep 0.3
+  rawshot "$design-a-glass-3-pill"
+  finger_up "$x" "$pill"
+  sleep 1.2
+  expect_log YtMini 'peek=0 target=pill'
+  expect_log YtMini 'play toggled'
+  expect_log YtHaptic 'mini_peek_full_glass'
+
+  # hold, move onto the next video's row, let go: it plays
+  row=$(( b - $(dp 40) ))
+  log_mark
+  finger_down "$x" "$(( y - $(dp 6) ))"
+  sleep 1.6
+  finger_move "$(( x + $(dp 30) ))" "$row"
+  sleep 0.3
+  rawshot "$design-a-glass-4-row"
+  finger_up "$(( x + $(dp 30) ))" "$row"
+  sleep 2
+  expect_log YtMini 'peek=0 target=next'
+  expect_log YtQueue 'play next from mini'
+
+  # the glass arrow beside the picture's right edge
+  sleep 3
+  if box=$(bounds_of 'id/player$'); then
+    read -r l t r b <<< "$box"
+    arrow=$(( r - $(dp 29) ))
+    log_mark
+    timeout 10 adb shell input tap "$arrow" "$(( b - $(dp 41) ))" || true
+    sleep 1.5
+    expect_log YtHaptic 'mini_button_glass'
+    rawshot "$design-a-glass-5-arrow"
+  fi
+}
+
 a_checks
+a_glass_checks

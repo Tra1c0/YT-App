@@ -1,6 +1,25 @@
 package com.github.libretube.ui.yt
 
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.IntSize
+import com.github.libretube.ui.yt.mini.YtBleedImage
+import com.github.libretube.ui.yt.mini.YtGlassLayout
+import com.github.libretube.ui.yt.mini.YtGlassMath
+import com.github.libretube.ui.yt.mini.YtGlassSlab
+import com.github.libretube.ui.yt.mini.ytGlassSlabShape
+import com.github.libretube.ui.yt.mini.ytMiniHover
+import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.border
@@ -273,9 +292,11 @@ fun LiquidNav(
                 LiquidSlots(count, look.activeWidth.toPx(), look.inactiveWidth.toPx(), pad.toPx(), gap.toPx()) { drop.value }
             }
         }
-        val highlight = remember(scope, slots) {
+        val barPx = with(density) { look.barHeight.toPx() }
+        val highlight = remember(scope, slots, barPx) {
             InteractiveHighlight(scope) { size, _ ->
-                Offset(slots.lensX() + slots.lensWidth() / 2f, size.height / 2f)
+                // on the tabs, also while the Glas slab makes the bar taller
+                Offset(slots.lensX() + slots.lensWidth() / 2f, size.height - barPx / 2f)
             }
         }
         val glassOk = isRenderEffectSupported()
@@ -284,7 +305,9 @@ fun LiquidNav(
         // one pane. The backdrop takes its outline from composition, so the corner composes
         // again, but only when it changes by a whole pixel
         val roundPx = with(density) { (look.barHeight / 2).toPx() }
-        val stacks = remember(design) { YtMiniPlayer.stacks(design) }
+        // Glas does not square its corners: the bar grows into one slab with the player instead
+        val slab = design == YtDesign.GLASS
+        val stacks = remember(design) { YtMiniPlayer.stacks(design) && !slab }
         val dockTopPx by remember(roundPx, stacks) { derivedStateOf { ytDockTop(roundPx, stacks).roundToInt() } }
         val top = with(density) { dockTopPx.toDp() }.coerceIn(0.dp, look.barHeight / 2)
         val surfaceShape = RoundedCornerShape(
@@ -299,46 +322,126 @@ fun LiquidNav(
             onSelect(items[i].id)
         }
 
-        // 1: the bar, glass over the screen, with the tabs at rest
+        // Glas: the slab behind the docked player, its handle, the video's colour in it, the
+        // bulge towards a video dragged near and the ripple of one dropped in
+        val slabShape = remember(barPx, density) { ytGlassSlabShape(barPx, with(density) { YtGlassLayout.SLAB_CORNER.dp.toPx() }) }
+        val topMarginPx = with(density) { look.margin.calculateTopPadding().toPx() }
+        // px per dp, under its own name: the glass's lambdas have a density of their own
+        val dpScale = density.density
+        val bleedImage = remember { YtBleedImage() }
+        val ripple = remember { Animatable(0f) }
+        if (slab) {
+            DisposableEffect(Unit) {
+                YtGlassSlab.navDraws = true
+                onDispose { YtGlassSlab.navDraws = false }
+            }
+            val accepted = YtDock.accepted
+            var seenDrop by remember { mutableIntStateOf(accepted) }
+            LaunchedEffect(accepted) {
+                if (accepted == seenDrop) return@LaunchedEffect
+                seenDrop = accepted
+                if (!motion) return@LaunchedEffect
+                // the droplet reaches the glass a little after the drop (YtGlassOver)
+                delay(380)
+                ripple.snapTo(0f)
+                ripple.animateTo(1f, tween(140))
+                ripple.animateTo(0f, spring(dampingRatio = 0.35f, stiffness = 260f))
+            }
+        }
+
+        // 1: the bar, glass over the screen, with the tabs at rest. Glas: grown upward into the
+        // slab behind the docked player (drawn above the bar's own view, its height unchanged)
         Box(
             Modifier
                 .width(width)
                 .height(look.barHeight)
+                .then(if (slab) Modifier.glassSlabGrowth(topMarginPx) else Modifier)
                 .drawBackdrop(
                     backdrop = backdrop,
-                    shape = { surfaceShape },
+                    shape = { if (slab) slabShape else surfaceShape },
                     effects = {
                         vibrancy()
                         blur(look.blur.toPx())
-                        lens(20.dp.toPx(), 22.dp.toPx())
+                        // a video dragged near bends the glass more, one dropped in ripples it
+                        val bend = if (slab) 1f + 0.35f * ytMiniHover(dpScale) + 0.5f * ripple.value else 1f
+                        lens(20.dp.toPx() * bend, 22.dp.toPx() * bend)
                     },
                     highlight = { Highlight(style = HighlightStyle.Default(angle = ytLightAngle(tilt.value))) },
                     shadow = { Shadow(radius = 22.dp, color = look.shadow) },
                     layerBlock = {
                         val scale = lerp(1f, 1f + 10.dp.toPx() / size.width, drop.pressProgress)
-                        scaleX = scale
-                        scaleY = scale
+                        // the slab bulges up towards a video dragged near, from the bar
+                        val bulge = if (slab) 1f + 0.03f * ytMiniHover(dpScale) else 1f
+                        scaleX = scale * bulge
+                        scaleY = scale * bulge
+                        if (slab) transformOrigin = TransformOrigin(0.5f, 1f)
                     },
-                    onDrawSurface = { drawRect(if (glassOk) look.tint else look.tintSolid) },
+                    onDrawSurface = {
+                        val grown = size.height - barPx
+                        if (slab && grown > 0.5f) {
+                            // the video's colour bleeds into the glass around it
+                            val image = bleedImage.of(YtGlassSlab.bleed?.frame)
+                            if (image != null) {
+                                drawImage(
+                                    image = image,
+                                    dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+                                    alpha = 0.32f * YtGlassMath.smoothstep(0f, 40.dp.toPx(), grown),
+                                    filterQuality = FilterQuality.Low,
+                                )
+                            }
+                        }
+                        drawRect(if (glassOk) look.tint else look.tintSolid)
+                        if (slab && grown > 0.5f) {
+                            // the tab row lies in the slab as a plate with a light rim
+                            val rim = YtGlassMath.plateRim(grown, barPx / 2f)
+                            val stroke = 1.dp.toPx()
+                            drawRoundRect(
+                                Color.White.copy(alpha = 0.75f * rim),
+                                topLeft = Offset(stroke / 2f, grown + stroke / 2f),
+                                size = Size(size.width - stroke, barPx - stroke),
+                                cornerRadius = CornerRadius(barPx / 2f - stroke / 2f),
+                                style = Stroke(stroke),
+                            )
+                            // the grab handle on the rim above the picture
+                            val handle = YtGlassMath.smoothstep(14.dp.toPx(), 30.dp.toPx(), grown)
+                            val hw = YtGlassLayout.HANDLE_WIDTH.dp.toPx()
+                            val hh = YtGlassLayout.HANDLE_HEIGHT.dp.toPx()
+                            drawRoundRect(
+                                YtGlassSlab.handle,
+                                topLeft = Offset((size.width - hw) / 2f, YtGlassLayout.HANDLE_TOP.dp.toPx()),
+                                size = Size(hw, hh),
+                                cornerRadius = CornerRadius(hh / 2f),
+                                alpha = handle,
+                            )
+                        }
+                    },
                 )
                 .then(highlight.modifier),
         ) {
-            TabStrip(count, slots, itemHeightPx) { i ->
-                val item = items[i]
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .clickable(interactionSource = null, indication = null) { select(i) },
-                ) {
+            // the tabs keep to the bar at the slab's foot
+            Box(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .height(look.barHeight),
+            ) {
+                TabStrip(count, slots, itemHeightPx) { i ->
+                    val item = items[i]
                     Box(
                         Modifier
                             .fillMaxSize()
-                            .graphicsLayer { alpha = 1f - slots.activeness(i) }
-                            .clip(barShape)
-                            .background(look.tile)
-                            .border(1.dp, look.tileBorder, barShape),
-                    )
-                    InactiveTab(look, palette, item, look.inactive, state.badges[item.id], Modifier.graphicsLayer { alpha = 1f - slots.activeness(i) })
+                            .clickable(interactionSource = null, indication = null) { select(i) },
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .graphicsLayer { alpha = 1f - slots.activeness(i) }
+                                .clip(barShape)
+                                .background(look.tile)
+                                .border(1.dp, look.tileBorder, barShape),
+                        )
+                        InactiveTab(look, palette, item, look.inactive, state.badges[item.id], Modifier.graphicsLayer { alpha = 1f - slots.activeness(i) })
+                    }
                 }
             }
         }
@@ -527,3 +630,16 @@ private fun LiquidIcon(item: YtNavItem, active: Boolean, color: Color, size: Dp)
         )
     }
 }
+
+/**
+ * Glas: the bar's glass grows upward by the slab behind the docked player (YtDock.slabPx, read
+ * while laying out), drawn above the bar's own view, which keeps its height.
+ */
+private fun Modifier.glassSlabGrowth(topMargin: Float): Modifier =
+    this.then(
+        Modifier.layout { measurable, constraints ->
+            val grow = YtGlassMath.slabGrowth(YtDock.slabPx, topMargin).roundToInt()
+            val placeable = measurable.measure(Constraints.fixed(constraints.maxWidth, constraints.maxHeight + grow))
+            layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, -grow) }
+        },
+    )
