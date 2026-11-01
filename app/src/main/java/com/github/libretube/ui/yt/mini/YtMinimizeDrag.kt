@@ -23,7 +23,6 @@ import com.github.libretube.ui.yt.YtTestHooks
 import com.github.libretube.ui.yt.player.YtPlayerHost
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
@@ -95,6 +94,8 @@ internal class YtMinimizeDrag(
         val endFrom: String,
         /** The progress at the grab: 0 open, 1 docked, between when a release was caught. */
         val startProgress: Float,
+        /** Where the page last rested before this gesture (0 open, 1 docked), also across a caught release. */
+        val origin: Int,
         val offX: Float,
         val offY: Float,
     ) {
@@ -272,6 +273,8 @@ internal class YtMinimizeDrag(
         // a release still running is caught where it is
         val caughtTx = session?.tx ?: 0f
         val caughtTy = session?.ty ?: 0f
+        // a caught release keeps the side its gesture began on: landing there changes nothing
+        val caughtOrigin = session?.takeIf { !it.yielded }?.origin
         stop(reset = false)
         if (g == null) {
             setOffsets(0f, 0f)
@@ -301,7 +304,8 @@ internal class YtMinimizeDrag(
         // not when it catches the page in its rubber band or beside the picture
         val offX = e.rawX - (finger.pointX(p) + YtDragMath.unFollow(caughtTx, sidewaysLinear, sidewaysDimension))
         val offY = e.rawY - (finger.pointY(p) + unband(fromMini, caughtTy))
-        val s = Session(fromMini, g.tracked, finger, g.endFrom, p, offX, offY)
+        val origin = caughtOrigin ?: if (p >= 0.5f) 1 else 0
+        val s = Session(fromMini, g.tracked, finger, g.endFrom, p, origin, offX, offY)
         s.tx = caughtTx
         s.ty = caughtTy
         s.zone = zoneOf(s, p, 0f)
@@ -332,7 +336,7 @@ internal class YtMinimizeDrag(
         val throwAway = !cancelled && s.fromMini && YtDragMath.closes(s.below, vy, closeAt)
         val target = when {
             // a gesture the system took back goes back to where it began
-            cancelled -> if (s.startProgress >= 0.5f) 1 else 0
+            cancelled -> s.origin
             else -> s.finger.settle(y, vy, s.progress)
         }
         log {
@@ -422,7 +426,7 @@ internal class YtMinimizeDrag(
 
     private fun zoneOf(s: Session, fitProgress: Float, rest: Float): Zone = when {
         s.fromMini && rest >= closeAt -> Zone.CLOSE
-        (s.startProgress >= 0.5f && fitProgress < 0.5f) || (s.startProgress < 0.5f && fitProgress >= 0.5f) -> Zone.SWITCH
+        (s.origin == 1 && fitProgress < 0.5f) || (s.origin == 0 && fitProgress >= 0.5f) -> Zone.SWITCH
         else -> Zone.STAY
     }
 
@@ -507,7 +511,7 @@ internal class YtMinimizeDrag(
     private fun finishTransition(s: Session, target: Int, instant: Boolean) {
         s.ownsProgress = false
         landingTarget = target
-        landingChanges = target != if (s.startProgress >= 0.5f) 1 else 0
+        landingChanges = target != s.origin
         // the haptic of a landing on the bar is this drag's; the mini player plays none of its own
         if (target == 1 && landingChanges) YtMinimizeModule.landingFromDrag = true
         val transition = motion.getTransition(R.id.yt_transition)
