@@ -97,7 +97,7 @@ object YtTimeUpLayer {
     @Composable
     private fun Layer(palette: YtPalette) {
         val density = ytDensity(LocalDensity.current, LocalConfiguration.current)
-        val motion = remember { YtMotionPrefs.enabled }
+        val motion = rememberYtMotionAllowed()
         CompositionLocalProvider(
             LocalDensity provides density,
             LocalYtMotion provides motion,

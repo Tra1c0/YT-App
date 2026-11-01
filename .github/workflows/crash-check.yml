@@ -21,7 +21,7 @@ on:
         default: default
       gpu:
         type: string
-        default: swiftshader_indirect
+        default: swiftshader
       night:
         type: boolean
         default: true
@@ -97,9 +97,9 @@ on:
         required: false
         default: "google_apis"
       gpu:
-        description: "Emulator GPU mode: swiftshader_indirect (host, fast) or guest (software in the guest, robust)"
+        description: "Emulator GPU mode: swiftshader (current software renderer) or guest"
         required: false
-        default: "swiftshader_indirect"
+        default: "swiftshader"
       signin_probe:
         description: "Also open the YouTube sign-in window and log what Google shows"
         type: boolean
@@ -241,6 +241,7 @@ jobs:
           arch: x86_64
           target: ${{ inputs.target }}
           profile: pixel_6
+          ram-size: 3072M
           emulator-boot-timeout: 1200
           emulator-options: -no-window -gpu ${{ inputs.gpu }} -no-snapshot -noaudio -no-boot-anim
           disable-animations: ${{ !inputs.motion }}
@@ -259,6 +260,8 @@ jobs:
             dumpsys-*.txt
             anr-*.txt
             input-driver.log
+            input-driver-system.log
+            input-driver-memory.log
             upgrade-*.json
 
       - name: Upload screenshots

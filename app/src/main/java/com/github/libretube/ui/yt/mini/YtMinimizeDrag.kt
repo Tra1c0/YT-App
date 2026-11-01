@@ -592,6 +592,8 @@ internal class YtMinimizeDrag(
         val p = motion.progress
         if (p != 0f && p != 1f) return
         val seen = Seen(boxOf(binding.player), boxOf(binding.mainContainer), motion.width, motion.height)
+        val opposite = (if (p == 1f) seenOpen else seenDocked)?.takeIf { it.fits() }
+        if (!YtRestGeometry.valid(seen.player, seen.box, motion.height, p == 1f, opposite?.player, opposite?.box)) return
         if (p == 0f) seenOpen = seen else seenDocked = seen
     }
 

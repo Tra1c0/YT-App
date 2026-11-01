@@ -528,7 +528,7 @@ fun YtFeedLayer(palette: YtPalette, preview: () -> com.github.libretube.ui.yt.fe
 @Composable
 fun YtOverlayLayer(palette: YtPalette, content: @Composable () -> Unit) {
     val density = ytDensity(LocalDensity.current, LocalConfiguration.current)
-    val motion = remember { YtMotionPrefs.enabled }
+    val motion = rememberYtMotionAllowed()
     CompositionLocalProvider(
         LocalDensity provides density,
         LocalYtMotion provides motion,

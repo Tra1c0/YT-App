@@ -136,9 +136,10 @@ c_checks() {
     expect_log YtGesture 'return chip shown return=[0-9]+'
     if xy=$(center_of 'id/yt_return_chip$'); then
       read -r x y <<< "$xy"
-      rawshot "$design-c-3-chip"
-      timeout 10 adb shell input tap "$x" "$y" || true
+      # Capture after activating it: screencap can take longer than the chip's lifetime.
+      driver_command TAP "$x" "$y"
       expect_log YtGesture 'return tap to=[0-9]+'
+      rawshot "$design-c-3-returned"
     else
       c_verdict FAIL "the return chip" "not on the screen"
     fi

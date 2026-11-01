@@ -58,3 +58,5 @@ YT ist ein veränderter Fork von LibreTube (GPLv3). Basis: LibreTube `master`, C
 Lokale Herz-Markierungen ersetzen den funktionslosen Like-Knopf der gestalteten Videoseiten. Side-Feed und Player beobachten denselben gespeicherten Zustand. Ein leeres Zeitbudget im Interessenwähler gibt jetzt eine Rückmeldung.
 
 Die Audioseite verbindet sich erst mit fertiger Ansicht mit dem Player; verspätete Antworten dürfen die neue Wiedergabe nicht stoppen. Beide Player entfernen UI-Listener beim Abbau, Audio bündelt die Positionsaktualisierung und pausiert sie im Hintergrund. YouTube neu zeigt die vorhandene Nur-Audio-Aktion wieder an.
+
+Die gemessenen Miniplayer-Endpunkte werden erst nach vollständigem Layout übernommen; Regressionstests decken die vorzeitig gesetzte MotionLayout-Position ab. Der Grafik-Rückfallmodus zeichnet getönte Flächen ohne zusätzliche Bildschirmkopien. Überlagerungen respektieren nun ebenfalls Lebenszyklus und die Android-Animationseinstellung.

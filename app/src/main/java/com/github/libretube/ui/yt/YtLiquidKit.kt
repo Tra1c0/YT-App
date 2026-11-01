@@ -174,7 +174,7 @@ fun rememberSwell(interaction: MutableInteractionSource): State<Float> {
  */
 @Composable
 fun LiquidLight(colors: List<Color>, modifier: Modifier = Modifier) {
-    val motion = LocalYtMotion.current
+    val motion = LocalYtMotion.current && com.kyant.backdrop.isRenderEffectSupported()
     val phase = if (motion) {
         val transition = rememberInfiniteTransition(label = "liquidLight")
         transition.animateFloat(0f, 1f, infiniteRepeatable(tween(26000, easing = LinearEasing), RepeatMode.Reverse), label = "lightPhase")

@@ -174,7 +174,7 @@ object YtDragLayer {
     @Composable
     private fun Ghost(session: YtDragSession, ghost: @Composable (YtDragSession) -> Unit, root: () -> Offset) {
         val follow = remember { Animatable(session.pointer, Offset.VectorConverter) }
-        val motion = remember { YtMotionPrefs.enabled }
+        val motion = rememberYtMotionAllowed()
         LaunchedEffect(Unit) {
             snapshotFlow { session.pointer }.collect { target ->
                 if (motion) {

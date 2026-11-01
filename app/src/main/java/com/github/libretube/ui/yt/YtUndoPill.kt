@@ -218,7 +218,7 @@ fun YtHomePills(palette: YtPalette, modifier: Modifier = Modifier, timeBox: (() 
 @Composable
 fun YtPillLayer(palette: YtPalette, timeBox: (() -> YtTimeBoxSource)? = null) {
     val density = ytDensity(LocalDensity.current, LocalConfiguration.current)
-    val motion = remember { YtMotionPrefs.enabled }
+    val motion = rememberYtMotionAllowed()
     CompositionLocalProvider(
         LocalDensity provides density,
         LocalYtMotion provides motion,

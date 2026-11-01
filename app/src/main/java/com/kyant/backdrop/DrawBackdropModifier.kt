@@ -11,6 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
@@ -58,6 +60,7 @@ fun Modifier.drawPlainBackdrop(
     onDrawSurface: (DrawScope.() -> Unit)? = null,
     onDrawFront: (DrawScope.() -> Unit)? = null
 ): Modifier {
+    if (!isRenderEffectSupported()) return tintedBackdrop(shape, layerBlock, onDrawBehind, onDrawSurface, onDrawFront)
     val shapeProvider = ShapeProvider(shape)
     return this
         .then(
@@ -96,6 +99,7 @@ fun Modifier.drawBackdrop(
     onDrawSurface: (DrawScope.() -> Unit)? = null,
     onDrawFront: (DrawScope.() -> Unit)? = null
 ): Modifier {
+    if (!isRenderEffectSupported()) return tintedBackdrop(shape, layerBlock, onDrawBehind, onDrawSurface, onDrawFront)
     val shapeProvider = ShapeProvider(shape)
     return this
         .then(
@@ -149,6 +153,22 @@ fun Modifier.drawBackdrop(
             )
         )
 }
+
+/** CPU and power-saving fallback: keep the surface and content without copying the scene. */
+private fun Modifier.tintedBackdrop(
+    shape: () -> Shape,
+    layerBlock: (GraphicsLayerScope.() -> Unit)?,
+    behind: (DrawScope.() -> Unit)?,
+    surface: (DrawScope.() -> Unit)?,
+    front: (DrawScope.() -> Unit)?,
+): Modifier = then(if (layerBlock != null) Modifier.graphicsLayer(layerBlock) else Modifier)
+    .clip(shape())
+    .drawWithContent {
+        behind?.invoke(this)
+        surface?.invoke(this)
+        drawContent()
+        front?.invoke(this)
+    }
 
 private class DrawBackdropElement(
     val backdrop: Backdrop,

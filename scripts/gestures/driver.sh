@@ -4,7 +4,7 @@ driver_start() {
   local jar="build/gesture-driver/yt-input.jar" line
   [ -f "$jar" ] || bash scripts/build-gesture-driver.sh >/dev/null || return 1
   adb push "$jar" /data/local/tmp/yt-input.jar >/dev/null || return 1
-  coproc YT_INPUT { adb shell -T 'CLASSPATH=/data/local/tmp/yt-input.jar app_process /system/bin YtInput' 2>input-driver.log; }
+  coproc YT_INPUT { adb shell -T 'CLASSPATH=/data/local/tmp/yt-input.jar app_process -Xmx64m /system/bin YtInput' 2>input-driver.log; }
   YT_INPUT_PID_SAVED=$YT_INPUT_PID
   exec {YT_INPUT_READ}<&"${YT_INPUT[0]}"
   exec {YT_INPUT_WRITE}>&"${YT_INPUT[1]}"
@@ -13,6 +13,8 @@ driver_start() {
     [ "$line" = 'YTINPUT READY' ] && return 0
   done
   echo 'UI driver did not start; see input-driver.log' >&2
+  timeout 20 adb logcat -d -t 1500 >input-driver-system.log 2>&1 || true
+  timeout 10 adb shell cat /proc/meminfo >input-driver-memory.log 2>&1 || true
   return 1
 }
 
@@ -42,7 +44,7 @@ driver_command() {
 
 driver_stop() {
   if [ -n "${YT_INPUT_WRITE:-}" ]; then
-    printf 'QUIT\n' >&"$YT_INPUT_WRITE" 2>/dev/null || true
+    (trap '' PIPE; printf 'QUIT\n' >&"$YT_INPUT_WRITE" 2>/dev/null || true)
     exec {YT_INPUT_WRITE}>&-
     exec {YT_INPUT_READ}<&-
   fi

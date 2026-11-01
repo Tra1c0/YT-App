@@ -96,7 +96,13 @@ public final class YtInput {
         } else if ("DOWN".equals(words[0])) touch(MotionEvent.ACTION_DOWN, x, y);
         else if ("MOVE".equals(words[0])) touch(MotionEvent.ACTION_MOVE, x, y);
         else if ("UP".equals(words[0])) touch(MotionEvent.ACTION_UP, x, y);
-        else if ("TAP".equals(words[0])) {
+        else if ("DOUBLE".equals(words[0])) {
+            touch(MotionEvent.ACTION_DOWN, x, y, false);
+            touch(MotionEvent.ACTION_UP, x, y, false);
+            SystemClock.sleep(60);
+            touch(MotionEvent.ACTION_DOWN, x, y, false);
+            touch(MotionEvent.ACTION_UP, x, y);
+        } else if ("TAP".equals(words[0])) {
             touch(MotionEvent.ACTION_DOWN, x, y, false);
             touch(MotionEvent.ACTION_UP, x, y);
         } else throw new IllegalArgumentException("Unknown command " + words[0]);
@@ -126,10 +132,7 @@ public final class YtInput {
     }
 
     private String dump() throws Exception {
-        // Older Android versions have no clearCache(), and refresh on the accessibility events.
-        try { UiAutomation.class.getMethod("clearCache").invoke(automation); }
-        catch (NoSuchMethodException ignored) { }
-        AccessibilityNodeInfo root = automation.getRootInActiveWindow();
+        AccessibilityNodeInfo root = currentRoot();
         if (root == null) throw new IllegalStateException("No active window");
         StringWriter writer = new StringWriter();
         XmlSerializer xml = Xml.newSerializer();
@@ -143,9 +146,18 @@ public final class YtInput {
         return writer.toString();
     }
 
-    /** Find one target without serializing the whole, constantly changing screen. */
-    private String find(String expression, int nth) {
+    private AccessibilityNodeInfo currentRoot() throws Exception {
+        // Older Android versions have no clearCache(), and refresh on the accessibility events.
+        try { UiAutomation.class.getMethod("clearCache").invoke(automation); }
+        catch (NoSuchMethodException ignored) { }
         AccessibilityNodeInfo root = automation.getRootInActiveWindow();
+        if (root != null && !root.refresh()) { root.recycle(); return null; }
+        return root;
+    }
+
+    /** Find one target without serializing the whole, constantly changing screen. */
+    private String find(String expression, int nth) throws Exception {
+        AccessibilityNodeInfo root = currentRoot();
         if (root == null) return "NOT_FOUND";
         findPattern = Pattern.compile(expression);
         findRemaining = Math.max(1, nth);
@@ -170,6 +182,8 @@ public final class YtInput {
                 findRemaining = Math.max(1, nth);
             }
             String result = findNode(root, viewport, 0);
+            if (result == null) System.err.println("FIND miss " + expression + " window=" + root.getWindowId()
+                + " bounds=" + viewport + " package=" + root.getPackageName() + " children=" + root.getChildCount());
             return result == null ? "NOT_FOUND" : result;
         } finally { root.recycle(); }
     }

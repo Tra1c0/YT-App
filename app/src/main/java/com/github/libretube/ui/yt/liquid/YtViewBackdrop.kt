@@ -37,7 +37,7 @@ class YtViewBackdrop(
 
     /** Redraws the glass whenever the screens below are about to be drawn anew. */
     val preDrawListener = ViewTreeObserver.OnPreDrawListener {
-        if (source.isDirty) {
+        if (com.kyant.backdrop.BackdropHardwareEffects.enabled && source.isDirty) {
             generation++
             Snapshot.sendApplyNotifications()
         }

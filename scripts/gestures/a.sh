@@ -74,14 +74,14 @@ a_glass_checks() {
   expect_log YtHaptic 'mini_dock_glass'
 
   log_mark
-  timeout 10 adb shell "input tap $x $y; input tap $x $y" || true
+  driver_command DOUBLE "$x" "$y"
   sleep 0.15
   rawshot "$design-a-glass-1-flash"
   sleep 1
   expect_log YtMini 'play toggled'
   expect_log YtHaptic 'mini_play_glass'
   # back to playing for the rest
-  timeout 10 adb shell "input tap $x $y; input tap $x $y" || true
+  driver_command DOUBLE "$x" "$y"
   sleep 1.2
 
   # hold, move onto the pill ("Wiedergabe"), let go: play toggles
