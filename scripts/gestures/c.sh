@@ -233,7 +233,7 @@ c_checks() {
   log_mark
   if b=$(c_open_with_bar --el yt_seek_test 60000); then
     read -r l t r bt <<< "$b"
-    if xy=$(center_of '^(Share|Teilen)$'); then
+    if xy=$(center_of '^(Share|Teilen|SHARE|TEILEN)$'); then
       read -r x y <<< "$xy"
       bt=$(( (t + bt) / 2 ))
       # half way up: still below the zone
