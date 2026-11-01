@@ -90,9 +90,36 @@ dismiss_anr() {
   timeout 10 adb shell input tap $(( $1 + ($3 - $1) * 3 / 10 )) $(( $4 - ($4 - $2) / 5 )) || true
   sleep 2
 }
-# the screen's elements as uiautomator sees them, one node per line
+# the screen's elements as uiautomator sees them, one node per line. The dump waits until the
+# screen has been still for a second; a screen that keeps changing (a running animation, a
+# playing video's clock) fails it with "could not get idle state". The old file goes first, so
+# such a failure yields nothing instead of an earlier screen; once that happens the dump is
+# tried again with the animations off for the moment. Its own notes go to stderr, since callers
+# read its output.
+ui_dump() {
+  timeout 10 adb shell rm -f /sdcard/ui.xml >/dev/null 2>&1 || true
+  timeout 30 adb shell uiautomator dump /sdcard/ui.xml 2>&1 | tr -d '\r' | grep -a -i -m1 'error' || true
+}
 ui() {
-  timeout 30 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
+  local err scales k
+  err=$(ui_dump)
+  if [ -n "$err" ]; then
+    scales=""
+    for k in window_animation_scale transition_animation_scale animator_duration_scale; do
+      scales="$scales $(timeout 10 adb shell settings get global "$k" 2>/dev/null | tr -d '\r')"
+      timeout 10 adb shell settings put global "$k" 0 >/dev/null 2>&1 || true
+    done
+    sleep 1
+    err=$(ui_dump)
+    # shellcheck disable=SC2086 # three values
+    set -- $scales
+    for k in window_animation_scale transition_animation_scale animator_duration_scale; do
+      case "${1:-}" in ''|null) timeout 10 adb shell settings delete global "$k" >/dev/null 2>&1 || true ;;
+        *) timeout 10 adb shell settings put global "$k" "$1" >/dev/null 2>&1 || true ;; esac
+      shift || true
+    done
+    mark "ui dump: animations off for a moment${err:+, still: $err}" >&2
+  fi
   timeout 20 adb exec-out cat /sdcard/ui.xml 2>/dev/null | grep -o '<node [^>]*>' || true
 }
 # the texts on the screen, and for a switch whether it is on and usable

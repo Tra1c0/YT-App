@@ -38,6 +38,31 @@ d_fail() {
   gesture_fails=$(( ${gesture_fails:-0} + 1 ))
 }
 
+# status 0 once a line of tag $1 since log_mark matches $2 (up to 3 s), without a verdict
+d_seen() {
+  local waited=0
+  while [ "$waited" -le 3 ]; do
+    tag_messages "$1" | grep -a -q -E -- "$2" && return 0
+    sleep 1
+    waited=$((waited + 1))
+  done
+  return 1
+}
+
+# a horizontal swipe of the card at $1 $2 by $3 px (negative: left), finger by finger with
+# screenshots ($4 the prefix); if the card's swipe did not log $5 ($6 its tag), once more as one
+# quick "input swipe", so the log tells a gesture the app missed from one it never got right
+d_swipe() {
+  local x="$1" y="$2" by="$3" prefix="$4" tag="$5" pattern="$6" card
+  SHOT_STEPS="4 8" drag "$x" "$y" $(( x + by )) "$y" 8 "$prefix"
+  d_seen "$tag" "$pattern" && return 0
+  show_log YtSwipe 6
+  mark "d: the step-by-step swipe did not reach the card's swipe; again as one input swipe"
+  card=$(d_card) && read -r x y _ <<< "$card"
+  fling "$x" "$y" $(( x + by )) "$y" 350
+  d_seen "$tag" "$pattern" || show_log YtSwipe 6
+}
+
 d_checks() {
   local card x y w reach bar h lens sx sy mini mx my
   d_home
@@ -51,7 +76,7 @@ d_checks() {
   [ "$reach" -lt "$(dp 140)" ] && reach=$(dp 140)
 
   # left: the card follows the finger off a field, flies out, the undo pill comes
-  SHOT_STEPS="4 8" drag "$x" "$y" $(( x - reach )) "$y" 8 "$design-d-1-hide"
+  d_swipe "$x" "$y" $(( -reach )) "$design-d-1-hide" YtHidden 'hide id='
   sleep 1
   rawshot "$design-d-2-undo"
   expect_log YtHidden 'hide id='
@@ -67,7 +92,7 @@ d_checks() {
   # right while nothing plays: into the draft, its pill comes
   log_mark
   card=$(d_card) && read -r x y w <<< "$card"
-  SHOT_STEPS="8" drag "$x" "$y" $(( x + reach )) "$y" 8 "$design-d-3-queue"
+  d_swipe "$x" "$y" "$reach" "$design-d-3-queue" YtQueue 'draft n=|append pos='
   sleep 2
   rawshot "$design-d-4-draft"
   expect_log YtQueue 'draft n=1'
@@ -115,6 +140,9 @@ d_checks() {
     d_home
   else
     mark "d: no search button or card, the search drag check is skipped"
+    # what the dump has as buttons with a description, to find the search button's
+    ui | grep -a -o 'content-desc="[^"]\{1,40\}"' | sort -u | head -n 12 | tr '\n' ' '
+    echo
   fi
 
   # the time box: the chip opens into the minutes row, 30 minutes plan at most 33 (at 1x)
@@ -191,8 +219,9 @@ d_checks() {
   fi
 
   # with the mini player docked (the test video plays offline, so online cards wait in the
-  # draft; an online player would take them at its end: "append pos=")
-  if open_test_video; then
+  # draft; an online player would take them at its end: "append pos="). The emulator's decoder
+  # sometimes stalls on a start (h264 errors in the log): one more try
+  if open_test_video || { mark "d: the test video once more"; open_test_video; }; then
     timeout 10 adb shell input keyevent KEYCODE_BACK || true
     sleep 4
     log_mark

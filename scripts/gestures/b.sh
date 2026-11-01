@@ -22,8 +22,8 @@ b_checks() {
   size=$(screen_size)
   read -r _ h <<< "$size"
   [ -n "$h" ] || { mark "B: no screen size"; return 0; }
-  read -r x0 y0 <<< "$(center_of 'id/player$')" || return 0
-  [ -n "$y0" ] || return 0
+  read -r x0 y0 <<< "$(center_of 'id/player$')"
+  numbers "${x0:-}" "${y0:-}" || { mark "B: no picture of the player on screen, the minimize checks are skipped"; return 0; }
 
   # 1. down from the middle of the video, slowly: the video shrinks under the finger
   log_mark
@@ -37,8 +37,8 @@ b_checks() {
   shot "$design-b-4-docked"
 
   # 2. up from the docked player: it opens under the finger
-  read -r mx my <<< "$(center_of 'id/main_container$')" || return 0
-  [ -n "$my" ] || return 0
+  read -r mx my <<< "$(center_of 'id/main_container$')"
+  numbers "${mx:-}" "${my:-}" || { mark "B: no docked player on screen, the rest is skipped"; return 0; }
   log_mark
   drag "$mx" "$my" "$mx" $(( h * 25 / 100 )) 10
   expect_log YtGesture 'minimize grab from=mini'
@@ -48,8 +48,8 @@ b_checks() {
   shot "$design-b-5-open"
 
   # 3. let go about a third of the way down, standing still: it opens again
-  read -r x0 y0 <<< "$(center_of 'id/player$')" || return 0
-  [ -n "$y0" ] || return 0
+  read -r x0 y0 <<< "$(center_of 'id/player$')"
+  numbers "${x0:-}" "${y0:-}" || { mark "B: no picture of the open player on screen, the rest is skipped"; return 0; }
   mid=$(( y0 + (my - y0) * 35 / 100 ))
   log_mark
   drag "$x0" "$y0" "$x0" "$mid" 6
@@ -57,16 +57,30 @@ b_checks() {
   EXPECT_WAIT=5 expect_log YtGesture 'minimize end p_end=0'
   sleep 1
 
-  # 4. a quick flick down: it docks with the flick's speed
+  # 4. a quick flick down: it docks with the flick's speed (the page first comes to rest: the
+  # open release above may still spring its offsets back)
+  sleep 2
   log_mark
   fling "$x0" "$y0" "$x0" $(( y0 + (my - y0) * 30 / 100 )) 60
   expect_log YtGesture 'minimize release .*to=dock'
   EXPECT_WAIT=5 expect_log YtGesture 'minimize end p_end=1'
+  show_log YtGesture 4
   sleep 2
 
-  # 5. the docked player pulled down to the screen's edge: thrown away, the player closes
-  read -r mx my <<< "$(center_of 'id/main_container$')" || return 0
-  [ -n "$my" ] || return 0
+  # 5. the docked player pulled down to the screen's edge: thrown away, the player closes. Only
+  # the docked player closes so (the open one docks): if the flick left it open, back docks it
+  read -r mx my <<< "$(center_of 'id/main_container$')"
+  numbers "${mx:-}" "${my:-}" || { mark "B: no player on screen, the close check is skipped"; return 0; }
+  if [ "$my" -lt $(( h / 2 )) ]; then
+    mark "B: the player is still open (main_container at y=$my); back docks it for the close check"
+    timeout 10 adb shell input keyevent KEYCODE_BACK || true
+    sleep 3
+    read -r mx my <<< "$(center_of 'id/main_container$')"
+    if ! numbers "${mx:-}" "${my:-}" || [ "$my" -lt $(( h / 2 )) ]; then
+      mark "B: no docked player, the close check is skipped"
+      return 0
+    fi
+  fi
   log_mark
   drag "$mx" "$my" "$mx" $(( h - 4 )) 6
   expect_log YtGesture 'minimize release .*to=close'

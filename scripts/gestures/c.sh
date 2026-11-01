@@ -19,11 +19,22 @@ c_verdict() {
   fi
 }
 
-# the test video with the controls up; prints "left top right bottom" of the time bar
+# the test video with the controls up; prints "left top right bottom" of the time bar and
+# nothing else (callers read it with $( ), so open_test_video's own lines go to stderr). The
+# hook logs where the bar lies once the controls are up ("controls test shown=true bar=l t r b"):
+# a playing video's clock keeps the screen from being still, which uiautomator's dump waits
+# for, so the dump is only the fallback.
 c_open_with_bar() {
+  local bar
   # the controls go up before "test hooks done", which open_test_video waits for
-  open_test_video --ez yt_controls_test true "$@" || return 1
-  bounds_of 'id/exo_progress$'
+  open_test_video --ez yt_controls_test true "$@" >&2 || return 1
+  bar=$(tag_messages YtTest | grep -a -o -E 'controls test shown=true bar=-?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+' | tail -n 1 | sed 's/.*bar=//')
+  local four='^-?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+$'
+  if ! [[ "$bar" =~ $four ]]; then
+    bar=$(bounds_of 'id/exo_progress$') || { mark "c: no time bar on the screen" >&2; return 1; }
+  fi
+  [[ "$bar" =~ $four ]] || return 1
+  echo "$bar"
 }
 
 # how far the position moved per px of finger at 1x and at 1/8, from the "move" lines

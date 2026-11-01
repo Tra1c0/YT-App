@@ -9,12 +9,15 @@
 #   open_test_video [am extras]     (crash-check.sh) opens the test video with further extras,
 #                                   e.g. --ei yt_queue_test 3 --el yt_seek_test 300000; returns
 #                                   once the app logs "test hooks done" (the queue is filled, the
-#                                   seek made), status 1 if it did not open
+#                                   seek made), status 1 if it did not open. It prints its own
+#                                   log lines: inside $( ) send them to stderr (>&2), as every
+#                                   helper whose output is a value has to
 #   anim_on / anim_off              the three animation scales to 1 or 0
 #   bounds_of <regex> [n]           "l t r b" of the n-th (default first) element whose
 #                                   resource-id, content-desc or text matches (awk regex, so ^ and
 #                                   $ anchor: 'id/main_container$', '^Teilen$'); status 1 if none
-#   center_of <regex> [n]           "x y" of the same element
+#   center_of <regex> [n]           "x y" of the same element (its "not found" goes to stderr)
+#   numbers <args>                  status 0 if every argument is a whole number
 #   finger_down / finger_move / finger_up <x> <y>
 #                                   one touch event each (input motionevent), to build any gesture
 #   drag <x1> <y1> <x2> <y2> <steps> [prefix]
@@ -73,11 +76,19 @@ bounds_of() {
     END { exit found ? 0 : 1 }'
 }
 
+# prints only the coordinates: callers read them with $( ), so its log line goes to stderr
 center_of() {
   local b l t r bt
-  b=$(bounds_of "$@") || { mark "not found: \"$1\""; return 1; }
+  b=$(bounds_of "$@") || { mark "not found: \"$1\"" >&2; return 1; }
   read -r l t r bt <<< "$b"
   echo "$(( (l + r) / 2 )) $(( (t + bt) / 2 ))"
+}
+
+# status 0 if all arguments are whole numbers (coordinates read from a helper's output)
+numbers() {
+  local n
+  [ "$#" -gt 0 ] || return 1
+  for n in "$@"; do [[ "$n" =~ ^-?[0-9]+$ ]] || return 1; done
 }
 
 finger_down() { timeout 10 adb shell input motionevent DOWN "$1" "$2" || true; }
