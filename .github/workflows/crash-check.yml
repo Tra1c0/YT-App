@@ -126,7 +126,7 @@ on:
         default: ""
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   emulator:
@@ -253,16 +253,3 @@ jobs:
           name: screens-${{ env.YT_TAG }}-${{ inputs.design }}-api${{ inputs.api }}
           path: screens/*.png
           if-no-files-found: warn
-
-      # the screenshots as release files: they can be fetched like the APKs; older sets go
-      - name: Publish the screenshots
-        if: always() && github.event_name == 'workflow_dispatch' && (inputs.screens || inputs.pip || inputs.lock || inputs.float || inputs.gestures || inputs.test_video)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # a screenshot taken after the emulator died is empty
-          find screens -name '*.png' -size -2k -delete 2>/dev/null || true
-          ls screens/*.png >/dev/null 2>&1 || { echo "no screenshots"; exit 0; }
-          gh release create "screens-${{ github.run_number }}" screens/*.png --repo "$GITHUB_REPOSITORY" \
-            --prerelease --title "Screenshots ${{ github.run_number }} ($YT_TAG)" \
-            --notes "Emulator screenshots of $YT_TAG: designs ${{ inputs.design }}, dark mode ${{ inputs.night }}."
