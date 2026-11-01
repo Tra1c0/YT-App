@@ -284,9 +284,31 @@ class YtMiniHost private constructor(
         if (mini && resizeBefore == null) {
             resizeBefore = view.resizeMode
             view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-        } else if (!mini) {
+            relayout(view)
+        } else if (!mini && resizeBefore != null) {
             resizeBefore?.let { view.resizeMode = it }
             resizeBefore = null
+            relayout(view)
+        }
+    }
+
+    /**
+     * A MotionLayout at rest lays its children out only when a transition moves them, so the
+     * picture would keep the frame of the old resize mode (Glas: the 16:9 picture letterboxed in
+     * the wide strip, black at its sides) until the next one: the player view is measured and
+     * laid out again at the size it has.
+     */
+    private fun relayout(view: View) {
+        view.post {
+            val width = view.width
+            val height = view.height
+            if (width <= 0 || height <= 0) return@post
+            view.forceLayout()
+            view.measure(
+                View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY),
+            )
+            view.layout(view.left, view.top, view.right, view.bottom)
         }
     }
 
