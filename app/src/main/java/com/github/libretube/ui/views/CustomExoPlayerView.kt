@@ -999,6 +999,11 @@ class CustomExoPlayerView(
         resizeModePref = resizeMode
     }
 
+    /** YT: a resize mode for a while (the docked mini player's crop), not remembered as the user's. */
+    fun setResizeModeTransient(resizeMode: Int) {
+        super.setResizeMode(resizeMode)
+    }
+
     override fun onRepeatModeClicked() {
         // repeat mode options dialog
         BaseBottomSheet()

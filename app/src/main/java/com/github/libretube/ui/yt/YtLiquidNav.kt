@@ -639,6 +639,10 @@ private fun Modifier.glassSlabGrowth(topMargin: Float): Modifier =
     this.then(
         Modifier.layout { measurable, constraints ->
             val grow = YtGlassMath.slabGrowth(YtDock.slabPx, topMargin).roundToInt()
+            // emulator checks: whether the bar really grows into the slab behind the mini player
+            if (com.github.libretube.helpers.YtGuard.isEmulator) {
+                android.util.Log.i("YtMini", "slab grow=$grow slabPx=${YtDock.slabPx} bar=${constraints.maxHeight}")
+            }
             val placeable = measurable.measure(Constraints.fixed(constraints.maxWidth, constraints.maxHeight + grow))
             layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, -grow) }
         },

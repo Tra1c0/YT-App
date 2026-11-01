@@ -283,10 +283,10 @@ class YtMiniHost private constructor(
         val view = binding.player
         if (mini && resizeBefore == null) {
             resizeBefore = view.resizeMode
-            view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+            view.setResizeModeTransient(AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
             relayout(view)
         } else if (!mini && resizeBefore != null) {
-            resizeBefore?.let { view.resizeMode = it }
+            resizeBefore?.let { view.setResizeModeTransient(it) }
             resizeBefore = null
             relayout(view)
         }
