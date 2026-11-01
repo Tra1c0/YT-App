@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- After-Miniplayer („Filmvorführung“): Abspann-Zeile der Vorschau, Ticket, Hinweis beim Ablegen -->
+    <string name="yt_mini_after_next_showing">NÄCHSTE VORSTELLUNG</string>
+    <string name="yt_mini_after_now_showing">LÄUFT JETZT</string>
+    <string name="yt_mini_after_intermission">PAUSE</string>
+    <string name="yt_mini_after_drop_next">IM PROGRAMM · ALS NÄCHSTES</string>
+    <string name="yt_mini_after_drop_end">IM PROGRAMM · NR. %1$d</string>
+</resources>

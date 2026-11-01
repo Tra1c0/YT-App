@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- After mini player ("Filmvorführung"): the preview's credits line, its ticket, the drop label -->
+    <string name="yt_mini_after_next_showing">NEXT SHOWING</string>
+    <string name="yt_mini_after_now_showing">NOW SHOWING</string>
+    <string name="yt_mini_after_intermission">INTERMISSION</string>
+    <string name="yt_mini_after_drop_next">ON THE PROGRAMME · NEXT</string>
+    <string name="yt_mini_after_drop_end">ON THE PROGRAMME · NO. %1$d</string>
+</resources>
