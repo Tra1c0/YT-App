@@ -21,10 +21,12 @@ import com.github.libretube.databinding.FragmentCommentsBinding
 import com.github.libretube.extensions.formatShort
 import com.github.libretube.extensions.parcelable
 import com.github.libretube.helpers.NavigationHelper
+import com.github.libretube.ui.adapters.CommentSceneGate
 import com.github.libretube.ui.adapters.CommentsPagingAdapter
 import com.github.libretube.ui.models.CommentRepliesViewModel
 import com.github.libretube.ui.models.CommentsViewModel
 import com.github.libretube.ui.sheets.CommentsSheet
+import com.github.libretube.ui.yt.scene.YtSceneSheet
 
 class CommentsRepliesFragment : Fragment(R.layout.fragment_comments) {
 
@@ -54,7 +56,9 @@ class CommentsRepliesFragment : Fragment(R.layout.fragment_comments) {
             navigateToChannel = { comment ->
                 NavigationHelper.navigateChannel(view.context, comment.commentorUrl)
                 setFragmentResult(CommentsSheet.DISMISS_SHEET_REQUEST_KEY, Bundle.EMPTY)
-            }
+            },
+            // YT: replies are hidden as the comments are (comments follow the scene)
+            gate = CommentSceneGate(sharedModel.scene, replies = true),
         )
         commentsSheet?.updateFragmentInfo(
             true,
@@ -67,6 +71,7 @@ class CommentsRepliesFragment : Fragment(R.layout.fragment_comments) {
         binding.commentsRV.layoutManager = layoutManager
 
         binding.commentsRV.adapter = repliesAdapter
+        YtSceneSheet.follow(this, binding.commentsRV, sharedModel.scene)
 
         commentsSheet?.binding?.btnScrollToTop?.setOnClickListener {
             // scroll back to the top / first comment

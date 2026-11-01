@@ -2,4 +2,36 @@
 <!-- YT: round 12, package E (the comments that follow the scene). Same keys in the same order in values and values-de. -->
 <resources>
     <string name="yt_r12_e_category">Comments</string>
+
+    <!-- the setting and the chips above the comments -->
+    <string name="yt_r12_e_scene_title">Comments follow the scene</string>
+    <string name="yt_r12_e_mode_off">Off</string>
+    <string name="yt_r12_e_mode_spoiler">No spoilers</string>
+    <string name="yt_r12_e_mode_scene">This scene</string>
+    <string name="yt_r12_e_chip_all">All</string>
+    <string name="yt_r12_e_chips_description">Which comments</string>
+
+    <!-- the line below the chips -->
+    <string name="yt_r12_e_caption_spoiler">Hidden: anything after %1$s. Only comments with a timestamp are recognised.</string>
+    <string name="yt_r12_e_caption_chapter">Chapter “%1$s” · %2$s–%3$s</string>
+    <string name="yt_r12_e_caption_around">Around %1$s · %2$s–%3$s</string>
+    <plurals name="yt_r12_e_scene_empty">
+        <item quantity="one">Nothing about %1$s–%2$s yet · %3$s comment searched</item>
+        <item quantity="other">Nothing about %1$s–%2$s yet · %3$s comments searched</item>
+    </plurals>
+    <string name="yt_r12_e_scene_empty_all">Nothing about %1$s–%2$s · all comments searched</string>
+    <string name="yt_r12_e_search_more">Search further</string>
+    <string name="yt_r12_e_searching">Searching …</string>
+
+    <!-- a hidden comment -->
+    <string name="yt_r12_e_spoiler_at">Spoiler at %1$s · tap</string>
+    <string name="yt_r12_e_spoiler_short">Spoiler · %1$s</string>
+    <string name="yt_r12_e_from">from %1$s</string>
+    <string name="yt_r12_e_info_from">%1$s · %2$s</string>
+    <string name="yt_r12_e_reveal">Show</string>
+    <string name="yt_r12_e_hidden_description">Comment by %1$s, hidden: spoiler at %2$s. Tap to show.</string>
+    <plurals name="yt_r12_e_more_times">
+        <item quantity="one">+%d more timestamp · tap</item>
+        <item quantity="other">+%d more timestamps · tap</item>
+    </plurals>
 </resources>

@@ -7,8 +7,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import com.github.libretube.helpers.ImageHelper
 import com.github.libretube.helpers.YtDesign
+import com.github.libretube.ui.models.CommentsViewModel
 
 /**
  * YT: puts the video page details of the selected design at the top of the area below the
@@ -24,7 +26,10 @@ object YtWatch {
         val design = YtDesign.current()
         val palette = design.palette ?: return null
 
-        val controller = YtWatchController()
+        // the pages read the comments through the activity's comment state (Side, Movo), so the
+        // classic sheet and the page share the pages fetched and what the scene lets them show
+        val comments = ViewModelProvider(fragment.requireActivity())[CommentsViewModel::class.java]
+        val controller = YtWatchController(comments)
         val composeView = ComposeView(fragment.requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {

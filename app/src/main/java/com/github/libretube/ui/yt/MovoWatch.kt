@@ -4,6 +4,8 @@ import android.text.format.DateUtils
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,8 +48,12 @@ import com.github.libretube.R
 import com.github.libretube.api.MediaServiceRepository
 import com.github.libretube.api.SubscriptionHelper
 import com.github.libretube.api.obj.Comment
+import com.github.libretube.api.obj.CommentsPage
 import com.github.libretube.extensions.formatShort
 import com.github.libretube.extensions.toID
+import com.github.libretube.helpers.SceneMode
+import com.github.libretube.ui.yt.scene.YtSceneChips
+import com.github.libretube.ui.yt.scene.rememberYtSceneUi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -74,17 +80,30 @@ fun MovoWatchDetails(
         }
     }
     var showDescription by remember(streams.title) { mutableStateOf(false) }
-    // first comment for the discussion preview
-    var firstComment by remember(controller.videoId) { mutableStateOf<Comment?>(null) }
-    var commentCount by remember(controller.videoId) { mutableStateOf(0L) }
+    // first comment for the discussion preview; YT: page 1 through the activity's comment state,
+    // shared with the classic sheet, and with spoiler protection the first one that is no spoiler
+    val scene = controller.comments?.scene
+    val sceneUi = rememberYtSceneUi(scene)
+    var page by remember(controller.videoId) { mutableStateOf<CommentsPage?>(null) }
     LaunchedEffect(controller.videoId) {
         val id = controller.videoId ?: return@LaunchedEffect
-        val page = withContext(Dispatchers.IO) {
-            runCatching { MediaServiceRepository.instance.getComments(id) }.getOrNull()
-        }
-        firstComment = page?.comments?.firstOrNull()
-        commentCount = page?.commentCount ?: 0L
+        page = runCatching {
+            scene?.cache?.page(id, null)
+                ?: withContext(Dispatchers.IO) { MediaServiceRepository.instance.getComments(id) }
+        }.getOrNull()
     }
+    LaunchedEffect(sceneUi.mode, controller.videoId) {
+        if (sceneUi.mode == SceneMode.SCENE) scene?.autoScan()
+    }
+    val sceneList = remember(sceneUi.indexed, sceneUi.step, sceneUi.mode) {
+        if (sceneUi.mode == SceneMode.SCENE && scene != null) scene.sceneList().map { it.comment } else emptyList()
+    }
+    val firstComment: Comment? = when (sceneUi.mode) {
+        SceneMode.OFF -> page?.comments?.firstOrNull()
+        SceneMode.SPOILER -> page?.comments?.firstOrNull { sceneUi.verdict(it).let { v -> !v.hidden && !v.folded } }
+        SceneMode.SCENE -> sceneList.firstOrNull { sceneUi.verdict(it).let { v -> !v.hidden && !v.folded } }
+    }
+    val commentCount = page?.commentCount ?: 0L
 
     Column(Modifier.fillMaxWidth()) {
         Text(
@@ -285,6 +304,22 @@ fun MovoWatchDetails(
                 modifier = Modifier
                     .padding(start = 4.dp)
                     .size(18.dp),
+            )
+        }
+        // YT: Alle / Diese Stelle / Spoilerschutz, as the classic sheet has them
+        if (scene != null && !scene.isLive && page?.comments?.isNotEmpty() == true) {
+            YtSceneChips(
+                selected = sceneUi.mode,
+                onSelect = scene::setMode,
+                font = YtFonts.geist,
+                active = palette.text,
+                onActive = palette.ink,
+                idle = palette.surface,
+                onIdle = palette.text,
+                modifier = Modifier
+                    .padding(top = 10.dp)
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 15.dp),
             )
         }
         firstComment?.let { comment -> MovoCommentCard(palette, imageLoader, comment, actions.onComments) }

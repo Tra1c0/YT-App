@@ -6,6 +6,18 @@
 
     <PreferenceCategory
         app:key="yt_r12_e_category"
-        app:title="@string/yt_r12_e_category" />
+        app:title="@string/yt_r12_e_category">
+
+        <!-- CommentScene.PREF_KEY; the chips above the comments change it too -->
+        <ListPreference
+            android:icon="@drawable/ic_comment"
+            app:defaultValue="off"
+            app:entries="@array/yt_r12_e_scene_entries"
+            app:entryValues="@array/yt_r12_e_scene_values"
+            app:key="yt_comments_scene"
+            app:title="@string/yt_r12_e_scene_title"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
 
 </PreferenceScreen>

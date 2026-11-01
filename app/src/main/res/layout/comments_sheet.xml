@@ -76,6 +76,27 @@
 
             </LinearLayout>
 
+            <!-- YT: Alle / Diese Stelle / Spoilerschutz (comments follow the scene); chips made in CommentsSheet -->
+            <HorizontalScrollView
+                android:id="@+id/sceneChipsScroll"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:paddingHorizontal="16dp"
+                android:scrollbars="none"
+                android:visibility="gone">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/sceneChips"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/yt_r12_e_chips_description"
+                    app:selectionRequired="true"
+                    app:singleLine="true"
+                    app:singleSelection="true" />
+
+            </HorizontalScrollView>
+
             <com.google.android.material.divider.MaterialDivider
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />

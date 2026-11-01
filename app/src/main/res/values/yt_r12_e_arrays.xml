@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: round 12, package E: the choices of "Kommentare folgen der Szene" (CommentScene.PREF_KEY). -->
+<resources>
+    <string-array name="yt_r12_e_scene_entries">
+        <item>@string/yt_r12_e_mode_off</item>
+        <item>@string/yt_r12_e_mode_spoiler</item>
+        <item>@string/yt_r12_e_mode_scene</item>
+    </string-array>
+    <string-array name="yt_r12_e_scene_values" translatable="false">
+        <item>off</item>
+        <item>spoiler</item>
+        <item>scene</item>
+    </string-array>
+</resources>

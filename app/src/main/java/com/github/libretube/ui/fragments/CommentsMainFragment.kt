@@ -18,9 +18,11 @@ import com.github.libretube.constants.IntentData
 import com.github.libretube.databinding.FragmentCommentsBinding
 import com.github.libretube.extensions.formatShort
 import com.github.libretube.helpers.NavigationHelper
+import com.github.libretube.ui.adapters.CommentSceneGate
 import com.github.libretube.ui.adapters.CommentsPagingAdapter
 import com.github.libretube.ui.models.CommentsViewModel
 import com.github.libretube.ui.sheets.CommentsSheet
+import com.github.libretube.ui.yt.scene.YtSceneSheet
 
 class CommentsMainFragment : Fragment(R.layout.fragment_comments) {
 
@@ -83,10 +85,16 @@ class CommentsMainFragment : Fragment(R.layout.fragment_comments) {
                     }
                 }
             },
+            // YT: comments follow the scene
+            gate = CommentSceneGate(viewModel.scene, replies = false),
         )
         binding.commentsRV.adapter = commentPagingAdapter
+        // YT: the list of the scene stands in for the pages in the scene mode
+        val sceneSheet = YtSceneSheet(this, binding, viewModel.scene, commentPagingAdapter)
+        sceneSheet.start()
 
         commentPagingAdapter.addLoadStateListener { loadStates ->
+            if (sceneSheet.showsScene) return@addLoadStateListener
             binding.progress.isVisible = loadStates.refresh is LoadState.Loading
 
             if (loadStates.append is LoadState.NotLoading && loadStates.append.endOfPaginationReached && commentPagingAdapter.itemCount == 0) {

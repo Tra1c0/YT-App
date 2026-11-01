@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: round 12, package E. The chips above the comments take the design's chip (chipStyle of the
+     design overlays); the classic look has no overlay, so its chips are made filter chips here. -->
+<resources>
+    <style name="ThemeOverlay.YT.R12e.SceneChips" parent="">
+        <item name="chipStyle">@style/Widget.Material3.Chip.Filter</item>
+    </style>
+</resources>
