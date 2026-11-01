@@ -643,7 +643,12 @@ for design in $DESIGNS; do
     if [ -n "$TEST_VIDEO" ]; then
       pip_from=$(wc -l < "logcat-$design.txt")
       timeout 10 adb shell input keyevent KEYCODE_HOME || true
-      sleep 3
+      # The window transition is asynchronous, especially on Android 8's software GPU.
+      # Observe the callback before reopening the app instead of interrupting it at 3 s.
+      for pip_wait in 1 2 3 4 5 6 7 8; do
+        sleep 1
+        if tail -n +"$((pip_from + 1))" "logcat-$design.txt" | grep -a -q -E 'YtLifecycle.*pip=true|YtPipWave.*show:'; then break; fi
+      done
       if tail -n +"$((pip_from + 1))" "logcat-$design.txt" | grep -a -q -E 'YtLifecycle.*pip=true|YtPipWave.*show:' || timeout 20 adb shell dumpsys activity activities | grep -a -q 'mode=pinned'; then
         shot "$design-2-pip"
       else
@@ -651,8 +656,12 @@ for design in $DESIGNS; do
         crashed="$crashed $design-pip"
       fi
       timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true >/dev/null
-      sleep 3
-      if ! driver_find 'id/player$' >/dev/null; then
+      player_returned=no
+      for pip_wait in 1 2 3 4; do
+        sleep 1
+        if driver_find 'id/player$' >/dev/null; then player_returned=yes; break; fi
+      done
+      if [ "$player_returned" != yes ]; then
         echo "::error::$design: video did not return from picture-in-picture"
         crashed="$crashed $design-pip-return"
       fi

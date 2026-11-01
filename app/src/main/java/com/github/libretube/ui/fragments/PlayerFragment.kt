@@ -1533,7 +1533,12 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
     }
 
     fun onUserLeaveHint() {
-        if (shouldStartPiP() || com.github.libretube.ui.yt.YtPipVisualizer.testPip) {
+        val shouldEnter = shouldStartPiP()
+        com.github.libretube.ui.yt.YtTestHooks.log("YtLifecycle") {
+            "leave pip=$shouldEnter connected=${::playerController.isInitialized && playerController.isConnected} " +
+                if (::playerController.isInitialized) "state=${playerController.playbackState} ready=${playerController.playWhenReady} playing=${playerController.isPlaying}" else "no controller"
+        }
+        if (shouldEnter || com.github.libretube.ui.yt.YtPipVisualizer.testPip) {
             // YT: with the sound wave on, the video floats in YT's own window, the wave with it
             if (floatOnOwn()) return
             com.github.libretube.ui.yt.YtPipVisualizer.beforePip(requireContext())
@@ -1560,6 +1565,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
     private val pipParams: PictureInPictureParamsCompat
         get() = run {
             val isPlaying = ::playerController.isInitialized && playerController.isPlaying
+            val playbackActive = isPlaybackActiveForPip()
 
             PictureInPictureParamsCompat.Builder()
                 .setActions(
@@ -1569,7 +1575,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
                     )
                 )
                 // YT: with the sound wave on, YT floats in its own window instead (onUserLeaveHint)
-                .setAutoEnterEnabled(isPlaying && !floatsOnOwn())
+                .setAutoEnterEnabled(playbackActive && !floatsOnOwn())
                 .apply {
                     if (isPlaying) {
                         setAspectRatio(playerController.videoSize)
@@ -1586,8 +1592,13 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
                 && PictureInPictureCompat.isPictureInPictureEnabled(requireContext())
 
     private fun shouldStartPiP(): Boolean {
-        return isPipAvailable() && ::playerController.isInitialized && playerController.isPlaying
+        return isPipAvailable() && isPlaybackActiveForPip()
     }
+
+    private fun isPlaybackActiveForPip() = ::playerController.isInitialized &&
+        playerController.isConnected && com.github.libretube.ui.yt.player.YtPipPlayback.active(
+            playerController.playWhenReady, playerController.playbackState
+        )
 
     /**
      * Check if the activity needs to be recreated due to an orientation change

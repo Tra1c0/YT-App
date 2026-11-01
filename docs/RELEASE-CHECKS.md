@@ -37,6 +37,8 @@ Der einmalige Android-Hinweis zum Vollbild gilt im Emulator als bereits bestäti
 
 Die Positionsprüfung beim Verkleinern misst nach `dispatchDraw`: MotionLayout aktualisiert dort die gezeichnete Geometrie. Ein vorheriger `OnPreDraw`-Wert mischt bei verschachtelten Layouts alte und neue Positionen. Die zulässige Abweichung bleibt acht Pixel. Der Eingabetreiber betreibt auch einen Main-Looper für die Accessibility-Rückrufe unter Android 16.
 
+Die PiP-Prüfung wartet auf den asynchronen Moduswechsel und auf die zurückgekehrte Player-Ansicht. Laufende Videos dürfen auch während des Nachladens in PiP wechseln; pausierte, beendete oder geschlossene Videos wechseln nicht automatisch.
+
 Ein fehlender Prüfgegenstand zählt als Fehler. „Kein Player gefunden“ oder eine fehlende Testdatei dürfen keinen grünen Gestentest ergeben. App-Abstürze, fehlgeschlagene Gesten und ANRs werden getrennt ausgegeben. App-Hänger sind Fehler; vorhandene Thread-Dumps werden für die Diagnose gesammelt.
 
 ## Läufe und Diagnose

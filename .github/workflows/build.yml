@@ -176,7 +176,7 @@ jobs:
     needs: build
     strategy:
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 12
       matrix:
         design: ${{ fromJSON(needs.build.outputs.designs) }}
     uses: ./.github/workflows/crash-check.yml
