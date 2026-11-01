@@ -1,6 +1,7 @@
 package com.github.libretube.ui.yt
 
 import android.text.format.DateUtils
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -188,7 +189,7 @@ fun KieselHomeScreen(
                 }
             }
             if (forYou.isNotEmpty()) {
-                item { KieselSection(stringResource(R.string.yt_kiesel_for_you), actions.onShowSubscriptions, Modifier.padding(top = 24.dp)) }
+                item { KieselSection(stringResource(R.string.yt_kiesel_for_you), actions.onShowSubscriptions, Modifier.padding(top = 24.dp), tune = true) }
                 item {
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 18.dp),
@@ -217,7 +218,7 @@ fun KieselHomeScreen(
 }
 
 @Composable
-private fun KieselSection(title: String, onAll: (() -> Unit)?, modifier: Modifier = Modifier) {
+private fun KieselSection(title: String, onAll: (() -> Unit)?, modifier: Modifier = Modifier, tune: Boolean = false) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.padding(start = 20.dp, end = 20.dp, bottom = 10.dp),
@@ -228,6 +229,23 @@ private fun KieselSection(title: String, onAll: (() -> Unit)?, modifier: Modifie
             style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 19.sp),
             modifier = Modifier.weight(1f),
         )
+        if (tune) {
+            // the Feed-Regler: a lavender capsule before "Alle ansehen", black while open
+            val active = YtFeedUi.sheet
+            val fill by animateColorAsState(if (active) KieselInk else KieselLavender, ytStateSpec(), label = "kieselTune")
+            YtTuneWord(
+                text = stringResource(R.string.yt_feed_open_short),
+                style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Bold, fontSize = 12.5.sp),
+                color = KieselInk,
+                active = KieselCream,
+                glyph = true,
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(fill)
+                    .padding(horizontal = 8.dp),
+            )
+        }
         if (onAll != null) {
             Text(
                 text = stringResource(R.string.yt_kiesel_view_all),

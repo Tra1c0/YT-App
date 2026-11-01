@@ -53,7 +53,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -70,6 +75,9 @@ import com.github.libretube.util.TextUtils
 
 /** Key of the "Alle" filter; the other filters are trending categories. */
 const val YT_FILTER_ALL = "ALL"
+
+/** Key of the Feed-Regler's glyph at the start of the filter row (the pill glides onto it). */
+private const val YT_FILTER_TUNE = "TUNE"
 
 /**
  * YT design "YouTube, neu gedacht", view A (Startseite): headline, topic filters, one dominant
@@ -215,12 +223,14 @@ private fun FilterRow(
         categories.map { it.name to stringResource(it.titleRes) }
     val scroll = rememberScrollState()
     val bounds = remember { mutableStateMapOf<String, Pair<Int, Int>>() }
-    val target = bounds[selected]
+    // while the Feed-Regler is open the pill rests on its glyph at the start of the row
+    val shown = if (YtFeedUi.sheet) YT_FILTER_TUNE else selected
+    val target = bounds[shown]
     val pillX by animateFloatAsState((target?.first ?: 0).toFloat(), ytStateSpec(), label = "filterX")
     val pillWidth by animateFloatAsState((target?.second ?: 0).toFloat(), ytStateSpec(), label = "filterWidth")
     val edge by animateFloatAsState(if (pinned) 1f else 0f, ytStateSpec(), label = "filterEdge")
     val scrollSpec = ytFinite(tween<Float>(260, easing = YtEaseOut))
-    LaunchedEffect(selected, target) {
+    LaunchedEffect(shown, target) {
         val (x, w) = target ?: return@LaunchedEffect
         val margin = 48
         if (x - margin < scroll.value) {
@@ -248,8 +258,30 @@ private fun FilterRow(
                     .background(palette.text),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                val tuneActive = shown == YT_FILTER_TUNE
+                val tuneInk by animateColorAsState(if (tuneActive) palette.ink else palette.text, ytStateSpec(), label = "ytTuneInk")
+                val tuneFill by animateColorAsState(if (tuneActive) Color.Transparent else palette.raised, ytStateSpec(), label = "ytTuneFill")
+                val openSheet = rememberOpenFeedSheet()
+                val tuneDescription = stringResource(R.string.yt_feed_open)
+                Box(
+                    modifier = Modifier
+                        .testTag("yt_feed_button")
+                        .onGloballyPositioned { bounds[YT_FILTER_TUNE] = it.positionInParent().x.roundToInt() to it.size.width }
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(tuneFill)
+                        .clickable(onClick = openSheet)
+                        .semantics {
+                            contentDescription = tuneDescription
+                            role = Role.Button
+                        }
+                        .height(34.dp)
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(painterResource(R.drawable.ic_yt_tune), contentDescription = null, tint = tuneInk, modifier = Modifier.size(18.dp))
+                }
                 filters.forEach { (key, label) ->
-                    val active = key == selected
+                    val active = key == shown
                     val color by animateColorAsState(if (active) palette.ink else palette.text, ytStateSpec(), label = "ytFilterText")
                     Box(
                         modifier = Modifier

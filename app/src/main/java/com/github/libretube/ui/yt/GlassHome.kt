@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -183,6 +184,18 @@ fun GlassHomeScreen(
                     color = palette.textSecondary,
                     style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 13.sp),
                     modifier = Modifier.padding(start = 15.dp),
+                )
+                Spacer(Modifier.weight(1f))
+                // the Feed-Regler: a glass circle at the right end of the pill, teal while open
+                YtTuneCircle(
+                    fill = Color(0x99FFFFFF),
+                    ink = palette.text,
+                    activeFill = Color(0xFF0A8F7F),
+                    activeInk = Color.White,
+                    modifier = Modifier.offset(x = 10.dp),
+                    size = 30.dp,
+                    glyph = 16.dp,
+                    surface = { m -> m.ytGlass(CircleShape, shadow = false) },
                 )
             }
             LiquidSegments(

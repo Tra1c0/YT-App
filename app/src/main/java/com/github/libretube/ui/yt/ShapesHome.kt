@@ -165,6 +165,28 @@ fun ShapesHomeScreen(
                             ShapesTile(palette.lavender, Modifier.weight(1f), actions.onShowSubscriptions) {
                                 Icon(painterResource(R.drawable.ic_yt_nav_subs), contentDescription = null, tint = palette.ink, modifier = Modifier.size(24.dp))
                             }
+                            // the Feed-Regler: a third tile, a lime cookie that turns while the sheet is open
+                            val openSheet = rememberOpenFeedSheet()
+                            val turn by animateFloatAsState(if (YtFeedUi.sheet) 1f else 0f, ytSpec(spring(dampingRatio = 0.6f, stiffness = 300f)), label = "shapesTune")
+                            ShapesTile(palette.lime, Modifier.weight(1f), openSheet) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .graphicsLayer { rotationZ = 45f * turn }
+                                        .clip(CookieShape(8, 0.06f))
+                                        .background(palette.ink.copy(alpha = 0.1f)),
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_yt_tune),
+                                        contentDescription = stringResource(R.string.yt_feed_open),
+                                        tint = palette.ink,
+                                        modifier = Modifier
+                                            .graphicsLayer { rotationZ = -45f * turn }
+                                            .size(22.dp),
+                                    )
+                                }
+                            }
                         }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,

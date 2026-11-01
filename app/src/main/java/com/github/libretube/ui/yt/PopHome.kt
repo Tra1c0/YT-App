@@ -127,6 +127,9 @@ fun PopHomeScreen(
                     PopTab(palette, stringResource(R.string.yt_tab_for_you), null, tab == YT_TAB_FOR_YOU, 99) { onSelectTab(YT_TAB_FOR_YOU) }
                     PopTab(palette, stringResource(R.string.yt_tab_subscriptions), R.drawable.ic_yt_nav_subs, tab == YT_TAB_SUBS, 78) { onSelectTab(YT_TAB_SUBS) }
                     PopTab(palette, stringResource(R.string.yt_tab_live), R.drawable.ic_yt_nav_live, tab == YT_TAB_LIVE, 74) { onSelectTab(YT_TAB_LIVE) }
+                    // the Feed-Regler as a fourth blob, plum while it is open
+                    val openSheet = rememberOpenFeedSheet()
+                    PopTab(palette, stringResource(R.string.yt_feed_open_short), R.drawable.ic_yt_tune, YtFeedUi.sheet, 74, openSheet)
                 }
             }
             if (source == null || videos.isEmpty()) {

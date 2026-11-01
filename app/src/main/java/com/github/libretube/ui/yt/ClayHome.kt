@@ -126,7 +126,9 @@ fun ClayHomeScreen(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 19.dp, top = 10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 19.dp, end = 16.dp, top = 10.dp),
         ) {
             Canvas(Modifier.size(12.dp, 15.dp)) {
                 rotate(-35f) {
@@ -141,6 +143,17 @@ fun ClayHomeScreen(
                 color = Color(0xFF7A5560),
                 style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp),
                 modifier = Modifier.padding(start = 10.dp),
+            )
+            Spacer(Modifier.weight(1f))
+            // the Feed-Regler: a puffy dot of clay next to "Heute für dich"
+            YtTuneCircle(
+                fill = Color.Transparent,
+                ink = Color(0xFF7A5560),
+                activeFill = palette.accent,
+                activeInk = palette.onAccent,
+                size = 38.dp,
+                glyph = 18.dp,
+                surface = { m -> m.ytSurface(palette, CircleShape) },
             )
         }
 

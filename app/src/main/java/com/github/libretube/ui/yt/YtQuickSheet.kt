@@ -4,6 +4,8 @@ import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -154,6 +156,16 @@ fun YtQuickSheet(
                         stringResource(R.string.yt_home_pause_end, YtPauseRules.daysLeft(pause.untilMillis, System.currentTimeMillis()))
                     }
                     QuickRow(palette, R.drawable.ic_yt_pause_week, label) { ytTogglePause(item); onDismiss() }
+                }
+                // "Warum sehe ich das?": the feed engine's reasons, and more or less of the channel
+                var why by remember(item) { mutableStateOf(false) }
+                QuickRow(palette, R.drawable.ic_info, stringResource(R.string.yt_feed_why)) { why = !why }
+                AnimatedVisibility(
+                    visible = why,
+                    enter = ytEnterTransition(expandVertically(spring(dampingRatio = 0.85f, stiffness = 420f)) + fadeIn(tween(160))),
+                    exit = ytExitTransition(shrinkVertically(tween(180, easing = YtEaseOut)) + fadeOut(tween(120))),
+                ) {
+                    YtWhyList(palette, item, Modifier.padding(start = 6.dp, end = 6.dp, top = 12.dp))
                 }
             }
         }

@@ -173,6 +173,17 @@ fun FrostHomeScreen(
                                 style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 14.sp),
                                 modifier = Modifier.padding(start = 12.dp),
                             )
+                            Spacer(Modifier.weight(1f))
+                            // the Feed-Regler: a frost circle at the end of the search row, orange while open
+                            val frostCircle = Modifier.frost(CircleShape)
+                            YtTuneCircle(
+                                fill = Color(0x33FFFFFF),
+                                ink = palette.text,
+                                activeFill = palette.accent,
+                                activeInk = palette.onAccent,
+                                glyph = 17.dp,
+                                surface = { m -> m.then(frostCircle) },
+                            )
                         }
                     }
                     item { FrostSection(palette, stringResource(R.string.yt_frost_today), actions.onShowSubscriptions) }

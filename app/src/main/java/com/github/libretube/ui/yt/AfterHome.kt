@@ -374,7 +374,9 @@ private fun AfterHero(
         val headerOverlap = with(LocalDensity.current) { YtChrome.headerOverlapPx.toDp() }
         Row(
             horizontalArrangement = Arrangement.spacedBy(25.dp),
-            modifier = Modifier.padding(start = 27.dp, end = 20.dp, top = headerOverlap + 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 27.dp, end = 14.dp, top = headerOverlap + 4.dp),
         ) {
             val tabs = listOf(
                 AFTER_TAB_SELECTION to stringResource(R.string.yt_after_selection),
@@ -407,6 +409,20 @@ private fun AfterHero(
                     )
                 }
             }
+            Spacer(Modifier.weight(1f))
+            // the Feed-Regler: a small tangerine "Programm" at the end of the hero tabs
+            YtTuneWord(
+                text = stringResource(R.string.yt_feed_open_after).uppercase(),
+                style = TextStyle(
+                    fontFamily = YtFonts.archivoNarrow,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    letterSpacing = 1.sp,
+                    shadow = Shadow(Color(0xCC000000), Offset(0f, 1f), 8f),
+                ),
+                color = palette.accent,
+                active = palette.text,
+            )
         }
         if (featured.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

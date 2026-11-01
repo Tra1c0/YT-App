@@ -125,7 +125,10 @@ fun SideHomeScreen(
                 item {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        modifier = Modifier.padding(start = 22.dp, end = 20.dp, top = 16.dp, bottom = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 22.dp, end = 14.dp, top = 16.dp, bottom = 11.dp),
                     ) {
                         SideTab(palette, stringResource(R.string.yt_side_for_you), tab == SIDE_TAB_FOR_YOU) {
                             onSelectTab(SIDE_TAB_FOR_YOU)
@@ -133,6 +136,15 @@ fun SideHomeScreen(
                         SideTab(palette, stringResource(R.string.yt_side_people), tab == SIDE_TAB_PEOPLE) {
                             onSelectTab(SIDE_TAB_PEOPLE)
                         }
+                        Spacer(Modifier.weight(1f))
+                        // the Feed-Regler as a quiet link at the end of the tabs
+                        YtTuneWord(
+                            text = stringResource(R.string.yt_feed_open),
+                            style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                            color = palette.textSecondary,
+                            active = palette.accent,
+                            glyph = true,
+                        )
                     }
                     SideDivider(palette)
                 }
@@ -322,6 +334,10 @@ private fun SidePost(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.yt_home_action_hide)) },
                         onClick = { menu = false; ytHideVideo(post) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.yt_feed_why)) },
+                        onClick = { menu = false; YtFeedUi.why = post },
                     )
                     DropdownMenuItem(
                         text = {

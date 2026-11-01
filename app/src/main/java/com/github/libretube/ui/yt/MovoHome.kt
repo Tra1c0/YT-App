@@ -126,6 +126,15 @@ fun MovoHomeScreen(
                         MovoTab(palette, stringResource(R.string.yt_movo_following), tab == MOVO_TAB_FOLLOWING) {
                             onSelectTab(MOVO_TAB_FOLLOWING)
                         }
+                        // the Feed-Regler: a round third pill, cobalt while it is open
+                        YtTuneCircle(
+                            fill = palette.surface,
+                            ink = palette.text,
+                            activeFill = palette.accent,
+                            activeInk = palette.onAccent,
+                            size = 32.dp,
+                            glyph = 17.dp,
+                        )
                     }
                 }
                 if (source == null) {

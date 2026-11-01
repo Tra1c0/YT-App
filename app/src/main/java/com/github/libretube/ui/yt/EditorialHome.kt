@@ -53,6 +53,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -198,7 +199,17 @@ private fun EditorialMainTabs(
     val target = bounds[selected]
     val barX by animateDpAsState(with(density) { (target?.first ?: 0).toDp() }, ytStateSpec(), label = "editorialBarX")
     val barWidth by animateDpAsState(with(density) { (target?.second ?: 0).toDp() }, ytStateSpec(), label = "editorialBarWidth")
-    Box(Modifier.padding(start = 17.dp, end = 16.dp, top = 6.dp)) {
+    Box(Modifier.fillMaxWidth().padding(start = 17.dp, end = 16.dp, top = 6.dp)) {
+        // the Feed-Regler in the paper's mono, at the end of the tabs, on their line; it takes
+        // no height of its own, so the blue bar stays on the rule
+        Box(Modifier.matchParentSize().padding(bottom = 9.dp), contentAlignment = Alignment.CenterEnd) {
+            YtTuneWord(
+                text = stringResource(R.string.yt_feed_open_editorial).uppercase(),
+                style = TextStyle(fontFamily = YtFonts.plexMono, fontSize = 11.sp, letterSpacing = 1.sp, textDecoration = TextDecoration.Underline),
+                color = palette.text,
+                active = palette.accent,
+            )
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(34.dp)) {
             tabs.forEach { (key, label) ->
                 val active = key == selected
