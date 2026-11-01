@@ -13,7 +13,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
-import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -53,7 +52,6 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.layout.ContentScale
@@ -338,15 +336,31 @@ fun Modifier.ytCardSwipe(
             }
             YtTestHooks.log("YtSwipe") { "slop id=$id x=${state.offset.value.roundToInt()}" }
             tracker.addPointerInputChange(start)
-            val lifted = horizontalDrag(start.id) { change ->
+            // past the slop the card owns the finger: every move counts by where the finger is
+            // (not by a change another gesture may have consumed, which reads as no move), until
+            // it lifts or the gesture is taken away
+            var last = start.position.x
+            var moves = 0
+            var lifted = false
+            while (true) {
+                val change = awaitPointerEvent().changes.firstOrNull { it.id == start.id } ?: break
                 tracker.addPointerInputChange(change)
+                val dx = change.position.x - last
+                last = change.position.x
+                if (dx != 0f) follow(raw + dx)
+                if (!change.pressed) {
+                    lifted = true
+                    break
+                }
                 change.consume()
-                follow(raw + change.positionChange().x)
+                moves++
             }
+            // where the finger put the card, not the offset, which its coroutine sets a frame later
+            val shown = YtSwipePhysics.band(raw, threshold, width)
             val velocity = if (lifted) tracker.calculateVelocity().x else 0f
-            val way = if (lifted) YtSwipePhysics.decide(state.offset.value, velocity, threshold) else 0
+            val way = if (lifted) YtSwipePhysics.decide(shown, velocity, threshold) else 0
             YtTestHooks.log("YtSwipe") {
-                "release id=$id x=${state.offset.value.roundToInt()} v=${velocity.roundToInt()} lifted=$lifted way=$way"
+                "release id=$id x=${shown.roundToInt()} moves=$moves v=${velocity.roundToInt()} lifted=$lifted way=$way"
             }
             // letting go: the commit (or nothing) is felt, not the threshold left behind
             arm(0, feel = false)
