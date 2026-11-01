@@ -9,7 +9,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -124,9 +123,6 @@ private fun NavIcon(item: YtNavItem, active: Boolean, tint: Color, size: Dp) {
     }
 }
 
-private fun Modifier.noRippleClick(onClick: () -> Unit) =
-    this.clickable(interactionSource = null, indication = null, onClick = onClick)
-
 @Composable
 internal fun Badge(palette: YtPalette, visible: Boolean, modifier: Modifier = Modifier) {
     if (!visible) return
@@ -181,7 +177,7 @@ fun ClayNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSel
                     .clip(tile.shape)
                     .background(Brush.verticalGradient(listOf(lighten(color, 0.16f), color, darken(color, 0.06f))))
                     .border(1.5.dp, Color.White.copy(alpha = 0.35f), tile.shape)
-                    .clickable(interactionSource = interaction, indication = null) { onSelect(item.id) },
+                    .ytNavTarget(item, active, interaction) { onSelect(item.id) },
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -254,7 +250,7 @@ fun EditorialNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .noRippleClick { onSelect(item.id) },
+                        .ytNavTarget(item, state.selected == item.id) { onSelect(item.id) },
                 ) {
                     Text(
                         text = stringResource(item.label),
@@ -312,7 +308,7 @@ fun GlassNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
                         .clip(pill)
                         .background(if (active) Color(0xF2FFFFFF) else Color(0x40FFFFFF))
                         .border(1.dp, Color(0xB3FFFFFF), pill)
-                        .noRippleClick { onSelect(item.id) },
+                        .ytNavTarget(item, state.selected == item.id) { onSelect(item.id) },
                 ) {
                     if (active) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -457,7 +453,7 @@ fun PopNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSele
                         .weight(1f)
                         .fillMaxHeight()
                         .padding(top = 12.dp)
-                        .noRippleClick {
+                        .ytNavTarget(item, state.selected == item.id) {
                             blob.animateToValue(i.toFloat())
                             onSelect(item.id)
                         },
@@ -525,7 +521,7 @@ fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .noRippleClick { onSelect(item.id) },
+                    .ytNavTarget(item, state.selected == item.id) { onSelect(item.id) },
             ) {
                 // the shape of the active tab blooms out of a circle (lobes grow, corners
                 // square up) while it turns into place; the scalloped ones keep turning slowly
@@ -603,7 +599,7 @@ fun FrostNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
                         .clip(RoundedCornerShape(24.dp))
                         .background(if (active) Color.White else Color(0x1AFFFFFF))
                         .border(1.dp, if (active) Color.Transparent else Color(0x33FFFFFF), RoundedCornerShape(24.dp))
-                        .noRippleClick { onSelect(item.id) },
+                        .ytNavTarget(item, state.selected == item.id) { onSelect(item.id) },
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box {
@@ -665,7 +661,7 @@ fun KieselNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .noRippleClick {
+                        .ytNavTarget(item, state.selected == item.id) {
                             scope.launch {
                                 ripple.snapTo(0f)
                                 ripple.animateTo(1f, rippleSpec)

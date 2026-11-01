@@ -38,7 +38,7 @@ b_checks() {
 
   # 2. up from the docked player: it opens under the finger
   read -r mx my <<< "$(center_of 'id/main_container$')"
-  numbers "${mx:-}" "${my:-}" || { mark "B: no docked player on screen, the rest is skipped"; return 0; }
+  numbers "${mx:-}" "${my:-}" || { gesture_fail "B: no docked player on screen"; return 1; }
   log_mark
   drag "$mx" "$my" "$mx" $(( h * 25 / 100 )) 10
   expect_log YtGesture 'minimize grab from=mini'
@@ -49,7 +49,7 @@ b_checks() {
 
   # 3. let go about a third of the way down, standing still: it opens again
   read -r x0 y0 <<< "$(center_of 'id/player$')"
-  numbers "${x0:-}" "${y0:-}" || { mark "B: no picture of the open player on screen, the rest is skipped"; return 0; }
+  numbers "${x0:-}" "${y0:-}" || { gesture_fail "B: no picture of the open player on screen"; return 1; }
   mid=$(( y0 + (my - y0) * 35 / 100 ))
   log_mark
   drag "$x0" "$y0" "$x0" "$mid" 6
@@ -70,15 +70,15 @@ b_checks() {
   # 5. the docked player pulled down to the screen's edge: thrown away, the player closes. Only
   # the docked player closes so (the open one docks): if the flick left it open, back docks it
   read -r mx my <<< "$(center_of 'id/main_container$')"
-  numbers "${mx:-}" "${my:-}" || { mark "B: no player on screen, the close check is skipped"; return 0; }
+  numbers "${mx:-}" "${my:-}" || { gesture_fail "B: no player on screen for closing"; return 1; }
   if [ "$my" -lt $(( h / 2 )) ]; then
     mark "B: the player is still open (main_container at y=$my); back docks it for the close check"
     timeout 10 adb shell input keyevent KEYCODE_BACK || true
     sleep 3
     read -r mx my <<< "$(center_of 'id/main_container$')"
     if ! numbers "${mx:-}" "${my:-}" || [ "$my" -lt $(( h / 2 )) ]; then
-      mark "B: no docked player, the close check is skipped"
-      return 0
+      gesture_fail "B: no docked player for closing"
+      return 1
     fi
   fi
   log_mark

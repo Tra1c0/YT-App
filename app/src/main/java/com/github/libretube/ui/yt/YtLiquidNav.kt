@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.coerceIn
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -430,7 +429,7 @@ fun LiquidNav(
                     Box(
                         Modifier
                             .fillMaxSize()
-                            .clickable(interactionSource = null, indication = null) { select(i) },
+                            .ytNavTarget(item, state.selected == item.id) { select(i) },
                     ) {
                         Box(
                             Modifier

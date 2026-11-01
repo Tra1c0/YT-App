@@ -28,6 +28,15 @@ DESIGNS="${YT_DESIGN:-standard}"
 DESIGNS="${DESIGNS//,/ }"
 echo "APK: $APK, designs: $DESIGNS, night: ${YT_NIGHT:-no}, locale: ${YT_LOCALE:-device}"
 adb wait-for-device
+if ! [[ "${YT_FONT_SCALE:-1.0}" =~ ^(1(\.[0-9]+)?|2(\.0+)?)$ ]]; then
+  echo '::error::Font scale must be between 1.0 and 2.0'
+  exit 2
+fi
+adb shell settings put system font_scale "${YT_FONT_SCALE:-1.0}"
+for scale in window_animation_scale transition_animation_scale animator_duration_scale; do
+  if [ "${YT_MOTION:-yes}" = yes ]; then value=1; else value=0; fi
+  adb shell settings put global "$scale" "$value"
+done
 adb shell input keyevent 82 || true
 SDK=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
 if [ "${YT_LOCK:-no}" = "yes" ] && [ "${SDK:-0}" -lt 35 ]; then
@@ -70,7 +79,10 @@ RETRACE=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/retrace 2>/dev/null | head -n 1
 crashed=""
 # extras for every start of the app; the gesture checks log the gestures (YtTestHooks, emulator only)
 START_EXTRAS=()
-[ "${YT_GESTURES:-no}" = "yes" ] && START_EXTRAS+=(--ez yt_gesture_log true --ez yt_home_fixture true)
+[ "${YT_GESTURES:-no}" = "yes" ] && START_EXTRAS+=(--ez yt_gesture_log true)
+if [ "${YT_GESTURES:-no}" = yes ] || [ "${YT_SCREENS:-no}" = yes ]; then
+  START_EXTRAS+=(--ez yt_home_fixture true)
+fi
 
 # the time on the device, to line up with its log
 mark() { echo "$(timeout 5 adb shell date +%H:%M:%S 2>/dev/null | tr -d '\r') $*"; }
@@ -194,7 +206,7 @@ anr_watch() {
 anr_watch > anr-watch.txt 2>&1 &
 ANR_WATCH=$!
 trap 'kill "$ANR_WATCH" 2>/dev/null || true; declare -F driver_stop >/dev/null && driver_stop' EXIT
-if [ "${YT_GESTURES:-no}" = yes ]; then
+if [ "${YT_GESTURES:-no}" = yes ] || [ "${YT_SCREENS:-no}" = yes ]; then
   . scripts/gestures/driver.sh
   driver_start || { echo '::error::The gesture input driver could not start'; exit 2; }
   YT_INPUT_READY=yes
@@ -614,7 +626,10 @@ for design in $DESIGNS; do
     if [ -n "$TEST_VIDEO" ] && open_test_video; then
       :
     else
-      [ -n "$TEST_VIDEO" ] && echo "::warning::$design: the test video did not open; the online video instead"
+      if [ "${YT_TEST_VIDEO:-no}" = yes ]; then
+        echo "::error::$design: required local playback did not open"
+        crashed="$crashed $design-local-playback"
+      fi
       open_online_video
     fi
     sleep 18
@@ -651,6 +666,34 @@ for design in $DESIGNS; do
       echo "::error::$design: $gesture_fails gesture checks failed"
       crashed="$crashed $design-gestures"
     fi
+  fi
+  if [ "${YT_SCREENS:-no}" = yes ]; then
+    echo "::group::$design: library and settings"
+    timeout 20 adb shell am force-stop "$PKG" || true
+    timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true ${START_EXTRAS[@]+"${START_EXTRAS[@]}"} >/dev/null
+    sleep 3
+    if b=$(driver_find 'yt_nav_libraryFragment$|id/libraryFragment$'); then
+      read -r l t r bt <<< "$b"
+      driver_command TAP $(( (l+r)/2 )) $(( (t+bt)/2 ))
+      sleep 2
+      shot "$design-4-library"
+      if ! driver_find '(?i)^(Downloads|Heruntergeladen|Heruntergeladene Videos)$' >/dev/null; then
+        echo "::error::$design: library content is not reachable"
+        crashed="$crashed $design-library"
+      fi
+    else
+      echo "::error::$design: library tab is not reachable"
+      crashed="$crashed $design-library-tab"
+    fi
+    timeout 30 adb shell am start -n "$PKG/com.github.libretube.ui.activities.SettingsActivity" >/dev/null
+    sleep 2
+    shot "$design-5-settings"
+    if ! driver_find 'id/recycler_view$' >/dev/null; then
+      echo "::error::$design: settings list is not reachable"
+      crashed="$crashed $design-settings"
+    fi
+    timeout 10 adb shell input keyevent KEYCODE_BACK || true
+    echo "::endgroup::"
   fi
   if [ -n "$TEST_VIDEO" ]; then
     echo "::group::$design: test hooks"

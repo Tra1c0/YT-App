@@ -25,6 +25,12 @@ on:
       night:
         type: boolean
         default: true
+      font_scale:
+        type: string
+        default: "1.0"
+      motion:
+        type: boolean
+        default: true
       locale:
         type: string
         default: de-DE
@@ -71,6 +77,13 @@ on:
         description: "Dark mode"
         type: boolean
         default: true
+      font_scale:
+        description: "System font scale (1.0 = normal, 1.8 = large text)"
+        default: "1.0"
+      motion:
+        description: "Enable system animations"
+        type: boolean
+        default: true
       locale:
         description: "App locale (empty = the device's English)"
         required: false
@@ -92,7 +105,7 @@ on:
         type: boolean
         default: true
       screens:
-        description: "Screenshots per design (start, player, mini player), published as the pre-release screens-<run>"
+        description: "Screenshots per design (home, player, mini player, library, settings), saved as Actions artifacts"
         type: boolean
         default: false
       pip:
@@ -192,7 +205,7 @@ jobs:
           java-version: 17
 
       - name: Build the manual check's input driver
-        if: inputs.gestures && inputs.artifact_name == ''
+        if: (inputs.gestures || inputs.screens) && inputs.artifact_name == ''
         run: bash scripts/build-gesture-driver.sh
 
       - name: Download upgrade baselines
@@ -210,6 +223,8 @@ jobs:
         env:
           YT_DESIGN: ${{ inputs.design }}
           YT_NIGHT: ${{ inputs.night && 'yes' || 'no' }}
+          YT_FONT_SCALE: ${{ inputs.font_scale }}
+          YT_MOTION: ${{ inputs.motion && 'yes' || 'no' }}
           YT_LOCALE: ${{ inputs.locale }}
           YT_SIGNIN_PROBE: ${{ inputs.signin_probe && 'yes' || 'no' }}
           YT_SCREENS: ${{ inputs.screens && 'yes' || 'no' }}
@@ -228,7 +243,7 @@ jobs:
           profile: pixel_6
           emulator-boot-timeout: 1200
           emulator-options: -no-window -gpu ${{ inputs.gpu }} -no-snapshot -noaudio -no-boot-anim
-          disable-animations: true
+          disable-animations: ${{ !inputs.motion }}
           script: |
             if [ "$YT_CHECK_UPGRADES" = yes ]; then bash scripts/check-upgrade.sh; fi
             bash scripts/crash-check.sh

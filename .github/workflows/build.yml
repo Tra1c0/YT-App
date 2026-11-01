@@ -191,13 +191,22 @@ jobs:
       target: default
 
   compatibility:
-    name: Compatibility (API ${{ matrix.api }})
+    name: Compatibility (API ${{ matrix.api }}, font ${{ matrix.font_scale }})
     needs: build
     if: needs.build.outputs.full == 'true'
     strategy:
       fail-fast: false
       matrix:
-        api: ["26", "36"]
+        include:
+          - api: "26"
+            font_scale: "1.0"
+            motion: true
+          - api: "36"
+            font_scale: "1.0"
+            motion: true
+          - api: "34"
+            font_scale: "1.8"
+            motion: false
     uses: ./.github/workflows/crash-check.yml
     with:
       artifact_name: ${{ needs.build.outputs.artifact }}
@@ -205,8 +214,10 @@ jobs:
       design: all
       api: ${{ matrix.api }}
       target: default
+      font_scale: ${{ matrix.font_scale }}
+      motion: ${{ matrix.motion }}
       gestures: false
-      check_upgrades: true
+      check_upgrades: ${{ matrix.api != '34' }}
       test_video: true
       screens: true
       signin_probe: false

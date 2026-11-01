@@ -13,8 +13,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -194,11 +192,13 @@ object YtNav {
         val bar = ComposeView(activity).apply {
             setContent {
                 YtTheme(palette) {
-                    YtNavBar(design, palette, items, state, backdrop) { id ->
-                        if (YtMotionPrefs.enabled && id != state.selected) {
-                            bottomNav.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                    Box(Modifier.ytTestRoot()) {
+                        YtNavBar(design, palette, items, state, backdrop) { id ->
+                            if (YtMotionPrefs.enabled && id != state.selected) {
+                                bottomNav.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                            }
+                            bottomNav.selectedItemId = id
                         }
-                        bottomNav.selectedItemId = id
                     }
                 }
             }
@@ -441,11 +441,7 @@ private fun NavTab(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = modifier.clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = null,
-            onClick = onClick,
-        ),
+        modifier = modifier.ytNavTarget(item, active, select = onClick),
     ) {
         if (style.iconSize > 0.dp) {
             Box(contentAlignment = Alignment.Center) {

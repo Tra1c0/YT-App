@@ -56,7 +56,11 @@ anim_scales() {
     timeout 10 adb shell settings put global "$k" "$1" || true
   done
 }
-anim_on() { mark "animations on"; anim_scales 1; sleep 1; }
+anim_on() {
+  if [ "${YT_MOTION:-yes}" = yes ]; then mark "animations on"; anim_scales 1
+  else mark "reduced motion"; anim_scales 0; fi
+  sleep 1
+}
 anim_off() { mark "animations off"; anim_scales 0; }
 
 bounds_of() {

@@ -108,6 +108,8 @@ c_checks() {
     finger_up $(( x + step * 3 )) $(( y - up ))
     expect_log YtScrub 'level=frame'
     expect_log YtScrub 'scrub end target=[0-9]+ level=frame frames=3 '
+  else
+    gesture_fail "c: required test video or control missing for check 2"
   fi
 
   # 3. cancelling: to the right, then far below the bar; letting go there seeks nowhere
@@ -121,6 +123,8 @@ c_checks() {
     for i in 1 2 3; do finger_move $(( x + 160 )) $(( y + $(dp 70) * i / 3 )); done
     finger_up $(( x + 160 )) $(( y + $(dp 70) ))
     expect_log YtScrub 'scrub end target=none .*cancelled=true'
+  else
+    gesture_fail "c: required test video or control missing for check 3"
   fi
 
   # 4. the return point: a jump back of 10 s, the chip, a tap on it goes back exactly
@@ -138,6 +142,8 @@ c_checks() {
     else
       c_verdict FAIL "the return chip" "not on the screen"
     fi
+  else
+    gesture_fail "c: required test video or control missing for check 4"
   fi
 
   # 5. the explanation loop: hold the bar at 30 % (A), drag about 5 s to the right (B), let go;
@@ -166,6 +172,8 @@ c_checks() {
     else
       c_verdict FAIL "the loop chip" "not on the screen"
     fi
+  else
+    gesture_fail "c: required test video or control missing for check 5"
   fi
 
   # 6. hold and drag on the video (the defaults: up = fullscreen, down = minimize, there: leave it)
@@ -213,6 +221,8 @@ c_checks() {
     else
       c_verdict FAIL "hold and drag in fullscreen" "no player on the screen"
     fi
+  else
+    gesture_fail "c: required test video or control missing for check 6"
   fi
 
   # 7. sharing onto the timeline: hold Share, let go short of the bar (nothing), then drag it
