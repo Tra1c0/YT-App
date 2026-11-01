@@ -143,6 +143,12 @@ class YtMiniScene(
     /** The part of the preview under the finger. */
     var target by mutableStateOf(YtMiniTarget.NONE)
 
+    /**
+     * Where the finger took the preview, as shares (0 to 1) of the picture's width and height from
+     * its top left corner (Frost thaws the frost from there); Unspecified outside a preview.
+     */
+    var press by mutableStateOf(androidx.compose.ui.geometry.Offset.Unspecified)
+
     /** Counts the landings; each new value replays a design's landing in its composables. */
     var landings by mutableIntStateOf(0)
 
