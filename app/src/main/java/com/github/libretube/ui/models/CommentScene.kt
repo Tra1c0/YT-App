@@ -403,6 +403,10 @@ class CommentScene(private val scope: CoroutineScope) {
             items.value = index.values.toList()
         }
         if (page.disabled || page.nextpage == null) exhaustedState.value = true
+        YtTestHooks.log(TAG) {
+            val known = synchronized(index) { index.values.toList() }
+            "page: hidden=${known.count { verdict(it.comment).hidden }} of ${known.size}"
+        }
     }
 
     /** Everything of the video goes (another video comes); the pages of [keepPagesOf] may stay. */
@@ -422,6 +426,17 @@ class CommentScene(private val scope: CoroutineScope) {
         boundaries = LongArray(0)
         nextBoundary = Long.MAX_VALUE
         tracking = false
+    }
+
+    /**
+     * Emulator checks (YtSceneTestHooks): the pages are read anew (from the fixture) and nothing
+     * counts as seen past the position now, whatever an earlier check left.
+     */
+    fun restartForTest() {
+        clear()
+        unlock.reset()
+        if (active.value != SceneMode.OFF) onClock(YtPlaybackClock.now(), SystemClock.elapsedRealtime())
+        bump()
     }
 
     companion object {
