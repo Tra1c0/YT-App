@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -747,7 +748,7 @@ private fun ShapesActions(palette: YtPalette, actions: List<WatchAction>, modifi
         actions.forEachIndexed { i, action ->
             var taps by remember { mutableIntStateOf(0) }
             val spin by animateFloatAsState(taps * 45f, ytSpec(spring(dampingRatio = 0.55f, stiffness = 300f)), label = "shapeSpin")
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(64.dp)) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(min = 64.dp)) {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
@@ -799,7 +800,7 @@ private fun FrostActions(palette: YtPalette, actions: List<WatchAction>, modifie
         actions.forEach { action ->
             val press = remember { MutableInteractionSource() }
             val thaw by rememberThaw(press)
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(62.dp)) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(min = 62.dp)) {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier

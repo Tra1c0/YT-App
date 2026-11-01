@@ -134,6 +134,10 @@ hold_drag() { drag_held 0.9 "$@"; }
 
 fling() {
   mark "fling $1,$2 to $3,$4 in ${5:-80} ms"
+  if [ "${YT_INPUT_READY:-no}" = yes ]; then
+    driver_command FLING "$1" "$2" "$3" "$4" "${5:-80}"
+    return
+  fi
   timeout 10 adb shell input swipe "$1" "$2" "$3" "$4" "${5:-80}" || true
 }
 

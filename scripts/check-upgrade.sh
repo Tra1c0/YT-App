@@ -7,8 +7,12 @@ data=/data/user/0/$pkg
 candidate=$(find apk -maxdepth 1 -name '*.apk' | head -1)
 [ -n "$candidate" ] || { echo 'No candidate APK' >&2; exit 2; }
 adb wait-for-device
-adb root >/dev/null
-adb wait-for-device
+for attempt in 1 2 3; do
+  adb root >/dev/null 2>&1 || true
+  timeout 30 adb wait-for-device || continue
+  [ "$(adb shell id -u 2>/dev/null | tr -d '\r')" = 0 ] && break
+  sleep 2
+done
 [ "$(adb shell id -u | tr -d '\r')" = 0 ] || { echo 'Upgrade fixtures require a rooted emulator' >&2; exit 2; }
 
 for baseline in upgrade-baselines/*/*.apk; do

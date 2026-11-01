@@ -599,6 +599,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
             requireContext(),
             serviceClass,
             if (startNewSession) args else Bundle.EMPTY,
+            isCurrent = { _binding != null && request == controllerRequest },
         ) { controller ->
             if (_binding == null || request != controllerRequest) {
                 // Release this connection, not the field (which may be uninitialized or
@@ -1488,6 +1489,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        com.github.libretube.ui.yt.YtTestHooks.log("YtLifecycle") { "pip=$isInPictureInPictureMode" }
         if (isInPictureInPictureMode) {
             // hide and disable exoPlayer controls
             disableController()

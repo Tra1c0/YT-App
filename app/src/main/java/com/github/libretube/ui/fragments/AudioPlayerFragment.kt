@@ -101,6 +101,7 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
         BackgroundHelper.startMediaService(
             requireContext(),
             if (isOffline) OfflinePlayerService::class.java else OnlinePlayerService::class.java,
+            isCurrent = { _binding != null && request == controllerRequest },
         ) { controller ->
             if (_binding == null || request != controllerRequest) {
                 controller.release()
@@ -485,6 +486,9 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
     }
 
     private fun handleServiceConnection() {
+        com.github.libretube.ui.yt.YtTestHooks.log("YtLifecycle") {
+            "audio connected offline=$isOffline progress=${binding.playerMotionLayout.progress} duration=${playerController?.duration}"
+        }
         playerController?.addListener(playerListener)
         playerController?.mediaMetadata?.let { updateStreamInfo(it) }
         // JSON-encode as work-around for https://github.com/androidx/media/issues/564

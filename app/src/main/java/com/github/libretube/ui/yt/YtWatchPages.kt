@@ -339,11 +339,12 @@ private fun <T> EvenRows(
     gap: Int = 8,
     cell: @Composable (T, Int, Modifier) -> Unit,
 ) {
+    val columns = if (LocalDensity.current.fontScale > 1.3f) minOf(perRow, 2) else perRow
     Column(modifier, verticalArrangement = Arrangement.spacedBy(gap.dp)) {
-        items.chunked(perRow).forEachIndexed { r, row ->
+        items.chunked(columns).forEachIndexed { r, row ->
             Row(horizontalArrangement = Arrangement.spacedBy(gap.dp)) {
-                row.forEachIndexed { c, item -> cell(item, r * perRow + c, Modifier.weight(1f)) }
-                repeat(perRow - row.size) { Spacer(Modifier.weight(1f)) }
+                row.forEachIndexed { c, item -> cell(item, r * columns + c, Modifier.weight(1f)) }
+                repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
@@ -842,28 +843,24 @@ private fun PanePage(
         }
         // round buttons: Glas with captions, Frost icons only
         val buttons = listOf(b.like) + b.actions
-        Row(
-            horizontalArrangement = Arrangement.SpaceEvenly,
+        EvenRows(
+            buttons, perRow = 5,
             modifier = Modifier
                 .padding(start = 8.dp, end = 8.dp, top = 16.dp)
                 .fillMaxWidth(),
-        ) {
-            buttons.forEach { action ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .then(action.gesture)
-                            .size(if (frost) 50.dp else 54.dp)
-                            .glassPane(CircleShape, frost)
-                            .clip(CircleShape)
-                            .clickable(onClick = action.onClick),
-                    ) {
-                        Icon(painterResource(action.icon), contentDescription = action.label, tint = ink, modifier = Modifier.size(22.dp))
-                    }
-                    if (!frost) {
-                        Text(action.label, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = font, fontSize = 11.sp), modifier = Modifier.padding(top = 6.dp))
-                    }
+        ) { action, _, cell ->
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = cell.then(action.gesture).clickable(onClick = action.onClick)) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(if (frost) 50.dp else 54.dp)
+                        .glassPane(CircleShape, frost)
+                        .clip(CircleShape),
+                ) {
+                    Icon(painterResource(action.icon), contentDescription = if (frost) action.label else null, tint = ink, modifier = Modifier.size(22.dp))
+                }
+                if (!frost) {
+                    Text(action.label, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = font, fontSize = 11.sp), modifier = Modifier.padding(top = 6.dp))
                 }
             }
         }

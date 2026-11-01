@@ -85,7 +85,7 @@ crashed=""
 START_EXTRAS=()
 [ "${YT_GESTURES:-no}" = "yes" ] && START_EXTRAS+=(--ez yt_gesture_log true)
 if [ "${YT_GESTURES:-no}" = yes ] || [ "${YT_SCREENS:-no}" = yes ]; then
-  START_EXTRAS+=(--ez yt_home_fixture true)
+  START_EXTRAS+=(--ez yt_gesture_log true --ez yt_home_fixture true)
 fi
 
 # the time on the device, to line up with its log
@@ -639,9 +639,10 @@ for design in $DESIGNS; do
     sleep 18
     timeout 20 adb exec-out screencap -p > "screens/$design-2-player.png" || true
     if [ -n "$TEST_VIDEO" ]; then
+      pip_from=$(wc -l < "logcat-$design.txt")
       timeout 10 adb shell input keyevent KEYCODE_HOME || true
       sleep 3
-      if timeout 20 adb shell dumpsys activity activities | grep -a -q 'mode=pinned'; then
+      if tail -n +"$((pip_from + 1))" "logcat-$design.txt" | grep -a -q -E 'YtLifecycle.*pip=true|YtPipWave.*show:' || timeout 20 adb shell dumpsys activity activities | grep -a -q 'mode=pinned'; then
         shot "$design-2-pip"
       else
         echo "::error::$design: playing video did not enter picture-in-picture"
@@ -659,7 +660,7 @@ for design in $DESIGNS; do
             read -r l t r bt <<< "$b"
             driver_command TAP $(( (l+r)/2 )) $(( (t+bt)/2 ))
             sleep 2
-            if driver_find 'id/time_bar$' >/dev/null; then
+            if driver_find 'id/open_video$' >/dev/null; then
               shot "$design-2-audio"
               timeout 10 adb shell input keyevent KEYCODE_HOME || true
               sleep 2
@@ -677,6 +678,8 @@ for design in $DESIGNS; do
                 crashed="$crashed $design-audio-background"
               fi
             else
+              shot "$design-2-audio-failed"
+              ui > "ui-$design-audio.xml"
               echo "::error::$design: audio player did not open"
               crashed="$crashed $design-audio"
             fi

@@ -238,6 +238,11 @@ class SingleViewTouchableMotionLayout(context: Context, attributeSet: AttributeS
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        // The collapsed page covers the feed as a View, but only its visible strip owns taps.
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN && progress == 1f && !peeking) {
+            viewToDetectTouch.getHitRect(viewRect)
+            if (!viewRect.contains(ev.x.toInt(), ev.y.toInt())) return false
+        }
         // YT: the finger's velocity for the minimize drag, in screen coordinates, since this
         // layout moves under the finger while the player shrinks
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
@@ -360,11 +365,18 @@ class SingleViewTouchableMotionLayout(context: Context, attributeSet: AttributeS
                     return true
                 }
                 gesture = Gesture.LEGACY
+                // The undecided tap belongs to the detector. Prime OnSwipe only when it wins.
+                MotionEvent.obtain(event).also { down ->
+                    down.action = MotionEvent.ACTION_DOWN
+                    down.setLocation(touchInitialX, touchInitialY)
+                    super.onTouchEvent(down)
+                    down.recycle()
+                }
             }
         }
 
         gestureDetector.onTouchEvent(event)
-        val handled = super.onTouchEvent(event)
+        val handled = if (gesture == Gesture.PENDING) true else super.onTouchEvent(event)
         if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
             gesture = Gesture.IDLE
         }

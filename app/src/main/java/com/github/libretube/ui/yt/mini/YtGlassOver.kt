@@ -272,7 +272,7 @@ private fun DrawScope.drawPlate(image: ImageBitmap?, frame: FloatArray, rim: Flo
 internal fun GlassOverlay(scene: YtMiniScene) {
     val density = LocalDensity.current.density
     val motion = LocalYtMotion.current
-    val motionAllowed by rememberUpdatedState(motion)
+    val motionAllowed by rememberUpdatedState(motion && com.kyant.backdrop.isRenderEffectSupported())
 
     // the colour of the video for the glass, copied while docked, playing and on screen
     val bleed = remember { YtMiniBleed() }

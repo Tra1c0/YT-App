@@ -220,6 +220,8 @@ c_checks() {
       expect_log YtGesture 'hold run action=minimize dir=DOWN fullscreen=true'
       EXPECT_WAIT=5 expect_log YtGesture 'hold done action=minimize'
     else
+      rawshot "$design-c-7-fullscreen-failed"
+      ui > "ui-$design-fullscreen.xml"
       c_verdict FAIL "hold and drag in fullscreen" "no player on the screen"
     fi
   else

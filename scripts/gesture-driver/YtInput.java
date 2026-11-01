@@ -90,7 +90,19 @@ public final class YtInput {
         }
         if (words.length < 3) throw new IllegalArgumentException("Expected a touch and x y");
         float x = Float.parseFloat(words[1]), y = Float.parseFloat(words[2]);
-        if ("START".equals(words[0]) && words.length == 5) {
+        if ("FLING".equals(words[0]) && words.length == 6) {
+            float endX = Float.parseFloat(words[3]), endY = Float.parseFloat(words[4]);
+            int duration = Math.max(16, Math.min(1000, Integer.parseInt(words[5])));
+            long start = SystemClock.uptimeMillis();
+            touch(MotionEvent.ACTION_DOWN, x, y, false);
+            int steps = Math.max(4, duration / 8);
+            for (int i = 1; i <= steps; i++) {
+                long wait = start + duration * i / steps - SystemClock.uptimeMillis();
+                if (wait > 0) SystemClock.sleep(wait);
+                touch(MotionEvent.ACTION_MOVE, x + (endX - x) * i / steps, y + (endY - y) * i / steps, false);
+            }
+            touch(MotionEvent.ACTION_UP, endX, endY);
+        } else if ("START".equals(words[0]) && words.length == 5) {
             touch(MotionEvent.ACTION_DOWN, x, y, false);
             touch(MotionEvent.ACTION_MOVE, Float.parseFloat(words[3]), Float.parseFloat(words[4]));
         } else if ("DOWN".equals(words[0])) touch(MotionEvent.ACTION_DOWN, x, y);
@@ -167,18 +179,24 @@ public final class YtInput {
             // Platform views (player, time bar, transient chips) have a direct ID query.
             java.util.regex.Matcher nativeId = Pattern.compile("^(?:id/)?([A-Za-z0-9_]+)\\$$").matcher(expression);
             if (nativeId.matches() && root.getPackageName() != null) {
-                String id = root.getPackageName() + ":id/" + nativeId.group(1);
-                List<AccessibilityNodeInfo> matches = root.findAccessibilityNodeInfosByViewId(id);
-                String result = null;
-                for (AccessibilityNodeInfo match : matches) {
-                    try {
-                        if (result == null && match.refresh() && match.isVisibleToUser()) {
-                            Rect box = visibleBounds(match, viewport);
-                            if (!box.isEmpty() && --findRemaining == 0) result = coordinates(box);
-                        }
-                    } finally { match.recycle(); }
+                String rootPackage = root.getPackageName().toString();
+                String[] packages = "app.tra1c0.yt".equals(rootPackage) ? new String[] { rootPackage }
+                    : new String[] { rootPackage, "app.tra1c0.yt" };
+                for (String packageName : packages) {
+                    findRemaining = Math.max(1, nth);
+                    String id = packageName + ":id/" + nativeId.group(1);
+                    List<AccessibilityNodeInfo> matches = root.findAccessibilityNodeInfosByViewId(id);
+                    String result = null;
+                    for (AccessibilityNodeInfo match : matches) {
+                        try {
+                            if (result == null && match.refresh() && match.isVisibleToUser()) {
+                                Rect box = visibleBounds(match, viewport);
+                                if (!box.isEmpty() && --findRemaining == 0) result = coordinates(box);
+                            }
+                        } finally { match.recycle(); }
+                    }
+                    if (result != null) return result;
                 }
-                if (result != null) return result;
                 findRemaining = Math.max(1, nth);
             }
             String result = findNode(root, viewport, 0);

@@ -227,6 +227,7 @@ fun LiquidSegments(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (keys.isEmpty()) return
     val count = keys.size
     val index = keys.indexOf(selected).coerceAtLeast(0)
     val scope = rememberCoroutineScope()
@@ -238,11 +239,10 @@ fun LiquidSegments(
     BoxWithConstraints(modifier) {
         val gapPx = with(density) { look.gap.toPx() }
         val heightPx = with(density) { look.height.roundToPx() }
-        val free = constraints.maxWidth - gapPx * (count - 1)
-        val total = weights.sum()
-        val widths = weights.map { free * it / total }
-        val starts = widths.runningFold(0f) { x, w -> x + w + gapPx }
-        val step = free / count + gapPx
+        val segments = com.github.libretube.ui.yt.liquid.YtSegmentLayout.measure(constraints.maxWidth, gapPx, weights)
+        val widths = segments.widths
+        val starts = segments.starts
+        val step = segments.step
 
         val gesture = remember { FloatArray(2) }
         val drop = remember(scope, count, motion, step) {
@@ -373,7 +373,7 @@ private fun SegmentStrip(count: Int, widths: List<Float>, starts: List<Float>, h
     Layout(
         content = { repeat(count) { i -> Box(propagateMinConstraints = true) { content(i) } } },
     ) { measurables, constraints ->
-        val placeables = measurables.mapIndexed { i, m -> m.measure(Constraints.fixed(widths[i].fastRoundToInt(), heightPx)) }
+        val placeables = measurables.mapIndexed { i, m -> m.measure(Constraints.fixed(widths[i].fastRoundToInt().coerceAtLeast(0), heightPx.coerceAtLeast(0))) }
         layout(constraints.maxWidth, heightPx) {
             placeables.forEachIndexed { i, p -> p.place(starts[i].fastRoundToInt(), 0) }
         }

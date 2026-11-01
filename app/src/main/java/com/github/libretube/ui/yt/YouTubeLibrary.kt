@@ -35,6 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -112,6 +113,11 @@ fun YouTubeLibraryScreen(
                             add(WatchAction(R.drawable.ic_download, stringResource(R.string.downloads), onOpenDownloads))
                         },
                     )
+                } else if (LocalDensity.current.fontScale > 1.3f) {
+                    Column(Modifier.padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (showHistory) QuickAccess(palette, R.drawable.ic_history, stringResource(R.string.watch_history), onOpenHistory, Modifier.fillMaxWidth())
+                        QuickAccess(palette, R.drawable.ic_download, stringResource(R.string.downloads), onOpenDownloads, Modifier.fillMaxWidth())
+                    }
                 } else {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),

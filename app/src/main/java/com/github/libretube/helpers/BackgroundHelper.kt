@@ -77,6 +77,7 @@ object BackgroundHelper {
         context: Context,
         serviceClass: Class<*>,
         arguments: Bundle = Bundle.EMPTY,
+        isCurrent: () -> Boolean = { true },
         onController: (MediaController) -> Unit = {}
     ) {
         val context = context.applicationContext
@@ -88,6 +89,10 @@ object BackgroundHelper {
         Futures.addCallback(controllerFuture, object : FutureCallback<MediaController> {
             override fun onSuccess(result: MediaController?) {
                 val controller = controllerFuture.get()
+                if (!isCurrent()) {
+                    controller.release()
+                    return
+                }
                 if (!arguments.isEmpty) controller.sendCustomCommand(
                     AbstractPlayerService.startServiceCommand,
                     arguments
@@ -101,9 +106,10 @@ object BackgroundHelper {
             // hence, we retry it here
             // see also: https://github.com/androidx/media/issues/1096
             override fun onFailure(t: Throwable) {
+                if (!isCurrent()) return
                 Log.e(TAG(), t.toString())
                 handler.postDelayed(200) {
-                    startMediaService(context, serviceClass, arguments, onController)
+                    if (isCurrent()) startMediaService(context, serviceClass, arguments, isCurrent, onController)
                 }
             }
         }, MoreExecutors.directExecutor())
@@ -129,7 +135,7 @@ object BackgroundHelper {
         arguments: Bundle = Bundle.EMPTY,
         onController: (MediaController) -> Unit = {}
     ) {
-        startMediaService(context, getCurrentPlayerServiceClass(), arguments, onController)
+        startMediaService(context, getCurrentPlayerServiceClass(), arguments, onController = onController)
     }
 
 

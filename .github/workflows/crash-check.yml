@@ -303,6 +303,7 @@ jobs:
             input-driver-system.log
             input-driver-memory.log
             upgrade-*.json
+            ui-*.xml
 
       - name: Upload screenshots
         if: always() && (inputs.screens || inputs.gestures || inputs.test_video)
