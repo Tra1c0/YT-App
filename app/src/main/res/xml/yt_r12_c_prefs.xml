@@ -37,6 +37,53 @@
             app:key="yt_loop_hold"
             app:title="@string/yt_r12_c_loop_hold_title" />
 
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_arrow_up_down"
+            android:summary="@string/yt_r12_c_hold_summary"
+            app:defaultValue="true"
+            app:key="yt_hold"
+            app:title="@string/yt_r12_c_hold_title" />
+
+        <ListPreference
+            android:icon="@drawable/yt_r12_c_ic_arrow_up"
+            android:dependency="yt_hold"
+            app:defaultValue="fullscreen"
+            app:entries="@array/yt_r12_c_hold_entries"
+            app:entryValues="@array/yt_r12_c_hold_values"
+            app:key="yt_hold_up"
+            app:title="@string/yt_r12_c_hold_up_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:icon="@drawable/ic_arrow_down"
+            android:dependency="yt_hold"
+            app:defaultValue="minimize"
+            app:entries="@array/yt_r12_c_hold_entries"
+            app:entryValues="@array/yt_r12_c_hold_values"
+            app:key="yt_hold_down"
+            app:title="@string/yt_r12_c_hold_down_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:icon="@drawable/yt_r12_c_ic_arrow_left"
+            android:dependency="yt_hold"
+            app:defaultValue="chapter_prev"
+            app:entries="@array/yt_r12_c_hold_entries"
+            app:entryValues="@array/yt_r12_c_hold_values"
+            app:key="yt_hold_left"
+            app:title="@string/yt_r12_c_hold_left_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:icon="@drawable/ic_arrow_right"
+            android:dependency="yt_hold"
+            app:defaultValue="chapter_next"
+            app:entries="@array/yt_r12_c_hold_entries"
+            app:entryValues="@array/yt_r12_c_hold_values"
+            app:key="yt_hold_right"
+            app:title="@string/yt_r12_c_hold_right_title"
+            app:useSimpleSummaryProvider="true" />
+
     </PreferenceCategory>
 
 </PreferenceScreen>

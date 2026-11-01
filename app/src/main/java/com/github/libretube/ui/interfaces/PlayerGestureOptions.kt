@@ -24,9 +24,17 @@ interface PlayerGestureOptions {
 
     fun onFullscreenChange(isFullscreen: Boolean)
 
-    fun onLongPress()
+    /** A long press began at [x], [y] (view px). */
+    fun onLongPress(x: Float, y: Float)
 
-    fun onLongPressEnd()
+    /** YT: the finger moved by [dx], [dy] (px) from where the long press began. */
+    fun onLongPressDrag(dx: Float, dy: Float)
+
+    /**
+     * The long press ended: lifted at [dx], [dy] from where it began, or [cancelled] (the gesture
+     * was taken away, or a second finger came).
+     */
+    fun onLongPressEnd(dx: Float, dy: Float, cancelled: Boolean)
 
     /**
      *  Returns a pair of the width and height of the view this listener is used for

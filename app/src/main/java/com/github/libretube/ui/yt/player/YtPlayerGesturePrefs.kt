@@ -8,6 +8,11 @@ object YtPlayerGesturePrefs {
     const val LIVE_PICTURE = "yt_scrub_live_picture"
     const val RETURN_CHIP = "yt_return_chip"
     const val LOOP_HOLD = "yt_loop_hold"
+    const val HOLD = "yt_hold"
+    const val HOLD_UP = "yt_hold_up"
+    const val HOLD_DOWN = "yt_hold_down"
+    const val HOLD_LEFT = "yt_hold_left"
+    const val HOLD_RIGHT = "yt_hold_right"
 
     /** The time magnifier: finer the higher the finger above the time bar. */
     val magnifier: Boolean get() = PreferenceHelper.getBoolean(MAGNIFIER, true)
@@ -20,4 +25,18 @@ object YtPlayerGesturePrefs {
 
     /** A long press on the time bar marks an explanation loop. */
     val loopHold: Boolean get() = PreferenceHelper.getBoolean(LOOP_HOLD, true)
+
+    /** Hold and drag on the video runs the action set for the direction. */
+    val hold: Boolean get() = PreferenceHelper.getBoolean(HOLD, true)
+
+    /** What hold and drag towards [dir] does. */
+    fun holdAction(dir: YtHoldDir): YtHoldAction {
+        val key = when (dir) {
+            YtHoldDir.UP -> HOLD_UP
+            YtHoldDir.DOWN -> HOLD_DOWN
+            YtHoldDir.LEFT -> HOLD_LEFT
+            YtHoldDir.RIGHT -> HOLD_RIGHT
+        }
+        return YtHoldAction.of(PreferenceHelper.getString(key, YtHoldAction.default(dir).value), dir)
+    }
 }

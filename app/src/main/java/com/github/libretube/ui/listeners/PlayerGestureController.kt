@@ -31,6 +31,10 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
     private var scaleGestureWasInProgress = false
     private var isMoving = false
     var longPressInProgress = false
+
+    // YT: where the long press began, for the drag after it
+    private var longPressX = 0f
+    private var longPressY = 0f
     var lastDoublePressTime: Instant? = null
 
     var areControlsLocked = false
@@ -46,7 +50,8 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
     }
 
     fun onTouchEvent(event: MotionEvent): Boolean {
-        when (event.action) {
+        // YT: by the masked action, so a second finger is seen as such
+        when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 scaleGestureWasInProgress = false
 
@@ -66,7 +71,20 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
                 }
             }
 
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                // YT: a second finger (a pinch) cancels the hold
+                if (longPressInProgress) {
+                    longPressInProgress = false
+                    listener.onLongPressEnd(0f, 0f, cancelled = true)
+                }
+            }
+
             MotionEvent.ACTION_MOVE -> {
+                // YT: the GestureDetector stops reporting moves once a long press fired; the hold follows the finger here
+                if (longPressInProgress) {
+                    listener.onLongPressDrag(event.x - longPressX, event.y - longPressY)
+                }
+
                 if (!scaleGestureWasInProgress && scaleGestureDetector.isInProgress) {
                     scaleGestureWasInProgress = true
 
@@ -89,7 +107,13 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
                 if (isMoving) listener.onSwipeEnd()
                 isMoving = false
 
-                if (longPressInProgress) listener.onLongPressEnd()
+                if (longPressInProgress) {
+                    listener.onLongPressEnd(
+                        event.x - longPressX,
+                        event.y - longPressY,
+                        cancelled = event.actionMasked == MotionEvent.ACTION_CANCEL,
+                    )
+                }
                 longPressInProgress = false
             }
         }
@@ -136,7 +160,9 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
             super.onLongPress(e)
 
             longPressInProgress = true
-            listener.onLongPress()
+            longPressX = e.x
+            longPressY = e.y
+            listener.onLongPress(e.x, e.y)
         }
 
         override fun onDoubleTapEvent(e: MotionEvent): Boolean {

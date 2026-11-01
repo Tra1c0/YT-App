@@ -129,6 +129,16 @@ class YtRewindChip(private val host: YtPlayerHost, private val player: CustomExo
         chip.hide()
     }
 
+    /** Jumps back to the return point, as a tap on the chip does (hold and drag's action); false if there is none. */
+    fun returnNow(): Boolean {
+        if (released || !state.hasReturn) return false
+        val target = state.returnMs
+        reduce(YtRewindEvent.Tap(now()))
+        host.seekTagged(target, YtSeekReason.CHIP)
+        YtTestHooks.log(LOG_TAG) { "return hold to=$target" }
+        return true
+    }
+
     private fun onTap() {
         val now = now()
         if (!state.visible(now)) return

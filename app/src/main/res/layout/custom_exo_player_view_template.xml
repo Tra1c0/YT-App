@@ -159,4 +159,14 @@
         android:translationZ="2dp"
         android:visibility="gone" />
 
+    <!-- YT: the compass of hold and drag on the video, over everything while a finger holds;
+         invisible at rest (not gone), so it knows its size when a hold begins -->
+    <com.github.libretube.ui.yt.player.YtHoldCompassView
+        android:id="@+id/yt_hold_compass"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:translationZ="3dp"
+        android:visibility="invisible" />
+
 </merge>

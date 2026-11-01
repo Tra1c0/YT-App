@@ -3,7 +3,8 @@
 # The player gestures: scrubbing, the return point, the loop, the compass, sharing a moment.
 # Sourced by crash-check.sh once per design with YT_GESTURES=yes ($design is the design); the
 # helpers are in lib.sh. So far the time magnifier (levels, frames, cancelling), the rewind
-# memory's chip and the explanation loop (marked on the time bar); each check opens the test video anew (the app's parameters are in
+# memory's chip, the explanation loop (marked on the time bar) and hold and drag on the video
+# (its compass, in the page and in fullscreen); each check opens the test video anew (the app's parameters are in
 # YtPlayerGestureTestHooks).
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh" || return 0
@@ -149,6 +150,53 @@ c_checks() {
       expect_log YtLoop 'end \(cleared\)'
     else
       c_verdict FAIL "the loop chip" "not on the screen"
+    fi
+  fi
+
+  # 6. hold and drag on the video (the defaults: up = fullscreen, down = minimize, there: leave it)
+  log_mark
+  if open_test_video --el yt_seek_test 60000; then
+    up=$(dp 110)
+    # left of the middle, clear of the play button should the controls be up
+    if b=$(bounds_of 'id/player$'); then
+      read -r l t r bt <<< "$b"
+      x=$(( l + (r - l) * 3 / 10 ))
+      y=$(( (t + bt) / 2 ))
+      # up past the ring, back to the centre, let go: nothing runs
+      finger_down "$x" "$y"
+      sleep 0.9
+      for i in 1 2 3 4; do finger_move "$x" $(( y - up * i / 4 )); done
+      for i in 3 2 1 0; do finger_move "$x" $(( y - up * i / 4 )); done
+      finger_up "$x" "$y"
+      expect_log YtGesture 'hold begin'
+      expect_log YtGesture 'hold dir=UP stage=ARMED'
+      expect_log YtGesture 'hold cancel cancelled=false stage=CENTRE'
+      # up again and let go there: fullscreen
+      finger_down "$x" "$y"
+      sleep 0.9
+      for i in 1 2 3 4 5 6; do finger_move "$x" $(( y - up * i / 6 )); done
+      rawshot "$design-c-6-compass"
+      finger_up "$x" $(( y - up ))
+      expect_log YtGesture 'hold run action=fullscreen dir=UP fullscreen=false'
+      EXPECT_WAIT=5 expect_log YtGesture 'hold done action=fullscreen'
+    else
+      c_verdict FAIL "hold and drag" "no player on the screen"
+    fi
+    # in fullscreen (it may have turned the screen): down leaves it
+    sleep 2
+    if b=$(bounds_of 'id/player$'); then
+      read -r l t r bt <<< "$b"
+      x=$(( l + (r - l) * 3 / 10 ))
+      y=$(( (t + bt) / 2 ))
+      finger_down "$x" "$y"
+      sleep 0.9
+      for i in 1 2 3 4 5 6; do finger_move "$x" $(( y + up * i / 6 )); done
+      rawshot "$design-c-7-compass-fullscreen"
+      finger_up "$x" $(( y + up ))
+      expect_log YtGesture 'hold run action=minimize dir=DOWN fullscreen=true'
+      EXPECT_WAIT=5 expect_log YtGesture 'hold done action=minimize'
+    else
+      c_verdict FAIL "hold and drag in fullscreen" "no player on the screen"
     fi
   fi
 }
