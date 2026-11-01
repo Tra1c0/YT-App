@@ -15,4 +15,31 @@
     <string name="yt_r12_c_live_picture_summary">Beim feinen Spulen zeigt das Video selbst die Stelle</string>
     <string name="yt_r12_c_return_chip_title">Zurückspulen mit Gedächtnis</string>
     <string name="yt_r12_c_return_chip_summary">Nach einem Sprung zurück bringt dich ein Chip wieder hin</string>
+    <string name="yt_r12_c_loop_title">Erklärschleife</string>
+    <string name="yt_r12_c_loop_mark_a">A</string>
+    <string name="yt_r12_c_loop_mark_b">B</string>
+    <string name="yt_r12_c_loop_chip">Durchgang %1$d</string>
+    <string name="yt_r12_c_loop_chip_pause">Weiter in %1$d s</string>
+    <string name="yt_r12_c_loop_chip_description">Erklärschleife von %1$s bis %2$s, Durchgang %3$d. Öffnet die Einstellungen der Schleife</string>
+    <string name="yt_r12_c_loop_chip_pause_description">Pause, der nächste Durchgang beginnt in %1$d Sekunden. Tippen, um gleich weiterzumachen</string>
+    <string name="yt_r12_c_loop_end">Schleife beenden</string>
+    <string name="yt_r12_c_loop_off">Aus</string>
+    <string name="yt_r12_c_loop_range">%1$s – %2$s</string>
+    <string name="yt_r12_c_loop_set_a">A = jetzt</string>
+    <string name="yt_r12_c_loop_set_b">B = jetzt</string>
+    <string name="yt_r12_c_loop_chapter">Dieses Kapitel</string>
+    <string name="yt_r12_c_loop_speed">Tempo</string>
+    <string name="yt_r12_c_loop_pause">Denkpause am Ende</string>
+    <string name="yt_r12_c_loop_pause_none">Keine</string>
+    <string name="yt_r12_c_loop_pause_seconds">%1$d s</string>
+    <string name="yt_r12_c_loop_start">Schleife starten</string>
+    <string name="yt_r12_c_loop_saved">Zuletzt benutzt</string>
+    <string name="yt_r12_c_loop_hint">Oder lange auf die Zeitleiste drücken, das setzt A, und bis B ziehen. Die Enden des Bands lassen sich verschieben.</string>
+    <string name="yt_r12_c_loop_unset">–</string>
+    <string name="yt_r12_c_loop_too_short">Eine Schleife braucht mindestens eine Sekunde</string>
+    <string name="yt_r12_c_loop_live">Bei Livestreams nicht möglich</string>
+    <string name="yt_r12_c_loop_no_chapter">Dieses Video hat keine Kapitel</string>
+    <string name="yt_r12_c_loop_started">Schleife %1$s</string>
+    <string name="yt_r12_c_loop_hold_title">Schleife auf der Zeitleiste markieren</string>
+    <string name="yt_r12_c_loop_hold_summary">Lange auf die Zeitleiste drücken setzt A, Ziehen setzt B; die Schleife gibt es auch in den Player-Optionen</string>
 </resources>

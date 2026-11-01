@@ -15,4 +15,31 @@
     <string name="yt_r12_c_live_picture_summary">When scrubbing finely, the video itself shows the spot</string>
     <string name="yt_r12_c_return_chip_title">Jump back with memory</string>
     <string name="yt_r12_c_return_chip_summary">After a jump back, a chip takes you back to where you were</string>
+    <string name="yt_r12_c_loop_title">Explanation loop</string>
+    <string name="yt_r12_c_loop_mark_a">A</string>
+    <string name="yt_r12_c_loop_mark_b">B</string>
+    <string name="yt_r12_c_loop_chip">Pass %1$d</string>
+    <string name="yt_r12_c_loop_chip_pause">Next in %1$d s</string>
+    <string name="yt_r12_c_loop_chip_description">Explanation loop from %1$s to %2$s, pass %3$d. Opens the loop settings</string>
+    <string name="yt_r12_c_loop_chip_pause_description">Pause, the next pass starts in %1$d seconds. Tap to go on now</string>
+    <string name="yt_r12_c_loop_end">End loop</string>
+    <string name="yt_r12_c_loop_off">Off</string>
+    <string name="yt_r12_c_loop_range">%1$s – %2$s</string>
+    <string name="yt_r12_c_loop_set_a">A = now</string>
+    <string name="yt_r12_c_loop_set_b">B = now</string>
+    <string name="yt_r12_c_loop_chapter">This chapter</string>
+    <string name="yt_r12_c_loop_speed">Speed</string>
+    <string name="yt_r12_c_loop_pause">Pause to think at the end</string>
+    <string name="yt_r12_c_loop_pause_none">None</string>
+    <string name="yt_r12_c_loop_pause_seconds">%1$d s</string>
+    <string name="yt_r12_c_loop_start">Start loop</string>
+    <string name="yt_r12_c_loop_saved">Used before</string>
+    <string name="yt_r12_c_loop_hint">Or hold the time bar to set A, then drag to set B. Drag an end of the band to move it.</string>
+    <string name="yt_r12_c_loop_unset">–</string>
+    <string name="yt_r12_c_loop_too_short">A loop needs at least a second</string>
+    <string name="yt_r12_c_loop_live">Not available for live streams</string>
+    <string name="yt_r12_c_loop_no_chapter">This video has no chapters</string>
+    <string name="yt_r12_c_loop_started">Loop %1$s</string>
+    <string name="yt_r12_c_loop_hold_title">Mark a loop on the time bar</string>
+    <string name="yt_r12_c_loop_hold_summary">Hold the time bar to set A, drag to set B; the loop is also in the player options</string>
 </resources>

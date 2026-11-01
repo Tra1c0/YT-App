@@ -7,6 +7,7 @@ object YtPlayerGesturePrefs {
     const val MAGNIFIER = "yt_scrub_magnifier"
     const val LIVE_PICTURE = "yt_scrub_live_picture"
     const val RETURN_CHIP = "yt_return_chip"
+    const val LOOP_HOLD = "yt_loop_hold"
 
     /** The time magnifier: finer the higher the finger above the time bar. */
     val magnifier: Boolean get() = PreferenceHelper.getBoolean(MAGNIFIER, true)
@@ -16,4 +17,7 @@ object YtPlayerGesturePrefs {
 
     /** After a jump back, the chip that returns to where it started. */
     val returnChip: Boolean get() = PreferenceHelper.getBoolean(RETURN_CHIP, true)
+
+    /** A long press on the time bar marks an explanation loop. */
+    val loopHold: Boolean get() = PreferenceHelper.getBoolean(LOOP_HOLD, true)
 }

@@ -146,4 +146,17 @@
         android:translationZ="2dp"
         android:visibility="gone" />
 
+    <!-- YT: the explanation loop's chip (pass, pause ring, end), top left below the controls'
+         top bar (the margin follows it at runtime), the same height as the return chip -->
+    <com.github.libretube.ui.yt.player.YtLoopChipView
+        android:id="@+id/yt_loop_chip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="6dp"
+        android:layout_marginTop="52dp"
+        android:padding="7dp"
+        android:translationZ="2dp"
+        android:visibility="gone" />
+
 </merge>

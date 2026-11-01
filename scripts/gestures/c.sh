@@ -2,8 +2,8 @@
 # YT round 12, package C: its gesture checks.
 # The player gestures: scrubbing, the return point, the loop, the compass, sharing a moment.
 # Sourced by crash-check.sh once per design with YT_GESTURES=yes ($design is the design); the
-# helpers are in lib.sh. So far the time magnifier (levels, frames, cancelling) and the rewind
-# memory's chip; each check opens the test video anew (the app's parameters are in
+# helpers are in lib.sh. So far the time magnifier (levels, frames, cancelling), the rewind
+# memory's chip and the explanation loop (marked on the time bar); each check opens the test video anew (the app's parameters are in
 # YtPlayerGestureTestHooks).
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh" || return 0
@@ -121,6 +121,34 @@ c_checks() {
       expect_log YtGesture 'return tap to=[0-9]+'
     else
       c_verdict FAIL "the return chip" "not on the screen"
+    fi
+  fi
+
+  # 5. the explanation loop: hold the bar at 30 % (A), drag about 5 s to the right (B), let go;
+  # the video jumps to A and comes back there after B; then the chip's x ends it
+  log_mark
+  if b=$(c_open_with_bar --el yt_seek_test 60000); then
+    read -r l t r bt <<< "$b"
+    y=$(( (t + bt) / 2 ))
+    x=$(( l + (r - l) * 3 / 10 ))
+    # 5 s of the 180 s test video, in px of the bar
+    step=$(( (r - l) * 5 / 180 / 4 + 1 ))
+    finger_down "$x" "$y"
+    sleep 0.9
+    for i in 1 2 3 4; do finger_move $(( x + step * i )) "$y"; done
+    rawshot "$design-c-4-loop-mark"
+    finger_up $(( x + step * 4 )) "$y"
+    expect_log YtLoop 'mark start editing=false'
+    expect_log YtLoop 'set a=[0-9]+ b=[0-9]+'
+    EXPECT_WAIT=12 expect_log YtLoop 'pass=2'
+    if b=$(bounds_of 'id/yt_loop_chip$'); then
+      rawshot "$design-c-5-loop-chip"
+      read -r l t r bt <<< "$b"
+      # the x sits at the chip's right end, inside its 7 dp padding
+      timeout 10 adb shell input tap $(( r - $(dp 24) )) $(( (t + bt) / 2 )) || true
+      expect_log YtLoop 'end \(cleared\)'
+    else
+      c_verdict FAIL "the loop chip" "not on the screen"
     fi
   fi
 }

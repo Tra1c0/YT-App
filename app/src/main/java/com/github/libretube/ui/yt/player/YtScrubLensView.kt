@@ -112,6 +112,12 @@ class YtScrubLensView @JvmOverloads constructor(
      * [levels] false: the magnifier is off for it (a live stream), so only the start and the
      * cancel zone are told.
      */
+    /**
+     * The end of the explanation loop being marked ("A", "B"): the pill names it and always shows
+     * the time; null for a plain scrub. Set before [begin].
+     */
+    var markLabel: String? = null
+
     fun begin(style: YtPlayerHudStyle, barCenterY: Float, lineHeights: FloatArray, levels: Boolean) {
         this.style = style
         this.barCenterY = barCenterY
@@ -173,6 +179,18 @@ class YtScrubLensView @JvmOverloads constructor(
             cancelling -> {
                 lead = ""
                 rest = cancelText
+            }
+
+            // marking an end of the explanation loop: which end, always with its time
+            markLabel != null -> {
+                lead = markLabel.orEmpty()
+                val decimals = when (level) {
+                    YtScrubLevel.FULL -> 0
+                    YtScrubLevel.FRAME -> 3
+                    else -> YtScrubPrecision.decimalsFor(1.0 / pxPerMs)
+                }
+                val levelPart = if (level == YtScrubLevel.FULL) "" else " · " + ladderLabels[level.ordinal - 1]
+                rest = levelPart + " · " + YtScrubPrecision.formatTime(positionMs, decimals, withHours)
             }
 
             atOrigin -> {

@@ -13,6 +13,7 @@ import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.TimeBar
 import androidx.media3.ui.TimeBar.OnScrubListener
+import com.github.libretube.R
 import com.github.libretube.ui.yt.YtHaptics
 import com.github.libretube.ui.yt.YtPlaybackClock
 import com.github.libretube.ui.yt.YtSeekReason
@@ -37,6 +38,10 @@ import kotlin.math.roundToLong
  * The bar runs the scrub itself: media3's DefaultTimeBar only draws the thumb, fed with
  * synthetic events at the bar's centre (so its own 3× fine mode never starts), and its callbacks
  * are ignored meanwhile; the listeners get the exact position from here.
+ *
+ * It also marks the explanation loop ([loopMarks]): a long press without moving sets A where it
+ * presses, dragging on sets B with the same levels; a drag that starts on an end of the running
+ * loop moves that end. Marking never seeks; the page makes the loop of it.
  */
 @UnstableApi
 open class DismissableTimeBar(
@@ -52,6 +57,27 @@ open class DismissableTimeBar(
 
     /** YT: whether the video plays from a download, so the live picture may seek anywhere. */
     var playsOffline: () -> Boolean = { false }
+
+    /** YT: the explanation loop's marks on the bar. */
+    interface LoopMarks {
+        /** The running loop's ends as [a, b] in ms, or null without one. */
+        fun range(): LongArray?
+
+        /** Whether a long press may mark a new loop now. */
+        fun canMark(): Boolean
+
+        /** A mark began: [editing] an end of the running loop, or a new loop from a long press. */
+        fun onMarkStart(editing: Boolean)
+
+        /** The finger let go: [fixedMs] stayed where it was, the other end is at [movingMs]. */
+        fun onMarked(fixedMs: Long, movingMs: Long, editing: Boolean)
+
+        /** Let go back at the start or far below the bar: nothing changes. */
+        fun onMarkCancelled(editing: Boolean)
+    }
+
+    /** YT: the page's explanation loop (YtLoopController sets it); null: no marking. */
+    var loopMarks: LoopMarks? = null
 
     // Drag-only seeking state
     private var initialX: Float = 0f
@@ -75,6 +101,13 @@ open class DismissableTimeBar(
 
     // the lens says "Start" only once the scrub came back there, not while it leaves it
     private var leftOrigin = false
+
+    // YT: the running loop mark (null outside of one): the end that moves, with the same levels
+    private var mark: YtScrubPrecision? = null
+    private var markFixedMs = 0L
+    private var markEditing = false
+    private var pendingHandle = HANDLE_NONE
+    private val longPress = Runnable { onLongPress() }
 
     // as PlayerControlView sets them
     private var barDurationMs: Long = C.TIME_UNSET
@@ -137,6 +170,10 @@ open class DismissableTimeBar(
                 downTime = event.downTime
                 waitingForDrag = true
                 dragStarted = false
+                // YT: on an end of the running loop a drag moves it; elsewhere a still hold marks a new one
+                removeCallbacks(longPress)
+                pendingHandle = handleAt(event.x)
+                if (pendingHandle == HANDLE_NONE && mayMark()) postDelayed(longPress, LOOP_HOLD_MS)
                 // the bar keeps the finger from the start: dragging down to cancel a scrub must
                 // not minimize the player instead
                 parent?.requestDisallowInterceptTouchEvent(true)
@@ -145,6 +182,10 @@ open class DismissableTimeBar(
             }
 
             MotionEvent.ACTION_MOVE -> {
+                if (mark != null) {
+                    moveMark(event)
+                    return true
+                }
                 if (waitingForDrag) {
                     // make sure that the user dragged at least touchSlopPx pixels
                     // which is the minimum amount to trigger a drag event
@@ -152,6 +193,11 @@ open class DismissableTimeBar(
                     val dy = abs(event.y - initialY)
                     if (dx <= touchSlopPx && dy <= touchSlopPx) return true
                     waitingForDrag = false
+                    removeCallbacks(longPress)
+                    if (pendingHandle != HANDLE_NONE) {
+                        if (!beginMark(event.x, event.y, editing = true)) parent?.requestDisallowInterceptTouchEvent(false)
+                        return true
+                    }
                     dragStarted = beginScrub(event)
                     if (!dragStarted) parent?.requestDisallowInterceptTouchEvent(false)
                     return true
@@ -162,6 +208,11 @@ open class DismissableTimeBar(
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 val cancelled = event.actionMasked == MotionEvent.ACTION_CANCEL
+                removeCallbacks(longPress)
+                if (mark != null) {
+                    endMark(event, cancelled)
+                    return true
+                }
                 if (dragStarted) {
                     dragStarted = false
                     endScrub(event, cancelled)
@@ -182,6 +233,13 @@ open class DismissableTimeBar(
     }
 
     override fun onDetachedFromWindow() {
+        // a loop mark cut off changes nothing
+        removeCallbacks(longPress)
+        if (mark != null) {
+            mark = null
+            lens?.end()
+            loopMarks?.onMarkCancelled(markEditing)
+        }
         // the player moves into or out of fullscreen mid-scrub: nothing changes, the picture goes back
         scrub?.let { engine ->
             live.end(null, engine.originMs)
@@ -208,6 +266,7 @@ open class DismissableTimeBar(
         val liveStream = player?.isCurrentMediaItemLive == true
         val levels = YtPlayerGesturePrefs.magnifier && !liveStream
         locateLens()
+        lens?.markLabel = null
         val lines = levelLines()
         val engine = YtScrubPrecision(
             levelStartsPx = lines,
@@ -309,6 +368,142 @@ open class DismissableTimeBar(
                 "frames=${engine.frameOffset} cancelled=${cancelled || engine.cancelling} origin=${engine.atOrigin}"
         }
         invalidate()
+    }
+
+    // YT: the hold went on without moving: A is where it pressed, dragging on sets B
+    private fun onLongPress() {
+        if (!waitingForDrag || mark != null || scrub != null || !mayMark()) return
+        waitingForDrag = false
+        if (!beginMark(initialX, initialY, editing = false)) parent?.requestDisallowInterceptTouchEvent(false)
+    }
+
+    private fun mayMark(): Boolean =
+        loopMarks?.canMark() == true && YtPlayerGesturePrefs.loopHold && isEnabled &&
+            barDurationMs > 0L && exoPlayer?.isCurrentMediaItemLive != true
+
+    // which end of the running loop is under [x], the nearer one if both are
+    private fun handleAt(x: Float): Int {
+        if (!isEnabled) return HANDLE_NONE
+        val range = loopMarks?.range() ?: return HANDLE_NONE
+        if (range.size < 2) return HANDLE_NONE
+        val xa = xOf(range[0]) ?: return HANDLE_NONE
+        val xb = xOf(range[1]) ?: return HANDLE_NONE
+        val hit = HANDLE_HIT_DP * density
+        val da = abs(x - xa)
+        val db = abs(x - xb)
+        val handle = when {
+            da > hit && db > hit -> return HANDLE_NONE
+            da < db -> HANDLE_A
+            else -> HANDLE_B
+        }
+        // the thumb nearer than the end (or on it): a plain scrub, as without a loop
+        val thumb = xOf(barPositionMs) ?: return handle
+        return if (abs(x - thumb) <= minOf(da, db)) HANDLE_NONE else handle
+    }
+
+    private fun beginMark(x: Float, y: Float, editing: Boolean): Boolean {
+        val duration = barDurationMs
+        val width = progressWidthPx()
+        if (duration <= 0L || width <= 0f) return false
+        val range = loopMarks?.range()
+        val fixed: Long
+        val start: Long
+        if (editing && range != null && range.size >= 2) {
+            fixed = if (pendingHandle == HANDLE_A) range[1] else range[0]
+            start = if (pendingHandle == HANDLE_A) range[0] else range[1]
+        } else if (!editing) {
+            start = ((initialX - progressLeftPx()) / width * duration).toLong().coerceIn(0L, duration)
+            fixed = start
+        } else {
+            return false
+        }
+        val levels = YtPlayerGesturePrefs.magnifier
+        locateLens()
+        val lines = levelLines()
+        val engine = YtScrubPrecision(
+            levelStartsPx = lines,
+            hysteresisPx = HYSTERESIS_DP * density,
+            framePx = FRAME_DP * density,
+            magnetPx = MAGNET_DP * density,
+            cancelBelowPx = CANCEL_BELOW_DP * density,
+            levels = levels,
+        )
+        // the moving end starts where it was: letting go there changes nothing
+        engine.start(start, start, duration, width, frameMs(exoPlayer), heightAbove(y), chapterStartsMs())
+        mark = engine
+        markFixedMs = fixed
+        markEditing = editing
+        haptics = YtHaptics.of(this)
+        withHours = duration >= HOUR_MS
+        lastX = x
+        lastHapticAt = 0L
+        haptics?.grab()
+        lens?.markLabel = context.getString(
+            if (editing && pendingHandle == HANDLE_A) R.string.yt_r12_c_loop_mark_a else R.string.yt_r12_c_loop_mark_b,
+        )
+        lens?.begin(YtPlayerHudStyle.current(context), height / 2f + lensDy, lines, levels)
+        loopMarks?.onMarkStart(editing)
+        updateMarkLens(x, y)
+        YtTestHooks.log(LOOP_LOG_TAG) { "mark start editing=$editing fixed=$fixed at=$start" }
+        invalidate()
+        return true
+    }
+
+    private fun moveMark(event: MotionEvent) {
+        val engine = mark ?: return
+        val dx = event.x - lastX
+        lastX = event.x
+        feel(engine.move(dx, heightAbove(event.y)))
+        updateMarkLens(event.x, event.y)
+        invalidate()
+    }
+
+    private fun updateMarkLens(x: Float, y: Float) {
+        val engine = mark ?: return
+        lens?.update(
+            x + lensDx,
+            y + lensDy,
+            engine.level,
+            engine.positionMs,
+            engine.pxPerMs,
+            engine.frameMs,
+            engine.frameOffset,
+            engine.atOrigin,
+            engine.cancelling,
+            withHours,
+        )
+    }
+
+    private fun endMark(event: MotionEvent, cancelled: Boolean) {
+        val engine = mark ?: return
+        if (!cancelled) engine.move(event.x - lastX, heightAbove(event.y))
+        // back at the start, far below the bar or cut off: nothing
+        val target = if (cancelled) null else engine.seekTarget()
+        mark = null
+        lens?.end()
+        haptics = null
+        val editing = markEditing
+        if (target == null) {
+            loopMarks?.onMarkCancelled(editing)
+        } else {
+            loopMarks?.onMarked(markFixedMs, target, editing)
+        }
+        YtTestHooks.log(LOOP_LOG_TAG) { "mark end fixed=$markFixedMs to=${target ?: "none"} editing=$editing" }
+        invalidate()
+    }
+
+    /** YT: while a loop mark runs, its range as [from, to] in ms (for the band), else null. */
+    protected fun loopPreviewMs(): LongArray? {
+        val engine = mark ?: return null
+        val moving = engine.positionMs.toLong()
+        return longArrayOf(minOf(markFixedMs, moving), maxOf(markFixedMs, moving))
+    }
+
+    /** YT: whether the running loop's end [handle] (0 A, 1 B) is being dragged. */
+    protected fun draggedLoopEnd(): Int = when {
+        mark == null || !markEditing -> -1
+        pendingHandle == HANDLE_A -> 0
+        else -> 1
     }
 
     // the strongest thing this move did, at most one small one every 30 ms
@@ -428,6 +623,16 @@ open class DismissableTimeBar(
 
     companion object {
         private const val LOG_TAG = "YtScrub"
+        private const val LOOP_LOG_TAG = "YtLoop"
+
+        // a still hold this long on the bar marks a loop's A
+        private const val LOOP_HOLD_MS = 450L
+
+        // how near an end of the loop a touch takes that end
+        private const val HANDLE_HIT_DP = 20f
+        private const val HANDLE_NONE = 0
+        private const val HANDLE_A = 1
+        private const val HANDLE_B = 2
 
         // where ½, ¼, ⅛ and the frames begin above the bar, in fullscreen
         private val LINES_DP = floatArrayOf(40f, 90f, 140f, 190f)

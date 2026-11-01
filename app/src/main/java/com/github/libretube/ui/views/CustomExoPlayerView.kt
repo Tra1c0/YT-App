@@ -126,6 +126,12 @@ class CustomExoPlayerView(
     /** YT: the controls are locked (the round-12 overlays stay away then). */
     val playerLocked: Boolean get() = isPlayerLocked
 
+    /** YT: opens the explanation loop's sheet (YtLoopController sets it); null: no entry in the options. */
+    var ytLoopEntry: (() -> Unit)? = null
+
+    /** YT: what the options say about the explanation loop ("1:23 – 1:45", "Aus"). */
+    var ytLoopSummary: (() -> String?)? = null
+
     private var resizeModePref: Int
         set(value) {
             PreferenceHelper.putInt(
@@ -612,7 +618,25 @@ class CustomExoPlayerView(
         }
     }
 
-    fun getOptionsMenuItems(): List<BottomSheetItem> = listOf(
+    fun getOptionsMenuItems(): List<BottomSheetItem> = ytOptionsMenuItems() + listOfNotNull(ytLoopMenuItem())
+
+    // YT: the explanation loop, after the upstream options
+    private fun ytLoopMenuItem(): BottomSheetItem? {
+        val open = ytLoopEntry ?: return null
+        return BottomSheetItem(
+            context.getString(R.string.yt_r12_c_loop_title),
+            R.drawable.ic_repeat,
+            { ytLoopSummary?.invoke() },
+        ) { open() }
+    }
+
+    /** YT: the controls stay while an explanation loop is marked on the time bar, then hide as after a scrub. */
+    fun ytHoldControls(hold: Boolean) {
+        cancelHideControllerTask()
+        if (!hold) enqueueHideControllerTask()
+    }
+
+    private fun ytOptionsMenuItems(): List<BottomSheetItem> = listOf(
         BottomSheetItem(
             context.getString(R.string.repeat_mode),
             R.drawable.ic_repeat,

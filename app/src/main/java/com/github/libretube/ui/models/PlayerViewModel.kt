@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.media3.common.util.UnstableApi
 import com.github.libretube.api.obj.Segment
 import com.github.libretube.helpers.PlayerHelper
+import com.github.libretube.ui.yt.player.YtLoop
 
 @UnstableApi
 class PlayerViewModel : ViewModel() {
@@ -21,4 +22,9 @@ class PlayerViewModel : ViewModel() {
      * Set to true if the activity will be recreated due to an orientation change
      */
     var isOrientationChangeInProgress = false
+
+    // YT: the explanation loop as the page last saw it (the service runs it), and an A set in
+    // its sheet that waits for its B (-1: none)
+    var ytLoop: YtLoop? = null
+    var ytLoopDraftAMs: Long = -1L
 }

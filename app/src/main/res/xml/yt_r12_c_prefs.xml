@@ -30,6 +30,13 @@
             app:key="yt_return_chip"
             app:title="@string/yt_r12_c_return_chip_title" />
 
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_repeat"
+            android:summary="@string/yt_r12_c_loop_hold_summary"
+            app:defaultValue="true"
+            app:key="yt_loop_hold"
+            app:title="@string/yt_r12_c_loop_hold_title" />
+
     </PreferenceCategory>
 
 </PreferenceScreen>

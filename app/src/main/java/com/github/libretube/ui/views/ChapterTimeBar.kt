@@ -52,6 +52,11 @@ class ChapterTimeBar(
     }
     private val notchPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
+    init {
+        // YT: the loop's handles come above the chapter breaks (drawMarkers)
+        drawsLoopHandlesItself = false
+    }
+
     override fun onDraw(canvas: Canvas) {
         val saveCount = canvas.saveLayer(null, null)
         super.onDraw(canvas)
@@ -87,6 +92,7 @@ class ChapterTimeBar(
     }
 
     private fun drawMarkers(canvas: Canvas) {
+        drawLoopHandles(canvas)
         val cy = height / 2f
         val origin = scrubOriginMs
         if (origin >= 0L) {
@@ -116,6 +122,9 @@ class ChapterTimeBar(
     fun setChapters(chapters: List<ChapterSegment>) {
         this.chapters = chapters
     }
+
+    /** YT: the chapters' starts in ms as the bar shows them (for the loop's "this chapter"). */
+    val loopChapterStartsMs: LongArray get() = chapterStartsMs()
 
     override fun chapterStartsMs(): LongArray =
         chapters.filter { it.highlightDrawable == null }.map { it.start * 1000 }.toLongArray()
