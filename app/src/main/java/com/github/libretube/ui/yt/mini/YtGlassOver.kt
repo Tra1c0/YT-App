@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -271,6 +272,7 @@ private fun DrawScope.drawPlate(image: ImageBitmap?, frame: FloatArray, rim: Flo
 internal fun GlassOverlay(scene: YtMiniScene) {
     val density = LocalDensity.current.density
     val motion = LocalYtMotion.current
+    val motionAllowed by rememberUpdatedState(motion)
 
     // the colour of the video for the glass, copied while docked, playing and on screen
     val bleed = remember { YtMiniBleed() }
@@ -279,7 +281,9 @@ internal fun GlassOverlay(scene: YtMiniScene) {
         onDispose { if (YtGlassSlab.bleed === bleed) YtGlassSlab.bleed = null }
     }
     LaunchedEffect(bleed) {
-        bleed.run(surface = scene.surface, active = { YtDock.docked && YtDock.progress >= 0.99f && scene.info.playing })
+        bleed.run(surface = scene.surface, active = {
+            motionAllowed && YtDock.docked && YtDock.progress >= 0.99f && scene.info.playing
+        })
     }
 
     val space = remember { GlassSpace() }

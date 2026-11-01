@@ -15,15 +15,15 @@
 b_checks() {
   local size h x0 y0 mx my mid
   if ! open_test_video; then
-    mark "B: no test video, the minimize checks are skipped"
+    gesture_fail "B: no test video for the minimize checks"
     return 0
   fi
   sleep 3
   size=$(screen_size)
   read -r _ h <<< "$size"
-  [ -n "$h" ] || { mark "B: no screen size"; return 0; }
+  [ -n "$h" ] || { gesture_fail "B: no screen size"; return 1; }
   read -r x0 y0 <<< "$(center_of 'id/player$')"
-  numbers "${x0:-}" "${y0:-}" || { mark "B: no picture of the player on screen, the minimize checks are skipped"; return 0; }
+  numbers "${x0:-}" "${y0:-}" || { gesture_fail "B: no player picture"; return 1; }
 
   # 1. down from the middle of the video, slowly: the video shrinks under the finger
   log_mark

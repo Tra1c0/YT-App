@@ -52,6 +52,21 @@ class HomeViewModel : ViewModel() {
     private val sections get() = listOf(trending, feed, bookmarks, playlists, continueWatching)
 
     private var loadHomeJob: Job? = null
+    private var emulatorFixture = false
+
+    /** Fixed local metadata for real UI gesture tests; inaccessible to intents on a phone. */
+    fun useEmulatorFixture(videos: List<StreamItem>) {
+        if (!com.github.libretube.helpers.YtGuard.isEmulator) return
+        emulatorFixture = true
+        loadHomeJob?.cancel()
+        feed.value = videos
+        trending.value = TrendingCategory.GAMING to TrendsViewModel.TrendingStreams("US", videos)
+        continueWatching.value = videos.take(2)
+        bookmarks.value = emptyList()
+        playlists.value = emptyList()
+        isLoading.value = false
+        loadedSuccessfully.value = true
+    }
 
     fun loadHomeFeed(
         context: Context,
@@ -59,6 +74,7 @@ class HomeViewModel : ViewModel() {
         visibleItems: Set<String>,
         onUnusualLoadTime: () -> Unit
     ) {
+        if (emulatorFixture) return
         isLoading.value = true
 
         loadHomeJob?.cancel()

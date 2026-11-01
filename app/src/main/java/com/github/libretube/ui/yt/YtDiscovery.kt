@@ -38,6 +38,14 @@ object YtDiscovery {
     val byCategory = MutableStateFlow<Map<TrendingCategory, List<StreamItem>>>(emptyMap())
     private val scope = MainScope()
     private var loading = false
+    private var emulatorFixture = false
+
+    fun useEmulatorFixture(items: List<StreamItem>) {
+        if (!com.github.libretube.helpers.YtGuard.isEmulator) return
+        emulatorFixture = true
+        videos.value = items
+        byCategory.value = categories.associateWith { items }
+    }
 
     /** The charts loaded so far, or null (the time box plans from them). */
     fun current(): List<StreamItem>? = videos.value
@@ -57,7 +65,7 @@ object YtDiscovery {
     }
 
     private suspend fun load(context: Context) {
-        if (loading) return
+        if (loading || emulatorFixture) return
         loading = true
         try {
             val region = PreferenceHelper.getTrendingRegion(context)
@@ -71,6 +79,7 @@ object YtDiscovery {
                     }.awaitAll()
                 }
             }
+            if (emulatorFixture) return
             byCategory.value = categories.zip(lists).toMap()
                 .mapValues { (_, list) -> list.filter { it.url != null && !it.isUpcoming }.distinctBy { it.url } }
             // one from each chart in turn

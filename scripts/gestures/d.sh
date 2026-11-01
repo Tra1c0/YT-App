@@ -11,10 +11,20 @@
 
 # a fresh start on the home: no player, nothing left over from the checks before
 d_home() {
+  local from
+  from=$(wc -l < "logcat-${design:-standard}.txt" 2>/dev/null || echo 0)
   timeout 20 adb shell am force-stop "$PKG" || true
   timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true ${START_EXTRAS[@]+"${START_EXTRAS[@]}"} >/dev/null \
     || echo "start timed out"
-  sleep "${YT_WAIT:-20}"
+  for _ in $(seq 1 30); do
+    if tail -n +"$((from + 1))" "logcat-${design:-standard}.txt" | grep -a -q 'home fixture n='; then
+      sleep 1
+      return 0
+    fi
+    sleep 0.5
+  done
+  d_fail "the local home fixture did not load"
+  return 1
 }
 
 # taps the element with resource-id (test tag) $1; status 1 if it is not on screen
@@ -34,6 +44,7 @@ d_card() {
 }
 
 d_fail() {
+  gesture_checks=$(( ${gesture_checks:-0} + 1 ))
   echo "FAIL ${design:-?} d: $*"
   gesture_fails=$(( ${gesture_fails:-0} + 1 ))
 }
@@ -144,7 +155,7 @@ d_checks() {
     texts | head -n 5
     d_home
   else
-    mark "d: no search button or card, the search drag check is skipped"
+    d_fail "no search button or card for the search drag"
     # what the dump has as buttons with a description, to find the search button's
     ui | grep -a -o 'content-desc="[^"]\{1,40\}"' | sort -u | head -n 12 | tr '\n' ' '
     echo
@@ -166,7 +177,7 @@ d_checks() {
     fi
     d_home
   else
-    mark "d: no time box chip (switched off?), the time box check is skipped"
+    d_fail "no time box chip"
   fi
 
   # the intent chooser: opened by the test hook (it never opens by itself in the emulator),
@@ -220,7 +231,7 @@ d_checks() {
       d_fail "the Feed-Regler did not open (yt_feed_sheet)"
     fi
   else
-    mark "d: no Feed-Regler button on screen (yt_feed_button), the sheet check is skipped"
+    d_fail "no Feed-Regler button on screen (yt_feed_button)"
   fi
 
   # with the mini player docked (the test video plays offline, so online cards wait in the
@@ -253,7 +264,7 @@ d_checks() {
       d_fail "no home card under the mini player"
     fi
   else
-    mark "d: no test video, the mini player check is skipped"
+    d_fail "no test video for the mini player check"
   fi
 }
 

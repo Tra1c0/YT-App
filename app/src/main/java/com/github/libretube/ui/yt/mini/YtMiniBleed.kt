@@ -16,6 +16,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -83,13 +85,17 @@ class YtMiniBleed {
         pending = true
         val result = try {
             suspendCancellableCoroutine { continuation ->
-                PixelCopy.request(view, target, { code -> if (continuation.isActive) continuation.resume(code) }, handler)
+                PixelCopy.request(view, target, { code ->
+                    // Cancellation cannot cancel PixelCopy. Keep its target reserved until
+                    // the actual callback, including when the screen stopped meanwhile.
+                    pending = false
+                    if (continuation.isActive) continuation.resume(code)
+                }, handler)
             }
         } catch (_: IllegalArgumentException) {
             // the surface went away between the check and the request
-            PixelCopy.ERROR_SOURCE_INVALID
-        } finally {
             pending = false
+            PixelCopy.ERROR_SOURCE_INVALID
         }
         if (result != PixelCopy.SUCCESS) {
             failures++
@@ -104,7 +110,15 @@ class YtMiniBleed {
     }
 
     /** Blurs the copy, eases it towards the last frame and shows it. */
-    private fun publish(source: Bitmap, sourceAspect: Float) {
+    private suspend fun publish(source: Bitmap, sourceAspect: Float) {
+        val out = withContext(Dispatchers.Default) { blurCopy(source) }
+        aspect = sourceAspect
+        frame = out
+        generation++
+    }
+
+    /** Pixel processing stays off the UI thread; collectLatest serializes these copies. */
+    private fun blurCopy(source: Bitmap): Bitmap {
         val width = source.width
         val height = source.height
         val size = width * height
@@ -123,9 +137,7 @@ class YtMiniBleed {
             ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { buffers[next] = it }
         out.setPixels(pixels, 0, width, 0, 0, width, height)
         front = next
-        aspect = sourceAspect
-        frame = out
-        generation++
+        return out
     }
 
     companion object {

@@ -2,6 +2,62 @@ name: Crash check
 
 # Starts a published build in an emulator, once per chosen design, and collects the crash log.
 on:
+  workflow_call:
+    inputs:
+      artifact_name:
+        type: string
+        required: true
+      source_sha:
+        type: string
+        required: true
+      design:
+        type: string
+        default: all
+      api:
+        type: string
+        default: "34"
+      target:
+        type: string
+        default: default
+      gpu:
+        type: string
+        default: swiftshader_indirect
+      night:
+        type: boolean
+        default: true
+      locale:
+        type: string
+        default: de-DE
+      screens:
+        type: boolean
+        default: true
+      gestures:
+        type: boolean
+        default: true
+      test_video:
+        type: boolean
+        default: true
+      signin_probe:
+        type: boolean
+        default: false
+      pip:
+        type: boolean
+        default: false
+      float:
+        type: boolean
+        default: false
+      lock:
+        type: boolean
+        default: false
+      video:
+        type: string
+        default: ""
+      wait:
+        type: string
+        default: "5"
+      check_upgrades:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       build:
@@ -80,6 +136,8 @@ jobs:
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
 
       - name: Enable KVM
         run: |
@@ -88,7 +146,27 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       # a number is a build of main (build-<n>), anything else a full tag (check-<n>-<commit> of a branch)
+      - name: Download the exact CI artifact
+        if: inputs.artifact_name != ''
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: apk
+
+      - name: Check artifact provenance
+        if: inputs.artifact_name != ''
+        env:
+          EXPECTED_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          (cd apk && sha256sum -c VALIDATION_SHA256SUMS)
+          [ "$(jq -r .commit apk/build.json)" = "$EXPECTED_SHA" ]
+          echo "YT_TAG=commit-${EXPECTED_SHA::7}" >> "$GITHUB_ENV"
+          mkdir -p build/gesture-driver
+          cp apk/yt-input.jar build/gesture-driver/
+
       - name: Download the build
+        if: inputs.artifact_name == ''
         env:
           GH_TOKEN: ${{ github.token }}
           YT_BUILD: ${{ inputs.build }}
@@ -113,6 +191,19 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Build the manual check's input driver
+        if: inputs.gestures && inputs.artifact_name == ''
+        run: bash scripts/build-gesture-driver.sh
+
+      - name: Download upgrade baselines
+        if: inputs.check_upgrades
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p upgrade-baselines/build-64 upgrade-baselines/stable
+          gh release download check-64-37a72ac --pattern '*.apk' --dir upgrade-baselines/build-64 --repo "$GITHUB_REPOSITORY"
+          gh release download --pattern '*.apk' --dir upgrade-baselines/stable --repo "$GITHUB_REPOSITORY"
+
       - name: Run the app
         uses: reactivecircus/android-emulator-runner@v2
         timeout-minutes: 45
@@ -129,6 +220,7 @@ jobs:
           YT_TEST_VIDEO: ${{ inputs.test_video && 'yes' || 'no' }}
           YT_VIDEO: ${{ inputs.video }}
           YT_WAIT: ${{ inputs.wait }}
+          YT_CHECK_UPGRADES: ${{ inputs.check_upgrades && 'yes' || 'no' }}
         with:
           api-level: ${{ inputs.api }}
           arch: x86_64
@@ -137,30 +229,40 @@ jobs:
           emulator-boot-timeout: 1200
           emulator-options: -no-window -gpu ${{ inputs.gpu }} -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
-          script: bash scripts/crash-check.sh
+          script: |
+            if [ "$YT_CHECK_UPGRADES" = yes ]; then bash scripts/check-upgrade.sh; fi
+            bash scripts/crash-check.sh
 
       - name: Upload logcat
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: logcat-${{ env.YT_TAG }}-${{ inputs.design }}-${{ inputs.night && 'night' || 'day' }}
+          name: logs-${{ env.YT_TAG }}-${{ inputs.design }}-api${{ inputs.api }}
           path: |
             logcat-*.txt
             crash-*.txt
             dumpsys-*.txt
+            anr-*.txt
+            input-driver.log
+            upgrade-*.json
+
+      - name: Upload screenshots
+        if: always() && (inputs.screens || inputs.gestures || inputs.test_video)
+        uses: actions/upload-artifact@v6
+        with:
+          name: screens-${{ env.YT_TAG }}-${{ inputs.design }}-api${{ inputs.api }}
+          path: screens/*.png
+          if-no-files-found: warn
 
       # the screenshots as release files: they can be fetched like the APKs; older sets go
       - name: Publish the screenshots
-        if: always() && (inputs.screens || inputs.pip || inputs.lock || inputs.float || inputs.gestures || inputs.test_video)
+        if: always() && github.event_name == 'workflow_dispatch' && (inputs.screens || inputs.pip || inputs.lock || inputs.float || inputs.gestures || inputs.test_video)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           # a screenshot taken after the emulator died is empty
           find screens -name '*.png' -size -2k -delete 2>/dev/null || true
           ls screens/*.png >/dev/null 2>&1 || { echo "no screenshots"; exit 0; }
-          for tag in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName' | grep '^screens-' || true); do
-            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
-          done
           gh release create "screens-${{ github.run_number }}" screens/*.png --repo "$GITHUB_REPOSITORY" \
             --prerelease --title "Screenshots ${{ github.run_number }} ($YT_TAG)" \
             --notes "Emulator screenshots of $YT_TAG: designs ${{ inputs.design }}, dark mode ${{ inputs.night }}."

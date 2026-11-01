@@ -370,17 +370,17 @@ fun ytScale(configuration: Configuration): Float {
 
 /**
  * Density for the design screens: dp and sp grow with the screen width. The text keeps the
- * size of the reference; only an accessibility font size above "large" still enlarges it.
+ * proportions of the reference while respecting the user's complete font-size setting.
  */
 fun ytDensity(base: Density, configuration: Configuration): Density = Density(
     density = base.density * ytScale(configuration),
-    fontScale = (base.fontScale / 1.15f).coerceAtLeast(1f),
+    fontScale = base.fontScale,
 )
 
 @Composable
 fun YtTheme(palette: YtPalette, content: @Composable () -> Unit) {
     val density = ytDensity(LocalDensity.current, LocalConfiguration.current)
-    val motion = YtMotionPrefs.enabled
+    val motion = rememberYtMotionAllowed()
     // the glass designs let their light follow the tilt of the phone: one sensor per screen
     val glass = palette.surfaceStyle == YtSurfaceStyle.GLASS || palette.surfaceStyle == YtSurfaceStyle.FROST
     val tilt = rememberYtGravity(motion && glass)

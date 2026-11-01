@@ -605,6 +605,8 @@ class CustomExoPlayerView(
         // remove the previous callback from the queue to prevent a flashing behavior
         cancelHideControllerTask()
         super.showController()
+        backgroundBinding.exoControlsBackground.animate().cancel()
+        backgroundBinding.exoControlsBackground.alpha = 1f
     }
 
     private fun initRewindAndForward() {

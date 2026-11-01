@@ -11,9 +11,8 @@ a_checks() {
   log_mark
   # the test video with three videos queued after it (the preview shows the next one), docked
   if ! open_test_video --ei yt_queue_test 3; then
-    mark "a: no test video; the online video instead"
-    open_online_video
-    sleep 15
+    gesture_fail "a: no test video for the mini player checks"
+    return 1
   fi
   sleep 4
   timeout 10 adb shell input keyevent KEYCODE_BACK || true
@@ -37,7 +36,7 @@ a_checks() {
       expect_log YtMini "^bounds ${box// / }\$"
     fi
   else
-    mark "a: no main_container on screen"
+    gesture_fail "a: no main_container on screen"
   fi
 
   # a long press on the picture: the preview grows (the finger stays still), letting go
@@ -54,7 +53,7 @@ a_checks() {
     rawshot "$design-a-3-after"
     expect_log YtMini 'peek=0 target=none'
   else
-    mark "a: no picture of the mini player on screen"
+    gesture_fail "a: no picture of the mini player on screen"
   fi
 }
 
@@ -66,7 +65,7 @@ a_glass_checks() {
   [ "${design:-}" = glass ] || return 0
   local box l t r b x y pill row arrow
   if ! box=$(bounds_of 'id/player$'); then
-    mark "a-glass: no picture of the mini player on screen"
+    gesture_fail "a-glass: no picture of the mini player on screen"
     return 0
   fi
   read -r l t r b <<< "$box"

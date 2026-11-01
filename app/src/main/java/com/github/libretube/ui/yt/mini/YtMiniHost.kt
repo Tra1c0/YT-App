@@ -26,6 +26,7 @@ import androidx.dynamicanimation.animation.SpringForce
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -197,9 +198,11 @@ class YtMiniHost private constructor(
     private fun Content(poll: Boolean, content: @Composable () -> Unit) {
         if (poll) {
             LaunchedEffect(Unit) {
-                while (true) {
-                    scene.info = info()
-                    delay(if (YtDock.docked) 350L else 1500L)
+                fragment.viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    while (true) {
+                        scene.info = info()
+                        delay(if (YtDock.docked) 350L else 1500L)
+                    }
                 }
             }
         }

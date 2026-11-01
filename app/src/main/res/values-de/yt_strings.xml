@@ -266,4 +266,7 @@
     <string name="yt_editorial_by">Von</string>
     <string name="yt_editorial_contents">Inhalt</string>
     <string name="yt_editorial_letters">Leserbriefe</string>
+    <string name="yt_update_title">Updates auf GitHub</string>
+    <string name="yt_update_summary">Version %s · Öffnet die Releases im Browser. Für private Builds bei GitHub anmelden.</string>
+    <string name="yt_update_open_failed">Installiere einen Browser oder die GitHub-App, um die Releases zu öffnen.</string>
 </resources>

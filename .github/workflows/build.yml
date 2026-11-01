@@ -2,21 +2,20 @@ name: Build YT
 
 on:
   workflow_dispatch:
+    inputs:
+      full_validation:
+        description: "Check all designs and Android 8/16 compatibility"
+        type: boolean
+        default: false
   push:
-    # main publishes the latest build; a round-12 branch publishes a test build (pre-release)
-    branches:
-      - main
-      - "r12/**"
-    paths-ignore:
-      - "**.md"
-      - "fastlane/**"
-      - "assets/**"
-      - "scripts/**"
-      - ".github/workflows/crash-check.yml"
-      - ".github/workflows/signing-key.yml"
+    branches: [main, "r12/**"]
+    paths-ignore: ["**.md", "fastlane/**", "assets/**", ".github/workflows/signing-key.yml"]
+  pull_request:
+    branches: [main]
+    paths-ignore: ["**.md", "fastlane/**", "assets/**"]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: build-${{ github.ref }}
@@ -24,16 +23,17 @@ concurrency:
 
 jobs:
   build:
-    name: Build and publish APK
+    name: Build and test APK
     runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.bundle.outputs.artifact }}
+      full: ${{ steps.bundle.outputs.full }}
+      designs: ${{ steps.bundle.outputs.designs }}
     env:
-      # Becomes part of the version code, so every build installs over the previous one.
       YT_BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v6
-
       - uses: gradle/actions/wrapper-validation@v5
-
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
@@ -82,6 +82,7 @@ jobs:
             debug "The key in YT_SIGNING cannot be opened (value: ${#value} characters). Copy the whole first box of \"Create signing key\" again."
           fi
           fp=$(printf '%s\n' "$info" | grep -m1 "SHA256:" | sed 's/.*SHA256: //' || true)
+          echo "::add-mask::$pass"
           echo "YT_KEYSTORE_PATH=$key" >> "$GITHUB_ENV"
           echo "YT_KEYSTORE_PASSWORD=$pass" >> "$GITHUB_ENV"
           echo "SIGNED_WITH=personal key (SHA-256 $fp)" >> "$GITHUB_ENV"
@@ -114,103 +115,160 @@ jobs:
           rm -f en.txt de.txt
           [ "$failed" = 0 ] || { echo "::error::The English and German YT strings differ (see above)"; exit 1; }
 
-      # the YT unit tests (plain JVM, no Android): a failing test stops the build before anything
-      # is published. The upstream tests are compiled but not run; they are not YT's to keep green.
-      # On the release variant, so the release build below reuses the compiled app (AGP 9 makes
-      # that task only with android.onlyEnableUnitTestForTheTestedBuildType=false; without it,
-      # the debug variant is tested instead, at the cost of a second compile).
-      - name: Run the YT unit tests
-        run: |
-          set -o pipefail
-          filter=(--tests 'com.github.libretube.helpers.Yt*' --tests 'com.github.libretube.ui.yt.*')
-          if ! ./gradlew :app:testReleaseUnitTest --no-daemon "${filter[@]}" 2>&1 | tee unit-tests.log; then
-            grep -q "testReleaseUnitTest' not found" unit-tests.log || exit 1
-            echo "::warning::No release unit test task; testing the debug variant"
-            ./gradlew :app:testDebugUnitTest --no-daemon "${filter[@]}"
-          fi
+      - name: Run all app unit tests
+        run: ./gradlew :app:testReleaseUnitTest --no-daemon --console=plain
 
-      - name: Upload the test report
-        if: failure()
+      - name: Upload test reports
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: unit-test-report-${{ github.run_number }}
           path: app/build/reports/tests/
           if-no-files-found: ignore
 
-      - name: Build release APK
-        run: ./gradlew assembleRelease --no-daemon
-
-      - name: Collect APK
-        id: apk
+      - name: Build release APK and input driver
         run: |
-          src=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
-          name="YT-32.1-yt.${YT_BUILD_NUMBER}.apk"
-          mkdir -p out
-          cp "$src" "out/$name"
-          echo "name=$name" >> "$GITHUB_OUTPUT"
+          ./gradlew assembleRelease --no-daemon --console=plain
+          bash scripts/build-gesture-driver.sh
 
-      - name: Upload build artifact
+      - name: Collect the exact build to validate
+        id: bundle
+        env:
+          FULL_VALIDATION: ${{ github.ref == 'refs/heads/main' || inputs.full_validation == true }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cp app/build/outputs/apk/release/*.apk "out/YT-32.1-yt.${YT_BUILD_NUMBER}.apk"
+          cp app/build/outputs/mapping/release/mapping.txt out/
+          cp build/gesture-driver/yt-input.jar out/
+          python3 - <<'META'
+          import json, os
+          from pathlib import Path
+          Path('out/build.json').write_text(json.dumps({
+              'commit': os.environ['GITHUB_SHA'],
+              'number': int(os.environ['YT_BUILD_NUMBER']),
+              'signing': os.environ['SIGNED_WITH'],
+              'personal': os.environ.get('YT_DEBUG_SIGNED') != 'true',
+          }, indent=2) + '\n')
+          META
+          (cd out && sha256sum *.apk > SHA256SUMS && sha256sum *.apk mapping.txt yt-input.jar build.json > VALIDATION_SHA256SUMS)
+          echo "artifact=yt-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "full=$FULL_VALIDATION" >> "$GITHUB_OUTPUT"
+          if [ "$FULL_VALIDATION" = true ]; then
+            echo 'designs=["standard","youtube","movo","after","side","clay","editorial","glass","pop","shapes","frost","kiesel"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'designs=["youtube","glass"]' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload APK and validation inputs
         uses: actions/upload-artifact@v6
         with:
-          name: ${{ steps.apk.outputs.name }}
-          path: out/${{ steps.apk.outputs.name }}
+          name: ${{ steps.bundle.outputs.artifact }}
+          path: out/
+          retention-days: 14
 
-      # main: build-<run>, the latest build (unless signed with the throwaway key). Any other
-      # branch: check-<run>-<commit>, a pre-release that never becomes the latest build, so the
-      # crash check can test it and nobody gets it as an update.
-      - name: Name the release
+  gestures:
+    name: Gestures (${{ matrix.design }})
+    needs: build
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        design: ${{ fromJSON(needs.build.outputs.designs) }}
+    uses: ./.github/workflows/crash-check.yml
+    with:
+      artifact_name: ${{ needs.build.outputs.artifact }}
+      source_sha: ${{ github.sha }}
+      design: ${{ matrix.design }}
+      gestures: true
+      test_video: true
+      screens: true
+      signin_probe: false
+      api: "34"
+      target: default
+
+  compatibility:
+    name: Compatibility (API ${{ matrix.api }})
+    needs: build
+    if: needs.build.outputs.full == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        api: ["26", "36"]
+    uses: ./.github/workflows/crash-check.yml
+    with:
+      artifact_name: ${{ needs.build.outputs.artifact }}
+      source_sha: ${{ github.sha }}
+      design: all
+      api: ${{ matrix.api }}
+      target: default
+      gestures: false
+      check_upgrades: true
+      test_video: true
+      screens: true
+      signin_probe: false
+
+  publish:
+    name: Publish verified APK
+    needs: [build, gestures, compatibility]
+    if: >-
+      always() && !cancelled() && github.event_name != 'pull_request' &&
+      needs.build.result == 'success' && needs.gestures.result == 'success' &&
+      (needs.compatibility.result == 'success' || needs.compatibility.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: ${{ needs.build.outputs.artifact }}
+          path: out
+      - name: Verify and name the release
         id: release
+        env:
+          FULL_VALIDATION: ${{ needs.build.outputs.full }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+          set -euo pipefail
+          (cd out && sha256sum -c VALIDATION_SHA256SUMS)
+          [ "$(jq -r .commit out/build.json)" = "$GITHUB_SHA" ]
+          personal=$(jq -r .personal out/build.json)
+          if [ "$GITHUB_REF" = refs/heads/main ] && [ "$personal" = true ] && [ "$FULL_VALIDATION" = true ]; then
             tag="build-$GITHUB_RUN_NUMBER"
-            name="YT Build $GITHUB_RUN_NUMBER"
-            note=""
-            if [ "${YT_DEBUG_SIGNED:-}" = "true" ]; then latest=false; pre=true; else latest=true; pre=false; fi
+            title="YT Build $GITHUB_RUN_NUMBER"
+            latest=true
+            prerelease=false
           else
             tag="check-$GITHUB_RUN_NUMBER-${GITHUB_SHA::7}"
-            name="YT test build $GITHUB_RUN_NUMBER of the branch $GITHUB_REF_NAME"
-            note="Test build of the branch $GITHUB_REF_NAME, not a release: for the crash check and for trying it out."
+            title="YT test build $GITHUB_RUN_NUMBER of the branch $GITHUB_REF_NAME"
             latest=false
-            pre=true
+            prerelease=true
           fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
           {
-            echo "tag=$tag"
-            echo "name=$name"
-            echo "note=$note"
-            echo "latest=$latest"
-            echo "prerelease=$pre"
-          } >> "$GITHUB_OUTPUT"
-
+            echo "YT build $GITHUB_RUN_NUMBER from commit $GITHUB_SHA."
+            echo "Signed with: $(jq -r .signing out/build.json)."
+            echo "Unit tests and emulator gesture checks passed."
+            if [ "$FULL_VALIDATION" = true ]; then
+              echo 'All twelve designs and Android 8/14/16 compatibility were checked.'
+            else
+              echo 'Preview: YouTube and Glas checked on Android 14; full design and compatibility validation is pending.'
+            fi
+          } > release-notes.md
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release.outputs.tag }}
-          name: ${{ steps.release.outputs.name }}
+          name: ${{ steps.release.outputs.title }}
           target_commitish: ${{ github.sha }}
           make_latest: ${{ steps.release.outputs.latest }}
           prerelease: ${{ steps.release.outputs.prerelease }}
+          body_path: release-notes.md
           files: |
-            out/${{ steps.apk.outputs.name }}
-            app/build/outputs/mapping/release/mapping.txt
-          fail_on_unmatched_files: false
-          body: |
-            YT build ${{ github.run_number }} from commit ${{ github.sha }}.
-            Signed with: ${{ env.SIGNED_WITH }}.
-            ${{ steps.release.outputs.note }}
-
-      # a branch keeps its last three test builds; older ones go with their tags, so the many
-      # pushes of the round-12 branches do not pile up releases (crash-check fetches its build
-      # when it starts, so a run that is under way keeps working)
-      - name: Remove older test builds of this branch
-        if: github.ref != 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          old=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 300 --json tagName,name \
-            | jq -r --arg branch " of the branch $GITHUB_REF_NAME" \
-              '.[] | select((.tagName | startswith("check-")) and (.name | endswith($branch))) | .tagName' \
-            | sort -t- -k2,2nr | tail -n +4)
-          for tag in $old; do
-            echo "removing the older test build $tag"
-            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
-          done
+            out/*.apk
+            out/mapping.txt
+            out/build.json
+            out/SHA256SUMS

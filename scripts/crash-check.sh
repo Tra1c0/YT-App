@@ -70,7 +70,7 @@ RETRACE=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/retrace 2>/dev/null | head -n 1
 crashed=""
 # extras for every start of the app; the gesture checks log the gestures (YtTestHooks, emulator only)
 START_EXTRAS=()
-[ "${YT_GESTURES:-no}" = "yes" ] && START_EXTRAS+=(--ez yt_gesture_log true)
+[ "${YT_GESTURES:-no}" = "yes" ] && START_EXTRAS+=(--ez yt_gesture_log true --ez yt_home_fixture true)
 
 # the time on the device, to line up with its log
 mark() { echo "$(timeout 5 adb shell date +%H:%M:%S 2>/dev/null | tr -d '\r') $*"; }
@@ -111,6 +111,10 @@ ui_dump() {
   timeout 30 adb shell uiautomator dump /sdcard/ui.xml 2>&1 | tr -d '\r' | grep -a -i -m1 'error' || true
 }
 ui() {
+  if [ "${YT_INPUT_READY:-no}" = yes ]; then
+    driver_command DUMP | grep -o '<node [^>]*>'
+    return
+  fi
   local err scales k
   err=$(ui_dump)
   if [ -n "$err" ]; then
@@ -179,7 +183,12 @@ anr_watch() {
 }
 anr_watch > anr-watch.txt 2>&1 &
 ANR_WATCH=$!
-trap 'kill "$ANR_WATCH" 2>/dev/null || true' EXIT
+trap 'kill "$ANR_WATCH" 2>/dev/null || true; declare -F driver_stop >/dev/null && driver_stop' EXIT
+if [ "${YT_GESTURES:-no}" = yes ]; then
+  . scripts/gestures/driver.sh
+  driver_start || { echo '::error::The gesture input driver could not start'; exit 2; }
+  YT_INPUT_READY=yes
+fi
 # the local test video: into the app's private files after its first start (pm clear wipes them,
 # so once per design), with the owner and SELinux label of the app's own files, so the app reads
 # it like one of its downloads. Needs adb root, which the emulator images allow.
@@ -610,13 +619,20 @@ for design in $DESIGNS; do
     mkdir -p screens
     echo "::group::$design: gesture checks"
     gesture_fails=0
+    gesture_checks=0
     # shellcheck disable=SC2034 # read by lib.sh
     LOG_FROM=0
     # shellcheck source=scripts/gestures/lib.sh
     . scripts/gestures/lib.sh
     anim_on
     # shellcheck source=/dev/null
-    for f in scripts/gestures/[a-e].sh; do . "$f"; done
+    for f in scripts/gestures/[a-e].sh; do
+      before_checks=$gesture_checks
+      . "$f"
+      if [ "$gesture_checks" = "$before_checks" ]; then
+        gesture_fail "$(basename "$f"): no assertions ran"
+      fi
+    done
     anim_off
     rm -f screens/*.raw
     echo "gesture checks failed: $gesture_fails"
@@ -645,7 +661,10 @@ for design in $DESIGNS; do
   grep -a -A2 "FATAL EXCEPTION" "logcat-$design.txt" | grep -a "Process:" | sed 's/^.*Process: /  crashed: /' | cut -c1-120 | sort | uniq -c || true
   if [ -s "crash-$design.txt" ] || [ "$state" != "running" ]; then crashed="$crashed $design"; fi
   anrs=$(grep -a -c "ANR in $PKG" "logcat-$design.txt" || true)
-  [ "${anrs:-0}" -gt 0 ] && echo "::warning::$design: Android saw the app not responding $anrs time(s) (on the emulator mostly the GPU programs of a cold start; see the thread stacks)"
+  if [ "${anrs:-0}" -gt 0 ]; then
+    echo "::error::$design: Android reported $anrs app hang(s)"
+    crashed="$crashed $design-anr"
+  fi
   echo "::group::$design: process after $WAIT s is $state"
   if [ -s "crash-$design.txt" ]; then
     head -60 "crash-$design.txt"
@@ -654,7 +673,7 @@ for design in $DESIGNS; do
     rm -f "crash-$design.txt"
     grep -n " E \| F " "logcat-$design.txt" | grep -i "$PKG\|libretube\|AndroidRuntime" | grep -v "jdwp\|JobScheduler\|ActivityManager:" | head -40 || true
   fi
-  if [ "$state" != "running" ]; then
+  if [ "$state" != "running" ] || [ "${anrs:-0}" -gt 0 ]; then
     # why the process went without a Java crash: native signal, low-memory kill, system kill
     echo "--- how the process ended"
     grep -a -E "Fatal signal|SIGSEGV|SIGABRT|SIGBUS|Abort message|backtrace:|#0[0-9] pc|lowmemorykiller|lmkd|Killing [0-9]+:$PKG|$PKG.*(died|crash)|Process $PKG|am_kill|am_proc_died|Out of memory|OutOfMemory|GL error|EGL_BAD|gralloc|ANR in" "logcat-$design.txt" | cut -c1-300 | head -60 || true
@@ -703,7 +722,7 @@ if [ -n "$crashed" ]; then
     timeout 300 "$RETRACE" apk/mapping.txt crashes.txt | head -600 || echo "retrace did not finish in time"
     echo "::endgroup::"
   fi
-  echo "::error::The app crashed in:$crashed"
+  echo "::error::Failed app checks:$crashed (crash, process, gesture and ANR failures are listed above)"
   exit 1
 fi
 echo "No crash in any of the designs: $DESIGNS"

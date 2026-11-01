@@ -11,6 +11,7 @@
 
 # a result line like expect_log's, for what the script works out itself
 c_verdict() {
+  gesture_checks=$(( ${gesture_checks:-0} + 1 ))
   local result="$1" what="$2" detail="$3"
   [ "$result" = OK ] || gesture_fails=$(( ${gesture_fails:-0} + 1 ))
   echo "$result ${design:-?} c: $what: $detail" | cut -c1-260
@@ -28,7 +29,9 @@ c_open_with_bar() {
   local bar
   # the controls go up before "test hooks done", which open_test_video waits for
   open_test_video --ez yt_controls_test true "$@" >&2 || return 1
-  bar=$(tag_messages YtTest | grep -a -o -E 'controls test shown=true bar=-?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+' | tail -n 1 | sed 's/.*bar=//')
+  # Measure the current view, after layout. The initial hook's bounds can be stale
+  # after a resized video or a fullscreen transition.
+  bar=$(bounds_of 'id/exo_progress$') || return 1
   local four='^-?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+$'
   if ! [[ "$bar" =~ $four ]]; then
     bar=$(bounds_of 'id/exo_progress$') || { mark "c: no time bar on the screen" >&2; return 1; }
@@ -65,7 +68,7 @@ c_checks() {
   # 1. the magnifier: 100 px to the right at the bar, up into the eighth, 100 px more
   log_mark
   if ! b=$(c_open_with_bar --el yt_seek_test 60000); then
-    mark "c: no test video or no time bar, the player checks are skipped"
+    gesture_fail "c: no test video or time bar"
     return 0
   fi
   read -r l t r bt <<< "$b"
@@ -256,7 +259,7 @@ c_checks() {
       c_verdict FAIL "share onto the timeline" "no Share action on the screen"
     fi
   else
-    mark "c: no test video or no time bar, the share check is skipped"
+    gesture_fail "c: no test video or time bar for sharing"
   fi
 }
 

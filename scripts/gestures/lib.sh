@@ -92,13 +92,13 @@ numbers() {
   for n in "$@"; do [[ "$n" =~ ^-?[0-9]+$ ]] || return 1; done
 }
 
-finger_down() { timeout 10 adb shell input motionevent DOWN "$1" "$2" || true; }
-finger_move() { timeout 10 adb shell input motionevent MOVE "$1" "$2" || true; }
-finger_up() { timeout 10 adb shell input motionevent UP "$1" "$2" || true; }
+finger_down() { driver_command DOWN "$1" "$2"; }
+finger_move() { driver_command MOVE "$1" "$2"; }
+finger_up() { driver_command UP "$1" "$2"; }
 # down at $1 $2 and the first move to $3 $4 in one adb call: each call takes 0.15 s and more on a
 # busy emulator, and a first move that came later than the long-press timeout (0.4 to 0.45 s)
 # would start the long press (the player's hold, a loop mark, a card's lift) instead of the drag
-finger_down_move() { timeout 10 adb shell "input motionevent DOWN $1 $2; input motionevent MOVE $3 $4" || true; }
+finger_down_move() { driver_command START "$1" "$2" "$3" "$4"; }
 
 # drag and hold_drag: the hold in seconds first, then their arguments
 drag_held() {
@@ -148,6 +148,7 @@ tag_messages() { gesture_log | grep -a -E " [VDIWEF] $1 *: " | sed -E "s/^.* [VD
 show_log() { tag_messages "$1" | tail -n "${2:-20}" | cut -c1-220; }
 
 expect_log() {
+  gesture_checks=$(( ${gesture_checks:-0} + 1 ))
   local tag="$1" pattern="$2" line="" waited=0 result
   while :; do
     line=$(tag_messages "$tag" | grep -a -E -- "$pattern" | tail -n 1)
@@ -167,4 +168,10 @@ expect_log() {
     printf -- '- **%s** %s, %s `%s`: %s\n' "$result" "${design:-?}" "$tag" "$pattern" "$(printf '%s' "${line:-no such line}" | cut -c1-160)" >> "$GITHUB_STEP_SUMMARY"
   fi
   [ "$result" = OK ]
+}
+
+gesture_fail() {
+  echo "FAIL ${design:-?}: $*"
+  gesture_checks=$(( ${gesture_checks:-0} + 1 ))
+  gesture_fails=$(( ${gesture_fails:-0} + 1 ))
 }

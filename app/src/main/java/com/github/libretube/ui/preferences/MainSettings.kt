@@ -19,7 +19,8 @@ class MainSettings : BasePreferenceFragment() {
         setPreferencesFromResource(R.xml.settings, rootKey)
 
         val update = findPreference<Preference>("update")
-        update?.summary = "v${BuildConfig.VERSION_NAME}"
+        update?.title = getString(R.string.yt_update_title)
+        update?.summary = getString(R.string.yt_update_summary, BuildConfig.VERSION_NAME)
 
         // check app update manually
         update?.setOnPreferenceClickListener {

@@ -33,7 +33,7 @@ e_checks() {
   fixture=$(scene_fixture | base64 -w0)
   log_mark
   open_test_video --el yt_seek_test 0 --es yt_comments_scene spoiler --es yt_comments_fixture "$fixture" --ez yt_comments_open true \
-    || { mark "e: no test video, no comment checks"; return 0; }
+    || { gesture_fail "e: no test video for the comment checks"; return 1; }
   expect_log YtScene 'comments sheet opened=true'
   sleep 3
   rawshot "$design-e-1-blur"
