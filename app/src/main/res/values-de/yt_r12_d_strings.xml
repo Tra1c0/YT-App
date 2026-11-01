@@ -57,4 +57,31 @@
     <string name="yt_home_search_channel">%1$s suchen</string>
     <string name="yt_home_drag">Karten und Suche ziehen</string>
     <string name="yt_home_drag_summary">Karte halten und auf den Miniplayer ziehen: Sie kommt als Nächstes, oder ans Ende, wenn schon andere warten. Die Lupe halten und auf eine Karte ziehen, um nach ihrem Kanal zu suchen</string>
+
+    <!-- the time box: "Heute habe ich … Minuten" -->
+    <string name="yt_timebox_title">Heute habe ich … Minuten</string>
+    <string name="yt_timebox_title_short">Heute: %1$d Minuten</string>
+    <string name="yt_timebox_minutes">%1$d Min.</string>
+    <string name="yt_timebox_custom">Eigene</string>
+    <string name="yt_timebox_less">5 Minuten weniger</string>
+    <string name="yt_timebox_more">5 Minuten mehr</string>
+    <string name="yt_timebox_go">Los</string>
+    <string name="yt_timebox_back">Zurück zur Auswahl</string>
+    <string name="yt_timebox_close">Schließen</string>
+    <string name="yt_timebox_planning">Plane …</string>
+    <string name="yt_timebox_nothing">Gerade nichts zum Planen. Zum Aktualisieren ziehen und noch mal versuchen.</string>
+    <string name="yt_timebox_left">noch %1$d Min.</string>
+    <string name="yt_timebox_running">Zeitbox: noch %1$d Min.</string>
+    <plurals name="yt_timebox_videos">
+        <item quantity="one">%d Video geplant</item>
+        <item quantity="other">%d Videos geplant</item>
+    </plurals>
+    <string name="yt_timebox_end">Beenden</string>
+    <string name="yt_timebox_up">Zeit ist um · Noch ein Video?</string>
+    <string name="yt_timebox_up_detail">Deine %1$d Minuten sind vorbei.</string>
+    <string name="yt_timebox_one_more">Noch ein Video</string>
+    <string name="yt_timebox_watch_on">Weiterschauen</string>
+    <string name="yt_timebox_done">Fertig</string>
+    <string name="yt_timebox_chip">Zeitbox auf der Startseite</string>
+    <string name="yt_timebox_chip_summary">Ein Knopf auf der Startseite plant Videos für die Minuten, die du hast, und hört an einer sinnvollen Stelle auf, am Ende eines Kapitels</string>
 </resources>

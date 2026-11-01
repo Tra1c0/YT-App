@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -170,10 +171,11 @@ fun ytTogglePause(channel: String?, name: String?, avatar: String?) {
  * YT: the pills at the bottom of the home screens, above the navigation (and a docked mini
  * player): the undo pill and the draft queue "N in der Warteschlange · Abspielen". In the
  * design's own surface, type and colors; they spring up from below and can be swiped away.
- * Lay it over the whole screen: it takes touches only on the pills.
+ * Lay it over the whole screen: it takes touches only on the pills. With [timeBox] (the home
+ * only: what it would plan from) the time box chip sits at the end above them.
  */
 @Composable
-fun YtHomePills(palette: YtPalette, modifier: Modifier = Modifier) {
+fun YtHomePills(palette: YtPalette, modifier: Modifier = Modifier, timeBox: (() -> YtTimeBoxSource)? = null) {
     val revision by PlayingQueue.revision.collectAsState()
     val hasPlayer = remember(revision) { YtQueue.hasPlayer() }
     // a player started elsewhere (search, a channel) takes the draft into its queue
@@ -188,8 +190,12 @@ fun YtHomePills(palette: YtPalette, modifier: Modifier = Modifier) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = ytNavPadding() + 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, bottom = ytNavPadding() + 12.dp),
         ) {
+            // "Heute habe ich … Minuten" at the end, above the pills so they never cover it
+            if (timeBox != null) YtTimeBoxChip(look, timeBox, Modifier.align(Alignment.End))
             // the last entry stays while the pill slides away
             val shown = remember { arrayOfNulls<YtUndoEntry>(1) }
             entry?.let { shown[0] = it }
@@ -208,7 +214,7 @@ fun YtHomePills(palette: YtPalette, modifier: Modifier = Modifier) {
  * motion, without a second YtTheme (which would start another tilt sensor for the glass designs).
  */
 @Composable
-fun YtPillLayer(palette: YtPalette) {
+fun YtPillLayer(palette: YtPalette, timeBox: (() -> YtTimeBoxSource)? = null) {
     val density = ytDensity(LocalDensity.current, LocalConfiguration.current)
     val motion = remember { YtMotionPrefs.enabled }
     CompositionLocalProvider(
@@ -216,7 +222,7 @@ fun YtPillLayer(palette: YtPalette) {
         LocalYtMotion provides motion,
         LocalYtMotionStyle provides palette.motion,
     ) {
-        YtHomePills(palette)
+        YtHomePills(palette, timeBox = timeBox)
     }
 }
 
@@ -329,7 +335,7 @@ private fun DraftPill(look: PillLook, count: Int) {
 
 /** A pill that follows a sideways swipe and, thrown far enough, flies off and is gone. */
 @Composable
-private fun SwipeAway(onGone: () -> Unit, content: @Composable () -> Unit) {
+internal fun SwipeAway(onGone: () -> Unit, content: @Composable () -> Unit) {
     val swipe = rememberYtSwipe()
     val haptics = rememberYtHaptics()
     val scope = rememberCoroutineScope()
@@ -354,7 +360,7 @@ private fun SwipeAway(onGone: () -> Unit, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun PillRow(look: PillLook, modifier: Modifier, content: @Composable () -> Unit) {
+internal fun PillRow(look: PillLook, modifier: Modifier, content: @Composable () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -365,7 +371,7 @@ private fun PillRow(look: PillLook, modifier: Modifier, content: @Composable () 
 }
 
 @Composable
-private fun PillAction(look: PillLook, label: String, tag: String, first: Boolean = false, onClick: () -> Unit) {
+internal fun PillAction(look: PillLook, label: String, tag: String, first: Boolean = false, onClick: () -> Unit) {
     val text = if (look.uppercase) label.uppercase() else label
     Box(
         contentAlignment = Alignment.Center,
@@ -399,12 +405,12 @@ private fun PillAction(look: PillLook, label: String, tag: String, first: Boolea
 }
 
 @Composable
-private fun Dot(look: PillLook) {
+internal fun Dot(look: PillLook) {
     Text(text = "·", color = look.text.copy(alpha = 0.6f), style = look.style(FontWeight.Bold))
 }
 
 /** How a design draws its pills. */
-private class PillLook(
+internal class PillLook(
     val surface: (Modifier) -> Modifier,
     val text: Color,
     val action: Color,
@@ -416,11 +422,16 @@ private class PillLook(
     /** Kiesel: the actions are capsules of their own. */
     val actionFill: Color? = null,
     val actionDecoration: TextDecoration? = null,
+    /** A bigger card in the pill's look (the time box), where the pill's own shape does not fit. */
+    val cardSurface: ((Modifier) -> Modifier)? = null,
 ) {
+    /** The surface of a card: [cardSurface], else the pill's. */
+    fun card(modifier: Modifier): Modifier = (cardSurface ?: surface)(modifier)
+
     fun style(weight: FontWeight) = TextStyle(fontFamily = font, fontWeight = weight, fontSize = size, letterSpacing = letterSpacing)
 }
 
-private fun pillLook(palette: YtPalette): PillLook {
+internal fun pillLook(palette: YtPalette): PillLook {
     fun flat(shape: Shape, color: Color, shadow: Color = Color(0x66000000)) = { m: Modifier ->
         m.shadow(10.dp, shape, ambientColor = shadow, spotColor = shadow).clip(shape).background(color)
     }
@@ -432,6 +443,7 @@ private fun pillLook(palette: YtPalette): PillLook {
         YtSignature.MOVO -> PillLook(
             surface = flat(RoundedCornerShape(50), Color.White),
             text = palette.ink, action = palette.accent, font = YtFonts.geist,
+            cardSurface = flat(RoundedCornerShape(24.dp), Color.White),
         )
         YtSignature.AFTER -> PillLook(
             surface = { m ->
@@ -444,6 +456,7 @@ private fun pillLook(palette: YtPalette): PillLook {
         YtSignature.SIDE -> PillLook(
             surface = flat(RoundedCornerShape(50), palette.raised),
             text = palette.text, action = palette.accent, font = YtFonts.figtree,
+            cardSurface = flat(RoundedCornerShape(24.dp), palette.raised),
         )
         YtSignature.CLAY -> PillLook(
             surface = { m -> m.ytSurface(palette, RoundedCornerShape(24.dp)) },
@@ -458,23 +471,28 @@ private fun pillLook(palette: YtPalette): PillLook {
         YtSignature.GLASS -> PillLook(
             surface = { m -> m.ytGlass(RoundedCornerShape(50), strong = true) },
             text = palette.text, action = Color(0xFF0A8F7F), font = YtFonts.googleSans,
+            cardSurface = { m -> m.ytGlass(RoundedCornerShape(26.dp), strong = true) },
         )
         YtSignature.POP -> PillLook(
             surface = flat(BlobShape(0.56f, 0.5f, 0.5f, 0.6f), palette.accent, Color(0x553B2054)),
             text = Color.White, action = palette.lime, font = YtFonts.nunito, size = 14.sp,
+            cardSurface = flat(RoundedCornerShape(30.dp), palette.accent, Color(0x553B2054)),
         )
         YtSignature.SHAPES -> PillLook(
             surface = flat(RoundedCornerShape(50), palette.surface),
             text = palette.ink, action = Color(0xFF6656C4), font = YtFonts.googleSans,
+            cardSurface = flat(RoundedCornerShape(28.dp), palette.surface),
         )
         YtSignature.FROST -> PillLook(
             surface = flat(RoundedCornerShape(50), palette.ink, Color(0x661F2A26)),
             text = palette.text, action = palette.accent, font = YtFonts.jakarta,
+            cardSurface = flat(RoundedCornerShape(24.dp), palette.ink, Color(0x661F2A26)),
         )
         YtSignature.KIESEL -> PillLook(
             surface = flat(RoundedCornerShape(50), KieselInk, Color(0x400E0E0E)),
             text = KieselCream, action = KieselInk, font = YtFonts.jakarta, size = 12.5.sp,
             actionFill = KieselLavender,
+            cardSurface = flat(RoundedCornerShape(26.dp), KieselInk, Color(0x400E0E0E)),
         )
     }
 }

@@ -9,7 +9,10 @@ import com.github.libretube.ui.activities.MainActivity
  */
 object YtActivityHooks {
     /** At the end of onCreate, once the screens are set up (not when it finished early). */
-    fun onCreate(activity: MainActivity, savedInstanceState: Bundle?) {}
+    fun onCreate(activity: MainActivity, savedInstanceState: Bundle?) {
+        // the time box's end card, over every screen
+        YtTimeUpLayer.attach(activity)
+    }
 
     fun onStart(activity: MainActivity) {}
 

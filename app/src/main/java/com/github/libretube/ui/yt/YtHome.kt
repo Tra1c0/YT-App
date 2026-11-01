@@ -66,7 +66,19 @@ object YtHome {
             setContent {
                 Box(Modifier.fillMaxSize().ytTestRoot()) {
                     Screen(fragment, design, viewModel, refresh)
-                    design.palette?.let { palette -> YtPillLayer(palette) }
+                    design.palette?.let { palette ->
+                        // the time box plans from what the home shows: continue watching first,
+                        // then subscriptions and charts in turn
+                        YtPillLayer(palette) {
+                            YtTimeBoxSource(
+                                continueWatching = viewModel.continueWatching.value,
+                                ranked = ytInterleave(
+                                    ytPlayable(viewModel.feed.value).orEmpty(),
+                                    ytPlayable(YtDiscovery.current()?.takeIf { it.isNotEmpty() } ?: viewModel.trending.value?.second?.streams).orEmpty(),
+                                ),
+                            )
+                        }
+                    }
                 }
             }
         }

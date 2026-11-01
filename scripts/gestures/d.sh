@@ -2,7 +2,7 @@
 # YT round 12, package D: its gesture checks.
 # Home: card swipes (left hides with an undo pill, right queues), the draft queue while nothing
 # plays, cards held and dragged onto the bar or the mini player, the search icon dragged onto a
-# card, and the same with the mini player docked.
+# card, the time box ("Heute habe ich … Minuten"), and the same with the mini player docked.
 # Sourced by crash-check.sh once per design with YT_GESTURES=yes ($design is the design); the
 # helpers are in lib.sh.
 # shellcheck source-path=SCRIPTDIR source=lib.sh
@@ -114,6 +114,25 @@ d_checks() {
     d_home
   else
     mark "d: no search button or card, the search drag check is skipped"
+  fi
+
+  # the time box: the chip opens into the minutes row, 30 minutes plan at most 33 (at 1x)
+  d_home
+  log_mark
+  if d_tap yt_timebox_chip; then
+    sleep 1
+    rawshot "$design-d-11-timebox"
+    if d_tap yt_timebox_30; then
+      EXPECT_WAIT=10 expect_log YtTimeBox 'total<=33|total<=3[0-2]|nothing to plan'
+      sleep 4
+      shot "$design-d-12-timebox-running"
+      show_log YtSession 5
+    else
+      d_fail "the time box card has no 30-minute button (yt_timebox_30)"
+    fi
+    d_home
+  else
+    mark "d: no time box chip (switched off?), the time box check is skipped"
   fi
 
   # with the mini player docked (the test video plays offline, so online cards wait in the

@@ -57,4 +57,31 @@
     <string name="yt_home_search_channel">Search %1$s</string>
     <string name="yt_home_drag">Drag cards and search</string>
     <string name="yt_home_drag_summary">Hold a card and drag it onto the mini player: it plays next, or goes to the end once others wait. Hold the search icon and drag it onto a card to search for its channel</string>
+
+    <!-- the time box: "Heute habe ich … Minuten" -->
+    <string name="yt_timebox_title">Today I have … minutes</string>
+    <string name="yt_timebox_title_short">Today: %1$d minutes</string>
+    <string name="yt_timebox_minutes">%1$d min</string>
+    <string name="yt_timebox_custom">Custom</string>
+    <string name="yt_timebox_less">5 minutes less</string>
+    <string name="yt_timebox_more">5 minutes more</string>
+    <string name="yt_timebox_go">Go</string>
+    <string name="yt_timebox_back">Back to the choices</string>
+    <string name="yt_timebox_close">Close</string>
+    <string name="yt_timebox_planning">Planning …</string>
+    <string name="yt_timebox_nothing">Nothing to plan right now. Pull to refresh and try again.</string>
+    <string name="yt_timebox_left">%1$d min left</string>
+    <string name="yt_timebox_running">Time box: %1$d min left</string>
+    <plurals name="yt_timebox_videos">
+        <item quantity="one">%d video planned</item>
+        <item quantity="other">%d videos planned</item>
+    </plurals>
+    <string name="yt_timebox_end">End</string>
+    <string name="yt_timebox_up">Time’s up · One more video?</string>
+    <string name="yt_timebox_up_detail">Your %1$d minutes are over.</string>
+    <string name="yt_timebox_one_more">One more video</string>
+    <string name="yt_timebox_watch_on">Keep watching</string>
+    <string name="yt_timebox_done">Done</string>
+    <string name="yt_timebox_chip">Time box on the home screen</string>
+    <string name="yt_timebox_chip_summary">A button on the home screen plans videos for the minutes you have and stops at a sensible point, at the end of a chapter</string>
 </resources>

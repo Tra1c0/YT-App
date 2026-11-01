@@ -22,6 +22,13 @@
             app:key="yt_home_drag"
             app:title="@string/yt_home_drag" />
 
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_yt_timer"
+            android:summary="@string/yt_timebox_chip_summary"
+            app:defaultValue="true"
+            app:key="yt_timebox_chip"
+            app:title="@string/yt_timebox_chip" />
+
         <com.github.libretube.ui.yt.feed.YtPausedChannelsPreference
             android:icon="@drawable/ic_yt_pause_week"
             app:key="yt_paused_channels_list"

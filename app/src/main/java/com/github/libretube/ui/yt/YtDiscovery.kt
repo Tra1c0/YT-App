@@ -36,6 +36,9 @@ object YtDiscovery {
     private val scope = MainScope()
     private var loading = false
 
+    /** The charts loaded so far, or null (the time box plans from them). */
+    fun current(): List<StreamItem>? = videos.value
+
     /** The mixed charts, loaded on first use and kept for the session. */
     @Composable
     fun rememberVideos(): List<StreamItem>? {
