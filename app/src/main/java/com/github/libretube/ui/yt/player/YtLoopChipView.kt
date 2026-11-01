@@ -44,6 +44,7 @@ class YtLoopChipView @JvmOverloads constructor(
     private var showing = false
     private var lastFrameAt = 0L
     private var closeActionId = -1
+    private var closeActionLabel: String? = null
     private var pressedClose = false
 
     private val appear = YtSpring(0f)
@@ -108,10 +109,14 @@ class YtLoopChipView @JvmOverloads constructor(
             style.text
         }
         contentDescription = description
-        if (closeActionId != -1) ViewCompat.removeAccessibilityAction(this, closeActionId)
-        closeActionId = ViewCompat.addAccessibilityAction(this, closeLabel) { _, _ ->
-            onClose?.invoke()
-            true
+        // (show comes every 250 ms during a pause: the action is added once per label)
+        if (closeActionId == -1 || closeLabel != closeActionLabel) {
+            if (closeActionId != -1) ViewCompat.removeAccessibilityAction(this, closeActionId)
+            closeActionId = ViewCompat.addAccessibilityAction(this, closeLabel) { _, _ ->
+                onClose?.invoke()
+                true
+            }
+            closeActionLabel = closeLabel
         }
         appear.stiffness = style.stiffness
         appear.dampingRatio = style.damping

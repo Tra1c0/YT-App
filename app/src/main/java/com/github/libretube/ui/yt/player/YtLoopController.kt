@@ -45,6 +45,17 @@ class YtLoopController(private val host: YtPlayerHost, private val player: Custo
 
     private val refresh = Runnable { render(YtLoopModule.status.value) }
 
+    // the page going into the mini player or PiP (or the lock) sends no status: a look every
+    // half second while a loop runs takes the chip away there and brings it back after
+    private var chipAllowed = false
+    private val watch = object : Runnable {
+        override fun run() {
+            if (released || shown.loop == null) return
+            // render looks again itself
+            if (allowed() != chipAllowed) render(YtLoopModule.status.value) else handler.postDelayed(this, WATCH_MS)
+        }
+    }
+
     private val marks = object : DismissableTimeBar.LoopMarks {
         override fun range(): LongArray? = shown.loop?.let { longArrayOf(it.aMs, it.bMs) }
 
@@ -111,6 +122,7 @@ class YtLoopController(private val host: YtPlayerHost, private val player: Custo
         statusJob?.cancel()
         statusJob = null
         handler.removeCallbacks(refresh)
+        handler.removeCallbacks(watch)
         if (bar.loopMarks === marks) bar.loopMarks = null
         bar.removeSeekBarListener(scrubs)
         bar.setLoop(-1L, -1L)
@@ -219,7 +231,10 @@ class YtLoopController(private val host: YtPlayerHost, private val player: Custo
             if (started) YtHaptics.of(chip).tick()
         }
 
-        if (loop != null && allowed()) showChip(mine, loop) else chip.hide()
+        chipAllowed = allowed()
+        if (loop != null && chipAllowed) showChip(mine, loop) else chip.hide()
+        handler.removeCallbacks(watch)
+        if (loop != null) handler.postDelayed(watch, WATCH_MS)
         // the countdown's seconds while it thinks
         if (mine.pausing) handler.postDelayed(refresh, PAUSE_REFRESH_MS)
     }
@@ -283,6 +298,7 @@ class YtLoopController(private val host: YtPlayerHost, private val player: Custo
     companion object {
         private const val LOG_TAG = "YtLoop"
         private const val PAUSE_REFRESH_MS = 250L
+        private const val WATCH_MS = 500L
         private const val HOUR_MS = 3_600_000L
         private const val CHIP_GAP_DP = 6f
         private const val DEFAULT_TOP_DP = 52f

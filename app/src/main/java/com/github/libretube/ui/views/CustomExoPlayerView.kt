@@ -1385,7 +1385,8 @@ class CustomExoPlayerView(
             YtHoldDirection.inEdge(x, width.toFloat(), YtHoldDirection.EDGE_DP * resources.displayMetrics.density)
         ytHolding = hold != null && !edge && hold.begin(x, y, fastForward)
         // YT: the page's drag to minimize and its scroll views must not take this finger now
-        if (ytHolding || fastForward) parent?.requestDisallowInterceptTouchEvent(true)
+        // (not in the mini player, whose own long press must still reach the page)
+        if (ytHolding || (fastForward && useController)) parent?.requestDisallowInterceptTouchEvent(true)
     }
 
     override fun onLongPressDrag(dx: Float, dy: Float) {

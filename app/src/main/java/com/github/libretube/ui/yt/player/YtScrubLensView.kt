@@ -108,11 +108,6 @@ class YtScrubLensView @JvmOverloads constructor(
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, value, resources.displayMetrics)
 
     /**
-     * A scrub begins. [lineHeights] are where ½, ¼, ⅛ and the frames begin, above [barCenterY];
-     * [levels] false: the magnifier is off for it (a live stream), so only the start and the
-     * cancel zone are told.
-     */
-    /**
      * The end of the explanation loop being marked ("A", "B"): the pill names it and always shows
      * the time; null for a plain scrub. Set before [begin].
      */
@@ -121,6 +116,11 @@ class YtScrubLensView @JvmOverloads constructor(
     /** With [markLabel]: the time in whole seconds on every level (a share link). Until [end]. */
     var markWholeSeconds = false
 
+    /**
+     * A scrub begins. [lineHeights] are where ½, ¼, ⅛ and the frames begin, above [barCenterY];
+     * [levels] false: the magnifier is off for it (a live stream), so only the start and the
+     * cancel zone are told.
+     */
     fun begin(style: YtPlayerHudStyle, barCenterY: Float, lineHeights: FloatArray, levels: Boolean) {
         this.style = style
         this.barCenterY = barCenterY
