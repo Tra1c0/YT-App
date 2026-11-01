@@ -301,15 +301,17 @@ private fun GlassVideo(
                                 change.consume()
                                 val coords = picture.coords?.takeIf { it.isAttached }
                                 val at = change.position
-                                if (!dragging && dragOn && coords != null && YtDragRules.leftPicture(at.x, at.y, width, height, margin)) {
+                                val windowAt = coords?.localToWindow(at)
+                                val overMini = windowAt != null && YtDrag.miniBounds?.contains(windowAt.x.toInt(), windowAt.y.toInt()) == true
+                                if (!dragging && dragOn && coords != null && YtDragRules.liftLoupe(at.x, at.y, width, height, margin, overMini)) {
                                     // past the edge: the lens lets go of the picture and carries its frame on
                                     val (x, y) = YtDragRules.loupe(at.x, at.y, width, height)
                                     val lens = coords.localToWindow(Offset(x, y))
                                     dragging = YtCardDrag.begin(scope, palette, video, Rect(lens, half), lens, motion)
                                     if (dragging) magnifier = null
                                 }
-                                if (dragging && coords != null) {
-                                    YtCardDrag.move(scope, coords.localToWindow(at), haptics, units, screen)
+                                if (dragging && windowAt != null) {
+                                    YtCardDrag.move(scope, windowAt, haptics, units, screen)
                                 } else if (!dragging) {
                                     follow(at)
                                 }

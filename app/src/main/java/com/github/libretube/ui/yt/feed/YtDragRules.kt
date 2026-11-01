@@ -90,4 +90,8 @@ object YtDragRules {
     /** Glas: true once the finger is [margin] px past an edge of the picture: the loupe becomes the ghost. */
     fun leftPicture(x: Float, y: Float, width: Float, height: Float, margin: Float): Boolean =
         x < -margin || y < -margin || x > width + margin || y > height + margin
+
+    /** A visible drop target can overlap a picture that continues behind the mini player. */
+    fun liftLoupe(x: Float, y: Float, width: Float, height: Float, margin: Float, overTarget: Boolean): Boolean =
+        overTarget || leftPicture(x, y, width, height, margin)
 }

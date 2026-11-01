@@ -77,4 +77,11 @@ class YtDragRulesTest {
         assertTrue(YtDragRules.leftPicture(-25f, 50f, 300f, 150f, 24f))
         assertTrue(YtDragRules.leftPicture(100f, 175f, 300f, 150f, 24f))
     }
+
+    @Test
+    fun theLoupeHandsOffToADropTargetOverlappingItsPicture() {
+        assertFalse(YtDragRules.liftLoupe(100f, 100f, 300f, 150f, 24f, overTarget = false))
+        assertTrue(YtDragRules.liftLoupe(100f, 100f, 300f, 150f, 24f, overTarget = true))
+        assertTrue(YtDragRules.liftLoupe(100f, 175f, 300f, 150f, 24f, overTarget = false))
+    }
 }
