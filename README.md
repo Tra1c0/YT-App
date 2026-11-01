@@ -22,6 +22,7 @@ Als **Pre-release** markierte `check-…`-Builds sind Vorschauen. Die Release-No
 - **Player:** Vollbild, Bild-in-Bild, Hintergrundwiedergabe, Downloads, Wischgesten, präzises Spulen, Rücksprung-Chip und Wiederholung einer markierten Passage. Gesten und Haptik sind unter **Gesten & Interaktion** einstellbar.
 - **Warteschlange:** Videos als Nächstes oder am Ende einfügen; ohne laufenden Player zunächst sammeln. Die gestalteten Feeds bieten Kartenwischen, Rückgängig und Ziehen auf den Miniplayer. Die Standardansicht behält ihre klassischen Kartenmenüs.
 - **Feed:** Die gestalteten Startseiten bieten Interessenwahl, Feed-Regler und ein optionales Zeitbudget. Die Sortierung erfolgt lokal auf dem Handy.
+- **Lokale Herzen:** Auf der Videoseite und im Side-Feed markieren; Markierungen bleiben auf dem Gerät.
 - **Kommentare:** Lesen, Zeitmarken anspringen, Szenenfilter und optionaler Spoilerschutz. Notizen in Side werden lokal gespeichert.
 - **Daten übernehmen:** Einstellungen → Sichern und Wiederherstellen; Google-Takeout-Abos als CSV oder den vorhandenen Konto-/Takeout-Import verwenden. Details: [Konto und Import](docs/KONTO.md).
 

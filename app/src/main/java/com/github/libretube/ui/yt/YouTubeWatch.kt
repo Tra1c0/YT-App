@@ -156,8 +156,9 @@ fun YouTubeWatchDetails(
         }
         WatchCreator(palette, imageLoader, streams, channelId != null, subscribed == true, toggle, actions.onOpenChannel)
 
+        val localHeart = rememberLocalHeartAction(controller.videoId)
         val watchActions = buildList {
-            add(WatchAction(R.drawable.ic_like, if (streams.likes > 0) streams.likes.formatShort() else stringResource(R.string.yt_watch_like)) {})
+            add(localHeart)
             add(WatchAction(R.drawable.ic_playlist_add, stringResource(R.string.yt_watch_save), actions.onSave))
             add(WatchAction(R.drawable.ic_share, stringResource(R.string.share), actions.onShare))
             if (!streams.isLive) add(WatchAction(R.drawable.ic_download, stringResource(R.string.yt_watch_download), actions.onDownload))

@@ -120,7 +120,7 @@ private class WatchBasics(
 )
 
 @Composable
-private fun rememberBasics(streams: Streams, actions: YtWatchActions): WatchBasics {
+private fun rememberBasics(streams: Streams, actions: YtWatchActions, videoId: String?): WatchBasics {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val channelId = streams.uploaderUrl?.toID()
@@ -145,10 +145,7 @@ private fun rememberBasics(streams: Streams, actions: YtWatchActions): WatchBasi
             }
         }
     }
-    val like = WatchAction(
-        R.drawable.ic_like,
-        if (streams.likes > 0) streams.likes.formatShort() else stringResource(R.string.yt_watch_like),
-    ) {}
+    val like = rememberLocalHeartAction(videoId)
     val shareGesture = Modifier.ytShareScrubSource(actions.shareScrub)
     val list = buildList {
         add(WatchAction(R.drawable.ic_playlist_add, stringResource(R.string.yt_watch_save), actions.onSave))
@@ -178,7 +175,7 @@ fun YtWatchPage(
     actions: YtWatchActions,
 ) {
     val streams = controller.streams ?: return
-    val basics = rememberBasics(streams, actions)
+    val basics = rememberBasics(streams, actions, controller.videoId)
     Column(Modifier.fillMaxWidth()) {
     when (design) {
         YtDesign.AFTER -> AfterPage(palette, imageLoader, basics, controller, actions)

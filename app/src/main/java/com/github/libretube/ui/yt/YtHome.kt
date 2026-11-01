@@ -138,7 +138,7 @@ object YtHome {
             var sideTab by remember { mutableStateOf(SIDE_TAB_FOR_YOU) }
             // "Meine Abos sehen" opens on the people
             LaunchedEffect(intent) { if (intent == YtIntent.SUBSCRIPTIONS) sideTab = SIDE_TAB_PEOPLE }
-            var hearts by remember { mutableStateOf(YtHearts.all()) }
+            val hearts by rememberYtHearts()
             YtTheme(YtPalettes.Side) {
                 SideHomeScreen(
                     palette = YtPalettes.Side,
@@ -161,7 +161,7 @@ object YtHome {
                             }.show(fragment.childFragmentManager, AddToPlaylistDialog::class.java.name)
                         },
                         onShare = { video -> shareVideo(fragment, video) },
-                        onToggleHeart = { video -> hearts = YtHearts.toggle(video.url!!.toID()) },
+                        onToggleHeart = { video -> video.url?.toID()?.let(YtHearts::toggle) },
                         onPost = { showPostDialog(fragment) },
                     ),
                 )

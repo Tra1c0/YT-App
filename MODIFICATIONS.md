@@ -54,3 +54,5 @@ YT ist ein veränderter Fork von LibreTube (GPLv3). Basis: LibreTube `master`, C
 - Aktualisierungseinstieg für private GitHub-Releases und Vergleich der YT-Buildnummern ergänzt.
 - Verspätete Player-Verbindungen und Wiedergabe-Rückmeldungen dem zugehörigen Besitzer zugeordnet; erste Feed-Karte korrekt entfernbar, Metadaten-Aufträge wiederverwendeter Karten bereinigt.
 - Deutsche und englische Bedienhinweise sowie Installations- und Prüfdokumentation aktualisiert.
+
+Lokale Herz-Markierungen ersetzen den funktionslosen Like-Knopf der gestalteten Videoseiten. Side-Feed und Player beobachten denselben gespeicherten Zustand. Ein leeres Zeitbudget im Interessenwähler gibt jetzt eine Rückmeldung.

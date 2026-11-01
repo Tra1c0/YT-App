@@ -298,7 +298,9 @@ internal fun YtIntentChooser(palette: YtPalette, visible: Boolean, timeBox: (() 
                         modifier = Modifier.padding(top = 18.dp, bottom = 10.dp),
                     )
                     YtMinutesRow(palette, onPick = { minutes ->
-                        YtTimeBoxStarter.start(context, minutes, timeBox(), onEmpty = {})
+                        YtTimeBoxStarter.start(context, minutes, timeBox(), onEmpty = {
+                            android.widget.Toast.makeText(context, R.string.yt_timebox_nothing, android.widget.Toast.LENGTH_LONG).show()
+                        })
                         onClose()
                     })
                 }

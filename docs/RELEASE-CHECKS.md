@@ -20,7 +20,7 @@ Eine Veröffentlichung hängt vom Ergebnis der Prüfungen ab. `main` erfordert d
 | C | Spul-Lupe, Einzelbilder, Abbruch, Rücksprung-Chip, Passage wiederholen, Richtungsgesten und Teilen mit Zeitmarke |
 | D | Karten ausblenden und rückgängig machen, Warteschlange, Ziehen, Feed-Regler, Interessen und Zeitbudget; Standard prüft seine klassischen Kartenaktionen |
 | E | Zeitbezogene Kommentare, Spoilerschutz und Szenenwechsel |
-| Kompatibilität | Start, lokale Wiedergabe, Miniplayer, Bibliothek und Einstellungen in allen Ansichten auf Android 8 und 16 |
+| Kompatibilität | Start, lokale Wiedergabe, Bild-in-Bild samt Rückkehr, Miniplayer, Bibliothek und Einstellungen in allen Ansichten auf Android 8 und 16 |
 | Barrierefreiheit | Alle Ansichten mit 180 % Systemschrift und ausgeschalteten Systemanimationen auf API 34; beschriftete, auswählbare Navigationstabs |
 | Update | Installation über Build 64 und den letzten stabilen Build; Abos, Playlists samt Videos, Verlauf, Position und Einstellungen bleiben erhalten |
 

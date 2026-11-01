@@ -33,6 +33,8 @@
     <string name="yt_watch_subscribe">Abonnieren</string>
     <string name="yt_watch_subscribed">Abonniert</string>
     <string name="yt_watch_like">Gefällt mir</string>
+    <string name="yt_watch_local_like">Herz · lokal</string>
+    <string name="yt_watch_local_liked">Markiert · lokal</string>
     <string name="yt_watch_save">Speichern</string>
     <string name="yt_watch_download">Herunterladen</string>
     <string name="yt_watch_audio">Nur Audio</string>

@@ -634,6 +634,22 @@ for design in $DESIGNS; do
     fi
     sleep 18
     timeout 20 adb exec-out screencap -p > "screens/$design-2-player.png" || true
+    if [ -n "$TEST_VIDEO" ]; then
+      timeout 10 adb shell input keyevent KEYCODE_HOME || true
+      sleep 3
+      if timeout 20 adb shell dumpsys activity activities | grep -a -q 'mode=pinned'; then
+        shot "$design-2-pip"
+      else
+        echo "::error::$design: playing video did not enter picture-in-picture"
+        crashed="$crashed $design-pip"
+      fi
+      timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true >/dev/null
+      sleep 3
+      if ! driver_find 'id/player$' >/dev/null; then
+        echo "::error::$design: video did not return from picture-in-picture"
+        crashed="$crashed $design-pip-return"
+      fi
+    fi
     dismiss_anr; timeout 10 adb shell input keyevent KEYCODE_BACK || true
     sleep 5
     timeout 20 adb exec-out screencap -p > "screens/$design-3-mini.png" || true

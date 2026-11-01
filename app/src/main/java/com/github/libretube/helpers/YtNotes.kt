@@ -41,7 +41,7 @@ object YtNotes {
 
 /** YT: videos marked with a heart in the design Side; only stored on the device. */
 object YtHearts {
-    private const val KEY = "yt_side_hearts"
+    internal const val KEY = "yt_side_hearts"
 
     fun all(): Set<String> = PreferenceHelper.getStringSet(KEY, emptySet())
 
