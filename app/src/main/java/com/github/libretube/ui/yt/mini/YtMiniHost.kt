@@ -1,9 +1,11 @@
 package com.github.libretube.ui.yt.mini
 
 import android.animation.Animator
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Outline
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
@@ -13,6 +15,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -184,6 +187,7 @@ class YtMiniHost private constructor(
 
         publishBoundsOnLayout()
         listen()
+        if (design.followsFinger) followFinger()
 
         fragment.viewLifecycleOwner.lifecycle.addObserver(
             LifecycleEventObserver { _, event ->
@@ -356,6 +360,30 @@ class YtMiniHost private constructor(
             binding.mainContainer.viewTreeObserver.addOnPreDrawListener(boundsCheck)
         }
         binding.mainContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> publishBounds() }
+    }
+
+    /**
+     * The finger on the docked box, for designs that answer it (Movo's tiles tilt under it). The
+     * listener only watches: it returns false, so the layout's gestures go on as before. It
+     * hears a gesture only where the layout itself handles it (not on the buttons).
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun followFinger() {
+        motion.setOnTouchListener { _, event ->
+            val box = binding.mainContainer
+            val x = event.x - box.left - box.translationX
+            val y = event.y - box.top - box.translationY
+            scene.finger = when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                    val docked = YtDock.docked && motion.currentState == R.id.end
+                    val inside = x >= 0f && y >= 0f && x <= box.width && y <= box.height
+                    // a gesture that starts outside the box goes on without it
+                    if (docked && (inside || (event.actionMasked == MotionEvent.ACTION_MOVE && scene.finger != null))) Offset(x, y) else null
+                }
+                else -> null
+            }
+            false
+        }
     }
 
     /** Follows the minimize transition (the page's listeners hear nothing of the preview's). */
@@ -719,6 +747,8 @@ class YtMiniHost private constructor(
 
     private fun destroy() {
         unbind()
+        if (design.followsFinger) motion.setOnTouchListener(null)
+        scene.finger = null
         landing?.cancel()
         reaction?.cancel()
         peekSpring.cancel()

@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.constraintlayout.motion.widget.MotionScene
 import androidx.constraintlayout.widget.ConstraintSet
@@ -155,6 +156,13 @@ class YtMiniScene(
     /** Counts the drops the player did not take; each new value plays the reject look. */
     var rejects by mutableIntStateOf(0)
 
+    /**
+     * Where a finger rests on the docked box (px of the box as it is laid out, not mirrored), or
+     * null. Kept only for designs that [YtMiniDesign.followsFinger]; read it in draw and layout
+     * lambdas or in a snapshotFlow, it changes with every move.
+     */
+    var finger by mutableStateOf<Offset?>(null)
+
     var onPlayPause: () -> Unit = {}
     var onPrev: () -> Unit = {}
     var onNext: () -> Unit = {}
@@ -196,6 +204,9 @@ abstract class YtMiniDesign(val design: YtDesign) {
 
     /** Whether a long press on the picture opens the preview. */
     open val peeks: Boolean get() = true
+
+    /** Whether the design answers the finger on the docked player ([YtMiniScene.finger]). */
+    open val followsFinger: Boolean get() = false
 
     /** Whether the player's surface is glass over the screens below (it then gets a backdrop). */
     open fun usesBackdrop(palette: YtPalette): Boolean = false
