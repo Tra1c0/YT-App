@@ -90,7 +90,9 @@ a_glass_checks() {
   finger_down "$x" "$y"
   sleep 1.6
   rawshot "$design-a-glass-2-peek"
-  finger_move "$x" "$(( (y + pill) / 2 ))"
+  # Leave every expanded action before entering the pill. The preview can grow a
+  # part underneath the initial finger; that part deliberately stays unarmed.
+  finger_move "$x" "$(( b - $(dp 150) ))"
   finger_move "$x" "$pill"
   sleep 0.3
   rawshot "$design-a-glass-3-pill"

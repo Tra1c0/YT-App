@@ -36,6 +36,24 @@ public final class YtInput {
     private YtInput(UiAutomation automation) { this.automation = automation; }
 
     public static void main(String[] args) throws Exception {
+        // Android 16's AccessibilityInteractionClient also posts to the main
+        // looper. app_process supplies none, so keep one running while the
+        // command stream blocks on stdin in its own thread.
+        Looper.prepareMainLooper();
+        new Thread(() -> {
+            int status = 0;
+            try {
+                runDriver();
+            } catch (Throwable error) {
+                error.printStackTrace(System.err);
+                status = 1;
+            }
+            System.exit(status);
+        }, "yt-input-commands").start();
+        Looper.loop();
+    }
+
+    private static void runDriver() throws Exception {
         HandlerThread thread = new HandlerThread("yt-input");
         thread.start();
         Class<?> connectionType = Class.forName("android.app.IUiAutomationConnection");
