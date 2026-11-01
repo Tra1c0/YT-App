@@ -68,6 +68,12 @@ if ! timeout 20 adb shell pm path "$PKG" >/dev/null 2>&1; then
   echo "::error::YT is not installed; nothing to check"
   exit 2
 fi
+# The emulator action may issue these before adbd has finished booting. Repeat
+# them after installation/root so a long PiP run cannot fall onto the lock screen.
+adb shell settings put system screen_off_timeout 2147483647
+adb shell svc power stayon true
+adb shell input keyevent KEYCODE_WAKEUP
+adb shell wm dismiss-keyguard || true
 # Error dialogs stay on: with them hidden, Android kills an app that does not respond at once.
 # On the emulator that hits Glas and Frost on a cold start (their GPU programs are compiled over
 # the emulator's slow GL pipe for seconds, while the main thread waits for the render thread;
@@ -104,7 +110,7 @@ dismiss_anr() {
   title=$(timeout 15 adb shell dumpsys window windows 2>/dev/null | grep -a -o "Application Not Responding: [A-Za-z0-9._]*" | head -n 1)
   [ -n "$title" ] || return 0
   other=${title#Application Not Responding: }
-  if [ -n "$other" ] && [ "$other" != "$PKG" ] && [ "$other" != system ]; then
+  if [ -n "$other" ] && [ "$other" != "$PKG" ] && [ "$other" != system ] && [ "$other" != com.android.systemui ]; then
     mark "not-responding dialog ($title): stopping $other"
     timeout 10 adb shell am force-stop "$other" || true
     sleep 1
@@ -808,6 +814,7 @@ for design in $DESIGNS; do
     for f in $(timeout 10 adb shell ls -t /data/anr 2>/dev/null | tr -d '\r' | head -n 4); do
       timeout 20 adb shell cat "/data/anr/$f" 2>/dev/null > anr-dump.txt || continue
       grep -q "Cmd line: $PKG" anr-dump.txt || continue
+      cp anr-dump.txt "anr-$design.txt"
       echo "--- main thread in /data/anr/$f"
       awk '/^"main"/{p=1} p{print} p&&/^$/{exit}' anr-dump.txt | head -n 60 | cut -c1-220
       echo "--- render thread"
