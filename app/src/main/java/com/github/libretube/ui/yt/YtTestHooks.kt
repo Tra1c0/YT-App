@@ -76,6 +76,10 @@ object YtTestHooks {
     private const val POLL_MS = 250L
     private const val POLLS = 240
 
+    // the test video gets a second chance after 20 s, then 30 s more (the check waits a minute)
+    private const val FIRST_POLLS = 80
+    private const val RETRY_POLLS = 120
+
     private const val EXTRA_TEST_VIDEO = "yt_test_video"
     private const val EXTRA_QUEUE_TEST = "yt_queue_test"
     private const val EXTRA_SEEK_TEST = "yt_seek_test"
@@ -174,11 +178,31 @@ object YtTestHooks {
             host,
             PlayerData(videoId = TEST_VIDEO_ID, downloadTab = DownloadTab.VIDEO, isOffline = true)
         )
-        val player = awaitPlayer(host) {
-            playingId(it) == TEST_VIDEO_ID && it.mediaMetadata.trackNumber != before
+        val fresh: (Player) -> Boolean = { playingId(it) == TEST_VIDEO_ID && it.mediaMetadata.trackNumber != before }
+        var player = awaitPlayer(host, FIRST_POLLS, fresh)
+        if (player == null) {
+            // the emulator's video decoder sometimes stalls at a start (h264 errors in the log):
+            // the stalled player prepares and seeks again, a player that never came opens again
+            val stuck = currentPlayer(host)
+            Log.i(
+                TAG,
+                "retry: the video is not ready after ${POLL_MS * FIRST_POLLS / 1000} s " +
+                    "(state=${stuck?.playbackState}, error=${stuck?.playerError?.errorCode})"
+            )
+            if (stuck != null && fresh(stuck)) {
+                stuck.prepare()
+                stuck.seekTo(stuck.currentPosition.coerceAtLeast(0L))
+                stuck.play()
+            } else if (!host.supportFragmentManager.isStateSaved) {
+                NavigationHelper.navigateVideo(
+                    host,
+                    PlayerData(videoId = TEST_VIDEO_ID, downloadTab = DownloadTab.VIDEO, isOffline = true)
+                )
+            }
+            player = awaitPlayer(host, RETRY_POLLS, fresh)
         }
         if (player == null) {
-            Log.w(TAG, "test video opened, but not ready after ${POLL_MS * POLLS / 1000} s")
+            Log.w(TAG, "test video opened, but not ready after ${POLL_MS * (FIRST_POLLS + RETRY_POLLS) / 1000} s")
             return null
         }
         Log.i(TAG, "test video $TEST_VIDEO_ID playing from $path, ${player.duration} ms")
@@ -381,9 +405,10 @@ object YtTestHooks {
      */
     suspend fun awaitPlayer(
         host: AbstractPlayerHostActivity,
+        polls: Int = POLLS,
         accept: (Player) -> Boolean = { true }
     ): Player? {
-        repeat(POLLS) {
+        repeat(polls) {
             val player = currentPlayer(host)
             if (player != null && player.playbackState == Player.STATE_READY && accept(player)) return player
             delay(POLL_MS)

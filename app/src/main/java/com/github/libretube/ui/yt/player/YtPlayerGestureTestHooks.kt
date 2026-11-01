@@ -2,6 +2,8 @@ package com.github.libretube.ui.yt.player
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import com.github.libretube.R
 import com.github.libretube.ui.activities.AbstractPlayerHostActivity
 import com.github.libretube.ui.yt.YtTestHandler
 import com.github.libretube.ui.yt.YtTestHooks
@@ -12,7 +14,9 @@ import kotlinx.coroutines.delay
  * (scripts/gestures/c.sh), read by YtTestHooks once the test video plays.
  *
  * - `--ez yt_controls_test true`: the controls stay up (until the next touch), so the check can
- *   find the time bar and scrub it before they hide.
+ *   find the time bar and scrub it before they hide. The log line gives the bar's place on the
+ *   screen ("bar=left top right bottom"): a dump of the screen waits for it to be still, which
+ *   the clock of a playing video never is.
  * - `--el yt_back_test <ms>`: a while after the start, the video jumps back by that much, as a
  *   double tap does (a plain seek, without a reason), for the rewind memory's chip.
  */
@@ -23,6 +27,9 @@ object YtPlayerGestureTestHooks : YtTestHandler {
 
     // the shared seek settles first, as a double tap comes some time after a seek
     private const val BACK_DELAY_MS = 1_500L
+
+    // the controls are laid out a frame or two after they go up
+    private const val BAR_DELAY_MS = 300L
 
     override val keys = listOf(EXTRA_CONTROLS, EXTRA_BACK)
 
@@ -45,7 +52,16 @@ object YtPlayerGestureTestHooks : YtTestHandler {
                 showControlsPermanently(true)
                 true
             }
-            Log.i(TAG, "controls test shown=$shown")
+            delay(BAR_DELAY_MS)
+            val bar = host.findViewById<View>(R.id.exo_progress)
+                ?.takeIf { it.isShown && it.width > 0 && it.height > 0 }
+                ?.let { view ->
+                    val at = IntArray(2)
+                    view.getLocationOnScreen(at)
+                    " bar=${at[0]} ${at[1]} ${at[0] + view.width} ${at[1] + view.height}"
+                }
+                .orEmpty()
+            Log.i(TAG, "controls test shown=$shown$bar")
         }
     }
 }

@@ -98,6 +98,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /*
  * YT: the card swipe of the home screens. Pushed to the left a card hides (it flies off and a
@@ -310,6 +311,8 @@ fun Modifier.ytCardSwipe(
         val width = size.width.toFloat().coerceAtLeast(1f)
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
+            // the emulator checks: whether a swipe reached the card at all, and where it stopped
+            YtTestHooks.log("YtSwipe") { "down id=$id leaving=${state.leaving}" }
             if (state.leaving) return@awaitEachGesture
             val tracker = VelocityTracker()
             tracker.addPointerInputChange(down)
@@ -329,7 +332,11 @@ fun Modifier.ytCardSwipe(
             val start = awaitHorizontalTouchSlopOrCancellation(down.id) { change, over ->
                 change.consume()
                 follow(YtSwipePhysics.unband(state.offset.value, threshold, width) + over)
-            } ?: return@awaitEachGesture
+            } ?: run {
+                YtTestHooks.log("YtSwipe") { "no swipe id=$id (lifted before the slop, or taken by another gesture)" }
+                return@awaitEachGesture
+            }
+            YtTestHooks.log("YtSwipe") { "slop id=$id x=${state.offset.value.roundToInt()}" }
             tracker.addPointerInputChange(start)
             val lifted = horizontalDrag(start.id) { change ->
                 tracker.addPointerInputChange(change)
@@ -338,6 +345,9 @@ fun Modifier.ytCardSwipe(
             }
             val velocity = if (lifted) tracker.calculateVelocity().x else 0f
             val way = if (lifted) YtSwipePhysics.decide(state.offset.value, velocity, threshold) else 0
+            YtTestHooks.log("YtSwipe") {
+                "release id=$id x=${state.offset.value.roundToInt()} v=${velocity.roundToInt()} lifted=$lifted way=$way"
+            }
             // letting go: the commit (or nothing) is felt, not the threshold left behind
             arm(0, feel = false)
             state.detents = 0
