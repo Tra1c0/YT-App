@@ -230,11 +230,14 @@ data class YtSessionState(
     fun holds(currentId: String?, ended: Boolean, now: Long): Boolean =
         ended && (done || remainingMs(now) <= 0 || (currentId != null && currentId == lastId))
 
-    /** "Noch ein Video": [item] plays after the plan, and the budget grows by its length. */
+    /**
+     * "Noch ein Video": [item] plays after the plan, and the budget grows by its length (from the
+     * time already spent, if that ran past the budget).
+     */
     fun plusOne(item: YtBoxItem): YtSessionState = copy(
         items = items.filter { it.id != item.id } + item,
         spare = spare.filter { it.id != item.id },
-        budgetMs = budgetMs + realMs(item.seconds),
+        budgetMs = maxOf(budgetMs, spentMs) + realMs(item.seconds),
         done = false,
         stoppedAt = null,
     )
@@ -245,7 +248,7 @@ data class YtSessionState(
         val rest = (durationSec - (item.endSec ?: durationSec)).coerceAtLeast(0)
         return copy(
             items = items.map { if (it.id == id) it.copy(endSec = null, seconds = it.seconds + rest) else it },
-            budgetMs = budgetMs + realMs(rest),
+            budgetMs = maxOf(budgetMs, spentMs) + realMs(rest),
             done = false,
             stoppedAt = null,
         )

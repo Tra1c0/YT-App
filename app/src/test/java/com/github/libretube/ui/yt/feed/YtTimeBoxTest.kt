@@ -172,6 +172,9 @@ class YtTimeBoxTest {
         assertNull(rest.endAtMs("b"))
         assertEquals(40 * 60_000L, rest.budgetMs)
         assertNull(rest.stoppedAt)
+        // the time ran 2 minutes over: one more 5-minute video leaves 5 minutes, not 3
+        val over = state().copy(spentMs = 32 * 60_000L, done = true).plusOne(YtBoxItem("c", 0, null, 300))
+        assertEquals(5 * 60_000L, over.remainingMs(0))
         // at 2x a 5-minute video takes 2.5 real minutes
         assertEquals(150_000L, state().copy(speed = 2f).realMs(300))
     }
