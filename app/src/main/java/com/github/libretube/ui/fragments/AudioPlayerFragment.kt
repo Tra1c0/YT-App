@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -84,6 +85,8 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
     var isOffline: Boolean = false
         private set
     private var playerController: MediaController? = null
+    private var controllerRequest = 0L
+    private val seekBarUpdate = Runnable { updateSeekBar() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,18 +94,22 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
         audioHelper = AudioHelper(requireContext())
 
         isOffline = requireArguments().getBoolean(IntentData.offlinePlayer)
+    }
 
+    private fun connectToPlayerService() {
+        val request = ++controllerRequest
         BackgroundHelper.startMediaService(
             requireContext(),
             if (isOffline) OfflinePlayerService::class.java else OnlinePlayerService::class.java,
-        ) {
-            if (_binding == null) {
-                it.sendCustomCommand(AbstractPlayerService.stopServiceCommand, Bundle.EMPTY)
-                it.release()
+        ) { controller ->
+            if (_binding == null || request != controllerRequest) {
+                controller.release()
                 return@startMediaService
             }
 
-            playerController = it
+            playerController?.removeListener(playerListener)
+            playerController?.release()
+            playerController = controller
             handleServiceConnection()
         }
     }
@@ -276,6 +283,7 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
             // if the player is minimized, the fragment behind the player should handle the event
             onBackPressedCallback.isEnabled = isMiniPlayerVisible != true
         }
+        connectToPlayerService()
     }
 
     fun switchToVideoMode(videoId: String) {
@@ -297,12 +305,14 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
     }
 
     private fun killFragment(stopPlayer: Boolean) {
+        controllerRequest++
         viewModel.isMiniPlayerVisible.value = false
 
         if (stopPlayer) playerController?.sendCustomCommand(
             AbstractPlayerService.stopServiceCommand,
             Bundle.EMPTY
         )
+        playerController?.removeListener(playerListener)
         playerController?.release()
         playerController = null
 
@@ -390,9 +400,10 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
         // reset color filter if data saver mode got toggled or conditions for it changed
         binding.thumbnail.setColorFilter(Color.TRANSPARENT)
 
-        lifecycleScope.launch {
-            val binding = _binding ?: return@launch
+        viewLifecycleOwner.lifecycleScope.launch {
             val bitmap = ImageHelper.getImage(requireContext(), thumbnailUri)
+            val binding = _binding ?: return@launch
+            if (playerController?.mediaMetadata?.artworkUri != thumbnailUri) return@launch
             binding.thumbnail.setImageBitmap(bitmap)
             binding.miniPlayerThumbnail.setImageBitmap(bitmap)
             binding.thumbnail.isVisible = true
@@ -401,6 +412,7 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
     }
 
     private fun initializeSeekBar() {
+        binding.timeBar.clearOnChangeListeners()
         binding.timeBar.addOnChangeListener { _, value, fromUser ->
             if (fromUser) playerController?.seekTo(value.toLong() * 1000)
         }
@@ -411,13 +423,15 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
      * Update the position, duration and text views belonging to the seek bar
      */
     private fun updateSeekBar() {
+        handler.removeCallbacks(seekBarUpdate)
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return
         val binding = _binding ?: return
         val duration = playerController?.duration?.takeIf { it > 0 } ?: let {
             // if there's no duration available, clear everything
             binding.timeBar.value = 0f
             binding.duration.text = ""
             binding.currentPosition.text = ""
-            handler.postDelayed(this::updateSeekBar, 100)
+            handler.postDelayed(seekBarUpdate, 100)
             return
         }
         val currentPosition = playerController?.currentPosition?.toFloat() ?: 0f
@@ -436,7 +450,7 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
             binding.timeBar.valueTo
         )
 
-        handler.postDelayed(this::updateSeekBar, 200)
+        handler.postDelayed(seekBarUpdate, 200)
     }
 
     private fun updatePlayPauseButton() {
@@ -449,27 +463,29 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
         }
     }
 
+    private val playerListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            super.onIsPlayingChanged(isPlaying)
+
+            updatePlayPauseButton()
+            isPaused = !isPlaying
+        }
+
+        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+            super.onMediaMetadataChanged(mediaMetadata)
+
+            updateStreamInfo(mediaMetadata)
+            // JSON-encode as work-around for https://github.com/androidx/media/issues/564
+            val chapters: List<ChapterSegment>? =
+                mediaMetadata.extras?.getString(IntentData.chapters)?.let {
+                    JsonHelper.json.decodeFromString(it)
+                }
+            chaptersModel.chaptersLiveData.value = chapters
+        }
+    }
+
     private fun handleServiceConnection() {
-        playerController?.addListener(object : Player.Listener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                super.onIsPlayingChanged(isPlaying)
-
-                updatePlayPauseButton()
-                isPaused = !isPlaying
-            }
-
-            override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-                super.onMediaMetadataChanged(mediaMetadata)
-
-                updateStreamInfo(mediaMetadata)
-                // JSON-encode as work-around for https://github.com/androidx/media/issues/564
-                val chapters: List<ChapterSegment>? =
-                    mediaMetadata.extras?.getString(IntentData.chapters)?.let {
-                        JsonHelper.json.decodeFromString(it)
-                    }
-                chaptersModel.chaptersLiveData.value = chapters
-            }
-        })
+        playerController?.addListener(playerListener)
         playerController?.mediaMetadata?.let { updateStreamInfo(it) }
         // JSON-encode as work-around for https://github.com/androidx/media/issues/564
         chaptersModel.chaptersLiveData.value =
@@ -482,8 +498,24 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
     }
 
     override fun onDestroyView() {
+        controllerRequest++
+        handler.removeCallbacksAndMessages(null)
+        playerController?.removeListener(playerListener)
+        playerController?.release()
+        playerController = null
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onStart() {
+        super.onStart()
+        updateSeekBar()
+        updateChapterIndex()
+    }
+
+    override fun onStop() {
+        handler.removeCallbacksAndMessages(null)
+        super.onStop()
     }
 
     override fun onSingleTap() {
@@ -538,6 +570,7 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
     }
 
     private fun updateChapterIndex() {
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return
         if (_binding == null) return
         handler.postDelayed(this::updateChapterIndex, 100)
 

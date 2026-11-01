@@ -137,7 +137,7 @@ jobs:
       - name: Collect the exact build to validate
         id: bundle
         env:
-          FULL_VALIDATION: ${{ github.ref == 'refs/heads/main' || inputs.full_validation == true }}
+          FULL_VALIDATION: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/r12/release-candidate' || inputs.full_validation == true }}
         run: |
           set -euo pipefail
           mkdir -p out

@@ -484,7 +484,7 @@ private fun YouTubePage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBa
             )
         }
         WatchCreator(palette, imageLoader, streams, b.hasChannel, b.subscribed, b.toggle, actions.onOpenChannel)
-        EvenRows(listOf(b.like) + b.actions.take(3), perRow = 4, modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 14.dp)) { action, _, mod ->
+        EvenRows(listOf(b.like) + b.actions, perRow = 5, modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 14.dp)) { action, _, mod ->
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = mod

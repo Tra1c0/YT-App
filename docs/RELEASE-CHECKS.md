@@ -22,9 +22,10 @@ Eine Veröffentlichung hängt vom Ergebnis der Prüfungen ab. `main` erfordert d
 | E | Zeitbezogene Kommentare, Spoilerschutz und Szenenwechsel |
 | Kompatibilität | Start, lokale Wiedergabe, Bild-in-Bild samt Rückkehr, Miniplayer, Bibliothek und Einstellungen in allen Ansichten auf Android 8 und 16 |
 | Barrierefreiheit | Alle Ansichten mit 180 % Systemschrift und ausgeschalteten Systemanimationen auf API 34; beschriftete, auswählbare Navigationstabs |
+| Audio | Videoseite → Nur Audio → Hintergrund → Audioseite → Video in Standard, YouTube neu, Glas und Frost; gemeinsamer Player-Code |
 | Update | Installation über Build 64 und den letzten stabilen Build; Abos, Playlists samt Videos, Verlauf, Position und Einstellungen bleiben erhalten |
 
-Auf Arbeitsbranches laufen zunächst A–E für YouTube neu und Glas. Mit `full_validation=true` und auf `main` kommen alle anderen Ansichten und die Kompatibilitätsprüfungen hinzu.
+Auf Arbeitsbranches laufen zunächst A–E für YouTube neu und Glas. Mit `full_validation=true`, auf `r12/release-candidate` und auf `main` kommen alle anderen Ansichten und die Kompatibilitätsprüfungen hinzu.
 
 ## Verlässliche Eingaben und Testdaten
 

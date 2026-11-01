@@ -1649,6 +1649,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         // YT: the features of round 12 let go of the page while its views still exist
         com.github.libretube.ui.yt.player.YtPlayerModules.onDestroyView(this)
         YtPlaybackClock.detach(ytClockReader)
+        if (::playerController.isInitialized) playerController.removeListener(playerListener)
+        handler.removeCallbacksAndMessages(null)
         super.onDestroyView()
         _binding = null
     }

@@ -649,6 +649,38 @@ for design in $DESIGNS; do
         echo "::error::$design: video did not return from picture-in-picture"
         crashed="$crashed $design-pip-return"
       fi
+      case "$design" in
+        youtube|standard|glass|frost)
+          if b=$(driver_find '^Nur Audio$|^Audio only$|id/relPlayer_background$'); then
+            read -r l t r bt <<< "$b"
+            driver_command TAP $(( (l+r)/2 )) $(( (t+bt)/2 ))
+            sleep 2
+            if driver_find 'id/time_bar$' >/dev/null; then
+              shot "$design-2-audio"
+              timeout 10 adb shell input keyevent KEYCODE_HOME || true
+              sleep 2
+              timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true --ez openAudioPlayer true --ez audioOnly true --ez offlinePlayer true >/dev/null
+              if b=$(driver_find 'id/open_video$'); then
+                read -r l t r bt <<< "$b"
+                driver_command TAP $(( (l+r)/2 )) $(( (t+bt)/2 ))
+                sleep 2
+                if ! driver_find 'id/player$' >/dev/null; then
+                  echo "::error::$design: audio did not return to video"
+                  crashed="$crashed $design-audio-return"
+                fi
+              else
+                echo "::error::$design: background audio did not return"
+                crashed="$crashed $design-audio-background"
+              fi
+            else
+              echo "::error::$design: audio player did not open"
+              crashed="$crashed $design-audio"
+            fi
+          else
+            echo "::error::$design: audio action is not reachable"
+            crashed="$crashed $design-audio-action"
+          fi ;;
+      esac
     fi
     dismiss_anr; timeout 10 adb shell input keyevent KEYCODE_BACK || true
     sleep 5
