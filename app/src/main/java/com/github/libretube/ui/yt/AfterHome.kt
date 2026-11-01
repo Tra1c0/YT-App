@@ -95,6 +95,9 @@ fun AfterHomeScreen(
     onRefresh: () -> Unit,
     onOpenVideo: (StreamItem) -> Unit,
     onShowAll: () -> Unit,
+    onSave: (StreamItem) -> Unit = {},
+    onShare: (StreamItem) -> Unit = {},
+    onOpenChannel: (StreamItem) -> Unit = {},
 ) {
     val playable = videos.orEmpty()
         .filter { !it.isShort && !it.isUpcoming && it.url != null }
@@ -141,6 +144,9 @@ fun AfterHomeScreen(
         }
     }
 
+    // a long press on a poster opens the quick actions (also hide and queue without swiping)
+    var quick by remember { mutableStateOf<StreamItem?>(null) }
+    Box(Modifier.fillMaxSize()) {
     YtRefreshBox(
         palette = palette,
         isRefreshing = isLoading && videos != null,
@@ -254,14 +260,31 @@ fun AfterHomeScreen(
                             .padding(start = 16.dp, end = 16.dp, bottom = 6.dp)
                             .ytEnter(enter, "more" + pair.first().url, row),
                     ) {
-                        pair.forEach { video ->
-                            AfterPoster(palette, imageLoader, video, open, Modifier.weight(1f))
+                        pair.forEachIndexed { i, video ->
+                            // the posters of the grid swipe: left hides, right queues (a film strip edge)
+                            AfterPoster(
+                                palette, imageLoader, video, open,
+                                Modifier
+                                    .weight(1f)
+                                    .ytCardSwipe(palette, video, RoundedCornerShape(10.dp), testTag = "yt_card_${row * 2 + i}"),
+                                onQuick = { quick = it },
+                            )
                         }
                         if (pair.size == 1) Spacer(Modifier.weight(1f))
                     }
                 }
             }
         }
+    }
+    YtQuickSheet(
+        palette = palette,
+        imageLoader = imageLoader,
+        video = quick,
+        onDismiss = { quick = null },
+        onSave = onSave,
+        onShare = onShare,
+        onChannel = onOpenChannel,
+    )
     }
 }
 
@@ -351,7 +374,9 @@ private fun AfterHero(
         val headerOverlap = with(LocalDensity.current) { YtChrome.headerOverlapPx.toDp() }
         Row(
             horizontalArrangement = Arrangement.spacedBy(25.dp),
-            modifier = Modifier.padding(start = 27.dp, end = 20.dp, top = headerOverlap + 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 27.dp, end = 14.dp, top = headerOverlap + 4.dp),
         ) {
             val tabs = listOf(
                 AFTER_TAB_SELECTION to stringResource(R.string.yt_after_selection),
@@ -384,6 +409,20 @@ private fun AfterHero(
                     )
                 }
             }
+            Spacer(Modifier.weight(1f))
+            // the Feed-Regler: a small tangerine "Programm" at the end of the hero tabs
+            YtTuneWord(
+                text = stringResource(R.string.yt_feed_open_after).uppercase(),
+                style = TextStyle(
+                    fontFamily = YtFonts.archivoNarrow,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    letterSpacing = 1.sp,
+                    shadow = Shadow(Color(0xCC000000), Offset(0f, 1f), 8f),
+                ),
+                color = palette.accent,
+                active = palette.text,
+            )
         }
         if (featured.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -524,10 +563,13 @@ private fun AfterPoster(
     video: StreamItem,
     onOpenVideo: (StreamItem) -> Unit,
     modifier: Modifier = Modifier,
+    onQuick: ((StreamItem) -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
             .aspectRatio(177f / 105f)
+            // held: the poster lifts and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, RoundedCornerShape(10.dp), onRelease = onQuick?.let { quick -> { quick(video) } })
             .ytPressable(RoundedCornerShape(10.dp)) { onOpenVideo(video) }
             .background(palette.surface),
     ) {

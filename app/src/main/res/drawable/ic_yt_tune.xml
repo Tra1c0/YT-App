@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the Feed-Regler, three sliders in strokes -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M4,7H11M15,7H20M4,12H7M11,12H20M4,17H13M17,17H20"
+        android:strokeWidth="1.8"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M13,7m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0M9,12m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0M15,17m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"
+        android:strokeWidth="1.8"
+        android:strokeColor="#FFFFFFFF" />
+</vector>

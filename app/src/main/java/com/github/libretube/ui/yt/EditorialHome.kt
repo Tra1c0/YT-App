@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.IntOffset
 import kotlin.math.roundToInt
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -51,6 +53,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -119,32 +122,36 @@ fun EditorialHomeScreen(
                 .graphicsLayer {
                     translationX = turn.value * size.width * 0.3f
                     alpha = 1f - kotlin.math.abs(turn.value) * 0.85f
-                }
-                .ytSwipe(swipe, threshold, direction = 0, haptics = haptics) { way ->
-                    val i = tabs.indexOf(tab)
-                    val next = (i - way).coerceIn(0, tabs.lastIndex)
-                    if (next != i) onSelectTab(tabs[next])
                 },
             contentPadding = PaddingValues(bottom = 16.dp + ytNavPadding()),
         ) {
-            item {
-                EditorialMainTabs(
-                    palette = palette,
-                    tabs = listOf(
-                        YT_TAB_FOR_YOU to stringResource(R.string.yt_tab_for_you),
-                        YT_TAB_SUBS to stringResource(R.string.yt_tab_subscriptions),
-                        YT_TAB_LIVE to stringResource(R.string.yt_tab_live),
-                    ),
-                    selected = tab,
-                    onSelect = onSelectTab,
-                )
-                Box(
-                    Modifier
-                        .padding(horizontal = 17.dp)
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(palette.text),
-                )
+            // the entries swipe on their own now (hide, queue), so the page turns by the header
+            item(key = "tabs") {
+                Column(
+                    Modifier.ytSwipe(swipe, threshold, direction = 0, haptics = haptics) { way ->
+                        val i = tabs.indexOf(tab)
+                        val next = (i - way).coerceIn(0, tabs.lastIndex)
+                        if (next != i) onSelectTab(tabs[next])
+                    },
+                ) {
+                    EditorialMainTabs(
+                        palette = palette,
+                        tabs = listOf(
+                            YT_TAB_FOR_YOU to stringResource(R.string.yt_tab_for_you),
+                            YT_TAB_SUBS to stringResource(R.string.yt_tab_subscriptions),
+                            YT_TAB_LIVE to stringResource(R.string.yt_tab_live),
+                        ),
+                        selected = tab,
+                        onSelect = onSelectTab,
+                    )
+                    Box(
+                        Modifier
+                            .padding(horizontal = 17.dp)
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(palette.text),
+                    )
+                }
             }
             if (tab == YT_TAB_FOR_YOU) {
                 item {
@@ -167,13 +174,13 @@ fun EditorialHomeScreen(
                 }
             }
             itemsIndexed(videos.take(3), key = { _, v -> "top-" + v.url }) { index, video ->
-                EditorialItem(palette, imageLoader, index + 1, video, actions, Modifier.ytEnter(enter, tab + video.url, index))
+                EditorialItem(palette, imageLoader, index + 1, video, actions, ytItemMotion().ytEnter(enter, tab + video.url, index))
             }
             if (shorts.isNotEmpty() && tab != YT_TAB_LIVE) {
                 item { EditorialShorts(palette, imageLoader, shorts, actions) }
             }
             itemsIndexed(videos.drop(3), key = { _, v -> "more-" + v.url }) { index, video ->
-                EditorialItem(palette, imageLoader, index + 4, video, actions, Modifier.ytEnter(enter, tab + video.url, index + 3))
+                EditorialItem(palette, imageLoader, index + 4, video, actions, ytItemMotion().ytEnter(enter, tab + video.url, index + 3))
             }
         }
     }
@@ -192,7 +199,17 @@ private fun EditorialMainTabs(
     val target = bounds[selected]
     val barX by animateDpAsState(with(density) { (target?.first ?: 0).toDp() }, ytStateSpec(), label = "editorialBarX")
     val barWidth by animateDpAsState(with(density) { (target?.second ?: 0).toDp() }, ytStateSpec(), label = "editorialBarWidth")
-    Box(Modifier.padding(start = 17.dp, end = 16.dp, top = 6.dp)) {
+    Box(Modifier.fillMaxWidth().padding(start = 17.dp, end = 16.dp, top = 6.dp)) {
+        // the Feed-Regler in the paper's mono, at the end of the tabs, on their line; it takes
+        // no height of its own, so the blue bar stays on the rule
+        Box(Modifier.matchParentSize().padding(bottom = 9.dp), contentAlignment = Alignment.CenterEnd) {
+            YtTuneWord(
+                text = stringResource(R.string.yt_feed_open_editorial).uppercase(),
+                style = TextStyle(fontFamily = YtFonts.plexMono, fontSize = 11.sp, letterSpacing = 1.sp, textDecoration = TextDecoration.Underline),
+                color = palette.text,
+                active = palette.accent,
+            )
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(34.dp)) {
             tabs.forEach { (key, label) ->
                 val active = key == selected
@@ -287,37 +304,13 @@ private fun EditorialItem(
         tween(if (pressed) 160 else 320, easing = YtEaseOut),
         label = "editorialColor",
     )
-    // pushed to the left, the entry slides off a black slip that reads MERKEN; letting go
-    // there saves the video
-    val swipe = rememberYtSwipe()
-    val haptics = rememberYtHaptics()
-    val threshold = with(LocalDensity.current) { 96.dp.toPx() }
-    Box(modifier) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .matchParentSize()
-                .padding(end = 16.dp)
-                .graphicsLayer { alpha = (-swipe.offset.value / threshold * 1.5f).coerceIn(0f, 1f) }
-                .background(Color.Black),
-        ) {
-            Text(
-                text = stringResource(R.string.save).uppercase(),
-                color = Color.White,
-                style = TextStyle(fontFamily = YtFonts.plexMono, fontWeight = FontWeight.Medium, fontSize = 12.sp, letterSpacing = 2.sp),
-                modifier = Modifier
-                    .padding(start = 180.dp)
-                    .graphicsLayer {
-                        val p = (-swipe.offset.value / threshold).coerceIn(0f, 1.2f)
-                        translationX = (1f - p) * 24.dp.toPx()
-                    },
-            )
-        }
+    // pushed either way, the entry slides off a black slip: AUSBLENDEN to the left, ANS ENDE
+    // to the right (ytCardSwipe); MERKEN moved to the dots (quick actions)
     Column(
-        Modifier
-            .offset { IntOffset(swipe.offset.value.roundToInt(), 0) }
-            .ytSwipe(swipe, threshold, direction = -1, haptics = haptics) { actions.onSave(video) }
+        modifier
+            .ytCardSwipe(palette, video, RectangleShape, inset = PaddingValues(end = 16.dp), testTag = "yt_card_${number - 1}")
+            // held: a hard frame, then it drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, RectangleShape, inset = PaddingValues(end = 16.dp), onRelease = { actions.onQuick(video) })
             .background(palette.background)
             .padding(start = 17.dp, end = 16.dp, top = 10.dp),
     ) {
@@ -390,11 +383,11 @@ private fun EditorialItem(
             }
             Icon(
                 painterResource(R.drawable.ic_yt_dots_vertical),
-                contentDescription = null,
+                contentDescription = stringResource(R.string.yt_home_more_actions),
                 tint = palette.text,
                 modifier = Modifier
                     .size(22.dp)
-                    .clickable { actions.onSave(video) },
+                    .clickable { actions.onQuick(video) },
             )
         }
         Box(
@@ -404,7 +397,6 @@ private fun EditorialItem(
                 .height(1.dp)
                 .background(palette.text),
         )
-    }
     }
 }
 

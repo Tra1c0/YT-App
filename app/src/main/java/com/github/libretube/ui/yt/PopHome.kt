@@ -4,7 +4,9 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -124,6 +127,9 @@ fun PopHomeScreen(
                     PopTab(palette, stringResource(R.string.yt_tab_for_you), null, tab == YT_TAB_FOR_YOU, 99) { onSelectTab(YT_TAB_FOR_YOU) }
                     PopTab(palette, stringResource(R.string.yt_tab_subscriptions), R.drawable.ic_yt_nav_subs, tab == YT_TAB_SUBS, 78) { onSelectTab(YT_TAB_SUBS) }
                     PopTab(palette, stringResource(R.string.yt_tab_live), R.drawable.ic_yt_nav_live, tab == YT_TAB_LIVE, 74) { onSelectTab(YT_TAB_LIVE) }
+                    // the Feed-Regler as a fourth blob, plum while it is open
+                    val openSheet = rememberOpenFeedSheet()
+                    PopTab(palette, stringResource(R.string.yt_feed_open_short), R.drawable.ic_yt_tune, YtFeedUi.sheet, 74, openSheet)
                 }
             }
             if (source == null || videos.isEmpty()) {
@@ -135,16 +141,16 @@ fun PopHomeScreen(
                 }
             }
             videos.firstOrNull()?.let { first ->
-                item(key = "feature-" + first.url) { PopFeature(palette, imageLoader, first, actions, Modifier.ytEnter(enter, tab + first.url, 0)) }
+                item(key = "feature-" + first.url) { PopFeature(palette, imageLoader, first, actions, ytItemMotion().ytEnter(enter, tab + first.url, 0)) }
             }
             items(videos.drop(1).take(1), key = { "list-" + it.url }) {
-                PopListCard(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, 1).graphicsLayer { rotationZ = -2.5f * swing.value })
+                PopListCard(palette, imageLoader, it, 1, actions, ytItemMotion().ytEnter(enter, tab + it.url, 1).graphicsLayer { rotationZ = -2.5f * swing.value })
             }
             if ((shorts.isNotEmpty() || liveCard != null) && tab != YT_TAB_LIVE) {
                 item { PopShorts(palette, imageLoader, shorts, liveCard, actions) }
             }
-            items(videos.drop(2), key = { "more-" + it.url }) {
-                PopListCard(palette, imageLoader, it, actions, Modifier.ytEnter(enter, tab + it.url, videos.indexOf(it)).graphicsLayer { rotationZ = -2.5f * swing.value })
+            itemsIndexed(videos.drop(2), key = { _, video -> "more-" + video.url }) { index, video ->
+                PopListCard(palette, imageLoader, video, index + 2, actions, ytItemMotion().ytEnter(enter, tab + video.url, index + 2).graphicsLayer { rotationZ = -2.5f * swing.value })
             }
         }
     }
@@ -212,6 +218,7 @@ private fun PopTab(palette: YtPalette, label: String, icon: Int?, active: Boolea
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PopFeature(
     palette: YtPalette,
@@ -221,6 +228,7 @@ private fun PopFeature(
     modifier: Modifier = Modifier,
 ) {
     val card = FeatureShape(smallFraction = 0.06f, largeFraction = 0.165f)
+    // a long press opens the quick actions (also hide and queue without swiping)
     // held, the card inflates a little like a balloon and pops back when let go
     val scope = rememberCoroutineScope()
     val motion = LocalYtMotion.current
@@ -229,6 +237,10 @@ private fun PopFeature(
         modifier
             .padding(horizontal = 14.dp)
             .fillMaxWidth()
+            // left hides, right queues: a blob inflates where the card was
+            .ytCardSwipe(palette, video, card, testTag = "yt_card_0")
+            // held: the balloon lifts and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, card, onRelease = { actions.onQuick(video) })
             .graphicsLayer {
                 val scale = 1f + 0.05f * inflate.value
                 scaleX = scale
@@ -368,11 +380,13 @@ private fun PopFeature(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PopListCard(
     palette: YtPalette,
     imageLoader: ImageLoader,
     video: StreamItem,
+    index: Int,
     actions: YtHomeActions,
     modifier: Modifier = Modifier,
 ) {
@@ -382,6 +396,8 @@ private fun PopListCard(
             .padding(start = 14.dp, end = 14.dp, top = 12.dp)
             .fillMaxWidth()
             .height(99.dp)
+            .ytCardSwipe(palette, video, shape, testTag = "yt_card_$index")
+            .ytHomeCard(palette, video, shape, onRelease = { actions.onQuick(video) })
             .shadow(4.dp, shape, clip = false, ambientColor = PopShadow, spotColor = PopShadow)
             .clip(shape)
             .background(palette.surface)
@@ -459,11 +475,11 @@ private fun PopListCard(
                 }
                 Icon(
                     painterResource(R.drawable.ic_yt_dots_vertical),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.yt_home_more_actions),
                     tint = palette.text,
                     modifier = Modifier
                         .size(20.dp)
-                        .clickable { actions.onSave(video) },
+                        .clickable { actions.onQuick(video) },
                 )
             }
         }

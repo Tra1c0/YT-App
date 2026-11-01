@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: intent "Einfach stöbern", a compass -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M12,12m-8.5,0a8.5,8.5 0,1 1,17 0a8.5,8.5 0,1 1,-17 0"
+        android:strokeWidth="1.8"
+        android:strokeColor="#FFFFFFFF" />
+    <path
+        android:pathData="M15.5,8.5L13.2,13.2L8.5,15.5L10.8,10.8Z"
+        android:fillColor="#FFFFFFFF" />
+</vector>

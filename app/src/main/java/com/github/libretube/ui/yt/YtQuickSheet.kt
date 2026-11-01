@@ -4,6 +4,8 @@ import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -47,12 +49,14 @@ import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.github.libretube.R
 import com.github.libretube.api.obj.StreamItem
+import com.github.libretube.ui.yt.feed.YtPauseRules
 
 /**
- * YT: quick actions for a video (save, share, channel) in a sheet that springs up from the
- * bottom, follows the finger when dragged (with a rubber band upwards) and can be thrown away:
- * letting go low or with a flick downwards closes it, carrying the finger's velocity. The
- * sheet uses the surfaces of the design.
+ * YT: quick actions for a video (save, share, channel, and since round 12 the end of the queue,
+ * hiding it and pausing its channel for a week, also the ways to reach the card swipes without
+ * swiping) in a sheet that springs up from the bottom, follows the finger when dragged (with a
+ * rubber band upwards) and can be thrown away: letting go low or with a flick downwards closes
+ * it, carrying the finger's velocity. The sheet uses the surfaces of the design.
  */
 @Composable
 fun YtQuickSheet(
@@ -142,6 +146,27 @@ fun YtQuickSheet(
                 QuickRow(palette, R.drawable.ic_playlist_add, stringResource(R.string.save)) { onSave(item); onDismiss() }
                 QuickRow(palette, R.drawable.ic_share, stringResource(R.string.share)) { onShare(item); onDismiss() }
                 QuickRow(palette, R.drawable.ic_yt_person, stringResource(R.string.yt_side_open_channel)) { onChannel(item); onDismiss() }
+                QuickRow(palette, R.drawable.ic_queue, stringResource(R.string.yt_home_action_queue)) { ytQueueVideo(item); onDismiss() }
+                QuickRow(palette, R.drawable.ic_yt_hide, stringResource(R.string.yt_home_action_hide)) { ytHideVideo(item); onDismiss() }
+                if (item.uploaderUrl != null || !item.uploaderName.isNullOrBlank()) {
+                    val pause = rememberPauseOf(item)
+                    val label = if (pause == null) {
+                        stringResource(R.string.yt_home_pause_week)
+                    } else {
+                        stringResource(R.string.yt_home_pause_end, YtPauseRules.daysLeft(pause.untilMillis, System.currentTimeMillis()))
+                    }
+                    QuickRow(palette, R.drawable.ic_yt_pause_week, label) { ytTogglePause(item); onDismiss() }
+                }
+                // "Warum sehe ich das?": the feed engine's reasons, and more or less of the channel
+                var why by remember(item) { mutableStateOf(false) }
+                QuickRow(palette, R.drawable.ic_info, stringResource(R.string.yt_feed_why)) { why = !why }
+                AnimatedVisibility(
+                    visible = why,
+                    enter = ytEnterTransition(expandVertically(spring(dampingRatio = 0.85f, stiffness = 420f)) + fadeIn(tween(160))),
+                    exit = ytExitTransition(shrinkVertically(tween(180, easing = YtEaseOut)) + fadeOut(tween(120))),
+                ) {
+                    YtWhyList(palette, item, Modifier.padding(start = 6.dp, end = 6.dp, top = 12.dp))
+                }
             }
         }
     }

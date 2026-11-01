@@ -2,7 +2,9 @@ package com.github.libretube.ui.yt
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -151,6 +153,8 @@ fun FrostHomeScreen(
                                 .fillMaxWidth()
                                 .height(46.dp)
                                 .frost(RoundedCornerShape(23.dp))
+                                // held: a frosted lens lifts off and drags onto a card to search its channel
+                                .ytSearchDragSource(palette)
                                 .clickable(onClick = actions.onSearch)
                                 .padding(horizontal = 6.dp),
                         ) {
@@ -168,6 +172,17 @@ fun FrostHomeScreen(
                                 color = palette.textSecondary,
                                 style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 14.sp),
                                 modifier = Modifier.padding(start = 12.dp),
+                            )
+                            Spacer(Modifier.weight(1f))
+                            // the Feed-Regler: a frost circle at the end of the search row, orange while open
+                            val frostCircle = Modifier.frost(CircleShape)
+                            YtTuneCircle(
+                                fill = Color(0x33FFFFFF),
+                                ink = palette.text,
+                                activeFill = palette.accent,
+                                activeInk = palette.onAccent,
+                                glyph = 17.dp,
+                                surface = { m -> m.then(frostCircle) },
                             )
                         }
                     }
@@ -190,11 +205,11 @@ fun FrostHomeScreen(
                     }
                     videos.firstOrNull()?.let { first ->
                         item(key = "big-" + first.url) {
-                            Box(Modifier.ytEnter(enter, "big" + first.url, 0)) { FrostBig(palette, imageLoader, first, actions) }
+                            Box(ytItemMotion().ytEnter(enter, "big" + first.url, 0)) { FrostBig(palette, imageLoader, first, actions) }
                         }
                     }
-                    items(videos.drop(1), key = { "row-" + it.url }) {
-                        Box(Modifier.ytEnter(enter, "row" + it.url, videos.indexOf(it))) { FrostRow(palette, imageLoader, it, actions) }
+                    itemsIndexed(videos.drop(1), key = { _, video -> "row-" + video.url }) { index, video ->
+                        Box(ytItemMotion().ytEnter(enter, "row" + video.url, index + 1)) { FrostRow(palette, imageLoader, video, index + 1, actions) }
                     }
                 }
             }
@@ -268,6 +283,7 @@ private fun FrostStat(palette: YtPalette, label: String, value: Int?, tag: Strin
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, actions: YtHomeActions) {
     val press = remember { MutableInteractionSource() }
@@ -276,6 +292,10 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
         Modifier
             .fillMaxWidth()
             .aspectRatio(1.35f)
+            // left hides, right queues: the frost clears around the mark in the gap
+            .ytCardSwipe(palette, video, RoundedCornerShape(26.dp), testTag = "yt_card_0")
+            // held: lifts and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, RoundedCornerShape(26.dp), onRelease = { actions.onQuick(video) })
             .frost(RoundedCornerShape(26.dp), clear = { thaw })
             .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
             .padding(8.dp),
@@ -328,14 +348,18 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FrostRow(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, actions: YtHomeActions) {
+private fun FrostRow(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, index: Int, actions: YtHomeActions) {
     val press = remember { MutableInteractionSource() }
     val thaw by rememberThaw(press)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .ytCardSwipe(palette, video, RoundedCornerShape(20.dp), testTag = "yt_card_$index")
+            // held: lifts and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, RoundedCornerShape(20.dp), onRelease = { actions.onQuick(video) })
             .frost(RoundedCornerShape(20.dp), clear = { thaw })
             .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
             .padding(8.dp),

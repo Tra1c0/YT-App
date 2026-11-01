@@ -58,12 +58,10 @@ import com.github.libretube.api.MediaServiceRepository
 import com.github.libretube.api.TrendingCategory
 import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.extensions.formatShort
-import com.github.libretube.extensions.toID
 import com.github.libretube.helpers.ImageHelper
 import com.github.libretube.helpers.NavigationHelper
 import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.helpers.YtDesign
-import com.github.libretube.parcelable.PlayerData
 import com.github.libretube.ui.fragments.TrendsFragment
 import com.github.libretube.ui.models.SubscriptionsViewModel
 import kotlinx.coroutines.Dispatchers
@@ -90,7 +88,7 @@ object YtLive {
             setContent {
                 var reload by remember { mutableIntStateOf(0) }
                 var loading by remember { mutableStateOf(true) }
-                val live by produceState<List<StreamItem>?>(null, reload) {
+                val loaded by produceState<List<StreamItem>?>(null, reload) {
                     loading = true
                     val region = PreferenceHelper.getTrendingRegion(context)
                     value = withContext(Dispatchers.IO) {
@@ -99,7 +97,9 @@ object YtLive {
                     }
                     loading = false
                 }
-                val feed by viewModel.videoFeed.observeAsState()
+                // hidden videos and paused channels stay off here too (rememberYtVisible)
+                val live = rememberYtVisible(loaded)
+                val feed = rememberYtVisible(viewModel.videoFeed.observeAsState().value)
                 YtTheme(palette) {
                     YouTubeLiveScreen(
                         palette = palette,
@@ -109,7 +109,7 @@ object YtLive {
                         isLoading = loading,
                         onRefresh = { reload++ },
                         onChangeRegion = { TrendsFragment.showChangeRegionDialog(context) { reload++ } },
-                        onOpen = { video -> video.url?.let { NavigationHelper.navigateVideo(context, PlayerData(it.toID())) } },
+                        onOpen = { video -> YtQueue.playKeepingQueue(context, video) },
                         onOpenChannel = { url -> NavigationHelper.navigateChannel(context, url) },
                         onSave = { ytSaveVideo(fragment, it) },
                         onShare = { ytShareVideo(fragment, it) },
@@ -235,6 +235,8 @@ private fun YouTubeLiveScreen(
             onShare = onShare,
             onChannel = { it.uploaderUrl?.let(onOpenChannel) },
         )
+        // the undo pill of a stream hidden or a channel paused from the quick sheet
+        YtHomePills(palette)
     }
 }
 

@@ -87,12 +87,10 @@ import com.github.libretube.R
 import com.github.libretube.api.MediaServiceRepository
 import com.github.libretube.api.TrendingCategory
 import com.github.libretube.api.obj.StreamItem
-import com.github.libretube.extensions.toID
 import com.github.libretube.helpers.ImageHelper
 import com.github.libretube.helpers.NavigationHelper
 import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.helpers.YtDesign
-import com.github.libretube.parcelable.PlayerData
 import com.github.libretube.ui.models.SubscriptionsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -142,14 +140,15 @@ object YtKiesel {
         val composeView = ComposeView(fragment.requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val feed by viewModel.videoFeed.observeAsState()
+                // hidden videos and paused channels stay off here too (rememberYtVisible)
+                val feed = rememberYtVisible(viewModel.videoFeed.observeAsState().value)
                 SideEffect { back.isEnabled = sheet.value != null }
                 YtTheme(palette) {
                     KieselDiscoverScreen(
                         imageLoader = ImageHelper.loader(),
                         feed = feed,
                         sheet = sheet,
-                        onOpenVideo = { video -> video.url?.let { NavigationHelper.navigateVideo(context, PlayerData(it.toID())) } },
+                        onOpenVideo = { video -> YtQueue.playKeepingQueue(context, video) },
                         onOpenChannel = { url -> NavigationHelper.navigateChannel(context, url) },
                     )
                 }
@@ -528,13 +527,14 @@ private fun KieselCategorySheet(
     onOpenVideo: (StreamItem) -> Unit,
 ) {
     val context = LocalContext.current
-    val videos by produceState<List<StreamItem>?>(null, category) {
+    val loaded by produceState<List<StreamItem>?>(null, category) {
         value = withContext(Dispatchers.IO) {
             runCatching {
                 MediaServiceRepository.instance.getTrending(PreferenceHelper.getTrendingRegion(context), category)
             }.getOrDefault(emptyList())
         }.filter { it.url != null && !it.isShort }
     }
+    val videos = rememberYtVisible(loaded)
     val enter = rememberYtEnterState()
     Column(
         Modifier

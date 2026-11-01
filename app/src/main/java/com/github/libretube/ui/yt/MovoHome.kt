@@ -26,17 +26,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.foundation.layout.offset
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
-import kotlin.math.roundToInt
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -72,6 +71,8 @@ fun MovoHomeScreen(
     onRefresh: () -> Unit,
     onOpenVideo: (StreamItem) -> Unit,
     onSave: (StreamItem) -> Unit = {},
+    onShare: (StreamItem) -> Unit = {},
+    onOpenChannel: (StreamItem) -> Unit = {},
 ) {
     val source = if (tab == MOVO_TAB_FOLLOWING) following else discover ?: following
     val videos = source.orEmpty().filter { !it.isShort && !it.isUpcoming && it.url != null }
@@ -82,7 +83,10 @@ fun MovoHomeScreen(
         opening.value = video.url
         onOpenVideo(video)
     }
+    // a long press opens the quick actions; saving moved there from the swipe to the right
+    var quick by remember { mutableStateOf<StreamItem?>(null) }
 
+    Box(Modifier.fillMaxSize()) {
     CompositionLocalProvider(LocalYtOpening provides opening.value) {
         YtRefreshBox(
             palette = palette,
@@ -122,6 +126,15 @@ fun MovoHomeScreen(
                         MovoTab(palette, stringResource(R.string.yt_movo_following), tab == MOVO_TAB_FOLLOWING) {
                             onSelectTab(MOVO_TAB_FOLLOWING)
                         }
+                        // the Feed-Regler: a round third pill, cobalt while it is open
+                        YtTuneCircle(
+                            fill = palette.surface,
+                            ink = palette.text,
+                            activeFill = palette.accent,
+                            activeInk = palette.onAccent,
+                            size = 32.dp,
+                            glyph = 17.dp,
+                        )
                     }
                 }
                 if (source == null) {
@@ -139,11 +152,21 @@ fun MovoHomeScreen(
                 }
                 itemsIndexed(blocks) { index, block ->
                     Box(Modifier.ytEnter(enter, "block" + block.first().url, index)) {
-                        MovoBlock(palette, imageLoader, block, open, onSave)
+                        MovoBlock(palette, imageLoader, block, index * 4, open) { quick = it }
                     }
                 }
             }
         }
+    }
+    YtQuickSheet(
+        palette = palette,
+        imageLoader = imageLoader,
+        video = quick,
+        onDismiss = { quick = null },
+        onSave = onSave,
+        onShare = onShare,
+        onChannel = onOpenChannel,
+    )
     }
 }
 
@@ -175,8 +198,10 @@ private fun MovoBlock(
     palette: YtPalette,
     imageLoader: ImageLoader,
     block: List<StreamItem>,
+    /** The place of the block's first card on the screen, for the emulator checks. */
+    first: Int,
     onOpenVideo: (StreamItem) -> Unit,
-    onSave: (StreamItem) -> Unit,
+    onQuick: (StreamItem) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val tall = block.getOrNull(0)
@@ -190,10 +215,10 @@ private fun MovoBlock(
                     .fillMaxWidth()
                     .height(325.dp),
             ) {
-                MovoSwipeCard(palette, { onSave(tall) }, Modifier.weight(1.24f).fillMaxHeight()) {
+                MovoSwipeCard(palette, tall, first, Modifier.weight(1.24f).fillMaxHeight()) {
                     MovoCard(
                         palette, imageLoader, tall, palette.accent, Color.White, titleSize = 25.sp,
-                        uppercase = true, onOpenVideo = onOpenVideo,
+                        uppercase = true, onOpenVideo = onOpenVideo, onQuick = onQuick,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -204,18 +229,18 @@ private fun MovoBlock(
                             .weight(1f)
                             .fillMaxHeight(),
                     ) {
-                        MovoSwipeCard(palette, { onSave(upper) }, Modifier.weight(1f).fillMaxWidth()) {
+                        MovoSwipeCard(palette, upper, first + 1, Modifier.weight(1f).fillMaxWidth()) {
                             MovoCard(
                                 palette, imageLoader, upper, palette.pink, palette.ink, titleSize = 21.sp,
-                                uppercase = false, onOpenVideo = onOpenVideo,
+                                uppercase = false, onOpenVideo = onOpenVideo, onQuick = onQuick,
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }
                         if (lower != null) {
-                            MovoSwipeCard(palette, { onSave(lower) }, Modifier.weight(1f).fillMaxWidth()) {
+                            MovoSwipeCard(palette, lower, first + 2, Modifier.weight(1f).fillMaxWidth()) {
                                 MovoCard(
                                     palette, imageLoader, lower, palette.lime, palette.ink, titleSize = 21.sp,
-                                    uppercase = false, onOpenVideo = onOpenVideo,
+                                    uppercase = false, onOpenVideo = onOpenVideo, onQuick = onQuick,
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }
@@ -225,10 +250,10 @@ private fun MovoBlock(
             }
         }
         if (wide != null) {
-            MovoSwipeCard(palette, { onSave(wide) }, Modifier.fillMaxWidth().height(143.dp)) {
+            MovoSwipeCard(palette, wide, first + 3, Modifier.fillMaxWidth().height(143.dp)) {
                 MovoCard(
                     palette, imageLoader, wide, palette.surface, Color.White, titleSize = 23.sp,
-                    uppercase = false, onOpenVideo = onOpenVideo,
+                    uppercase = false, onOpenVideo = onOpenVideo, onQuick = onQuick,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -237,46 +262,13 @@ private fun MovoBlock(
 }
 
 /**
- * Swipe a card to the right to save it: the card follows the finger 1:1 up to the threshold and
- * then with a rubber band, behind it a lime field with a bookmark that grows with the pull; a
- * tick when it is far enough, a confirm when let go there, and the card springs back with the
- * finger's velocity. Taps and vertical scrolling stay untouched.
+ * A tile of the mosaic that can be swiped (ytCardSwipe): to the left it hides, behind it a pink
+ * field with a crossed-out eye; to the right it goes to the end of the queue, behind it the
+ * lime field whose mark grows with the pull. Saving moved to the long press (quick actions).
  */
 @Composable
-private fun MovoSwipeCard(palette: YtPalette, onSave: () -> Unit, modifier: Modifier, content: @Composable () -> Unit) {
-    val swipe = rememberYtSwipe()
-    val haptics = rememberYtHaptics()
-    val threshold = with(LocalDensity.current) { 96.dp.toPx() }
-    Box(modifier.clip(RoundedCornerShape(16.dp))) {
-        Box(
-            Modifier
-                .matchParentSize()
-                .graphicsLayer { alpha = (swipe.offset.value / threshold * 1.5f).coerceIn(0f, 1f) }
-                .background(palette.lime),
-        ) {
-            Icon(
-                painterResource(R.drawable.ic_yt_nav_bookmark_fill),
-                contentDescription = stringResource(R.string.save),
-                tint = palette.ink,
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 22.dp)
-                    .size(30.dp)
-                    .graphicsLayer {
-                        val p = (swipe.offset.value / threshold).coerceIn(0f, 1.3f)
-                        val scale = 0.55f + 0.5f * p
-                        scaleX = scale
-                        scaleY = scale
-                    },
-            )
-        }
-        Box(
-            Modifier
-                .fillMaxSize()
-                .offset { IntOffset(swipe.offset.value.roundToInt(), 0) }
-                .ytSwipe(swipe, threshold, direction = 1, haptics = haptics) { onSave() },
-        ) { content() }
-    }
+private fun MovoSwipeCard(palette: YtPalette, video: StreamItem, index: Int, modifier: Modifier, content: @Composable () -> Unit) {
+    Box(modifier.ytCardSwipe(palette, video, RoundedCornerShape(16.dp), testTag = "yt_card_$index")) { content() }
 }
 
 /**
@@ -293,12 +285,15 @@ private fun MovoCard(
     titleSize: TextUnit,
     uppercase: Boolean,
     onOpenVideo: (StreamItem) -> Unit,
+    onQuick: (StreamItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
             .ytRecede(video.url)
             .ytTilt()
+            // held: lifts off the mosaic and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, RoundedCornerShape(16.dp), onRelease = { onQuick(video) })
             .ytPressable(RoundedCornerShape(16.dp)) { onOpenVideo(video) }
             .background(color),
     ) {

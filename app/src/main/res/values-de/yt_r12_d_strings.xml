@@ -2,4 +2,230 @@
 <!-- YT: round 12, package D (the home screens). Same keys in the same order in values and values-de. -->
 <resources>
     <string name="yt_r12_d_category">Startseite</string>
+
+    <!-- card swipe: what the field behind a card says, short -->
+    <string name="yt_home_swipe_queue">Ans Ende</string>
+    <string name="yt_home_swipe_hide">Ausblenden</string>
+    <!-- the same as actions (menus, quick sheet, accessibility) -->
+    <string name="yt_home_action_queue">Ans Ende der Warteschlange</string>
+    <string name="yt_home_more_actions">Weitere Aktionen</string>
+    <string name="yt_home_action_hide">Video ausblenden</string>
+
+    <!-- the undo pill -->
+    <string name="yt_home_hidden_done">Video ausgeblendet</string>
+    <string name="yt_home_undo">Rückgängig</string>
+    <string name="yt_home_pause_week">Kanal 1 Woche pausieren</string>
+    <string name="yt_home_pause_done">%1$s für eine Woche pausiert</string>
+    <string name="yt_home_pause_ended">%1$s ist wieder da</string>
+    <string name="yt_home_pause_end">Pause beenden · noch %1$d T.</string>
+    <!-- a paused channel's avatar: the days left, short -->
+    <string name="yt_home_pause_days_left">noch %1$d T.</string>
+    <plurals name="yt_home_pause_days_spoken">
+        <item quantity="one">%1$s, pausiert, noch %2$d Tag</item>
+        <item quantity="other">%1$s, pausiert, noch %2$d Tage</item>
+    </plurals>
+
+    <!-- the draft queue while nothing plays -->
+    <string name="yt_home_draft_count">%1$d in der Warteschlange</string>
+    <string name="yt_home_draft_play">Abspielen</string>
+    <string name="yt_home_draft_discard">Warteschlange verwerfen</string>
+
+    <!-- settings -->
+    <string name="yt_home_card_swipe">Karten wischen</string>
+    <string name="yt_home_card_swipe_summary">Auf der Startseite: nach links blendet ein Video für 90 Tage aus, nach rechts kommt es ans Ende der Warteschlange</string>
+    <string name="yt_home_paused_channels">Pausierte Kanäle</string>
+    <string name="yt_home_paused_channels_none">Kein Kanal ist pausiert. Pausieren geht im Menü eines Videos, nach dem Ausblenden oder mit langem Druck auf das Kanalbild.</string>
+    <plurals name="yt_home_paused_channels_count">
+        <item quantity="one">%d Kanal pausiert</item>
+        <item quantity="other">%d Kanäle pausiert</item>
+    </plurals>
+    <string name="yt_home_paused_resume">Auswahl fortsetzen</string>
+    <string name="yt_home_hidden_videos">Ausgeblendete Videos</string>
+    <string name="yt_home_hidden_videos_none">Kein Video ist ausgeblendet</string>
+    <plurals name="yt_home_hidden_videos_count">
+        <item quantity="one">%d Video auf der Startseite ausgeblendet</item>
+        <item quantity="other">%d Videos auf der Startseite ausgeblendet</item>
+    </plurals>
+    <string name="yt_home_hidden_show_all">Alle wieder zeigen</string>
+    <plurals name="yt_home_hidden_show_all_message">
+        <item quantity="one">%d ausgeblendetes Video erscheint wieder auf der Startseite.</item>
+        <item quantity="other">%d ausgeblendete Videos erscheinen wieder auf der Startseite.</item>
+    </plurals>
+
+    <!-- dragging: a card onto the mini player, the search icon onto a card -->
+    <string name="yt_home_search">Suchen</string>
+    <string name="yt_home_search_channel">%1$s suchen</string>
+    <string name="yt_home_drag">Karten und Suche ziehen</string>
+    <string name="yt_home_drag_summary">Karte halten und auf den Miniplayer ziehen: Sie kommt als Nächstes, oder ans Ende, wenn schon andere warten. Die Lupe halten und auf eine Karte ziehen, um nach ihrem Kanal zu suchen</string>
+
+    <!-- the time box: "Heute habe ich … Minuten" -->
+    <string name="yt_timebox_title">Heute habe ich … Minuten</string>
+    <string name="yt_timebox_title_short">Heute: %1$d Minuten</string>
+    <string name="yt_timebox_minutes">%1$d Min.</string>
+    <string name="yt_timebox_custom">Eigene</string>
+    <string name="yt_timebox_less">5 Minuten weniger</string>
+    <string name="yt_timebox_more">5 Minuten mehr</string>
+    <string name="yt_timebox_go">Los</string>
+    <string name="yt_timebox_back">Zurück zur Auswahl</string>
+    <string name="yt_timebox_close">Schließen</string>
+    <string name="yt_timebox_planning">Plane …</string>
+    <string name="yt_timebox_nothing">Gerade nichts zum Planen. Zum Aktualisieren ziehen und noch mal versuchen.</string>
+    <string name="yt_timebox_left">noch %1$d Min.</string>
+    <string name="yt_timebox_running">Zeitbox: noch %1$d Min.</string>
+    <plurals name="yt_timebox_videos">
+        <item quantity="one">%d Video geplant</item>
+        <item quantity="other">%d Videos geplant</item>
+    </plurals>
+    <string name="yt_timebox_end">Beenden</string>
+    <string name="yt_timebox_up">Zeit ist um · Noch ein Video?</string>
+    <string name="yt_timebox_up_detail">Deine %1$d Minuten sind vorbei.</string>
+    <string name="yt_timebox_one_more">Noch ein Video</string>
+    <string name="yt_timebox_watch_on">Weiterschauen</string>
+    <string name="yt_timebox_done">Fertig</string>
+    <string name="yt_timebox_chip">Zeitbox auf der Startseite</string>
+    <string name="yt_timebox_chip_summary">Ein Knopf auf der Startseite plant Videos für die Minuten, die du hast, und hört an einer sinnvollen Stelle auf, am Ende eines Kapitels</string>
+
+    <!-- the intent chooser and the Feed-Regler -->
+    <string name="yt_intent_title">Worauf hast du Lust?</string>
+    <string name="yt_intent_subtitle">Die Startseite richtet sich danach. Ändern kannst du es jederzeit mit dem Chip unten.</string>
+    <string name="yt_intent_learn">Ich will etwas lernen</string>
+    <string name="yt_intent_music">Musik hören</string>
+    <string name="yt_intent_subscriptions">Meine Abos sehen</string>
+    <string name="yt_intent_browse">Einfach stöbern</string>
+    <string name="yt_intent_learn_hint">Längere Videos, die etwas erklären, und deine Themen</string>
+    <string name="yt_intent_music_hint">Musik-Charts und Musikkanäle</string>
+    <string name="yt_intent_subscriptions_hint">Nur deine Kanäle, das Neueste zuerst</string>
+    <string name="yt_intent_browse_hint">Abos und Charts, gemischt</string>
+    <string name="yt_intent_learn_short">Lernen</string>
+    <string name="yt_intent_music_short">Musik</string>
+    <string name="yt_intent_subscriptions_short">Abos</string>
+    <string name="yt_intent_browse_short">Stöbern</string>
+    <string name="yt_intent_minutes">Oder: Heute habe ich … Minuten</string>
+    <string name="yt_intent_skip">Jetzt nicht</string>
+    <string name="yt_intent_chip">Startseite für: %1$s. Tippen zum Ändern</string>
+    <string name="yt_intent_ask">Beim Öffnen fragen, worauf ich Lust habe</string>
+    <string name="yt_intent_ask_summary">%s. Nie über einem Link, einer Suche oder einem offenen Player</string>
+    <string name="yt_intent_ask_always">Jedes Mal</string>
+    <string name="yt_intent_ask_after30">Nach 30 Minuten weg</string>
+    <string name="yt_intent_ask_never">Nie</string>
+    <string name="yt_feed_title">Feed-Regler</string>
+    <string name="yt_feed_open">Feed anpassen</string>
+    <string name="yt_feed_open_after">Programm</string>
+    <string name="yt_feed_open_editorial">§ Einstellen</string>
+    <string name="yt_feed_open_short">Anpassen</string>
+    <string name="yt_feed_honest">Alles hier läuft auf deinem Handy. YouTube redet nicht mit und lernt nichts daraus: Es gibt keine Personalisierung auf dem Server, nur deine Abos, die Charts, deine Suchen und deinen Verlauf.</string>
+    <string name="yt_feed_for_intent">Regeln für „%1$s“</string>
+    <string name="yt_feed_preview">Vorschau</string>
+    <string name="yt_feed_preview_empty">Zu diesen Regeln passt noch nichts</string>
+    <string name="yt_feed_close">Schließen</string>
+    <string name="yt_feed_sources">Quellen und Gewichte</string>
+    <string name="yt_feed_source_subscriptions">Abos</string>
+    <string name="yt_feed_source_music">Musik-Charts</string>
+    <string name="yt_feed_source_podcasts">Podcasts</string>
+    <string name="yt_feed_source_trailers">Trailer</string>
+    <string name="yt_feed_source_gaming">Gaming</string>
+    <string name="yt_feed_source_live">Live</string>
+    <string name="yt_feed_source_topics">Deine Themen</string>
+    <string name="yt_feed_source_related">Wie zuletzt gesehen</string>
+    <string name="yt_feed_source_continue">Weiterschauen</string>
+    <string name="yt_feed_weight_off">aus</string>
+    <string name="yt_feed_weight">%1$s, Gewicht %2$d von 10</string>
+    <string name="yt_feed_weight_less">Weniger %1$s</string>
+    <string name="yt_feed_weight_more">Mehr %1$s</string>
+    <string name="yt_feed_sources_note">Themen und „wie zuletzt gesehen“ brauchen zusätzliche Anfragen und laden im Hintergrund.</string>
+    <string name="yt_feed_region">Region der Charts</string>
+    <string name="yt_feed_region_change">Ändern</string>
+    <string name="yt_feed_formats">Formate</string>
+    <string name="yt_feed_format_videos">Videos</string>
+    <string name="yt_feed_format_live">Live</string>
+    <string name="yt_feed_length">Länge</string>
+    <string name="yt_feed_length_any">Egal</string>
+    <string name="yt_feed_length_short">Unter 4 Min.</string>
+    <string name="yt_feed_length_medium">4 bis 20 Min.</string>
+    <string name="yt_feed_length_long">Über 20 Min.</string>
+    <string name="yt_feed_length_film">Über 60 Min.</string>
+    <string name="yt_feed_age">Aktualität</string>
+    <string name="yt_feed_age_any">Egal</string>
+    <string name="yt_feed_age_day">Heute</string>
+    <string name="yt_feed_age_week">Diese Woche</string>
+    <string name="yt_feed_age_month">Diesen Monat</string>
+    <string name="yt_feed_age_year">Dieses Jahr</string>
+    <string name="yt_feed_order">Reihenfolge</string>
+    <string name="yt_feed_order_mixed">Gemischt</string>
+    <string name="yt_feed_order_newest">Neueste</string>
+    <string name="yt_feed_order_popular">Meistgesehen</string>
+    <string name="yt_feed_diversity">Abwechslung</string>
+    <string name="yt_feed_per_channel">Ein Kanal unter 10 höchstens</string>
+    <string name="yt_feed_gap">Andere dazwischen</string>
+    <string name="yt_feed_no_limit">Keine Grenze</string>
+    <string name="yt_feed_watched">Gesehene Videos</string>
+    <string name="yt_feed_watched_hide">Ausblenden</string>
+    <string name="yt_feed_watched_last">Ans Ende</string>
+    <string name="yt_feed_watched_show">Zeigen</string>
+    <string name="yt_feed_channels">Kanäle</string>
+    <string name="yt_feed_channels_empty">Kanäle markierst du unten in der Vorschau oder bei einem Video unter „Warum sehe ich das?“</string>
+    <string name="yt_feed_channel_more">Mehr</string>
+    <string name="yt_feed_channel_normal">Normal</string>
+    <string name="yt_feed_channel_less">Weniger</string>
+    <string name="yt_feed_channel_pause">1 Woche Pause</string>
+    <string name="yt_feed_channel_music">Musikkanal</string>
+    <string name="yt_feed_channel_learn">Lernkanal</string>
+    <string name="yt_feed_groups">Abo-Gruppen</string>
+    <string name="yt_feed_groups_all">Alle Abos</string>
+    <string name="yt_feed_groups_none">Noch keine Gruppen. Anlegen kannst du sie im Abo-Reiter.</string>
+    <string name="yt_feed_words">Wörter</string>
+    <string name="yt_feed_include">Mehr mit diesen Wörtern</string>
+    <string name="yt_feed_only_included">Nur Videos mit diesen Wörtern</string>
+    <string name="yt_feed_never">Nie mit diesen Wörtern, in jedem Modus</string>
+    <string name="yt_feed_words_hint">Wörter, mit Komma getrennt</string>
+    <string name="yt_feed_topics">Themen</string>
+    <string name="yt_feed_topics_hint">Ein Thema, z. B. Astronomie</string>
+    <string name="yt_feed_topic_add">Thema hinzufügen</string>
+    <string name="yt_feed_topic_remove">%1$s entfernen</string>
+    <string name="yt_feed_topic_weight">%1$s, Gewicht %2$d von 5. Tippen für mehr</string>
+    <string name="yt_feed_topics_note">Jedes Thema ist eine Videosuche, die nach ihrem Gewicht beigemischt wird.</string>
+    <string name="yt_feed_learn">Lernen</string>
+    <string name="yt_feed_only_learning">Nur Videos, die etwas erklären</string>
+    <string name="yt_feed_learn_min">Lang genug ab</string>
+    <string name="yt_feed_learn_note">Erkannt an der Länge, an Wörtern wie „erklärt“ oder „Tutorial“, an deinen Themen und an Lernkanälen. Eine Schätzung, nicht YouTubes Kategorien.</string>
+    <string name="yt_feed_music">Musik</string>
+    <string name="yt_feed_only_music">Nur Musik</string>
+    <string name="yt_feed_music_audio">Musik als Audio abspielen</string>
+    <string name="yt_feed_music_note">Musik heißt: die Musik-Charts, deine Musikkanäle und „- Topic“- und VEVO-Kanäle.</string>
+    <string name="yt_feed_presets">Voreinstellungen</string>
+    <string name="yt_feed_preset_use">Voreinstellung „%1$s“ nehmen</string>
+    <string name="yt_feed_reset">Zurücksetzen</string>
+    <string name="yt_feed_minutes_value">%1$d Min.</string>
+    <string name="yt_feed_why">Warum sehe ich das?</string>
+    <string name="yt_feed_why_none">Dieses Video kommt nicht aus dem sortierten Feed.</string>
+    <string name="yt_feed_more_of">Mehr von %1$s</string>
+    <string name="yt_feed_less_of">Weniger von %1$s</string>
+    <string name="yt_feed_reason_source">Aus: %1$s</string>
+    <string name="yt_feed_reason_topic">Dein Thema „%1$s“</string>
+    <string name="yt_feed_reason_related">Passt zu „%1$s“, das du gesehen hast</string>
+    <string name="yt_feed_reason_related_any">Passt zu dem, was du gesehen hast</string>
+    <string name="yt_feed_reason_chosen_chart">Dein gewähltes Thema: %1$s</string>
+    <string name="yt_feed_reason_boosted">Du willst mehr von %1$s</string>
+    <string name="yt_feed_reason_less">Weiter unten: weniger von %1$s</string>
+    <string name="yt_feed_reason_word">Enthält „%1$s“</string>
+    <string name="yt_feed_reason_fresh">Neu in den letzten zwei Tagen</string>
+    <string name="yt_feed_reason_popular">Viele Aufrufe</string>
+    <string name="yt_feed_reason_often">Du schaust oft %1$s</string>
+    <string name="yt_feed_reason_hearted">Hat dein Herz</string>
+    <string name="yt_feed_reason_learn">Sieht aus, als erkläre es etwas</string>
+    <string name="yt_feed_reason_music">Zählt als Musik</string>
+    <string name="yt_feed_reason_started">Du hast es angefangen</string>
+    <string name="yt_feed_reason_watched_last">Schon gesehen, darum am Ende</string>
+    <string name="yt_feed_reason_spaced">Nach unten gerückt, damit %1$s nicht gehäuft kommt</string>
+    <string name="yt_feed_this_channel">diesem Kanal</string>
+    <string-array name="yt_intent_ask_entries">
+        <item>@string/yt_intent_ask_always</item>
+        <item>@string/yt_intent_ask_after30</item>
+        <item>@string/yt_intent_ask_never</item>
+    </string-array>
+    <string-array name="yt_intent_ask_values">
+        <item>always</item>
+        <item>after30</item>
+        <item>never</item>
+    </string-array>
 </resources>

@@ -126,7 +126,9 @@ fun ClayHomeScreen(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 19.dp, top = 10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 19.dp, end = 16.dp, top = 10.dp),
         ) {
             Canvas(Modifier.size(12.dp, 15.dp)) {
                 rotate(-35f) {
@@ -141,6 +143,17 @@ fun ClayHomeScreen(
                 color = Color(0xFF7A5560),
                 style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp),
                 modifier = Modifier.padding(start = 10.dp),
+            )
+            Spacer(Modifier.weight(1f))
+            // the Feed-Regler: a puffy dot of clay next to "Heute für dich"
+            YtTuneCircle(
+                fill = Color.Transparent,
+                ink = Color(0xFF7A5560),
+                activeFill = palette.accent,
+                activeInk = palette.onAccent,
+                size = 38.dp,
+                glyph = 18.dp,
+                surface = { m -> m.ytSurface(palette, CircleShape) },
             )
         }
 
@@ -439,6 +452,10 @@ private fun ClayNextCard(
             .padding(start = 15.dp, end = 18.dp, top = 15.dp)
             .fillMaxWidth()
             .height(111.dp)
+            // left hides, right queues: the card leaves a dent in the dough
+            .ytCardSwipe(palette, video, shape, testTag = "yt_card_next")
+            // held: the dough puffs up and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, shape, onRelease = { actions.onQuick(video) })
             .ytSquish(interaction)
             .shadow(10.dp, shape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(shape)
@@ -488,11 +505,11 @@ private fun ClayNextCard(
                 )
                 Icon(
                     painterResource(R.drawable.ic_yt_dots_vertical),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.yt_home_more_actions),
                     tint = palette.text,
                     modifier = Modifier
                         .size(18.dp)
-                        .clickable { actions.onSave(video) },
+                        .clickable { actions.onQuick(video) },
                 )
             }
             Text(

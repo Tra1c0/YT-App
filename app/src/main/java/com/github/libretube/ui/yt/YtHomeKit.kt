@@ -1,13 +1,28 @@
 package com.github.libretube.ui.yt
 
 import android.text.format.DateUtils
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
 import com.github.libretube.R
 import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.extensions.formatShort
+import com.github.libretube.extensions.toID
+import com.github.libretube.helpers.YtChannelPause
+import com.github.libretube.helpers.YtHidden
+import com.github.libretube.ui.yt.feed.YtPausedChannel
+import com.github.libretube.ui.yt.feed.YtVisibility
 
 /*
  * YT: shared pieces of the home screens of the second round of designs (Clay, Editorial, Glas,
@@ -20,7 +35,7 @@ const val YT_TAB_LIVE = "LIVE"
 
 /** What a home screen shows. Lists are null while they load. */
 class YtHomeData(
-    /** Your subscriptions and the trends, interleaved: the closest YT has to recommendations. */
+    /** Subscriptions, charts, topics and history as the user's rules rank them (YtFeedEngine). */
     val forYou: List<StreamItem>?,
     /** The subscription feed without Shorts, newest first. */
     val subscriptions: List<StreamItem>?,
@@ -50,19 +65,55 @@ class YtHomeActions(
     val onRefresh: () -> Unit,
     /** Opens a video at a position, in seconds. */
     val onOpenVideoAt: (StreamItem, Long) -> Unit = { video, _ -> onOpenVideo(video) },
+    /** Shares the link of a video (the quick sheet of the designs that have one). */
+    val onShare: (StreamItem) -> Unit = {},
+    /**
+     * Opens the quick actions of a video (save, share, channel, queue, hide, pause): the way to
+     * everything the card swipes do without swiping.
+     */
+    val onQuick: (StreamItem) -> Unit = {},
 )
 
 /** Videos that can be played as a regular video: no Shorts, nothing upcoming, with a URL. */
 fun ytPlayable(videos: List<StreamItem>?): List<StreamItem>? =
     videos?.filter { !it.isShort && !it.isUpcoming && it.url != null }?.distinctBy { it.url }
 
-/** Alternates the items of [a] and [b], without duplicates. */
-fun ytInterleave(a: List<StreamItem>, b: List<StreamItem>): List<StreamItem> = buildList {
-    for (i in 0 until maxOf(a.size, b.size)) {
-        a.getOrNull(i)?.let(::add)
-        b.getOrNull(i)?.let(::add)
+/**
+ * [videos] without what the home screens leave out: videos swiped away ([hidden], video id to
+ * day) and channels [paused] at [now] (YtVisibility). The same list when nothing goes.
+ */
+fun ytVisible(videos: List<StreamItem>?, hidden: Map<String, Int>, paused: List<YtPausedChannel>, now: Long): List<StreamItem>? =
+    YtVisibility.visible(
+        videos, hidden, paused, now,
+        id = { it.url?.toID() },
+        channelId = { YtChannelPause.channelId(it.uploaderUrl) },
+        channelName = { it.uploaderName },
+    )
+
+/** [videos] as the home screens show them; follows hiding and pausing as they happen. */
+@Composable
+fun rememberYtVisible(videos: List<StreamItem>?): List<StreamItem>? {
+    val hidden by YtHidden.hidden.collectAsState()
+    val paused by YtChannelPause.paused.collectAsState()
+    return remember(videos, hidden, paused) { ytVisible(videos, hidden, paused, System.currentTimeMillis()) }
+}
+
+/**
+ * The motion of a home list item that comes or goes (a card swiped away, one brought back):
+ * the others close the gap on a spring; without motion they jump. New items keep their own
+ * entrance (ytEnter), so nothing fades in twice.
+ */
+@Composable
+fun LazyItemScope.ytItemMotion(): Modifier =
+    if (LocalYtMotion.current) {
+        Modifier.animateItem(
+            fadeInSpec = null,
+            placementSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow, visibilityThreshold = IntOffset.VisibilityThreshold),
+            fadeOutSpec = tween(160),
+        )
+    } else {
+        Modifier.animateItem(fadeInSpec = null, placementSpec = null, fadeOutSpec = null)
     }
-}.distinctBy { it.url }
 
 /** Grayscale for the Editorial thumbnails. */
 val ytGrayscale: ColorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })

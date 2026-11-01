@@ -2,7 +2,9 @@ package com.github.libretube.ui.yt
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -163,6 +165,28 @@ fun ShapesHomeScreen(
                             ShapesTile(palette.lavender, Modifier.weight(1f), actions.onShowSubscriptions) {
                                 Icon(painterResource(R.drawable.ic_yt_nav_subs), contentDescription = null, tint = palette.ink, modifier = Modifier.size(24.dp))
                             }
+                            // the Feed-Regler: a third tile, a lime cookie that turns while the sheet is open
+                            val openSheet = rememberOpenFeedSheet()
+                            val turn by animateFloatAsState(if (YtFeedUi.sheet) 1f else 0f, ytSpec(spring(dampingRatio = 0.6f, stiffness = 300f)), label = "shapesTune")
+                            ShapesTile(palette.lime, Modifier.weight(1f), openSheet) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .graphicsLayer { rotationZ = 45f * turn }
+                                        .clip(CookieShape(8, 0.06f))
+                                        .background(palette.ink.copy(alpha = 0.1f)),
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_yt_tune),
+                                        contentDescription = stringResource(R.string.yt_feed_open),
+                                        tint = palette.ink,
+                                        modifier = Modifier
+                                            .graphicsLayer { rotationZ = -45f * turn }
+                                            .size(22.dp),
+                                    )
+                                }
+                            }
                         }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -171,6 +195,8 @@ fun ShapesHomeScreen(
                                 .height(46.dp)
                                 .clip(RoundedCornerShape(23.dp))
                                 .background(palette.surface)
+                                // held: the cookie lens lifts off and drags onto a card to search its channel
+                                .ytSearchDragSource(palette)
                                 .clickable(onClick = actions.onSearch)
                                 .padding(horizontal = 14.dp),
                         ) {
@@ -274,7 +300,7 @@ fun ShapesHomeScreen(
                 }
             }
             itemsIndexed(videos.drop(1), key = { _, v -> "v-" + v.url }) { index, video ->
-                Box(Modifier.ytEnter(enter, "v" + video.url, index + 3)) {
+                Box(ytItemMotion().ytEnter(enter, "v" + video.url, index + 3)) {
                     ShapesVideo(palette, imageLoader, video, index, actions, turn)
                 }
             }
@@ -424,6 +450,7 @@ fun WavyProgress(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: StreamItem, index: Int, actions: YtHomeActions, turn: () -> Float) {
     // alternating corners give each card its own shape
@@ -433,7 +460,14 @@ private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: Str
         else -> RoundedCornerShape(topStart = 16.dp, topEnd = 60.dp, bottomEnd = 16.dp, bottomStart = 60.dp)
     }
     val tag = listOf(palette.lime, ShapesYellow, palette.pink, palette.lavender)[index % 4]
-    Column(Modifier.clickable { actions.onOpenVideo(video) }) {
+    // left hides, right queues: a cookie turns in the gap, clicking every 30 degrees
+    Column(
+        Modifier
+            .ytCardSwipe(palette, video, shape, testTag = "yt_card_$index")
+            // held: lifts and drags onto the mini player; let go unmoved: quick actions
+            .ytHomeCard(palette, video, shape, onRelease = { actions.onQuick(video) })
+            .clickable { actions.onOpenVideo(video) },
+    ) {
         Box(
             Modifier
                 .fillMaxWidth()

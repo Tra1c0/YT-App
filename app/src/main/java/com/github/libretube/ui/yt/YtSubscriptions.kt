@@ -45,6 +45,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.github.libretube.ui.yt.feed.YtPauseRules
+import com.github.libretube.helpers.YtChannelPause
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
@@ -80,7 +86,6 @@ import com.github.libretube.extensions.toID
 import com.github.libretube.helpers.ImageHelper
 import com.github.libretube.helpers.NavigationHelper
 import com.github.libretube.helpers.YtDesign
-import com.github.libretube.parcelable.PlayerData
 import com.github.libretube.repo.FeedRefresh
 import com.github.libretube.ui.dialogs.AddToPlaylistDialog
 import com.github.libretube.ui.models.SubscriptionsViewModel
@@ -109,11 +114,14 @@ object YtSubscriptions {
         val composeView = ComposeView(context).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val feed by viewModel.videoFeed.observeAsState()
+                // hidden videos and paused channels stay off the feed here too (rememberYtVisible)
+                val loaded by viewModel.videoFeed.observeAsState()
+                val feed = rememberYtVisible(loaded)
                 val channels by viewModel.subscriptions.observeAsState()
                 var refreshing by remember { mutableStateOf(false) }
-                LaunchedEffect(feed) { refreshing = false }
+                LaunchedEffect(loaded) { refreshing = false }
                 YtTheme(palette) {
+                    Box(Modifier.fillMaxSize().ytTestRoot()) {
                     YtSubscriptionsScreen(
                         palette = palette,
                         imageLoader = ImageHelper.loader(),
@@ -125,11 +133,15 @@ object YtSubscriptions {
                             refreshing = true
                             viewModel.fetchFeed(context, FeedRefresh.All)
                         },
-                        onOpenVideo = { video -> video.url?.let { NavigationHelper.navigateVideo(context, PlayerData(it.toID())) } },
+                        // a tap keeps what the user queued (YtQueue)
+                        onOpenVideo = { video -> YtQueue.playKeepingQueue(context, video) },
                         onOpenChannel = { url -> NavigationHelper.navigateChannel(context, url) },
                         onSave = { ytSaveVideo(fragment, it) },
                         onShare = { ytShareVideo(fragment, it) },
                     )
+                    // the undo pill of a channel paused from its avatar or the quick sheet
+                    YtHomePills(palette)
+                    }
                 }
             }
         }
@@ -274,6 +286,10 @@ private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels:
         YtSignature.KIESEL -> KieselInk
         else -> palette.text
     }
+    // paused channels stay in the strip, faded, with the days left; a long press pauses or resumes
+    val paused by YtChannelPause.paused.collectAsState()
+    val now = remember(paused) { System.currentTimeMillis() }
+    val pauseLabel = stringResource(R.string.yt_home_pause_week)
     LazyRow(
         contentPadding = PaddingValues(horizontal = 15.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -291,12 +307,27 @@ private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels:
                 YtSignature.AFTER -> palette.accent
                 else -> palette.raised
             }
+            val pause = YtPauseRules.find(paused, YtChannelPause.channelId(channel.url), channel.name, now)
+            val days = pause?.let { YtPauseRules.daysLeft(it.untilMillis, now) } ?: 0
+            val endLabel = stringResource(R.string.yt_home_pause_end, days)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .width(66.dp)
                     .ytEnter(enter, channel.url, i)
-                    .ytPressable(RoundedCornerShape(14.dp), squish = palette.signature == YtSignature.CLAY || palette.signature == YtSignature.KIESEL) { onOpenChannel(channel.url) }
+                    .semantics {
+                        customActions = listOf(
+                            CustomAccessibilityAction(if (pause == null) pauseLabel else endLabel) {
+                                ytTogglePause(channel.url, channel.name, channel.avatar)
+                                true
+                            },
+                        )
+                    }
+                    .ytPressable(
+                        RoundedCornerShape(14.dp),
+                        squish = palette.signature == YtSignature.CLAY || palette.signature == YtSignature.KIESEL,
+                        onLongClick = { ytTogglePause(channel.url, channel.name, channel.avatar) },
+                    ) { onOpenChannel(channel.url) }
                     .padding(vertical = 4.dp),
             ) {
                 Box(
@@ -310,16 +341,23 @@ private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels:
                 ) {
                     AsyncImage(
                         model = channel.avatar,
-                        contentDescription = channel.name,
+                        contentDescription = if (pause == null) channel.name
+                        else pluralStringResource(R.plurals.yt_home_pause_days_spoken, days, channel.name, days),
                         imageLoader = imageLoader,
                         contentScale = ContentScale.Crop,
-                        colorFilter = if (palette.signature == YtSignature.EDITORIAL) ytGrayscale else null,
-                        modifier = Modifier.fillMaxSize(),
+                        colorFilter = when {
+                            palette.signature == YtSignature.EDITORIAL -> ytGrayscale
+                            pause != null -> ytSaturation(0.2f)
+                            else -> null
+                        },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { alpha = if (pause != null) 0.7f else 1f },
                     )
                 }
                 Text(
-                    text = channel.name,
-                    color = ink,
+                    text = if (pause == null) channel.name else stringResource(R.string.yt_home_pause_days_left, days),
+                    color = if (pause == null) ink else ink.copy(alpha = 0.7f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 10.5.sp),

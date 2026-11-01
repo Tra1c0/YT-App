@@ -355,6 +355,8 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
         modifier = Modifier
             .size(look.size)
             .ytPressScale(interaction)
+            // search: held, the icon lifts as a lens that drags onto a card to search its channel
+            .then(if (kind == HeaderButton.SEARCH) Modifier.ytSearchDragSource(palette, ytSearchLabel()) else Modifier)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick),
     ) {
         Box(
@@ -441,6 +443,7 @@ private fun KieselHeaderBar(palette: YtPalette, onSearch: () -> Unit, onProfile:
             modifier = Modifier
                 .size(42.dp)
                 .ytPressScale(search)
+                .ytSearchDragSource(palette, ytSearchLabel())
                 .clip(CircleShape)
                 .clickable(interactionSource = search, indication = null, onClick = onSearch),
         ) {
