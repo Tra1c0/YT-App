@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- YouTube neu mini player: the preview's pill names what letting go on it does -->
+    <string name="yt_mini_youtube_pause">Pause</string>
+    <string name="yt_mini_youtube_resume">Resume</string>
+    <!-- shown on the "Up next" row while the finger is on it -->
+    <string name="yt_mini_youtube_release">Let go to play</string>
+</resources>
