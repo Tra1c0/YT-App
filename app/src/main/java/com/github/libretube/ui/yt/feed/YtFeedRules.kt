@@ -45,15 +45,17 @@ data class YtTopic(val query: String, val weight: Int = 3)
 @Serializable
 data class YtFeedRules(
     /** Weight per source, 0 (off) to 10. Missing sources count as 0. */
+    // the home as it was: subscriptions and the four charts in turn (1:1); topics count once added,
+    // "like what I watched" costs a lookup per video, so it starts off
     val weights: Map<YtFeedSource, Int> = mapOf(
-        YtFeedSource.SUBSCRIPTIONS to 6,
-        YtFeedSource.MUSIC to 2,
-        YtFeedSource.PODCASTS to 2,
-        YtFeedSource.TRAILERS to 2,
-        YtFeedSource.GAMING to 2,
+        YtFeedSource.SUBSCRIPTIONS to 4,
+        YtFeedSource.MUSIC to 1,
+        YtFeedSource.PODCASTS to 1,
+        YtFeedSource.TRAILERS to 1,
+        YtFeedSource.GAMING to 1,
         YtFeedSource.LIVE to 0,
         YtFeedSource.TOPICS to 3,
-        YtFeedSource.RELATED to 2,
+        YtFeedSource.RELATED to 0,
         YtFeedSource.CONTINUE to 0,
     ),
     val videos: Boolean = true,

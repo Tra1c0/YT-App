@@ -35,7 +35,7 @@ const val YT_TAB_LIVE = "LIVE"
 
 /** What a home screen shows. Lists are null while they load. */
 class YtHomeData(
-    /** Your subscriptions and the trends, interleaved: the closest YT has to recommendations. */
+    /** Subscriptions, charts, topics and history as the user's rules rank them (YtFeedEngine). */
     val forYou: List<StreamItem>?,
     /** The subscription feed without Shorts, newest first. */
     val subscriptions: List<StreamItem>?,
@@ -114,14 +114,6 @@ fun LazyItemScope.ytItemMotion(): Modifier =
     } else {
         Modifier.animateItem(fadeInSpec = null, placementSpec = null, fadeOutSpec = null)
     }
-
-/** Alternates the items of [a] and [b], without duplicates. */
-fun ytInterleave(a: List<StreamItem>, b: List<StreamItem>): List<StreamItem> = buildList {
-    for (i in 0 until maxOf(a.size, b.size)) {
-        a.getOrNull(i)?.let(::add)
-        b.getOrNull(i)?.let(::add)
-    }
-}.distinctBy { it.url }
 
 /** Grayscale for the Editorial thumbnails. */
 val ytGrayscale: ColorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })

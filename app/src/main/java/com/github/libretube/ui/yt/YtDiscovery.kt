@@ -33,6 +33,9 @@ object YtDiscovery {
         TrendingCategory.GAMING,
     )
     private val videos = MutableStateFlow<List<StreamItem>?>(null)
+
+    /** The same charts by category, for the feed engine (YtFeed), which mixes them by the user's weights. */
+    val byCategory = MutableStateFlow<Map<TrendingCategory, List<StreamItem>>>(emptyMap())
     private val scope = MainScope()
     private var loading = false
 
@@ -68,6 +71,8 @@ object YtDiscovery {
                     }.awaitAll()
                 }
             }
+            byCategory.value = categories.zip(lists).toMap()
+                .mapValues { (_, list) -> list.filter { it.url != null && !it.isUpcoming }.distinctBy { it.url } }
             // one from each chart in turn
             videos.value = buildList {
                 for (i in 0 until (lists.maxOfOrNull { it.size } ?: 0)) {

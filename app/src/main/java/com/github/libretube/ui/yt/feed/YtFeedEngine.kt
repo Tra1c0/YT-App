@@ -77,8 +77,8 @@ data class YtRanked(val item: YtFeedItem, val score: Double, val reasons: List<Y
  *    watched videos (hide). A source with weight 0 is off.
  * 2. Each source is sorted on its own (as given, newest or most viewed) with the boosts on top:
  *    boosted and often watched channels, wanted words, hearts, fresh videos; "less" goes down.
- * 3. The sources are mixed by weight (stride scheduling: a source of weight 6 gets three times
- *    the places of one of weight 2, evenly spread), the same video only once.
+ * 3. The sources are mixed by weight (smooth weighted round robin: a source of weight 6 gets
+ *    three times the places of one of weight 2, evenly spread), the same video only once.
  * 4. Diversity: a channel waits until [YtFeedRules.channelGap] others came between and shows at
  *    most [YtFeedRules.maxPerChannel] times among 10; nothing is dropped for it, only moved.
  * 5. Watched videos go to the end (or stay, as the rules say).
@@ -275,24 +275,30 @@ object YtFeedEngine {
     }
 
     /**
-     * Stride scheduling: each source runs a clock that moves on by 1/weight per video it gives;
-     * the source with the earliest clock gives next (ties: the higher weight, then the source's
-     * order). So the places follow the weights and spread evenly, and an empty source just stops.
+     * Smooth weighted round robin: each turn every source with videos left gains its weight, the
+     * one with the most gives the next video and pays the sum of all weights. So the places follow
+     * the weights and spread evenly (6:2 gives three of one, then one of the other, interleaved),
+     * ties go to the higher weight, then the source's order, and an empty source just stops.
      */
     private fun mix(bySource: Map<YtFeedSource, List<YtRanked>>, rules: YtFeedRules): List<YtRanked> {
         val sources = YtFeedSource.entries.filter { rules.weight(it) > 0 && !bySource[it].isNullOrEmpty() }
         val next = IntArray(YtFeedSource.entries.size)
-        // each source starts half a stride in, so the first places go by weight too
-        val clock = DoubleArray(YtFeedSource.entries.size) { 0.5 / max(1, rules.weight(YtFeedSource.entries[it])) }
+        val credit = IntArray(YtFeedSource.entries.size)
         val total = sources.sumOf { bySource.getValue(it).size }
         val out = ArrayList<YtRanked>(total)
         while (out.size < total) {
-            val source = sources
-                .filter { next[it.ordinal] < bySource.getValue(it).size }
-                .minWithOrNull(compareBy<YtFeedSource> { clock[it.ordinal] }.thenByDescending { rules.weight(it) }.thenBy { it.ordinal })
-                ?: break
-            out += bySource.getValue(source)[next[source.ordinal]++]
-            clock[source.ordinal] += 1.0 / rules.weight(source)
+            val active = sources.filter { next[it.ordinal] < bySource.getValue(it).size }
+            if (active.isEmpty()) break
+            var sum = 0
+            for (source in active) {
+                credit[source.ordinal] += rules.weight(source)
+                sum += rules.weight(source)
+            }
+            val pick = active.maxWithOrNull(
+                compareBy<YtFeedSource> { credit[it.ordinal] }.thenBy { rules.weight(it) }.thenByDescending { it.ordinal },
+            ) ?: break
+            credit[pick.ordinal] -= sum
+            out += bySource.getValue(pick)[next[pick.ordinal]++]
         }
         return out
     }

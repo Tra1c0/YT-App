@@ -56,6 +56,16 @@ class YtFeedEngineTest {
     }
 
     @Test
+    fun `browse puts a subscription and a chart in turn, as the home did`() {
+        val subs = (0 until 4).map { video("s$it", rank = it) }
+        val charts = listOf(YtFeedSource.MUSIC, YtFeedSource.PODCASTS, YtFeedSource.TRAILERS, YtFeedSource.GAMING)
+            .mapIndexed { i, source -> video("c$i", source) }
+        val rules = YtFeedRules.preset(YtIntent.BROWSE).copy(maxPerChannel = 0, channelGap = 0)
+        val ranked = ids(YtFeedEngine.rank(subs + charts, rules, personal, signals))
+        assertEquals(listOf("s0", "c0", "s1", "c1", "s2", "c2", "s3", "c3"), ranked)
+    }
+
+    @Test
     fun `a source with weight 0 is off and an empty one just stops`() {
         val rules = plain.withWeight(YtFeedSource.MUSIC, 0)
         val ranked = YtFeedEngine.rank(listOf(video("s0"), video("m0", YtFeedSource.MUSIC)), rules, personal, signals)

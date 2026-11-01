@@ -3,6 +3,8 @@ package com.github.libretube.ui.yt
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -28,6 +30,8 @@ import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.helpers.YtDesign
 import com.github.libretube.ui.dialogs.AddToPlaylistDialog
 import com.github.libretube.ui.models.HomeViewModel
+import com.github.libretube.ui.yt.feed.YtFeed
+import com.github.libretube.ui.yt.feed.YtIntent
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -42,7 +46,8 @@ internal fun YtRound2Home(
     design: YtDesign,
     viewModel: HomeViewModel,
     refresh: () -> Unit,
-    charts: List<StreamItem>?,
+    /** The feed as the current intent's rules rank it (YtFeed), null while nothing loaded. */
+    ranked: List<StreamItem>?,
 ) {
     val palette = design.palette ?: return
     val context = LocalContext.current
@@ -75,9 +80,11 @@ internal fun YtRound2Home(
 
     val subscriptions = ytPlayable(feed)
     val trendingVisible = rememberYtVisible(trending?.second?.streams)
-    val trends = ytPlayable(charts ?: trendingVisible)
-    val forYou = if (subscriptions == null && trends == null) null
-    else ytInterleave(subscriptions.orEmpty(), trends.orEmpty())
+    // the ranked feed (YtFeedEngine), else what has loaded so far
+    val forYou = ytPlayable(ranked ?: subscriptions ?: trendingVisible)
+    // "Meine Abos sehen" opens the designs with tabs on the subscriptions
+    val intent by YtFeed.intent.collectAsState()
+    LaunchedEffect(intent) { if (intent == YtIntent.SUBSCRIPTIONS) tab = YT_TAB_SUBS }
     val data = YtHomeData(
         forYou = forYou,
         subscriptions = subscriptions,
@@ -95,8 +102,8 @@ internal fun YtRound2Home(
     }
     val actions = YtHomeActions(
         // a tap keeps what the user queued (YtQueue)
-        onOpenVideo = { video -> YtQueue.playKeepingQueue(context, video) },
-        onOpenVideoAt = { video, seconds -> YtQueue.playKeepingQueue(context, video, seconds) },
+        onOpenVideo = { video -> YtQueue.playKeepingQueue(context, video, audio = YtFeed.audioNow()) },
+        onOpenVideoAt = { video, seconds -> YtQueue.playKeepingQueue(context, video, seconds, audio = YtFeed.audioNow()) },
         onOpenChannel = { video -> NavigationHelper.navigateChannel(context, video.uploaderUrl) },
         onSave = { video ->
             AddToPlaylistDialog().apply {

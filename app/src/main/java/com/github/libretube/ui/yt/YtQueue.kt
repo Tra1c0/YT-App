@@ -116,7 +116,7 @@ object YtQueue {
      * draft follows; with videos the user queued still to come, the tapped video plays now and
      * they follow; otherwise the video plays as before (the queue then starts anew).
      */
-    fun playKeepingQueue(context: Context, video: StreamItem, seconds: Long = 0) {
+    fun playKeepingQueue(context: Context, video: StreamItem, seconds: Long = 0, audio: Boolean = false) {
         val id = idOf(video) ?: return
         if (draft.isNotEmpty() && !hasPlayer()) {
             val list = YtQueueRule.startWithDraft(video, draft.toList(), ::idOf)
@@ -125,18 +125,18 @@ object YtQueue {
             list.drop(1).mapNotNullTo(queued, ::idOf)
             PlayingQueue.setStreams(list)
             YtTestHooks.log("YtQueue") { "start draft n=${list.size} id=$id" }
-            NavigationHelper.navigateVideo(context, PlayerData(id, timestamp = seconds, keepQueue = true))
+            NavigationHelper.navigateVideo(context, PlayerData(id, timestamp = seconds, keepQueue = true), audioOnlyPlayerRequested = audio)
             return
         }
         if (hasPlayer() && keepsQueue()) {
             // right after the current video, so the queued ones follow the tapped one
             PlayingQueue.ytInsertNext(video)
             YtTestHooks.log("YtQueue") { "play keeping queue id=$id" }
-            NavigationHelper.navigateVideo(context, PlayerData(id, timestamp = seconds, keepQueue = true))
+            NavigationHelper.navigateVideo(context, PlayerData(id, timestamp = seconds, keepQueue = true), audioOnlyPlayerRequested = audio)
             return
         }
         queued.clear()
-        NavigationHelper.navigateVideo(context, PlayerData(id, timestamp = seconds))
+        NavigationHelper.navigateVideo(context, PlayerData(id, timestamp = seconds), audioOnlyPlayerRequested = audio)
     }
 
     /** "Abspielen" on the draft pill: the draft plays from its first video. */
