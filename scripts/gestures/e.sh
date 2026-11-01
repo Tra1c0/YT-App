@@ -9,6 +9,7 @@
 # spoiler protection at the start, those at 1:30 and 2:40 are hidden (blurred, before Android 12
 # the pill "Spoiler bei …"). A seek to 1:40 reveals nothing at once; after 5 s of playback there
 # the mark follows and only 2:40 stays hidden. Then the chip "Diese Stelle" shows the scene.
+# The video starts at 0:00 (yt_seek_test 0): an earlier run left a saved position, which would count as seen.
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh" || return 0
 
@@ -31,7 +32,7 @@ e_checks() {
   local fixture
   fixture=$(scene_fixture | base64 -w0)
   log_mark
-  open_test_video --es yt_comments_scene spoiler --es yt_comments_fixture "$fixture" --ez yt_comments_open true \
+  open_test_video --el yt_seek_test 0 --es yt_comments_scene spoiler --es yt_comments_fixture "$fixture" --ez yt_comments_open true \
     || { mark "e: no test video, no comment checks"; return 0; }
   expect_log YtScene 'comments sheet opened=true'
   sleep 3

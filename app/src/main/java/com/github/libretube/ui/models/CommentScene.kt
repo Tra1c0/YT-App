@@ -152,6 +152,11 @@ class CommentScene(private val scope: CoroutineScope) {
     /** The step of the position in the scene mode (YtCommentMoments.sceneStep): the scene list follows it. */
     val sceneStep: StateFlow<Long> = steps.asStateFlow()
 
+    private val seenSeconds = MutableStateFlow(0L)
+
+    /** How far the viewer has seen, in whole seconds: the caption of the spoiler mode follows it. */
+    val seenUpToSeconds: StateFlow<Long> = seenSeconds.asStateFlow()
+
     private val items = MutableStateFlow<List<SceneComment>>(emptyList())
 
     /** Every comment read so far, in the order of the pages. */
@@ -181,6 +186,9 @@ class CommentScene(private val scope: CoroutineScope) {
         private set
 
     private val unlock = YtSceneUnlock()
+
+    // grows with every new start of the mark, so a saved position read for an earlier one is dropped
+    private var unlockGeneration = 0
 
     // false: the next reading of the clock starts the mark there (a mode switched on)
     private var tracking = false
@@ -227,11 +235,12 @@ class CommentScene(private val scope: CoroutineScope) {
         bump()
         if (same) return
         // where the viewer stopped last time counts as seen
+        val generation = ++unlockGeneration
         scope.launch {
             val saved = withContext(Dispatchers.IO) {
                 runCatching { Database.watchPositionDao().findById(videoId)?.position }.getOrNull()
             } ?: return@launch
-            if (this@CommentScene.videoId == videoId && unlock.raiseTo(saved)) {
+            if (this@CommentScene.videoId == videoId && generation == unlockGeneration && unlock.raiseTo(saved)) {
                 YtTestHooks.log(TAG) { "seen up to the saved position $saved" }
                 update(playback.positionMs)
             }
@@ -261,6 +270,7 @@ class CommentScene(private val scope: CoroutineScope) {
     private fun update(positionMs: Long) {
         val now = ScenePlayback(positionMs, unlock.unlockedMs, durationMs, chapterStarts)
         playback = now
+        seenSeconds.value = now.unlockedUpToMs / 1000
         if (boundariesDirty) {
             boundariesDirty = false
             boundaries = YtCommentMoments.boundaries(moments.values.flatMap { it.ms })
@@ -435,6 +445,7 @@ class CommentScene(private val scope: CoroutineScope) {
     fun restartForTest() {
         clear()
         unlock.reset()
+        unlockGeneration++
         if (active.value != SceneMode.OFF) onClock(YtPlaybackClock.now(), SystemClock.elapsedRealtime())
         bump()
     }

@@ -293,6 +293,9 @@ class CommentRowBinder(
             state.unselectable = true
         } else if (state.unselectable) {
             text.setTextIsSelectable(true)
+            // setTextIsSelectable makes it focusable in touch mode, which would eat the first tap
+            // (no replies on it); the layout has it not focusable
+            text.isFocusable = false
             text.movementMethod = LinkMovementMethodCompat.getInstance()
             state.unselectable = false
         }

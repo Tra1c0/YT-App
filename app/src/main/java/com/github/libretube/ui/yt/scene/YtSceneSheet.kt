@@ -41,6 +41,9 @@ class YtSceneSheet(
     // where the paged list was when the scene took its place
     private var pagedPosition = 0
 
+    /** The pages are back in the list: their loading and "no comments" are shown again as they are. */
+    var onPagesBack: (() -> Unit)? = null
+
     /** True while the list of the scene stands in for the pages. */
     val showsScene: Boolean get() = binding.commentsRV.adapter === sceneAdapter
 
@@ -65,6 +68,10 @@ class YtSceneSheet(
                         }
                 }
                 launch { combine(scene.scanning, scene.exhausted) { _, _ -> Unit }.collect { caption() } }
+                // "Verdeckt: alles nach 3:20" moves on with the mark, once a second at most
+                launch {
+                    scene.seenUpToSeconds.collect { if (scene.mode.value == SceneMode.SPOILER) caption() }
+                }
             }
         }
     }
@@ -84,6 +91,7 @@ class YtSceneSheet(
         } else if (list.adapter !== paged) {
             list.adapter = paged
             layoutManager?.scrollToPosition(pagedPosition)
+            onPagesBack?.invoke()
         }
         binding.sceneBar.isVisible = mode != SceneMode.OFF
         caption()

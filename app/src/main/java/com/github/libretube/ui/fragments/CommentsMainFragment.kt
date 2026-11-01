@@ -9,6 +9,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
 import androidx.fragment.app.setFragmentResult
+import androidx.paging.CombinedLoadStates
 import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
@@ -91,16 +92,24 @@ class CommentsMainFragment : Fragment(R.layout.fragment_comments) {
         binding.commentsRV.adapter = commentPagingAdapter
         // YT: the list of the scene stands in for the pages in the scene mode
         val sceneSheet = YtSceneSheet(this, binding, viewModel.scene, commentPagingAdapter)
-        sceneSheet.start()
+        var lastLoadStates: CombinedLoadStates? = null
 
-        commentPagingAdapter.addLoadStateListener { loadStates ->
-            if (sceneSheet.showsScene) return@addLoadStateListener
+        fun showLoadStates(loadStates: CombinedLoadStates) {
             binding.progress.isVisible = loadStates.refresh is LoadState.Loading
 
             if (loadStates.append is LoadState.NotLoading && loadStates.append.endOfPaginationReached && commentPagingAdapter.itemCount == 0) {
                 binding.errorTV.text = getString(R.string.no_comments_available)
                 binding.errorTV.isVisible = true
             }
+        }
+        // YT: back from the scene, the pages show their loading and "no comments" again
+        sceneSheet.onPagesBack = { lastLoadStates?.let(::showLoadStates) }
+        sceneSheet.start()
+
+        commentPagingAdapter.addLoadStateListener { loadStates ->
+            lastLoadStates = loadStates
+            if (sceneSheet.showsScene) return@addLoadStateListener
+            showLoadStates(loadStates)
         }
 
         viewModel.currentCommentsPosition.observe(viewLifecycleOwner) {
