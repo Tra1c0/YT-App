@@ -19,6 +19,7 @@
 #   center_of <regex> [n]           "x y" of the same element (its "not found" goes to stderr)
 #   numbers <args>                  status 0 if every argument is a whole number
 #   finger_down / finger_move / finger_up <x> <y>
+#   finger_down_move <x> <y> <x2> <y2>  down and the first move in one call (a drag, not a hold)
 #                                   one touch event each (input motionevent), to build any gesture
 #   drag <x1> <y1> <x2> <y2> <steps> [prefix]
 #                                   finger down, <steps> moves, up; with a prefix a raw screenshot
@@ -94,15 +95,25 @@ numbers() {
 finger_down() { timeout 10 adb shell input motionevent DOWN "$1" "$2" || true; }
 finger_move() { timeout 10 adb shell input motionevent MOVE "$1" "$2" || true; }
 finger_up() { timeout 10 adb shell input motionevent UP "$1" "$2" || true; }
+# down at $1 $2 and the first move to $3 $4 in one adb call: each call takes 0.15 s and more on a
+# busy emulator, and a first move that came later than the long-press timeout (0.4 to 0.45 s)
+# would start the long press (the player's hold, a loop mark, a card's lift) instead of the drag
+finger_down_move() { timeout 10 adb shell "input motionevent DOWN $1 $2; input motionevent MOVE $3 $4" || true; }
 
 # drag and hold_drag: the hold in seconds first, then their arguments
 drag_held() {
   local hold="$1" x1="$2" y1="$3" x2="$4" y2="$5" steps="${6:-10}" prefix="${7:-}" i
   [ "$steps" -ge 1 ] 2>/dev/null || steps=1
   mark "drag $x1,$y1 to $x2,$y2 in $steps moves${prefix:+, shots $prefix}"
-  finger_down "$x1" "$y1"
-  if [ "$hold" != 0 ]; then sleep "$hold"; fi
-  for i in $(seq 1 "$steps"); do
+  if [ "$hold" != 0 ]; then
+    finger_down "$x1" "$y1"
+    sleep "$hold"
+    i=1
+  else
+    finger_down_move "$x1" "$y1" "$(( x1 + (x2 - x1) / steps ))" "$(( y1 + (y2 - y1) / steps ))"
+    i=2
+  fi
+  for i in $(seq "$i" "$steps"); do
     finger_move "$(( x1 + (x2 - x1) * i / steps ))" "$(( y1 + (y2 - y1) * i / steps ))"
     if [ -n "$prefix" ] && { [ -z "${SHOT_STEPS:-}" ] || [[ " $SHOT_STEPS " == *" $i "* ]]; }; then
       rawshot "$prefix-$i"

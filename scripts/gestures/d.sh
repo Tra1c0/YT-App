@@ -124,6 +124,11 @@ d_checks() {
     rawshot "$design-d-7-release"
     timeout 10 adb shell input keyevent KEYCODE_BACK || true
     sleep 1
+    # without the sheet, back left the app: the checks below need the home
+    if ! timeout 20 adb shell dumpsys activity activities 2>/dev/null | grep -a -m1 "topResumedActivity" | grep -q "$PKG"; then
+      mark "d: back left the app (no quick sheet was open); the home again"
+      d_home
+    fi
   fi
 
   # the search icon held and dragged onto a card: a search for the card's channel name

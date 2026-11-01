@@ -72,8 +72,9 @@ c_checks() {
   y=$(( (t + bt) / 2 ))
   x=$(( l + (r - l) * 3 / 10 ))
   up=$(dp 125)
-  finger_down "$x" "$y"
-  for i in 1 2 3 4 5; do finger_move $(( x + 20 * i )) "$y"; done
+  # down and out of the slop in one call: a late first move would mark a loop instead
+  finger_down_move "$x" "$y" $(( x + 40 )) "$y"
+  for i in 3 4 5; do finger_move $(( x + 20 * i )) "$y"; done
   x=$(( x + 100 ))
   for i in 1 2 3 4 5; do finger_move "$x" $(( y - up * i / 5 )); done
   for i in 1 2 3 4 5; do finger_move $(( x + 20 * i )) $(( y - up )); done
@@ -97,8 +98,8 @@ c_checks() {
     x=$(( l + (r - l) / 2 ))
     up=$(dp 175)
     step=$(( $(dp 12) + 1 ))
-    finger_down "$x" "$y"
-    for i in 1 2 3 4 5 6; do finger_move "$x" $(( y - up * i / 6 )); done
+    finger_down_move "$x" "$y" "$x" $(( y - up / 6 ))
+    for i in 2 3 4 5 6; do finger_move "$x" $(( y - up * i / 6 )); done
     for i in 1 2 3; do finger_move $(( x + step * i )) $(( y - up )); done
     rawshot "$design-c-2-frames"
     finger_up $(( x + step * 3 )) $(( y - up ))
@@ -112,8 +113,8 @@ c_checks() {
     read -r l t r bt <<< "$b"
     y=$(( (t + bt) / 2 ))
     x=$(( l + (r - l) / 4 ))
-    finger_down "$x" "$y"
-    for i in 1 2 3 4; do finger_move $(( x + 40 * i )) "$y"; done
+    finger_down_move "$x" "$y" $(( x + 40 )) "$y"
+    for i in 2 3 4; do finger_move $(( x + 40 * i )) "$y"; done
     for i in 1 2 3; do finger_move $(( x + 160 )) $(( y + $(dp 70) * i / 3 )); done
     finger_up $(( x + 160 )) $(( y + $(dp 70) ))
     expect_log YtScrub 'scrub end target=none .*cancelled=true'

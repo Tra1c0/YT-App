@@ -19,6 +19,8 @@ a_checks() {
   timeout 10 adb shell input keyevent KEYCODE_BACK || true
   sleep 3
   rawshot "$design-a-1-mini"
+  # Glas: how far the bar's slab grows behind the docked player (YtLiquidNav)
+  tag_messages YtMini | grep -a 'slab grow=' | tail -n 2
   expect_log YtMini '^dock '
   expect_log YtHaptic 'mini_dock'
 

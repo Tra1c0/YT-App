@@ -78,10 +78,20 @@ shot() { dismiss_anr; mark "screenshot $1"; timeout 20 adb exec-out screencap -p
 # Android's "… isn't responding" dialog lies over the screen and takes keys like Back: press
 # "Wait". uiautomator cannot read the screen while the app hangs, so the button is found from the
 # dialog's frame: "Wait" is the last of its rows (Android 14: title, Close app, Wait).
+# Another app's dialog (the emulator's launcher, Quickstep, hangs under load) is closed by
+# stopping that app instead: no tap, since a tap would cut off a gesture the checks are making,
+# and the dialog would come back every few seconds while the launcher stays hung.
 dismiss_anr() {
-  local title f
+  local title f other
   title=$(timeout 15 adb shell dumpsys window windows 2>/dev/null | grep -a -o "Application Not Responding: [A-Za-z0-9._]*" | head -n 1)
   [ -n "$title" ] || return 0
+  other=${title#Application Not Responding: }
+  if [ -n "$other" ] && [ "$other" != "$PKG" ]; then
+    mark "not-responding dialog ($title): stopping $other"
+    timeout 10 adb shell am force-stop "$other" || true
+    sleep 1
+    return 0
+  fi
   f=$(frame_of "$title")
   [ -n "$f" ] || return 0
   set -- $f
@@ -104,6 +114,8 @@ ui() {
   local err scales k
   err=$(ui_dump)
   if [ -n "$err" ]; then
+    # a not-responding dialog takes the place of the app's window in the dump
+    dismiss_anr >&2
     scales=""
     for k in window_animation_scale transition_animation_scale animator_duration_scale; do
       scales="$scales $(timeout 10 adb shell settings get global "$k" 2>/dev/null | tr -d '\r')"
