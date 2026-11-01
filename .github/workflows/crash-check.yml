@@ -293,7 +293,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: logs-${{ env.YT_TAG }}-${{ inputs.design }}-api${{ inputs.api }}
+          name: logs-${{ env.YT_TAG }}-${{ inputs.design }}-api${{ inputs.api }}-attempt${{ github.run_attempt }}
           path: |
             logcat-*.txt
             crash-*.txt
@@ -309,6 +309,6 @@ jobs:
         if: always() && (inputs.screens || inputs.gestures || inputs.test_video)
         uses: actions/upload-artifact@v6
         with:
-          name: screens-${{ env.YT_TAG }}-${{ inputs.design }}-api${{ inputs.api }}
+          name: screens-${{ env.YT_TAG }}-${{ inputs.design }}-api${{ inputs.api }}-attempt${{ github.run_attempt }}
           path: screens/*.png
           if-no-files-found: warn

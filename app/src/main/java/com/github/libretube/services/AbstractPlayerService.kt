@@ -56,6 +56,7 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     var exoPlayer: ExoPlayer? = null
 
     private var notificationProvider: NowPlayingNotification? = null
+    private var destroying = false
     var trackSelector: DefaultTrackSelector? = null
 
     lateinit var videoId: String
@@ -484,6 +485,11 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     }
 
     override fun onDestroy() {
+        if (destroying) return
+        destroying = true
+        com.github.libretube.ui.yt.YtTestHooks.log("YtLifecycle") {
+            "destroy service=${javaClass.simpleName} ${android.util.Log.getStackTraceString(Throwable())}"
+        }
         // wait for a short time before killing the mediaSession
         // as the playerController must be released before we finish the session
         // otherwise there would be a

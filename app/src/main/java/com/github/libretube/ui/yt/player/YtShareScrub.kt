@@ -42,7 +42,11 @@ internal class YtShareScrub(private val host: YtPlayerHost) : YtShareScrubBridge
             controller.isCurrentMediaItemLive || controller.duration <= 0L || bar() == null
         ) {
             haptics.reject()
-            YtTestHooks.log(LOG_TAG) { "share refused" }
+            YtTestHooks.log(LOG_TAG) {
+                "share refused activity=${activity != null} controller=${controller != null} " +
+                    "video=${host.currentVideoId()} streams=${host.currentStreams() != null} " +
+                    "live=${controller?.isCurrentMediaItemLive} duration=${controller?.duration} bar=${bar() != null}"
+            }
             return
         }
         active = true

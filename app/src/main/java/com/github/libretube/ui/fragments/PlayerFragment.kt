@@ -1065,6 +1065,12 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
     }
 
     override fun onDestroy() {
+        com.github.libretube.ui.yt.YtTestHooks.log("YtLifecycle") {
+            "destroy page=${System.identityHashCode(this)} changing=${activity?.isChangingConfigurations} " +
+                "orientation=${viewModel.isOrientationChangeInProgress} removing=$isRemoving " +
+                "connected=${::playerController.isInitialized && playerController.isConnected}"
+        }
+        controllerRequest++
         super.onDestroy()
         com.github.libretube.ui.yt.YtPipVisualizer.hide()
         // YT: the floating window goes with the page (its controller is released below)

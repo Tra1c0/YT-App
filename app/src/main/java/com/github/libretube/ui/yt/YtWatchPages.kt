@@ -20,6 +20,7 @@ import androidx.annotation.FontRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -712,9 +714,10 @@ private fun EditorialPage(palette: YtPalette, b: WatchBasics, controller: YtWatc
         // enough that every label shows in full
         val items = listOf(b.like) + b.actions
         val rule = palette.text.copy(alpha = 0.25f)
-        items.chunked(3).forEachIndexed { r, row ->
+        val columns = if (LocalDensity.current.fontScale > 1.3f) 2 else 3
+        items.chunked(columns).forEachIndexed { r, row ->
             if (r > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(rule))
-            Row(Modifier.fillMaxWidth().height(58.dp)) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 58.dp)) {
                 row.forEachIndexed { c, action ->
                     if (c > 0) Box(Modifier.padding(vertical = 10.dp).width(1.dp).height(38.dp).background(rule))
                     Column(
@@ -724,11 +727,11 @@ private fun EditorialPage(palette: YtPalette, b: WatchBasics, controller: YtWatc
                             .clickable(onClick = action.onClick)
                             .padding(horizontal = 6.dp, vertical = 9.dp),
                     ) {
-                        Text("%02d".format(r * 3 + c + 1), color = palette.accent, style = mono.copy(fontSize = 9.sp))
-                        Text(action.label.uppercase(), color = palette.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = mono.copy(fontSize = 10.sp, letterSpacing = 0.6.sp), modifier = Modifier.padding(top = 3.dp))
+                        Text("%02d".format(r * columns + c + 1), color = palette.accent, style = mono.copy(fontSize = 9.sp))
+                        Text(action.label.uppercase(), color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis, style = mono.copy(fontSize = 10.sp, lineHeight = 14.sp, letterSpacing = 0.6.sp), modifier = Modifier.padding(top = 3.dp))
                     }
                 }
-                repeat(3 - row.size) {
+                repeat(columns - row.size) {
                     Box(Modifier.padding(vertical = 10.dp).width(1.dp).height(38.dp).background(rule))
                     Spacer(Modifier.weight(1f))
                 }
@@ -1004,26 +1007,29 @@ private fun ShapesPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
         Text(b.meta, color = palette.text.copy(alpha = 0.65f), style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 12.5.sp), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp))
         WatchCreator(palette, imageLoader, streams, b.hasChannel, b.subscribed, b.toggle, actions.onOpenChannel)
         val buttons = listOf(b.like) + b.actions
-        Row(
-            horizontalArrangement = Arrangement.SpaceEvenly,
+        EvenRows(
+            buttons, perRow = 5,
             modifier = Modifier
                 .padding(start = 8.dp, end = 8.dp, top = 18.dp)
                 .fillMaxWidth(),
-        ) {
-            buttons.forEachIndexed { i, action ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .then(action.gesture)
-                            .size(54.dp)
-                            .ytPressable(shapes[i % shapes.size]) { action.onClick() }
-                            .background(colors[i % colors.size]),
-                    ) {
-                        Icon(painterResource(action.icon), contentDescription = action.label, tint = palette.ink, modifier = Modifier.size(22.dp))
-                    }
-                    Text(action.label, color = palette.text.copy(alpha = 0.8f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 11.sp), modifier = Modifier.padding(top = 6.dp))
+        ) { action, i, cell ->
+            val press = remember { MutableInteractionSource() }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = cell.then(action.gesture)
+                    .clickable(interactionSource = press, indication = null, onClick = action.onClick),
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(54.dp)
+                        .ytPressScale(press)
+                        .clip(shapes[i % shapes.size])
+                        .background(colors[i % colors.size]),
+                ) {
+                    Icon(painterResource(action.icon), contentDescription = null, tint = palette.ink, modifier = Modifier.size(22.dp))
                 }
+                Text(action.label, color = palette.text.copy(alpha = 0.8f), maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 11.sp), modifier = Modifier.padding(top = 6.dp))
             }
         }
         val labels = buildList {
