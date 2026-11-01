@@ -2,7 +2,8 @@
 # YT round 12, package D: its gesture checks.
 # Home: card swipes (left hides with an undo pill, right queues), the draft queue while nothing
 # plays, cards held and dragged onto the bar or the mini player, the search icon dragged onto a
-# card, the time box ("Heute habe ich … Minuten"), and the same with the mini player docked.
+# card, the time box ("Heute habe ich … Minuten"), the intent chooser and the Feed-Regler, and the
+# same with the mini player docked.
 # Sourced by crash-check.sh once per design with YT_GESTURES=yes ($design is the design); the
 # helpers are in lib.sh.
 # shellcheck source-path=SCRIPTDIR source=lib.sh
@@ -133,6 +134,60 @@ d_checks() {
     d_home
   else
     mark "d: no time box chip (switched off?), the time box check is skipped"
+  fi
+
+  # the intent chooser: opened by the test hook (it never opens by itself in the emulator),
+  # "Musik hören" sets the intent, the chip on the home shows it and opens the chooser again
+  timeout 20 adb shell am force-stop "$PKG" || true
+  log_mark
+  timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --ez yt_quiet true --ez yt_intent_test true \
+    ${START_EXTRAS[@]+"${START_EXTRAS[@]}"} >/dev/null || echo "start timed out"
+  sleep "${YT_WAIT:-20}"
+  if bounds_of 'yt_intent_chooser$' >/dev/null; then
+    shot "$design-d-13-chooser"
+    if d_tap yt_intent_music; then
+      sleep 2
+      expect_log YtIntent 'intent=MUSIC'
+      shot "$design-d-14-music"
+      d_tap yt_intent_chip || d_fail "no intent chip on the home after the choice (yt_intent_chip)"
+      sleep 1
+      if bounds_of 'yt_intent_chooser$' >/dev/null; then
+        # back to "Einfach stöbern", the home as before
+        d_tap yt_intent_browse || d_fail "the chooser has no browse choice (yt_intent_browse)"
+        expect_log YtIntent 'intent=BROWSE'
+      else
+        d_fail "the intent chip does not open the chooser"
+      fi
+    else
+      d_fail "the chooser has no music choice (yt_intent_music)"
+    fi
+  else
+    d_fail "the intent chooser did not open (yt_intent_test)"
+  fi
+
+  # the Feed-Regler: its button in the design opens the sheet, a weight drag ranks the preview anew
+  d_home
+  log_mark
+  if d_tap yt_feed_button; then
+    sleep 1
+    if bounds_of 'yt_feed_sheet$' >/dev/null; then
+      rawshot "$design-d-15-feed"
+      expect_log YtFeed 'sheet open'
+      if d_tap yt_feed_weight_music_more; then
+        sleep 1
+        expect_log YtFeed 'rules saved'
+        shot "$design-d-16-feed-weight"
+        # back to the preset, so the next checks see the home as before
+        d_tap yt_feed_reset || d_fail "the sheet has no reset (yt_feed_reset)"
+      else
+        d_fail "the sheet has no weight buttons (yt_feed_weight_music_more)"
+      fi
+      d_tap yt_feed_close || timeout 10 adb shell input keyevent KEYCODE_BACK || true
+    else
+      d_fail "the Feed-Regler did not open (yt_feed_sheet)"
+    fi
+  else
+    mark "d: no Feed-Regler button on screen (yt_feed_button), the sheet check is skipped"
   fi
 
   # with the mini player docked (the test video plays offline, so online cards wait in the
