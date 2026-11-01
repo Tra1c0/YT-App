@@ -29,6 +29,15 @@
             app:key="yt_timebox_chip"
             app:title="@string/yt_timebox_chip" />
 
+        <ListPreference
+            android:icon="@drawable/ic_yt_intent_browse"
+            android:summary="@string/yt_intent_ask_summary"
+            app:defaultValue="after30"
+            app:entries="@array/yt_intent_ask_entries"
+            app:entryValues="@array/yt_intent_ask_values"
+            app:key="yt_intent_ask"
+            app:title="@string/yt_intent_ask" />
+
         <com.github.libretube.ui.yt.feed.YtPausedChannelsPreference
             android:icon="@drawable/ic_yt_pause_week"
             app:key="yt_paused_channels_list"

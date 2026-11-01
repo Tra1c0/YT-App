@@ -194,7 +194,9 @@ fun YtHomePills(palette: YtPalette, modifier: Modifier = Modifier, timeBox: (() 
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, bottom = ytNavPadding() + 12.dp),
         ) {
-            // "Heute habe ich … Minuten" at the end, above the pills so they never cover it
+            // the intent picked on opening, tap to change; then "Heute habe ich … Minuten", both
+            // at the end, above the pills so they never cover them
+            if (timeBox != null) YtIntentChip(look, Modifier.align(Alignment.End))
             if (timeBox != null) YtTimeBoxChip(look, timeBox, Modifier.align(Alignment.End))
             // the last entry stays while the pill slides away
             val shown = remember { arrayOfNulls<YtUndoEntry>(1) }

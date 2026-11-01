@@ -14,7 +14,12 @@ object YtActivityHooks {
         YtTimeUpLayer.attach(activity)
     }
 
-    fun onStart(activity: MainActivity) {}
+    fun onStart(activity: MainActivity) {
+        // "Worauf hast du Lust?" on a cold start and after 30 minutes away
+        YtIntentTrigger.onStart(activity)
+    }
 
-    fun onStop(activity: MainActivity) {}
+    fun onStop(activity: MainActivity) {
+        YtIntentTrigger.onStop(activity)
+    }
 }

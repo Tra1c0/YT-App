@@ -9,6 +9,8 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -38,6 +40,10 @@ import com.github.libretube.helpers.YtHearts
 import com.github.libretube.parcelable.PlayerData
 import com.github.libretube.ui.dialogs.AddToPlaylistDialog
 import com.github.libretube.ui.models.HomeViewModel
+import com.github.libretube.ui.yt.feed.YtFeed
+import com.github.libretube.ui.yt.feed.YtFeedInput
+import com.github.libretube.ui.yt.feed.YtIntent
+import com.github.libretube.ui.yt.feed.rememberYtFeed
 import com.github.libretube.util.TextUtils
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -68,16 +74,16 @@ object YtHome {
                     Screen(fragment, design, viewModel, refresh)
                     design.palette?.let { palette ->
                         // the time box plans from what the home shows: continue watching first,
-                        // then subscriptions and charts in turn
-                        YtPillLayer(palette) {
+                        // then the feed as the current intent's rules rank it
+                        val timeBox = {
                             YtTimeBoxSource(
                                 continueWatching = viewModel.continueWatching.value,
-                                ranked = ytInterleave(
-                                    ytPlayable(viewModel.feed.value).orEmpty(),
-                                    ytPlayable(YtDiscovery.current()?.takeIf { it.isNotEmpty() } ?: viewModel.trending.value?.second?.streams).orEmpty(),
-                                ),
+                                ranked = ytPlayable(YtFeed.rank(feedInput(viewModel)).videos).orEmpty(),
                             )
                         }
+                        YtPillLayer(palette, timeBox)
+                        // the intent chooser, the Feed-Regler and "Warum sehe ich das?" above it all
+                        YtOverlayLayer(palette) { YtFeedLayer(palette, preview = { feedInput(viewModel) }, timeBox = timeBox) }
                     }
                 }
             }
@@ -89,8 +95,16 @@ object YtHome {
         return true
     }
 
-    /** Opens [video], keeping what the user queued (YtQueue). */
-    private fun open(context: Context, video: StreamItem) = YtQueue.playKeepingQueue(context, video)
+    /** Opens [video], keeping what the user queued (YtQueue); as audio for music if so set. */
+    private fun open(context: Context, video: StreamItem) = YtQueue.playKeepingQueue(context, video, audio = YtFeed.audioNow())
+
+    /** What the home has loaded, for the feed engine. */
+    private fun feedInput(viewModel: HomeViewModel) = YtFeedInput(
+        subscriptions = viewModel.feed.value,
+        charts = YtDiscovery.byCategory.value,
+        trending = viewModel.trending.value?.second?.streams,
+        continueWatching = viewModel.continueWatching.value,
+    )
 
     @Composable
     private fun Screen(fragment: Fragment, design: YtDesign, viewModel: HomeViewModel, refresh: () -> Unit) {
@@ -102,24 +116,34 @@ object YtHome {
         var filter by remember { mutableStateOf(YT_FILTER_ALL) }
         var movoTab by remember { mutableStateOf(MOVO_TAB_DISCOVER) }
         // charts to discover: without subscriptions the home would otherwise be nearly empty
-        val discovery = YtDiscovery.rememberVideos()
+        YtDiscovery.rememberVideos()
+        val byCategory by YtDiscovery.byCategory.collectAsState()
         val trendingStreams = rememberYtVisible(trending?.second?.streams)
-        val charts = rememberYtVisible(discovery?.takeIf { it.isNotEmpty() }) ?: trendingStreams
+        // "Für dich": subscriptions, charts, topics and history as the user's rules rank them
+        // (YtFeedEngine; browsing without rules is subscriptions and charts in turn, as before)
+        val forYou = rememberYtVisible(
+            rememberYtFeed(YtFeedInput(viewModel.feed.observeAsState().value, byCategory, trending?.second?.streams, viewModel.continueWatching.observeAsState().value)),
+        )
+        val intent by YtFeed.intent.collectAsState()
         val refreshAll = {
             refresh()
             YtDiscovery.refresh(context)
+            YtFeed.loadExtras(context, force = true)
+            YtFeed.loadSignals()
         }
 
         if (design.hasShortsTab || design == YtDesign.KIESEL) {
-            YtRound2Home(fragment, design, viewModel, refreshAll, charts)
+            YtRound2Home(fragment, design, viewModel, refreshAll, forYou)
         } else if (design == YtDesign.SIDE) {
             var sideTab by remember { mutableStateOf(SIDE_TAB_FOR_YOU) }
+            // "Meine Abos sehen" opens on the people
+            LaunchedEffect(intent) { if (intent == YtIntent.SUBSCRIPTIONS) sideTab = SIDE_TAB_PEOPLE }
             var hearts by remember { mutableStateOf(YtHearts.all()) }
             YtTheme(YtPalettes.Side) {
                 SideHomeScreen(
                     palette = YtPalettes.Side,
                     imageLoader = ImageHelper.loader(),
-                    forYou = charts ?: feed,
+                    forYou = forYou ?: feed,
                     people = feed,
                     tab = sideTab,
                     hearts = hearts,
@@ -165,9 +189,7 @@ object YtHome {
                 AfterHomeScreen(
                     palette = YtPalettes.After,
                     imageLoader = ImageHelper.loader(),
-                    videos = if (selection) {
-                        feed?.takeIf { videos -> videos.any { !it.isShort } } ?: charts
-                    } else tabVideos,
+                    videos = if (selection) forYou ?: feed else tabVideos,
                     continueWatching = continueWatching,
                     tab = afterTab,
                     isLoading = if (selection) isLoading else tabVideos == null,
@@ -184,11 +206,12 @@ object YtHome {
                 )
             }
         } else if (design == YtDesign.MOVO) {
+            LaunchedEffect(intent) { if (intent == YtIntent.SUBSCRIPTIONS) movoTab = MOVO_TAB_FOLLOWING }
             YtTheme(YtPalettes.Movo) {
                 MovoHomeScreen(
                     palette = YtPalettes.Movo,
                     imageLoader = ImageHelper.loader(),
-                    discover = charts,
+                    discover = forYou,
                     following = feed,
                     tab = movoTab,
                     isLoading = isLoading,
@@ -204,9 +227,9 @@ object YtHome {
             YouTubeHomeScreen(
                 palette = YtPalettes.YouTube,
                 imageLoader = ImageHelper.loader(),
-                feed = feed,
-                // "Alle": subscriptions, or the mixed charts; a topic: its chart
-                trending = if (filter == YT_FILTER_ALL) charts else trendingStreams,
+                // "Alle": the ranked feed; a topic: its chart
+                feed = if (filter == YT_FILTER_ALL) forYou ?: feed else feed,
+                trending = if (filter == YT_FILTER_ALL) forYou else trendingStreams,
                 categories = MediaServiceRepository.instance.getTrendingCategories(),
                 selectedFilter = filter,
                 isLoading = isLoading,
