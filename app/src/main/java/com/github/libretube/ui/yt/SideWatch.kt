@@ -13,6 +13,8 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,8 +58,18 @@ import com.github.libretube.api.MediaServiceRepository
 import com.github.libretube.api.obj.Comment
 import com.github.libretube.api.obj.CommentsPage
 import com.github.libretube.extensions.formatShort
+import com.github.libretube.helpers.SceneMode
+import com.github.libretube.helpers.SceneVerdict
+import com.github.libretube.helpers.YtCommentMoments
 import com.github.libretube.helpers.YtNote
 import com.github.libretube.helpers.YtNotes
+import com.github.libretube.ui.models.CommentScene
+import com.github.libretube.ui.yt.scene.YtSceneChips
+import com.github.libretube.ui.yt.scene.YtSceneText
+import com.github.libretube.ui.yt.scene.YtSceneUi
+import com.github.libretube.ui.yt.scene.rememberYtSceneUi
+import com.github.libretube.ui.yt.scene.sceneCaption
+import com.github.libretube.ui.yt.scene.ytSceneReveal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -65,12 +77,6 @@ private enum class SideSheetTab { CONVERSATION, NOTES }
 
 /** Comments of the first page that the sheet shows; the rest opens in the classic sheet. */
 private const val SIDE_COMMENTS_SHOWN = 20
-
-/** A video time like 2:16 or 1:02:16 in a comment. */
-private val TIMESTAMP = Regex("""(?<![\d:])(\d{1,2}:)?\d{1,2}:\d{2}(?![\d:])""")
-
-private fun parseTimestamp(text: String): Long =
-    text.split(":").fold(0L) { acc, part -> acc * 60 + part.toLong() } * 1000
 
 /**
  * YT design "Side", video page below the player: title and creator, then a raised
@@ -96,12 +102,16 @@ fun SideWatchDetails(
     var draft by remember(videoId) { mutableStateOf("") }
     var savedAsNote by remember(videoId) { mutableStateOf(false) }
 
+    // YT: page 1 through the activity's comment state, shared with the classic sheet (one fetch)
+    val scene = controller.comments?.scene
+    val sceneUi = rememberYtSceneUi(scene)
     LaunchedEffect(videoId) {
         comments = null
         comments = videoId?.let { id ->
-            withContext(Dispatchers.IO) {
-                runCatching { MediaServiceRepository.instance.getComments(id) }.getOrNull()
-            }
+            runCatching {
+                scene?.cache?.page(id, null)
+                    ?: withContext(Dispatchers.IO) { MediaServiceRepository.instance.getComments(id) }
+            }.getOrNull()
         } ?: CommentsPage(disabled = true)
     }
 
@@ -250,7 +260,7 @@ fun SideWatchDetails(
                 ) {
                     Column {
                         when (tab) {
-                            SideSheetTab.CONVERSATION -> Conversation(palette, imageLoader, comments, actions)
+                            SideSheetTab.CONVERSATION -> Conversation(palette, imageLoader, comments, actions, sceneUi)
                             SideSheetTab.NOTES -> Notes(
                                 palette = palette,
                                 notes = notes,
@@ -332,7 +342,13 @@ private fun Conversation(
     imageLoader: ImageLoader,
     page: CommentsPage?,
     actions: YtWatchActions,
+    sceneUi: YtSceneUi,
 ) {
+    val scene = sceneUi.scene
+    // YT: in the scene mode the comments of the current scene, read on from page 1 in the background
+    LaunchedEffect(sceneUi.mode, scene?.videoId) {
+        if (sceneUi.mode == SceneMode.SCENE) scene?.autoScan()
+    }
     when {
         page == null -> Box(
             Modifier
@@ -354,9 +370,43 @@ private fun Conversation(
                 palette,
                 pluralStringResource(R.plurals.yt_side_answers, count.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), count.formatShort()),
             )
-            page.comments.take(SIDE_COMMENTS_SHOWN).forEachIndexed { index, comment ->
+            // YT: Alle / Diese Stelle / Spoilerschutz, as the classic sheet has them
+            if (scene != null && !scene.isLive) {
+                YtSceneChips(
+                    selected = sceneUi.mode,
+                    onSelect = scene::setMode,
+                    font = YtFonts.figtree,
+                    active = palette.accent,
+                    onActive = palette.onAccent,
+                    idle = Color.Transparent,
+                    onIdle = palette.textSecondary,
+                    modifier = Modifier
+                        .padding(top = 6.dp)
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 15.dp),
+                )
+            }
+            val inScene = sceneUi.mode == SceneMode.SCENE
+            val sceneList = remember(sceneUi.indexed, sceneUi.step, inScene) {
+                if (inScene && scene != null) scene.sceneList().map { it.comment } else emptyList()
+            }
+            val shown = if (inScene) sceneList.take(SIDE_COMMENTS_SHOWN) else page.comments.take(SIDE_COMMENTS_SHOWN)
+            sceneCaption(sceneUi, shown.size)?.let { SheetCaption(palette, it) }
+            shown.forEachIndexed { index, comment ->
                 if (index > 0) SideDivider(palette.copy(surface = palette.raised))
-                CommentRow(palette, imageLoader, comment, actions)
+                CommentRow(palette, imageLoader, comment, actions, sceneUi.verdict(comment), scene)
+            }
+            if (inScene && scene != null && !sceneUi.exhausted) {
+                Text(
+                    text = stringResource(if (sceneUi.scanning) R.string.yt_r12_e_searching else R.string.yt_r12_e_search_more),
+                    color = if (sceneUi.scanning) palette.textSecondary else palette.accent,
+                    style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(50))
+                        .clickable(enabled = !sceneUi.scanning) { scene.scanMore() }
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                )
             }
             if (page.comments.size > SIDE_COMMENTS_SHOWN || page.nextpage != null) {
                 Text(
@@ -390,13 +440,23 @@ private fun CommentRow(
     imageLoader: ImageLoader,
     comment: Comment,
     actions: YtWatchActions,
+    verdict: SceneVerdict,
+    scene: CommentScene?,
 ) {
     val text = remember(comment.commentId) {
         HtmlCompat.fromHtml(comment.commentText.orEmpty(), HtmlCompat.FROM_HTML_MODE_LEGACY).toString().trim()
     }
-    val timestamp = remember(comment.commentId) { TIMESTAMP.find(text)?.value }
+    // YT: the first time the comment names, from its links (YtCommentMoments), else from its text
+    val timestampMs = remember(comment.commentId) {
+        scene?.momentsOf(comment)?.ms?.firstOrNull()
+            ?: YtCommentMoments.TIMESTAMP.find(text)?.value?.let(YtCommentMoments::parseClock)
+    }
 
-    Row(Modifier.padding(start = 19.dp, end = 12.dp, top = 12.dp, bottom = 11.dp)) {
+    Row(
+        Modifier
+            .ytSceneReveal(scene, comment, verdict)
+            .padding(start = 19.dp, end = 12.dp, top = 12.dp, bottom = 11.dp),
+    ) {
         AsyncImage(
             model = comment.thumbnail,
             contentDescription = null,
@@ -433,14 +493,15 @@ private fun CommentRow(
                             .padding(horizontal = 8.dp, vertical = 2.dp),
                     )
                 }
-                timestamp?.let { time ->
+                timestampMs?.let { ms ->
+                    val time = YtCommentMoments.formatTime(ms)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .padding(start = 8.dp)
                             .clip(RoundedCornerShape(50))
                             .background(palette.raised)
-                            .clickable { actions.onSeek(parseTimestamp(time)) }
+                            .clickable { actions.onSeek(ms) }
                             .padding(horizontal = 8.dp, vertical = 3.dp),
                     ) {
                         Icon(
@@ -466,12 +527,18 @@ private fun CommentRow(
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }
-            Text(
+            // YT: blurred while it names a time not seen yet (comments follow the scene)
+            YtSceneText(
                 text = text,
+                comment = comment,
+                verdict = verdict,
+                scene = scene,
+                style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 13.sp, lineHeight = 18.sp),
                 color = palette.text,
                 maxLines = 6,
-                overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = YtFonts.figtree, fontSize = 13.sp, lineHeight = 18.sp),
+                pill = palette.raised,
+                onPill = palette.text,
+                accent = palette.accent,
                 modifier = Modifier.padding(top = 3.dp),
             )
             Row(

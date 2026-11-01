@@ -2,4 +2,36 @@
 <!-- YT: round 12, package E (the comments that follow the scene). Same keys in the same order in values and values-de. -->
 <resources>
     <string name="yt_r12_e_category">Kommentare</string>
+
+    <!-- the setting and the chips above the comments -->
+    <string name="yt_r12_e_scene_title">Kommentare folgen der Szene</string>
+    <string name="yt_r12_e_mode_off">Aus</string>
+    <string name="yt_r12_e_mode_spoiler">Spoilerschutz</string>
+    <string name="yt_r12_e_mode_scene">Diese Stelle</string>
+    <string name="yt_r12_e_chip_all">Alle</string>
+    <string name="yt_r12_e_chips_description">Welche Kommentare</string>
+
+    <!-- the line below the chips -->
+    <string name="yt_r12_e_caption_spoiler">Verdeckt: alles nach %1$s. Erkannt werden nur Kommentare mit Zeitmarke.</string>
+    <string name="yt_r12_e_caption_chapter">Kapitel „%1$s“ · %2$s–%3$s</string>
+    <string name="yt_r12_e_caption_around">Rund um %1$s · %2$s–%3$s</string>
+    <plurals name="yt_r12_e_scene_empty">
+        <item quantity="one">Noch nichts zu %1$s–%2$s · %3$s Kommentar durchsucht</item>
+        <item quantity="other">Noch nichts zu %1$s–%2$s · %3$s Kommentare durchsucht</item>
+    </plurals>
+    <string name="yt_r12_e_scene_empty_all">Nichts zu %1$s–%2$s · alle Kommentare durchsucht</string>
+    <string name="yt_r12_e_search_more">Weiter suchen</string>
+    <string name="yt_r12_e_searching">Suche …</string>
+
+    <!-- a hidden comment -->
+    <string name="yt_r12_e_spoiler_at">Spoiler bei %1$s · tippen</string>
+    <string name="yt_r12_e_spoiler_short">Spoiler · %1$s</string>
+    <string name="yt_r12_e_from">ab %1$s</string>
+    <string name="yt_r12_e_info_from">%1$s · %2$s</string>
+    <string name="yt_r12_e_reveal">Anzeigen</string>
+    <string name="yt_r12_e_hidden_description">Kommentar von %1$s, verdeckt: Spoiler bei %2$s. Zum Anzeigen tippen.</string>
+    <plurals name="yt_r12_e_more_times">
+        <item quantity="one">+%d weitere Zeitmarke · tippen</item>
+        <item quantity="other">+%d weitere Zeitmarken · tippen</item>
+    </plurals>
 </resources>

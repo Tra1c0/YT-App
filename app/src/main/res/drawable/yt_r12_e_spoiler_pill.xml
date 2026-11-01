@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: a hidden comment where there is no blur (before Android 12): "Spoiler bei 14:20 · tippen". -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="?attr/colorSurfaceContainerHighest" />
+    <corners android:radius="12dp" />
+</shape>
