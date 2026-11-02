@@ -256,6 +256,24 @@ jobs:
           gh release download check-64-37a72ac --pattern '*.apk' --dir upgrade-baselines/build-64 --repo "$GITHUB_REPOSITORY"
           gh release download --pattern '*.apk' --dir upgrade-baselines/stable --repo "$GITHUB_REPOSITORY"
 
+      - name: Reserve memory for the software emulator
+        run: |
+          # The runner has 7 GB RAM. The guest and the host software renderer both
+          # need memory; give the host headroom instead of letting OOM kill qemu.
+          sudo fallocate -l 6G /mnt/yt-emulator.swap
+          sudo chmod 600 /mnt/yt-emulator.swap
+          sudo mkswap /mnt/yt-emulator.swap
+          sudo swapon /mnt/yt-emulator.swap
+          sudo sysctl vm.swappiness=10
+          (
+            while true; do
+              date -u
+              free -m
+              ps -eo rss,comm --sort=-rss | head -8
+              sleep 10
+            done
+          ) > runner-memory.log 2>&1 &
+
       - name: Run the app
         uses: reactivecircus/android-emulator-runner@v2
         timeout-minutes: 45
@@ -292,12 +310,19 @@ jobs:
             if [ "$YT_CHECK_UPGRADES" = yes ]; then bash scripts/check-upgrade.sh; fi
             bash scripts/crash-check.sh
 
+      - name: Runner memory diagnostics
+        if: always()
+        run: |
+          tail -60 runner-memory.log || true
+          sudo dmesg | grep -E -i 'out of memory|oom-kill|killed process|segfault' | tail -30 || true
+
       - name: Upload logcat
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: logs-${{ env.YT_TAG }}-${{ inputs.design }}-api${{ inputs.api }}-attempt${{ github.run_attempt }}
           path: |
+            runner-memory.log
             logcat-*.txt
             crash-*.txt
             dumpsys-*.txt
