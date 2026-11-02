@@ -281,9 +281,12 @@ jobs:
           arch: x86_64
           target: ${{ inputs.target }}
           profile: pixel_6
+          # Keep the renderer reproducible. Emulator 37.2.13 exits natively during
+          # playback/rotation on these runners, taking adbd and all later checks with it.
+          emulator-build: 15507667 # Android Emulator 36.6.11 stable, API 36 supported
           ram-size: 3072M
           emulator-boot-timeout: 1200
-          emulator-options: -no-window -gpu ${{ inputs.gpu }} -no-snapshot -noaudio -no-boot-anim
+          emulator-options: -no-window -gpu ${{ inputs.gpu }} -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
           disable-animations: ${{ !inputs.motion }}
           script: |
             if [ "$YT_CHECK_UPGRADES" = yes ]; then bash scripts/check-upgrade.sh; fi

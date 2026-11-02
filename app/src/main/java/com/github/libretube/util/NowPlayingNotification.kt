@@ -24,6 +24,7 @@ class NowPlayingNotification(
     var notificationIntent: Intent = Intent(),
     private val onDismissed: () -> Unit = {},
 ): MediaNotification.Provider {
+    private val dismissalOwner = YtNotificationPlayback()
     private val nProvider = DefaultMediaNotificationProvider.Builder(context)
         .setNotificationId(NotificationId.PLAYER_PLAYBACK.id)
         .setChannelId(PLAYER_CHANNEL_NAME)
@@ -61,10 +62,12 @@ class NowPlayingNotification(
         nProvider.setSmallIcon(R.drawable.ic_launcher_lockscreen)
         // SystemUI can deliver an old notification's dismissal after a new item has
         // started. Give each dismissal its own immutable action and media identity.
+        val revision = dismissalOwner.nextNotification()
         val dismissalFactory = object : MediaNotification.ActionFactory by actionFactory {
             override fun createNotificationDismissalIntent(session: MediaSession): PendingIntent {
                 val metadata = session.player.mediaMetadata
                 val extras = Bundle().apply {
+                    putLong(DISMISS_REVISION, revision)
                     putString(IntentData.videoId, metadata.extras?.getString(IntentData.videoId))
                     metadata.trackNumber?.let { putInt(DISMISS_TRACK, it) }
                 }
@@ -85,10 +88,14 @@ class NowPlayingNotification(
         if (action == DISMISS_ACTION) {
             val metadata = session.player.mediaMetadata
             val capturedTrack = if (extras.containsKey(DISMISS_TRACK)) extras.getInt(DISMISS_TRACK) else null
-            if (YtNotificationPlayback.matches(
-                    extras.getString(IntentData.videoId), capturedTrack,
+            val current = dismissalOwner.canDismiss(
+                    extras.getLong(DISMISS_REVISION, -1), extras.getString(IntentData.videoId), capturedTrack,
                     metadata.extras?.getString(IntentData.videoId), metadata.trackNumber
-                )) onDismissed()
+                )
+            com.github.libretube.ui.yt.YtTestHooks.log("YtLifecycle") {
+                "notification dismissal current=$current revision=${extras.getLong(DISMISS_REVISION, -1)}"
+            }
+            if (current) onDismissed()
             return true
         }
         runCatching { handlePlayerAction(PlayerEvent.valueOf(action)) }
@@ -98,5 +105,6 @@ class NowPlayingNotification(
     private companion object {
         const val DISMISS_ACTION = "yt.dismiss_playback_notification"
         const val DISMISS_TRACK = "yt.notification_track"
+        const val DISMISS_REVISION = "yt.notification_revision"
     }
 }
