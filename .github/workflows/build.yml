@@ -192,33 +192,30 @@ jobs:
       target: default
 
   compatibility:
-    name: Compatibility (API ${{ matrix.api }}, font ${{ matrix.font_scale }})
+    name: Compatibility (API ${{ matrix.api }}, ${{ matrix.design }})
     needs: build
     if: needs.build.outputs.full == 'true'
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - api: "26"
-            font_scale: "1.0"
-            motion: true
-          - api: "36"
-            font_scale: "1.0"
-            motion: true
-          - api: "34"
-            font_scale: "1.8"
-            motion: false
+        api: ["26", "34", "36"]
+        # Every design still runs every compatibility check. Independent groups
+        # avoid making twelve cold starts wait for one emulator in sequence.
+        design:
+          - standard,youtube,movo,after
+          - side,clay,editorial,glass
+          - pop,shapes,frost,kiesel
     uses: ./.github/workflows/crash-check.yml
     with:
       artifact_name: ${{ needs.build.outputs.artifact }}
       source_sha: ${{ github.sha }}
-      design: all
+      design: ${{ matrix.design }}
       api: ${{ matrix.api }}
       target: default
-      font_scale: ${{ matrix.font_scale }}
-      motion: ${{ matrix.motion }}
+      font_scale: ${{ matrix.api == '34' && '1.8' || '1.0' }}
+      motion: ${{ matrix.api != '34' }}
       gestures: false
-      check_upgrades: ${{ matrix.api != '34' }}
+      check_upgrades: ${{ matrix.api != '34' && matrix.design == 'standard,youtube,movo,after' }}
       test_video: true
       screens: true
       signin_probe: false
