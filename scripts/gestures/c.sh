@@ -29,6 +29,7 @@ c_open_with_bar() {
   local bar
   # the controls go up before "test hooks done", which open_test_video waits for
   open_test_video --ez yt_controls_test true "$@" >&2 || return 1
+  wait_open_player || return 1
   # Measure the current view, after layout. The initial hook's bounds can be stale
   # after a resized video or a fullscreen transition.
   bar=$(bounds_of 'id/exo_progress$') || return 1

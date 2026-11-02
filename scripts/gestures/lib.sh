@@ -93,6 +93,29 @@ center_of() {
   echo "$(( (l + r) / 2 )) $(( (t + bt) / 2 ))"
 }
 
+# A ready decoder can precede the page's opening transition. Inputs must target
+# the settled video, rather than a rectangle moving between mini and full size.
+wait_open_player() {
+  local size width height box previous="" l t r b stable=0 i
+  size=$(screen_size)
+  read -r width height <<< "$size"
+  for i in $(seq 1 30); do
+    if box=$(bounds_of 'id/player$'); then
+      read -r l t r b <<< "$box"
+      if [ "$((r-l))" -ge "$((width*98/100))" ] && [ "$((b-t))" -ge "$((width*4/10))" ] && [ "$box" = "$previous" ]; then
+        stable=$((stable+1))
+        [ "$stable" -lt 2 ] || return 0
+      else
+        stable=0
+      fi
+      previous=$box
+    fi
+    sleep 0.25
+  done
+  mark 'the full player did not settle before the gesture' >&2
+  return 1
+}
+
 # status 0 if all arguments are whole numbers (coordinates read from a helper's output)
 numbers() {
   local n

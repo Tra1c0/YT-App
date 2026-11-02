@@ -120,7 +120,7 @@ jobs:
         run: bash scripts/tests/gesture-driver-protocol.sh
 
       - name: Run all app unit tests
-        run: ./gradlew :app:testReleaseUnitTest --no-daemon --console=plain
+        run: ./gradlew :app:testReleaseUnitTest --no-daemon --console=plain -Dorg.gradle.jvmargs=-Xmx4g -Pkotlin.compiler.execution.strategy=in-process
 
       - name: Upload test reports
         if: always()
@@ -132,7 +132,7 @@ jobs:
 
       - name: Build release APK and input driver
         run: |
-          ./gradlew assembleRelease --no-daemon --console=plain
+          ./gradlew assembleRelease --no-daemon --console=plain -Dorg.gradle.jvmargs=-Xmx4g -Pkotlin.compiler.execution.strategy=in-process
           bash scripts/build-gesture-driver.sh
 
       - name: Collect the exact build to validate

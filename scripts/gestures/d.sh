@@ -47,7 +47,7 @@ d_tap() {
 
 # "x y w" of the first home card on screen: the second if there is one, else the first
 d_card() {
-  local b l t r bt nav limit size width height tag attempt
+  local b l t r bt nav limit size width height index attempt mini
   size=$(screen_size)
   read -r width height <<< "$size"
   limit=$((height - $(dp 100)))
@@ -55,9 +55,15 @@ d_card() {
     read -r _ limit _ _ <<< "$nav"
     limit=$((limit - $(dp 12)))
   fi
+  if mini=$(bounds_of 'id/main_container$'); then
+    read -r _ t _ _ <<< "$mini"
+    if [ "$t" -ge "$((height/2))" ] && [ "$t" -lt "$limit" ]; then
+      limit=$((t - $(dp 12)))
+    fi
+  fi
   for attempt in 1 2 3; do
-    for tag in yt_card_1 yt_card_0 yt_card_next; do
-      b=$(bounds_of "$tag\$") || continue
+    for index in 2 1 3 4 5 6; do
+      b=$(bounds_of 'yt_card_([0-9]+|next)$' "$index") || continue
       read -r l t r bt <<< "$b"
       [ "$t" -ge "$(dp 72)" ] || t=$(dp 72)
       [ "$bt" -le "$limit" ] || bt=$limit

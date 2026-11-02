@@ -361,7 +361,7 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     override fun onCreate() {
         super.onCreate()
 
-        notificationProvider = NowPlayingNotification(this)
+        notificationProvider = NowPlayingNotification(this, onDismissed = { handlePlayerAction(PlayerEvent.Stop) })
         setMediaNotificationProvider(notificationProvider!!)
 
         createPlayerAndMediaSession()
@@ -457,6 +457,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
         intent: Intent
     ): Boolean {
         val event: KeyEvent = intent.parcelableExtra(Intent.EXTRA_KEY_EVENT) ?: return false
+        // One physical key press consists of DOWN and UP; execute it once.
+        if (event.action != KeyEvent.ACTION_DOWN) return true
         when (event.keyCode) {
             KeyEvent.KEYCODE_MEDIA_NEXT -> {
                 handlePlayerAction(PlayerEvent.Next)
@@ -470,14 +472,17 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
 
             KeyEvent.KEYCODE_MEDIA_REWIND -> {
                 handlePlayerAction(PlayerEvent.Rewind)
+                return true
             }
 
             KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
                 handlePlayerAction(PlayerEvent.Forward)
+                return true
             }
 
             KeyEvent.KEYCODE_MEDIA_STOP -> {
                 handlePlayerAction(PlayerEvent.Stop)
+                return true
             }
         }
 

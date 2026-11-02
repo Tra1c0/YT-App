@@ -32,6 +32,10 @@ if ! [[ "${YT_SUITES:-abcde}" =~ ^[a-e]+$ ]]; then
 fi
 echo "APK: $APK, designs: $DESIGNS, night: ${YT_NIGHT:-no}, locale: ${YT_LOCALE:-device}"
 adb wait-for-device
+# Preserve the Pixel 6's logical 411 x 914 dp viewport while reducing the
+# software renderer's pixel workload. Every coordinate check still reads bounds.
+adb shell wm size 720x1600
+adb shell wm density 280
 if ! [[ "${YT_FONT_SCALE:-1.0}" =~ ^(1(\.[0-9]+)?|2(\.0+)?)$ ]]; then
   echo '::error::Font scale must be between 1.0 and 2.0'
   exit 2
@@ -222,6 +226,7 @@ if [ "${YT_GESTURES:-no}" = yes ] || [ "${YT_SCREENS:-no}" = yes ]; then
   . scripts/gestures/driver.sh
   driver_start || { echo '::error::The gesture input driver could not start'; exit 2; }
   YT_INPUT_READY=yes
+  . scripts/gestures/lib.sh
 fi
 # the local test video: into the app's private files after its first start (pm clear wipes them,
 # so once per design), with the owner and SELinux label of the app's own files, so the app reads
@@ -667,7 +672,7 @@ for design in $DESIGNS; do
         sleep 1
         if driver_find 'id/player$' >/dev/null; then player_returned=yes; break; fi
       done
-      if [ "$player_returned" != yes ]; then
+      if [ "$player_returned" != yes ] || ! wait_open_player; then
         echo "::error::$design: video did not return from picture-in-picture"
         crashed="$crashed $design-pip-return"
       fi
@@ -676,8 +681,12 @@ for design in $DESIGNS; do
           if b=$(driver_find '^Nur Audio$|^Audio only$|id/relPlayer_background$'); then
             read -r l t r bt <<< "$b"
             driver_command TAP $(( (l+r)/2 )) $(( (t+bt)/2 ))
-            sleep 2
-            if driver_find 'id/open_video$' >/dev/null; then
+            audio_opened=no
+            for audio_wait in 1 2 3 4 5 6 7 8; do
+              sleep 0.5
+              if driver_find 'id/open_video$' >/dev/null; then audio_opened=yes; break; fi
+            done
+            if [ "$audio_opened" = yes ]; then
               shot "$design-2-audio"
               timeout 10 adb shell input keyevent KEYCODE_HOME || true
               sleep 2

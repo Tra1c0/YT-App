@@ -55,6 +55,7 @@ import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -129,7 +130,8 @@ fun PopHomeScreen(
                     PopTab(palette, stringResource(R.string.yt_tab_live), R.drawable.ic_yt_nav_live, tab == YT_TAB_LIVE, 74) { onSelectTab(YT_TAB_LIVE) }
                     // the Feed-Regler as a fourth blob, plum while it is open
                     val openSheet = rememberOpenFeedSheet()
-                    PopTab(palette, stringResource(R.string.yt_feed_open_short), R.drawable.ic_yt_tune, YtFeedUi.sheet, 74, openSheet)
+                    PopTab(palette, stringResource(R.string.yt_feed_open_short), R.drawable.ic_yt_tune, YtFeedUi.sheet, 74,
+                        modifier = Modifier.testTag("yt_feed_button"), onClick = openSheet)
                 }
             }
             if (source == null || videos.isEmpty()) {
@@ -184,12 +186,12 @@ private fun rememberPopSwing(list: LazyListState): State<Float> {
 }
 
 @Composable
-private fun PopTab(palette: YtPalette, label: String, icon: Int?, active: Boolean, width: Int, onClick: () -> Unit) {
+private fun PopTab(palette: YtPalette, label: String, icon: Int?, active: Boolean, width: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val background by animateColorAsState(if (active) palette.accent else PopLilac, ytStateSpec(), label = "popTab")
     val content by animateColorAsState(if (active) Color.White else palette.text, ytStateSpec(), label = "popTabContent")
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
+        modifier = modifier
             .width(width.dp)
             .height(50.dp)
             .ytSelectBounce(active)

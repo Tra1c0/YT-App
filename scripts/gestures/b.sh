@@ -21,6 +21,7 @@ b_checks() {
     return 0
   fi
   sleep 3
+  wait_open_player || { gesture_fail 'B: the full player did not settle'; return 1; }
   size=$(screen_size)
   read -r _ h <<< "$size"
   [ -n "$h" ] || { gesture_fail "B: no screen size"; return 1; }
