@@ -124,6 +124,15 @@ drag_held() {
 drag() { drag_held 0 "$@"; }
 hold_drag() { drag_held 0.9 "$@"; }
 
+# Two taps one after the other within the double-tap time (300 ms). Two "input tap" in a row
+# are too far apart: each starts its own process, which takes longer than that on the emulator,
+# so the app saw two single taps (a single tap opens the mini player). Here both processes start
+# together and the second waits 120 ms before it taps.
+double_tap() {
+  mark "double tap $1,$2"
+  timeout 10 adb shell "input tap $1 $2 & sleep 0.12; input tap $1 $2; wait" || true
+}
+
 fling() {
   mark "fling $1,$2 to $3,$4 in ${5:-80} ms"
   timeout 10 adb shell input swipe "$1" "$2" "$3" "$4" "${5:-80}" || true

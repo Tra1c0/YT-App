@@ -154,7 +154,7 @@ b_open_docked() {
 }
 
 b_dock_checks() {
-  local h x0 y0 c rotation auto
+  local h x0 y0 c rotation auto turned
   if ! open_test_video; then
     mark "B dock: no test video, the dock checks are skipped"
     return 0
@@ -210,9 +210,16 @@ b_dock_checks() {
     timeout 10 adb shell settings put system user_rotation 1 || true
     sleep 3
     rawshot "$design-b-dock-landscape"
+    # the activity's orientation is locked (screenOrientation="locked"): then the display stays
+    # upright, nothing moves and the app has no new place to log
+    turned=$(timeout 10 adb shell dumpsys window displays 2>/dev/null | grep -a -o -m1 'mCurrentRotation=[A-Z_0-9]*' | tr -d '\r')
     timeout 10 adb shell settings put system user_rotation "${rotation:-0}" || true
     timeout 10 adb shell settings put system accelerometer_rotation "${auto:-0}" || true
-    b_dock_at rotation
+    case "$turned" in
+      *ROTATION_0|*=0|"")
+        mark "B dock (rotation): the display did not turn (${turned:-rotation unknown}); nothing to check" ;;
+      *) b_dock_at rotation ;;
+    esac
   fi
 
   # 6. home and back (with a video playing, home may take it into picture-in-picture)

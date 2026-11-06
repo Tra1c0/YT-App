@@ -43,10 +43,21 @@ else
 fi
 # the floating check looks at the app's threads, the test video goes into the app's own files:
 # root first (adbd restarts, which would cut a running log capture short), as the emulator image allows
+# adb root fails now and then right after the boot ("closed", the device offline for a moment):
+# a few tries, each waiting for adbd to come back
+is_root() { [ "$(timeout 10 adb shell id -u 2>/dev/null | tr -d '\r')" = "0" ]; }
+get_root() {
+  local i
+  for i in 1 2 3; do
+    is_root && return 0
+    timeout 20 adb root >/dev/null 2>&1 || true
+    sleep $(( i * 3 ))
+    timeout 30 adb wait-for-device || true
+  done
+  is_root
+}
 if [ "${YT_FLOAT:-no}" = "yes" ] || [ "${YT_TEST_VIDEO:-no}" = "yes" ]; then
-  timeout 20 adb root >/dev/null 2>&1 || true
-  sleep 3
-  timeout 30 adb wait-for-device || true
+  get_root || echo "::warning::No adb root after three tries"
 fi
 # an installation that failed would show as crashes in every design
 if ! timeout 20 adb shell pm path "$PKG" >/dev/null 2>&1; then
@@ -68,6 +79,8 @@ if [ -n "${YT_LOCALE:-}" ]; then
 fi
 RETRACE=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/retrace 2>/dev/null | head -n 1)
 crashed=""
+# designs whose gesture checks failed (the app kept running)
+failed=""
 # extras for every start of the app; the gesture checks log the gestures (YtTestHooks, emulator only)
 START_EXTRAS=()
 [ "${YT_GESTURES:-no}" = "yes" ] && START_EXTRAS+=(--ez yt_gesture_log true)
@@ -107,8 +120,15 @@ dismiss_anr() {
 # tried again with the animations off for the moment. Its own notes go to stderr, since callers
 # read its output.
 ui_dump() {
+  local out
   timeout 10 adb shell rm -f /sdcard/ui.xml >/dev/null 2>&1 || true
-  timeout 30 adb shell uiautomator dump /sdcard/ui.xml 2>&1 | tr -d '\r' | grep -a -i -m1 'error' || true
+  # a dump that never finds the screen idle can hang until the timeout without a word (Glas
+  # redraws all the time); only "dumped to" counts as done
+  out=$(timeout 25 adb shell uiautomator dump /sdcard/ui.xml 2>&1 | tr -d '\r')
+  case "$out" in
+    *"dumped to"*) ;;
+    *) printf '%s\n' "${out:-no dump within 25 s}" | grep -a -i -m1 -E 'error|exception|no dump' || echo "no dump: ${out:0:80}" ;;
+  esac
 }
 ui() {
   local err scales k
@@ -188,9 +208,16 @@ TEST_VIDEO=""
 push_test_video() {
   local dir="/data/user/0/$PKG/files" ref owner label
   TEST_VIDEO=""
-  if [ "$(timeout 10 adb shell id -u 2>/dev/null | tr -d '\r')" != "0" ]; then
-    echo "::warning::No adb root: the test video cannot go into the app's files"
-    return 1
+  if ! is_root; then
+    # adbd restarts for root, which ends the running log capture: start it again, appending
+    if ! get_root; then
+      echo "::warning::No adb root: the test video cannot go into the app's files"
+      return 1
+    fi
+    if [ -n "${logpid:-}" ] && ! kill -0 "$logpid" 2>/dev/null; then
+      adb logcat -v threadtime >> "logcat-${design:-standard}.txt" 2>/dev/null &
+      logpid=$!
+    fi
   fi
   # the files dir appears on the app's first use of it; until then its data dir has the same owner and label
   ref="$dir"
@@ -345,9 +372,61 @@ if [ "${YT_LOCK:-no}" = "yes" ]; then
   if [ -s crash-lock.txt ]; then head -60 crash-lock.txt; crashed="$crashed lock"; else rm -f crash-lock.txt; fi
   echo "::endgroup::"
 fi
-for design in $DESIGNS; do
-  # the emulator itself can die (its GPU emulation is fragile); that is no crash of the app
-  if [ "$(timeout 15 adb get-state 2>/dev/null)" != "device" ]; then
+# the emulator itself can die (its GPU emulation is fragile, run 42285503145 lost it 2 minutes
+# in); that is no crash of the app. Then adb is restarted, and if the device stays away the
+# emulator is started again as the workflow started it (YT_EMU_OPTIONS), at most twice per job,
+# set up again (installation, root, dark mode), and the design it took with it runs again.
+device_ok() {
+  local waited=0
+  while [ "$waited" -lt "$1" ]; do
+    [ "$(timeout 10 adb get-state 2>/dev/null)" = "device" ] && return 0
+    sleep 5
+    waited=$(( waited + 5 ))
+  done
+  return 1
+}
+revives=0
+revive_emulator() {
+  local waited=0 k
+  [ "$revives" -lt 2 ] || return 1
+  revives=$(( revives + 1 ))
+  echo "::warning::The emulator is gone ($1); attempt $revives to bring it back"
+  timeout 20 adb kill-server >/dev/null 2>&1 || true
+  timeout 20 adb start-server >/dev/null 2>&1 || true
+  if ! device_ok 45; then
+    if [ -z "${YT_EMU_OPTIONS:-}" ] || [ ! -x "${ANDROID_HOME:-}/emulator/emulator" ]; then
+      echo "no emulator command (YT_EMU_OPTIONS, ANDROID_HOME) to start it again"
+      return 1
+    fi
+    pkill -f qemu-system >/dev/null 2>&1 || true
+    sleep 3
+    # shellcheck disable=SC2086 # the options are words
+    "$ANDROID_HOME/emulator/emulator" -port 5554 -avd "${YT_AVD:-test}" $YT_EMU_OPTIONS > "emulator-restart-$revives.txt" 2>&1 &
+    device_ok 300 || { echo "the new emulator did not come up"; tail -n 20 "emulator-restart-$revives.txt"; return 1; }
+  fi
+  while [ "$(timeout 10 adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
+    [ "$waited" -ge 300 ] && { echo "no boot within 300 s"; return 1; }
+    sleep 5
+    waited=$(( waited + 5 ))
+  done
+  timeout 10 adb shell input keyevent 82 >/dev/null 2>&1 || true
+  for k in window_animation_scale transition_animation_scale animator_duration_scale; do
+    timeout 10 adb shell settings put global "$k" 0 >/dev/null 2>&1 || true
+  done
+  timeout 180 adb install -r "$APK" >/dev/null || { echo "installing again failed"; return 1; }
+  if [ "${YT_FLOAT:-no}" = "yes" ] || [ "${YT_TEST_VIDEO:-no}" = "yes" ]; then get_root || true; fi
+  timeout 10 adb shell settings put global hide_error_dialogs 0 >/dev/null 2>&1 || true
+  if [ "${YT_NIGHT:-no}" = "yes" ]; then timeout 10 adb shell cmd uimode night yes >/dev/null 2>&1 || true; fi
+  echo "the emulator is back"
+}
+# shellcheck disable=SC2206 # the designs are words
+todo=($DESIGNS)
+next=0
+retried=""
+while [ "$next" -lt "${#todo[@]}" ]; do
+  design="${todo[$next]}"
+  next=$(( next + 1 ))
+  if [ "$(timeout 15 adb get-state 2>/dev/null)" != "device" ] && ! revive_emulator "before $design"; then
     echo "::error::The emulator is gone before $design; the designs from here on are untested"
     exit 2
   fi
@@ -623,7 +702,7 @@ for design in $DESIGNS; do
     echo "::endgroup::"
     if [ "$gesture_fails" != 0 ]; then
       echo "::error::$design: $gesture_fails gesture checks failed"
-      crashed="$crashed $design-gestures"
+      failed="$failed $design"
     fi
   fi
   if [ -n "$TEST_VIDEO" ]; then
@@ -634,6 +713,16 @@ for design in $DESIGNS; do
   fi
   if timeout 20 adb shell pidof "$PKG" >/dev/null 2>&1; then state="running"; else state="NOT RUNNING"; fi
   kill "$logpid" 2>/dev/null; wait "$logpid" 2>/dev/null
+  # the emulator went during this design: no verdict on the app; once more after the revival
+  if [ "$state" != "running" ] && [ "$(timeout 15 adb get-state 2>/dev/null)" != "device" ]; then
+    echo "::warning::$design: the emulator went during the run; its log is in logcat-$design.txt"
+    mv -f "logcat-$design.txt" "logcat-$design-emulator-gone.txt" 2>/dev/null || true
+    case " $retried " in
+      *" $design "*) ;;
+      *) retried="$retried $design"; todo=("${todo[@]:0:$next}" "$design" "${todo[@]:$next}") ;;
+    esac
+    continue
+  fi
   # only crashes of this app count (other processes of the emulator crash too)
   awk -v pkg="Process: $PKG," '
     function flush() { if (keep) print block; block = ""; keep = 0; n = 0 }
@@ -696,6 +785,9 @@ if [ "${YT_SIGNIN_PROBE:-no}" = "yes" ] && [ "$(timeout 15 adb get-state 2>/dev/
   echo "::endgroup::"
 fi
 
+if [ -n "$failed" ]; then
+  echo "::error::Gesture checks failed in:$failed (no crash; see the FAIL lines)"
+fi
 if [ -n "$crashed" ]; then
   if [ -n "$RETRACE" ] && [ -f apk/mapping.txt ]; then
     echo "::group::Retraced crashes"
@@ -706,4 +798,5 @@ if [ -n "$crashed" ]; then
   echo "::error::The app crashed in:$crashed"
   exit 1
 fi
+[ -n "$failed" ] && exit 1
 echo "No crash in any of the designs: $DESIGNS"

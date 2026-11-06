@@ -33,6 +33,22 @@ d_card() {
   echo "$(( (l + r) / 2 )) $(( (t + bt) / 2 )) $(( r - l ))"
 }
 
+# the same, for a card part above y=$1 (the docked mini player's top): a card's middle can lie
+# under the mini player, and a swipe there moves the player instead of the card
+d_card_above() {
+  local limit="$1" id b l t r bt
+  for id in yt_card_1 yt_card_0 yt_card_next yt_card_2; do
+    b=$(bounds_of "$id\$") || continue
+    read -r l t r bt <<< "$b"
+    [ "$bt" -gt "$limit" ] && bt="$limit"
+    if [ $(( bt - t )) -ge "$(dp 56)" ]; then
+      echo "$(( (l + r) / 2 )) $(( (t + bt) / 2 )) $(( r - l ))"
+      return 0
+    fi
+  done
+  return 1
+}
+
 d_fail() {
   echo "FAIL ${design:-?} d: $*"
   gesture_fails=$(( ${gesture_fails:-0} + 1 ))
@@ -64,7 +80,7 @@ d_swipe() {
 }
 
 d_checks() {
-  local card x y w reach bar h lens sx sy mini mx my
+  local card x y w reach bar h lens sx sy mini mx my mini_top
   d_home
   log_mark
   if ! card=$(d_card); then
@@ -230,7 +246,10 @@ d_checks() {
     timeout 10 adb shell input keyevent KEYCODE_BACK || true
     sleep 4
     log_mark
-    if card=$(d_card); then
+    # above the docked mini player (the whole screen when there is none)
+    mini_top=$(bounds_of 'id/main_container$' | awk '{ print $2 }')
+    numbers "${mini_top:-}" || mini_top=$(screen_size | awk '{ print $2 }')
+    if card=$(d_card_above "${mini_top:-2400}"); then
       read -r x y w <<< "$card"
       drag "$x" "$y" $(( x + reach )) "$y" 8
       sleep 0.3
@@ -243,7 +262,7 @@ d_checks() {
       log_mark
       if mini=$(center_of 'main_container$'); then
         read -r mx my <<< "$mini"
-        card=$(d_card) && read -r x y w <<< "$card"
+        card=$(d_card_above "${mini_top:-2400}") && read -r x y w <<< "$card"
         SHOT_STEPS="10" hold_drag "$x" "$y" "$mx" "$my" 12 "$design-d-10-hover"
         expect_log YtDrag 'hover=mini'
         expect_log YtQueue 'drop (next|append|rejected)'

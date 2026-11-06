@@ -129,6 +129,9 @@ jobs:
           YT_TEST_VIDEO: ${{ inputs.test_video && 'yes' || 'no' }}
           YT_VIDEO: ${{ inputs.video }}
           YT_WAIT: ${{ inputs.wait }}
+          # to start the emulator again if it dies on the way (crash-check.sh, revive_emulator)
+          YT_EMU_OPTIONS: -no-window -gpu ${{ inputs.gpu }} -no-snapshot -noaudio -no-boot-anim
+          YT_AVD: test
         with:
           api-level: ${{ inputs.api }}
           arch: x86_64
@@ -148,8 +151,10 @@ jobs:
             logcat-*.txt
             crash-*.txt
             dumpsys-*.txt
+            emulator-restart-*.txt
 
-      # the screenshots as release files: they can be fetched like the APKs; older sets go
+      # the screenshots as release files: they can be fetched like the APKs; older sets go, but
+      # the three newest stay, so runs started together do not delete each other's sets
       - name: Publish the screenshots
         if: always() && (inputs.screens || inputs.pip || inputs.lock || inputs.float || inputs.gestures || inputs.test_video)
         env:
@@ -158,7 +163,7 @@ jobs:
           # a screenshot taken after the emulator died is empty
           find screens -name '*.png' -size -2k -delete 2>/dev/null || true
           ls screens/*.png >/dev/null 2>&1 || { echo "no screenshots"; exit 0; }
-          for tag in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName' | grep '^screens-' || true); do
+          for tag in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName,createdAt --jq 'sort_by(.createdAt) | reverse | .[].tagName' | grep '^screens-' | tail -n +4 || true); do
             gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
           done
           gh release create "screens-${{ github.run_number }}" screens/*.png --repo "$GITHUB_REPOSITORY" \
