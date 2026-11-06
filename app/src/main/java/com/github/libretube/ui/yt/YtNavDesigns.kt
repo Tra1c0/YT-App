@@ -174,6 +174,21 @@ fun ClayNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSel
                 modifier = Modifier
                     .offset(tile.x, tile.y)
                     .size(tile.w, tile.h)
+                    // the docked mini player is dough pressed onto the upper blobs: they are
+                    // pulled up a little with it while its long press stretches it (read while
+                    // drawing, so the bar does not compose again)
+                    .then(
+                        if (index < 2) {
+                            Modifier.graphicsLayer {
+                                val pull = YtDock.peek.coerceIn(0f, 1.15f)
+                                scaleY = 1f + 0.025f * pull
+                                scaleX = 1f - 0.008f * pull
+                                transformOrigin = TransformOrigin(0.5f, 1f)
+                            }
+                        } else {
+                            Modifier
+                        },
+                    )
                     // a poked blob of clay: squashes under the finger, wobbles when it becomes active
                     .ytJelly(active, amount = 0.08f)
                     .ytSquish(interaction)
