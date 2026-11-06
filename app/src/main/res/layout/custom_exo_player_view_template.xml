@@ -159,10 +159,11 @@
         android:translationZ="2dp"
         android:visibility="gone" />
 
-    <!-- YT: the compass of hold and drag on the video, over everything while a finger holds;
-         invisible at rest (not gone), so it knows its size when a hold begins -->
-    <com.github.libretube.ui.yt.player.YtHoldCompassView
-        android:id="@+id/yt_hold_compass"
+    <!-- YT: hold and drag on the video: the room around the shrunk video and the tiles of the
+         four actions, over everything while a finger holds; a sibling of exo_content_frame, which
+         it moves and scales; invisible at rest (not gone), so it knows its size when a hold begins -->
+    <com.github.libretube.ui.yt.player.YtHoldTilesView
+        android:id="@+id/yt_hold_tiles"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:importantForAccessibility="no"

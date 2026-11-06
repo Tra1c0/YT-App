@@ -1,10 +1,11 @@
 # shellcheck shell=bash
 # YT round 12, package C: its gesture checks.
-# The player gestures: scrubbing, the return point, the loop, the compass, sharing a moment.
+# The player gestures: scrubbing, the return point, the loop, hold and drag, sharing a moment.
 # Sourced by crash-check.sh once per design with YT_GESTURES=yes ($design is the design); the
 # helpers are in lib.sh. So far the time magnifier (levels, frames, cancelling), the rewind
 # memory's chip, the explanation loop (marked on the time bar), hold and drag on the video
-# (its compass, in the page and in fullscreen) and sharing onto the timeline; each check opens the test video anew (the app's parameters are in
+# (the video shrinks under the finger with a tile per direction, in the page and in fullscreen)
+# and sharing onto the timeline; each check opens the test video anew (the app's parameters are in
 # YtPlayerGestureTestHooks).
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh" || return 0
@@ -57,6 +58,19 @@ c_ratio() {
       if (px["1/1"] == 0 || px["1/8"] == 0 || ms["1/1"] == 0) { print "none"; exit }
       printf "%.3f %.1f %.1f\n", (ms["1/8"] / px["1/8"]) / (ms["1/1"] / px["1/1"]), ms["1/1"] / px["1/1"], ms["1/8"] / px["1/8"]
     }'
+}
+
+# whether the last hold shrank the video to a part of the player [width] px wide (its log
+# says where the video went: "hold begin ... video=l t r b tiles=...")
+c_hold_shrunk() {
+  local width="$1" box l t r b
+  box=$(tag_messages YtGesture | grep -a -o -E 'hold begin .*video=-?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+' | tail -n 1 | sed 's/.*video=//')
+  read -r l t r b <<< "$box"
+  if [ -n "$box" ] && [ "${width:-0}" -gt 0 ] && awk -v w="$(( r - l ))" -v p="$width" 'BEGIN { q = w / p; exit !(q > 0.2 && q < 0.6) }'; then
+    c_verdict OK "the held video shrinks" "$(( r - l )) of $width px"
+  else
+    c_verdict FAIL "the held video shrinks" "video=${box:-none} player=$width px"
+  fi
 }
 
 c_checks() {
@@ -177,17 +191,23 @@ c_checks() {
       # up past the ring, back to the centre, let go: nothing runs
       finger_down "$x" "$y"
       sleep 0.9
+      # mid-hold, still in the centre: the shrunk video and its four tiles
+      sleep 0.5
+      rawshot "$design-c-6-hold-tiles"
       for i in 1 2 3 4; do finger_move "$x" $(( y - up * i / 4 )); done
       for i in 3 2 1 0; do finger_move "$x" $(( y - up * i / 4 )); done
       finger_up "$x" "$y"
-      expect_log YtGesture 'hold begin'
+      expect_log YtGesture 'hold begin .*video=-?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+ tiles=[A-Z,]+'
+      c_hold_shrunk "$(( r - l ))"
       expect_log YtGesture 'hold dir=UP stage=ARMED'
       expect_log YtGesture 'hold cancel cancelled=false stage=CENTRE'
       # up again and let go there: fullscreen
       finger_down "$x" "$y"
       sleep 0.9
       for i in 1 2 3 4 5 6; do finger_move "$x" $(( y - up * i / 6 )); done
-      rawshot "$design-c-6-compass"
+      # the up tile armed, grown, in the design's armed colour
+      sleep 0.4
+      rawshot "$design-c-6-hold-armed"
       finger_up "$x" $(( y - up ))
       expect_log YtGesture 'hold run action=fullscreen dir=UP fullscreen=false'
       EXPECT_WAIT=5 expect_log YtGesture 'hold done action=fullscreen'
@@ -203,7 +223,8 @@ c_checks() {
       finger_down "$x" "$y"
       sleep 0.9
       for i in 1 2 3 4 5 6; do finger_move "$x" $(( y + up * i / 6 )); done
-      rawshot "$design-c-7-compass-fullscreen"
+      sleep 0.4
+      rawshot "$design-c-7-hold-fullscreen"
       finger_up "$x" $(( y + up ))
       expect_log YtGesture 'hold run action=minimize dir=DOWN fullscreen=true'
       EXPECT_WAIT=5 expect_log YtGesture 'hold done action=minimize'
