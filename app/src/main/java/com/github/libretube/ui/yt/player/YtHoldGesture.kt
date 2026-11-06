@@ -22,10 +22,10 @@ import java.text.DecimalFormatSymbols
 
 /**
  * YT: hold and drag on the playing video (package C, (d)), in the page and in fullscreen. A long
- * press shows the compass ([YtHoldCompassView]) with the action set for each direction
- * (YtPlayerGesturePrefs); the finger lights a target past 40 dp and arms it past 88 dp, letting
- * go runs it. Back to the centre or a second finger cancels. Holding still keeps the long press's
- * 2× if that is on. The action runs after the gesture has ended, so a window change (fullscreen,
+ * press shrinks the video itself under the finger, with a tile for the action set for each
+ * direction around it ([YtHoldTilesView], YtPlayerGesturePrefs); the finger lights a tile past
+ * 40 dp and arms it past 88 dp, letting go runs it and the video springs back. Back to the
+ * centre or a second finger cancels. Holding still keeps the long press's 2× if that is on. The action runs after the gesture has ended, so a window change (fullscreen,
  * picture-in-picture, a sheet) never meets a finger still down. One per page view.
  */
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -37,7 +37,7 @@ class YtHoldGesture(
     /** The page's explanation loop, for "loop the last 10 s". */
     private val loop: () -> YtLoopController?,
 ) : CustomExoPlayerView.HoldDrag {
-    private val compass = player.backgroundBinding.ytHoldCompass
+    private val tiles = player.backgroundBinding.ytHoldTiles
     private val handler = Handler(Looper.getMainLooper())
     private val density = player.resources.displayMetrics.density
     private var actions: Map<YtHoldDir, YtHoldAction> = emptyMap()
@@ -54,7 +54,7 @@ class YtHoldGesture(
         released = true
         if (player.ytHold === this) player.ytHold = null
         handler.removeCallbacksAndMessages(null)
-        compass.clear()
+        tiles.clear()
     }
 
     override fun begin(x: Float, y: Float, fastForward: Boolean): Boolean {
@@ -67,11 +67,14 @@ class YtHoldGesture(
         val targets = actions.mapValues { (_, action) -> target(context, action) }
         state = YtHoldState()
         holding = true
-        compass.show(x, y, targets, if (fastForward) context.getString(R.string.yt_r12_c_hold_fast) else null, YtPlayerHudStyle.current(context))
-        // the controls make room for the compass, and come back after
+        tiles.show(
+            x, y, player.backgroundBinding.exoContentFrame, targets,
+            if (fastForward) context.getString(R.string.yt_r12_c_hold_fast) else null, YtHoldTileStyle.current(context),
+        )
+        // the controls make room for the tiles, and come back after
         if (player.isControllerFullyVisible) player.hideController()
-        YtHaptics.of(compass).grab()
-        YtTestHooks.log(LOG_TAG) { "hold begin x=${x.toInt()} y=${y.toInt()} fast=$fastForward" }
+        YtHaptics.of(tiles).grab()
+        YtTestHooks.log(LOG_TAG) { "hold begin x=${x.toInt()} y=${y.toInt()} fast=$fastForward ${tiles.layoutSummary}" }
         return true
     }
 
@@ -83,9 +86,9 @@ class YtHoldGesture(
         val feedback = YtHoldDirection.feedback(state, shown)
         val leftNow = shown.leftCentre && !state.leftCentre
         state = shown
-        compass.move(dx, dy, shown)
-        if (leftNow) compass.centre(null)
-        val haptics = YtHaptics.of(compass)
+        tiles.move(dx, dy, shown)
+        if (leftNow) tiles.centre(null)
+        val haptics = YtHaptics.of(tiles)
         when (feedback) {
             YtHoldFeedback.DETENT -> haptics.detent()
             YtHoldFeedback.ARM -> haptics.threshold(true)
@@ -102,22 +105,22 @@ class YtHoldGesture(
         val dir = state.dir
         val action = dir?.let { actions[it] }
         if (cancelled || dir == null || action == null || !YtHoldDirection.runs(state)) {
-            compass.dismiss()
-            if (state.leftCentre) YtHaptics.of(compass).release()
+            tiles.dismiss()
+            if (state.leftCentre) YtHaptics.of(tiles).release()
             YtTestHooks.log(LOG_TAG) { "hold cancel cancelled=$cancelled stage=${state.stage}" }
             return
         }
-        compass.commit(dir)
-        YtHaptics.of(compass).confirm()
+        tiles.commit(dir)
+        YtHaptics.of(tiles).confirm()
         YtTestHooks.log(LOG_TAG) { "hold run action=${action.value} dir=$dir fullscreen=${player.isFullscreen()}" }
         // after the gesture: the touch stream ends first
         handler.post { if (!released) run(action) }
     }
 
-    private fun target(context: Context, action: YtHoldAction): YtHoldCompassView.Target {
+    private fun target(context: Context, action: YtHoldAction): YtHoldTilesView.Target {
         val (icon, label) = look(context, action)
         val drawable = AppCompatResources.getDrawable(context, icon)?.mutate()
-        return YtHoldCompassView.Target(drawable, label)
+        return YtHoldTilesView.Target(drawable, label)
     }
 
     // the icon and the name of an action as it stands now (playing or not, fullscreen or not)
@@ -167,10 +170,10 @@ class YtHoldGesture(
         }
     }
 
-    // what an action did: a short word for the compass (null: it shows itself), and whether it could not
+    // what an action did: a short word for the tiles view (null: it shows itself), and whether it could not
     private class Outcome(val text: String? = null, val rejected: Boolean = false)
 
-    // runs [action]; what it did shows briefly in the compass where nothing else shows it
+    // runs [action]; what it did shows briefly in the middle where nothing else shows it
     private fun run(action: YtHoldAction) {
         val context = player.context
         val controller = host.controller()
@@ -266,8 +269,8 @@ class YtHoldGesture(
                 shown
             }
         }
-        outcome.text?.let { compass.result(it) }
-        if (outcome.rejected) YtHaptics.of(compass).reject()
+        outcome.text?.let { tiles.result(it) }
+        if (outcome.rejected) YtHaptics.of(tiles).reject()
         YtTestHooks.log(LOG_TAG) { "hold done action=${action.value} result=${outcome.text ?: "-"} rejected=${outcome.rejected}" }
     }
 
@@ -285,7 +288,7 @@ class YtHoldGesture(
         val target = (if (next) YtHoldDirection.nextChapterMs(position, starts) else YtHoldDirection.previousChapterMs(position, starts))
             ?: return Outcome(player.context.getString(R.string.yt_r12_c_hold_last_chapter), rejected = true)
         controller.seekTo(target)
-        YtHaptics.of(compass).segment()
+        YtHaptics.of(tiles).segment()
         val name = player.ytChapterTitle(target)?.takeIf { it.isNotEmpty() }
             ?: YtScrubPrecision.formatTime(target.toDouble(), 0, withHours = controller.duration >= HOUR_MS)
         return Outcome(name)

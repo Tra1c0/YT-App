@@ -40,8 +40,8 @@ enum class YtHoldFeedback {
 
 /**
  * YT: the rules of hold and drag on the playing video (package C, (d)): which target the finger
- * points at, when it lights up and when it arms, what the knob of the compass does beyond its
- * ring, and where the chapter jumps go. Everything in dp and ms. Pure, so it is tested on the JVM.
+ * points at, when it lights up and when it arms, how far the shrunk video leans after the finger
+ * (a rubber band), and where the chapter jumps go. Everything in dp and ms. Pure, so it is tested on the JVM.
  */
 object YtHoldDirection {
     /** From here a target lights up. */
@@ -108,7 +108,7 @@ object YtHoldDirection {
     fun runs(state: YtHoldState): Boolean = state.stage == YtHoldStage.ARMED && state.dir != null
 
     /**
-     * How far the compass's knob is from the centre when the finger is [distance] away: 1:1 up to
+     * How far the shrunk video leans when the finger is [distance] away: 1:1 up to
      * most of [limit], then it gives less and less and never passes [limit] (a rubber band, with
      * no kink where it starts).
      */

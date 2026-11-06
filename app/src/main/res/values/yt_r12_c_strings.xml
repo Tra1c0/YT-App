@@ -43,7 +43,7 @@
     <string name="yt_r12_c_loop_hold_title">Mark a loop on the time bar</string>
     <string name="yt_r12_c_loop_hold_summary">Hold the time bar to set A, drag to set B; the loop is also in the player options</string>
     <string name="yt_r12_c_hold_title">Hold and drag on the video</string>
-    <string name="yt_r12_c_hold_summary">Hold the playing video, then drag up, down, left or right; letting go runs that direction’s action</string>
+    <string name="yt_r12_c_hold_summary">Hold the playing video: it shrinks under your finger and keeps playing, four tiles show the actions set below. Drag onto a tile and let go to run it; letting go in the middle cancels</string>
     <string name="yt_r12_c_hold_up_title">Hold and drag up</string>
     <string name="yt_r12_c_hold_down_title">Hold and drag down</string>
     <string name="yt_r12_c_hold_left_title">Hold and drag left</string>
