@@ -31,6 +31,7 @@ import com.github.libretube.ui.activities.MainActivity
 import com.github.libretube.ui.activities.NoInternetActivity
 import com.github.libretube.ui.fragments.DownloadTab
 import com.github.libretube.ui.fragments.DownloadsFragmentPage.Companion.sortDownloadList
+import com.github.libretube.ui.yt.YtTestHooks
 import com.github.libretube.util.PlayingQueue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -186,9 +187,20 @@ open class OfflinePlayerService : AbstractPlayerService() {
                 if (mediaSource == null) source else MergingMediaSource(mediaSource!!, source)
         }
 
-        if (mediaSource == null || isAudioOnlyPlayer && audioSource == null) {
+        // YT: in audio-only mode a download without its own audio file plays its video file's
+        // sound (the video track is off); stopping here ended the whole queue at such a video
+        val playable = YtOfflineAudio.playable(
+            hasVideo = videoSource != null,
+            hasAudio = audioSource != null,
+            hasAny = mediaSource != null,
+            audioOnly = isAudioOnlyPlayer
+        )
+        if (mediaSource == null || !playable) {
             stopSelf()
             return
+        }
+        if (YtOfflineAudio.soundFromVideo(videoSource != null, audioSource != null, isAudioOnlyPlayer)) {
+            YtTestHooks.log("YtQueue") { "audio only from the video file id=${downloadWithItems.download.videoId}" }
         }
 
         exoPlayer?.setMediaSource(mediaSource!!)

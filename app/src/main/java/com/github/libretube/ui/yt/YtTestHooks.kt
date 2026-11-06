@@ -48,6 +48,8 @@ import java.nio.file.Files
  *   download of its own that plays the test video's file. With the test video in the same
  *   intent, or while it plays; a test video opened without it gets an empty queue again.
  * - `--el yt_seek_test <ms>`: the player seeks there once it is ready.
+ * - `--ez yt_audio_test true`: after that, the video player switches to the audio player (as
+ *   its audio button does), so a queue's end can be checked in audio mode (scripts/gestures/f.sh).
  *
  * Log tag YtTest (queue: YtQueue), for crash-check.sh to show and the checks to grep; "test
  * hooks done" once everything an intent asked for ran.
@@ -83,6 +85,7 @@ object YtTestHooks {
     private const val EXTRA_TEST_VIDEO = "yt_test_video"
     private const val EXTRA_QUEUE_TEST = "yt_queue_test"
     private const val EXTRA_SEEK_TEST = "yt_seek_test"
+    private const val EXTRA_AUDIO_TEST = "yt_audio_test"
 
     // the packages' own parameters, one object each in its owner's folder (A, B, C, D, E)
     private val packages: List<YtTestHandler> = listOf(
@@ -121,12 +124,13 @@ object YtTestHooks {
             null
         }
         val seekMs = if (intent.hasExtra(EXTRA_SEEK_TEST)) intent.getLongExtra(EXTRA_SEEK_TEST, -1L) else null
+        val audio = intent.getBooleanExtra(EXTRA_AUDIO_TEST, false)
         val asked = packages.filter { handler -> handler.keys.any(intent::hasExtra) }
         // a copy, taken before the extras go
         val extras = intent.extras ?: Bundle()
-        (listOf(EXTRA_TEST_VIDEO, EXTRA_QUEUE_TEST, EXTRA_SEEK_TEST) + packages.flatMap { it.keys })
+        (listOf(EXTRA_TEST_VIDEO, EXTRA_QUEUE_TEST, EXTRA_SEEK_TEST, EXTRA_AUDIO_TEST) + packages.flatMap { it.keys })
             .forEach(intent::removeExtra)
-        if (testVideo == null && queueSize == null && seekMs == null && asked.isEmpty()) return
+        if (testVideo == null && queueSize == null && seekMs == null && !audio && asked.isEmpty()) return
 
         // one after the other: what follows the test video works on it once it plays
         host.lifecycleScope.launch {
@@ -137,6 +141,7 @@ object YtTestHooks {
             }
             if (fillers != null) fillQueue(fillers)
             if (seekMs != null) seekTest(host, seekMs)
+            if (audio) audioTest(host)
             asked.forEach { it.test(host, extras) }
             Log.i(TAG, "test hooks done")
         }
@@ -249,6 +254,20 @@ object YtTestHooks {
         }
         Log.i(TAG, "seek test from=${player.currentPosition} to=$ms")
         player.seekTo(ms)
+    }
+
+    // the video player hands over to the audio player, as its audio button does
+    private fun audioTest(host: AbstractPlayerHostActivity) {
+        if (host.supportFragmentManager.isStateSaved) {
+            Log.w(TAG, "audio test: the screen is in the background")
+            return
+        }
+        val switched = host.runOnPlayerFragment {
+            if (view == null) return@runOnPlayerFragment false
+            switchToAudioMode()
+            true
+        }
+        Log.i(TAG, "audio test switched=$switched")
     }
 
     /**
