@@ -26,13 +26,14 @@ class YtInteractionSettings : BasePreferenceFragment() {
     }
 
     companion object {
-        /** One section per package: mini player, minimizing, player gestures, home, comments. */
+        /** One section per package: mini player, minimizing, player gestures, home, comments, Shorts. */
         private val SECTIONS = intArrayOf(
             R.xml.yt_r12_a_prefs,
             R.xml.yt_r12_b_prefs,
             R.xml.yt_r12_c_prefs,
             R.xml.yt_r12_d_prefs,
             R.xml.yt_r12_e_prefs,
+            R.xml.yt_r12_shorts_prefs,
         )
     }
 }

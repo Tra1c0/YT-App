@@ -26,6 +26,8 @@ import com.github.libretube.ui.activities.MainActivity
 import com.github.libretube.ui.dialogs.AddToPlaylistDialog
 import com.github.libretube.ui.dialogs.ShareDialog
 import com.github.libretube.ui.fragments.SubscriptionsFragment
+import com.github.libretube.ui.yt.shorts.YtShortsPrefs
+import com.github.libretube.ui.yt.shorts.YtShortsView
 import com.github.libretube.util.PlayingQueue
 import com.github.libretube.util.PlayingQueueMode
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +48,9 @@ class VideoOptionsBottomSheet : BaseBottomSheet() {
         playlistId: String?
     ) {
         when (option) {
+            R.string.yt_r12_shorts_open_in_player -> {
+                YtShortsView.openInPlayer(requireContext(), videoId)
+            }
             // Start the background mode
             R.string.playOnBackground -> {
                 NavigationHelper.navigateVideo(
@@ -151,6 +156,8 @@ class VideoOptionsBottomSheet : BaseBottomSheet() {
         setTitle(streamItem.title)
 
         var optionsList = buildList {
+            // YT: a short opens in the Shorts view on a tap; here it can go to the video player
+            if (streamItem.isShort && YtShortsPrefs.viewEnabled) add(R.string.yt_r12_shorts_open_in_player)
             add(R.string.addToPlaylist)
             if (!streamItem.isLive) add(R.string.download)
             add(R.string.share)

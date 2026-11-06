@@ -7,7 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +32,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -73,6 +75,7 @@ import com.github.libretube.helpers.YtDesign
 import com.github.libretube.parcelable.PlayerData
 import com.github.libretube.repo.FeedRefresh
 import com.github.libretube.ui.models.SubscriptionsViewModel
+import com.github.libretube.ui.yt.shorts.YtShortsView
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -120,9 +123,18 @@ object YtShorts {
             setContent {
                 // hidden videos and paused channels stay off the Shorts too (rememberYtVisible)
                 val feed = rememberYtVisible(viewModel.videoFeed.observeAsState().value)
+                val shorts = of(feed)
                 YtTheme(palette) {
-                    YtShortsScreen(palette, ImageHelper.loader(), of(feed)) { video ->
-                        NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
+                    // a long press keeps the old way: the short in the video player
+                    CompositionLocalProvider(
+                        LocalShortLongPress provides { video -> YtShortsView.openInPlayer(context, video.url!!.toID()) },
+                    ) {
+                        YtShortsScreen(palette, ImageHelper.loader(), shorts) { video ->
+                            // the Shorts view, from the tapped short on through the whole tab
+                            if (!YtShortsView.open(context, shorts.orEmpty(), video)) {
+                                NavigationHelper.navigateVideo(context, PlayerData(video.url!!.toID()))
+                            }
+                        }
                     }
                 }
             }
@@ -134,6 +146,9 @@ object YtShorts {
         return true
     }
 }
+
+/** What a long press on a short does (open it in the video player). */
+private val LocalShortLongPress = staticCompositionLocalOf<(StreamItem) -> Unit> { {} }
 
 private val ShapesNight = listOf(Color(0xFF12122A), Color(0xFF1C1A45), Color(0xFF3F3489), Color(0xFF6656C4))
 private val ShapesTags = listOf(Color(0xFFF6D365), Color(0xFFBFE26B), Color(0xFFD9D4EE), Color(0xFFF28B82))
@@ -393,7 +408,8 @@ private fun ViewsBadge(short: StreamItem, color: Color, font: androidx.compose.u
 
 @Composable
 private fun PlainShort(palette: YtPalette, imageLoader: ImageLoader, short: StreamItem, onOpen: (StreamItem) -> Unit) {
-    Column(Modifier.ytPressable(ytCardShape(palette, 14)) { onOpen(short) }) {
+    val longPress = LocalShortLongPress.current
+    Column(Modifier.ytPressable(ytCardShape(palette, 14), onLongClick = { longPress(short) }) { onOpen(short) }) {
         Box(
             Modifier
                 .fillMaxWidth()
@@ -416,7 +432,8 @@ private fun PlainShort(palette: YtPalette, imageLoader: ImageLoader, short: Stre
 @Composable
 private fun ClayShort(palette: YtPalette, imageLoader: ImageLoader, short: StreamItem, onOpen: (StreamItem) -> Unit) {
     val shape = RoundedCornerShape(24.dp)
-    Column(Modifier.ytPressable(shape, squish = true) { onOpen(short) }) {
+    val longPress = LocalShortLongPress.current
+    Column(Modifier.ytPressable(shape, squish = true, onLongClick = { longPress(short) }) { onOpen(short) }) {
         Box(
             Modifier
                 .fillMaxWidth()
@@ -448,9 +465,10 @@ private fun EditorialShort(palette: YtPalette, imageLoader: ImageLoader, short: 
     val press = remember { MutableInteractionSource() }
     val pressed by press.collectIsPressedAsState()
     val color by animateFloatAsState(if (pressed) 1f else 0f, ytSpec(tween(260, easing = YtEaseOut)), label = "editorialColor")
+    val longPress = LocalShortLongPress.current
     Column(
         Modifier
-            .clickable(interactionSource = press, indication = null) { onOpen(short) },
+            .combinedClickable(interactionSource = press, indication = null, onLongClick = { longPress(short) }) { onOpen(short) },
     ) {
         Box(
             Modifier
@@ -508,6 +526,7 @@ private fun GlassShort(palette: YtPalette, imageLoader: ImageLoader, short: Stre
     val still = rememberLayerBackdrop()
     val press = remember { MutableInteractionSource() }
     val swell by rememberSwell(press)
+    val longPress = LocalShortLongPress.current
     val shape = RoundedCornerShape(16.dp)
     Box(
         Modifier
@@ -517,7 +536,7 @@ private fun GlassShort(palette: YtPalette, imageLoader: ImageLoader, short: Stre
             .shadow(6.dp, shape, clip = false, ambientColor = Color(0x405C8C85), spotColor = Color(0x405C8C85))
             .clip(shape)
             .background(palette.lime)
-            .clickable(interactionSource = press, indication = LocalIndication.current) { onOpen(short) },
+            .combinedClickable(interactionSource = press, indication = LocalIndication.current, onLongClick = { longPress(short) }) { onOpen(short) },
     ) {
         YtLargeThumbnail(short, imageLoader, Modifier.fillMaxSize().layerBackdrop(still))
         Column(
@@ -553,6 +572,7 @@ private fun PopShort(palette: YtPalette, imageLoader: ImageLoader, short: Stream
     var taps by remember { mutableIntStateOf(0) }
     val press = remember { MutableInteractionSource() }
     val pressed by press.collectIsPressedAsState()
+    val longPress = LocalShortLongPress.current
     val askew = if (index % 2 == 0) -2.5f else 2.5f
     val tilt by animateFloatAsState(if (pressed) 0f else askew, ytSpec(spring(dampingRatio = 0.5f, stiffness = 260f)), label = "popTilt")
     val shape = RoundedCornerShape(26.dp)
@@ -562,7 +582,7 @@ private fun PopShort(palette: YtPalette, imageLoader: ImageLoader, short: Stream
             .ytJelly(taps % 2 == 0, amount = 0.08f)
             .ytSquish(press)
             .clip(shape)
-            .clickable(interactionSource = press, indication = null) {
+            .combinedClickable(interactionSource = press, indication = null, onLongClick = { longPress(short) }) {
                 taps++
                 onOpen(short)
             },
@@ -599,7 +619,8 @@ private fun ShapesShort(palette: YtPalette, imageLoader: ImageLoader, short: Str
         RoundedCornerShape(topStart = 16.dp, topEnd = 56.dp, bottomEnd = 16.dp, bottomStart = 56.dp)
     }
     val tag = ShapesTags[index % ShapesTags.size]
-    Column(Modifier.ytPressable(RoundedCornerShape(16.dp)) { onOpen(short) }) {
+    val longPress = LocalShortLongPress.current
+    Column(Modifier.ytPressable(RoundedCornerShape(16.dp), onLongClick = { longPress(short) }) { onOpen(short) }) {
         Box(
             Modifier
                 .fillMaxWidth()
@@ -651,11 +672,12 @@ private fun ShapesShort(palette: YtPalette, imageLoader: ImageLoader, short: Str
 private fun FrostShort(palette: YtPalette, imageLoader: ImageLoader, short: StreamItem, backdrop: Backdrop?, onOpen: (StreamItem) -> Unit) {
     val press = remember { MutableInteractionSource() }
     val thaw by rememberThaw(press)
+    val longPress = LocalShortLongPress.current
     Column(
         Modifier
             .ytPressScale(press)
             .frostGlass(backdrop, RoundedCornerShape(20.dp)) { thaw }
-            .clickable(interactionSource = press, indication = LocalIndication.current) { onOpen(short) }
+            .combinedClickable(interactionSource = press, indication = LocalIndication.current, onLongClick = { longPress(short) }) { onOpen(short) }
             .padding(6.dp),
     ) {
         Box(

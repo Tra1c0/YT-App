@@ -25,6 +25,7 @@ import com.github.libretube.ui.extensions.setFormattedDuration
 import com.github.libretube.ui.extensions.setWatchProgressLength
 import com.github.libretube.ui.sheets.VideoOptionsBottomSheet
 import com.github.libretube.ui.viewholders.VideoCardsViewHolder
+import com.github.libretube.ui.yt.shorts.YtShortsView
 import com.github.libretube.util.DeArrowUtil
 import com.github.libretube.util.TextUtils
 import kotlinx.coroutines.CoroutineScope
@@ -111,6 +112,10 @@ class VideoCardsAdapter(private val columnWidthDp: Float? = null) :
                 }
             }
             root.setOnClickListener {
+                // YT: a short opens the Shorts view with the shorts of this list
+                if (video.isShort && YtShortsView.open(root.context, currentList.filter { it.isShort }, video)) {
+                    return@setOnClickListener
+                }
                 NavigationHelper.navigateVideo(root.context, PlayerData(videoId))
             }
 

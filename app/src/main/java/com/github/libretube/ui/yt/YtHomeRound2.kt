@@ -32,6 +32,7 @@ import com.github.libretube.ui.dialogs.AddToPlaylistDialog
 import com.github.libretube.ui.models.HomeViewModel
 import com.github.libretube.ui.yt.feed.YtFeed
 import com.github.libretube.ui.yt.feed.YtIntent
+import com.github.libretube.ui.yt.shorts.YtShortsView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -103,7 +104,12 @@ internal fun YtRound2Home(
     }
     val actions = YtHomeActions(
         // a tap keeps what the user queued (YtQueue)
-        onOpenVideo = { video -> YtQueue.playKeepingQueue(context, video, audio = YtFeed.audioNow()) },
+        onOpenVideo = { video ->
+            // a short of the Shorts rows opens the Shorts view with the feed's shorts
+            if (!video.isShort || !YtShortsView.open(context, YtShorts.of(feed).orEmpty(), video)) {
+                YtQueue.playKeepingQueue(context, video, audio = YtFeed.audioNow())
+            }
+        },
         onOpenVideoAt = { video, seconds -> YtQueue.playKeepingQueue(context, video, seconds, audio = YtFeed.audioNow()) },
         onOpenChannel = { video -> NavigationHelper.navigateChannel(context, video.uploaderUrl) },
         onSave = { video ->

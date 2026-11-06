@@ -313,6 +313,48 @@ Videos können Feinschliff brauchen. Beim Übergeben des Videos ins Fenster wart
 auf die Mediensitzung (bis zu 3 s); im langsamen Emulator war das spürbar, auf einem Handy sollte
 es Millisekunden dauern (nicht gemessen).
 
+## Shorts-Ansicht (Runde 12)
+
+Shorts öffnen aus dem Shorts-Reiter und aus den Shorts-Reihen der Feeds in einer eigenen
+Ansicht über der App (`ui/yt/shorts/`): ein Short pro Seite, nach oben wischen für den nächsten,
+beginnend beim angetippten Short mit der Liste, aus der er kam; gegen Ende kommen die verwandten
+Shorts des aktuellen dazu. Antippen pausiert, Doppeltipp gibt ein Herz (die Herzen von Side,
+nur auf dem Gerät), der Kanalname öffnet den Kanal, rechts Teilen und „Im Videoplayer öffnen“.
+Langes Drücken im Shorts-Reiter öffnet weiter direkt den Videoplayer; der Schalter
+„Shorts-Ansicht“ unter Gesten & Interaktion stellt den alten Weg ganz wieder her.
+
+Die Ansicht hat einen eigenen ExoPlayer, nicht den Wiedergabedienst: Der Dienst trägt Warteschlange,
+Benachrichtigung und Hintergrundwiedergabe des Videoplayers, und ein Feed, der alle paar Sekunden
+wechselt, würde beides bei jedem Wischen umschreiben. Die Ansicht spielt nur im Vordergrund, nimmt
+den Audiofokus (Video- und Audioplayer pausieren) und holt die Daten der Nachbar-Shorts voraus.
+
+**Zeitleiste (8.1):** versteckt, nur eine 2 dp feine Linie (abschaltbar). Ein Finger in der 48 dp
+hohen Zone über der Navigationsleiste lässt die Leiste unter dem Finger aufwachsen; seitlich ziehen
+springt genau an die Stelle, mit Zeit und, wo der Short Vorschaubilder hat, einem Standbild; Loslassen
+springt dorthin, nach 1,2 s blendet die Leiste aus. Ein Tick pro Sekunde beim Ziehen.
+
+**Autoscroll (8.2):** nach 1, 2, 3 oder 5 Wiedergaben weiter (Standard 1, weil ausdrücklich gewünscht;
+„Aus“ wiederholt den Short), umschaltbar oben rechts. In den letzten 3 s läuft ein Ring mit
+„Weiter in 3“; Antippen bleibt beim Short. Nie, solange ein Finger liegt, die Zeitleiste offen ist
+oder pausiert wurde.
+
+| Design | Leiste und Griff | Pillen | Seitenwechsel (Bewegung, Haptik) |
+| --- | --- | --- | --- |
+| Standard / YouTube neu | rot, runder Griff | dunkle Kapseln | ruhige Feder, heller Tick |
+| Movo | Limette, kurze Kapsel als Griff | dunkle Kacheln, 14 dp | federnd, Anstieg und Klick |
+| After | Orange, Bildfenster-Rahmen als Griff, Großbuchstaben | schwarzes Gate, fast eckig | Kamerafahrt (Bild bleibt mit halber Geschwindigkeit zurück, dunkelt ab), schwerer Aufsetzer |
+| Side | Aprikose, runder Griff | Graphit, weich | ruhig, doppelter leiser Schlag |
+| Clay | Rosé, Blob als Griff, dicke Leiste | Creme mit Mauve | knetig (Seite gibt nach), dumpfer Druck |
+| Editorial | Blau, eckiger Griff, Mono-Zeit, Großbuchstaben | Papier mit Schwarz, eckig | knapp, ohne Feder, klarer Tick |
+| Glas | Rot, runder Griff | helles Glas mit Petrol | flüssig, tiefer Tick mit Nachhall |
+| Pop | Gelb, Blob als Griff | gelbe Blobs mit Pflaume | federnd, Klick und Hüpfer |
+| Formen | Limette, Cookie, der sich mit der Stelle dreht | Nacht-Kapseln | federnd, Drehung |
+| Frost | Orange, runder Griff | dunkler Frost auf Salbei | flüssig, Knistern |
+| Kiesel | Lavendel, Kiesel als Griff | schwarzes Panel | körperlich, schwerer Aufsetzer |
+
+Alle Pillen sind deckend oder kräftig getönt, ihr Text hält 4,5:1 über schwarzem und weißem Bild
+(`YtShortsLookTest`). Mit „Animationen der Designs“ aus wechseln Seite, Leiste und Countdown direkt.
+
 ## Liquid Glass (Glas und Frost)
 
 Die Glasflächen nutzen Kyants Backdrop-Bibliothek (`third_party/backdrop/`): Unschärfe ab

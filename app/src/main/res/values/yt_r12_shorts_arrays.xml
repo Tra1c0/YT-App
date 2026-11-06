@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: round 12, the choices of the Shorts view's autoscroll (YtShortsPrefs.KEY_AUTOSCROLL, YtShortsAutoscroll.CHOICES). -->
+<resources>
+    <string-array name="yt_r12_shorts_autoscroll_entries">
+        <item>@string/yt_r12_shorts_autoscroll_off</item>
+        <item>@string/yt_r12_shorts_autoscroll_1</item>
+        <item>@string/yt_r12_shorts_autoscroll_2</item>
+        <item>@string/yt_r12_shorts_autoscroll_3</item>
+        <item>@string/yt_r12_shorts_autoscroll_5</item>
+    </string-array>
+    <string-array name="yt_r12_shorts_autoscroll_values" translatable="false">
+        <item>off</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>5</item>
+    </string-array>
+</resources>

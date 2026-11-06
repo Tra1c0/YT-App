@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: round 12, the Shorts view (8.1 hidden timeline, 8.2 autoscroll). Same keys in the same order in values and values-de. -->
+<resources>
+    <string name="yt_r12_shorts_category">Shorts</string>
+
+    <!-- settings -->
+    <string name="yt_r12_shorts_view_title">Shorts view</string>
+    <string name="yt_r12_shorts_view_summary">Shorts open full screen, one below the other, swipe up for the next. Off: in the video player.</string>
+    <string name="yt_r12_shorts_autoscroll_title">Autoscroll</string>
+    <string name="yt_r12_shorts_autoscroll_off">Off: a short repeats</string>
+    <string name="yt_r12_shorts_autoscroll_1">After 1 play</string>
+    <string name="yt_r12_shorts_autoscroll_2">After 2 plays</string>
+    <string name="yt_r12_shorts_autoscroll_3">After 3 plays</string>
+    <string name="yt_r12_shorts_autoscroll_5">After 5 plays</string>
+    <string name="yt_r12_shorts_line_title">Thin progress line</string>
+    <string name="yt_r12_shorts_line_summary">A thin line at the bottom shows how far the short has played. The timeline itself appears when you touch the bottom edge.</string>
+
+    <!-- the view -->
+    <string name="yt_r12_shorts_close">Close</string>
+    <string name="yt_r12_shorts_timeline">Timeline: touch the bottom edge and drag sideways</string>
+    <string name="yt_r12_shorts_auto_on">Auto %1$d×</string>
+    <string name="yt_r12_shorts_auto_off">Auto off</string>
+    <string name="yt_r12_shorts_next_in">Next in %1$d</string>
+    <string name="yt_r12_shorts_stay">Tap to stay</string>
+    <string name="yt_r12_shorts_heart">Heart</string>
+    <string name="yt_r12_shorts_open_in_player">Open in video player</string>
+    <string name="yt_r12_shorts_play">Play</string>
+    <string name="yt_r12_shorts_failed">This short could not be loaded.</string>
+    <string name="yt_r12_shorts_retry">Try again</string>
+</resources>
