@@ -13,4 +13,17 @@ internal object YtMotionAccess {
     fun drawProgressLinear(layout: MotionLayout) {
         layout.mProgressInterpolator = null
     }
+
+    /**
+     * Builds the motion of [layout]'s views again from its transition's keyframes and puts them
+     * where the current progress has them. MotionLayout reads keyframe values only when it sets
+     * up its views (at a measure of a changed hierarchy), and at rest it moves nothing until the
+     * progress changes: a keyframe written after that setup (MainActivity writes the container's
+     * docked shift once the bar has its height) would otherwise wait for the next transition.
+     * The same two steps as MotionLayout.onLayout takes when its size changes.
+     */
+    fun reapply(layout: MotionLayout) {
+        layout.rebuildScene()
+        layout.evaluate(true)
+    }
 }
