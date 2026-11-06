@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: round 12, the Formen mini player. Same keys in the same order in values and values-de. -->
+<resources>
+    <!-- The next video's row of the long-press preview while the finger is on it. -->
+    <string name="yt_mini_shapes_release">Let go to play it</string>
+</resources>
