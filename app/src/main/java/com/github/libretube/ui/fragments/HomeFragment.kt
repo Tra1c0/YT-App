@@ -108,7 +108,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
         binding.refresh.setOnRefreshListener {
             binding.refresh.isRefreshing = true
-            fetchHomeFeed()
+            fetchHomeFeed(force = true)
         }
 
         binding.trendingRegion.setOnClickListener {
@@ -158,7 +158,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
 
         // YT: the selected design shows its own home screen on top of the classic layout
-        com.github.libretube.ui.yt.YtHome.attach(this, binding.root, homeViewModel, ::fetchHomeFeed)
+        com.github.libretube.ui.yt.YtHome.attach(this, binding.root, homeViewModel) { force -> fetchHomeFeed(force) }
     }
 
     override fun onResume() {
@@ -180,7 +180,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         _binding = null
     }
 
-    private fun fetchHomeFeed() {
+    /** [force]: a pull to refresh, the subscriptions load again instead of coming from the cache. */
+    private fun fetchHomeFeed(force: Boolean = false) {
         binding.nothingHere.isGone = true
         val defaultItems = resources.getStringArray(R.array.homeTabItemsValues)
         val visibleItems = PreferenceHelper.getStringSet(HOME_TAB_CONTENT, defaultItems.toSet())
@@ -189,7 +190,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             context = requireContext(),
             subscriptionsViewModel = subscriptionsViewModel,
             visibleItems = visibleItems,
-            onUnusualLoadTime = ::showChangeInstanceSnackBar
+            onUnusualLoadTime = ::showChangeInstanceSnackBar,
+            force = force
         )
     }
 

@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.random.Random
 
 /**
  * The lists the home already has, handed to the feed: the subscription feed, the charts by
@@ -41,6 +42,12 @@ data class YtFeedInput(
     val trending: List<StreamItem>?,
     val continueWatching: List<StreamItem>?,
 )
+
+/**
+ * What a pull to refresh changes in the ranking: the top of the last refreshes ([seen], the new
+ * top gets other videos) and a number that nudges near-equal places ([shuffle], 0: none).
+ */
+data class YtFeedFreshness(val seen: YtSeenMemory = YtSeenMemory(), val shuffle: Long = 0L)
 
 /** The ranked feed: the videos in order and, by video id, why each one is there. */
 data class YtFeedResult(val videos: List<StreamItem>, val reasons: Map<String, List<YtReason>>)
@@ -61,10 +68,12 @@ data class YtLocalSignals(
 object YtFeed {
     const val KEY = "yt_feed_rules"
     const val INTENT_KEY = "yt_intent"
+    const val SEEN_KEY = "yt_feed_seen"
 
     // the extra sources: how many videos each search or related list gives, and how long they keep
     private const val PER_TOPIC = 12
     private const val RELATED_FROM = 2
+    private const val RELATED_POOL = 10
     private const val PER_RELATED = 10
     private const val EXTRAS_TTL_MS = 30L * 60 * 1000
     private const val LOAD_TIMEOUT_MS = 15_000L
@@ -94,6 +103,17 @@ object YtFeed {
 
     /** Why each video of the last ranked feed is there ("Warum sehe ich das?"). */
     val reasons: StateFlow<Map<String, List<YtReason>>> get() = reasonsFlow
+
+    private val freshFlow = MutableStateFlow(YtFeedFreshness(loadSeen()))
+
+    /** The seen-on-top memory and the shuffle of the last pull to refresh. */
+    val freshness: StateFlow<YtFeedFreshness> get() = freshFlow
+
+    /** The top of the feed as last ranked for the home: what a refresh remembers. */
+    private var lastTop: List<YtSeen> = emptyList()
+
+    /** Counts the forced reloads: which part of each search and of the history the extras use. */
+    private var turn = 0
 
     private var extrasJob: Job? = null
     private var extrasKey: String? = null
@@ -165,6 +185,31 @@ object YtFeed {
     private fun loadIntent(): YtIntent? =
         PreferenceHelper.getString(INTENT_KEY, "").let { name -> YtIntent.entries.firstOrNull { it.name == name } }
 
+    private fun loadSeen(): YtSeenMemory = runCatching {
+        YtSeenMemory.decode(PreferenceHelper.getString(SEEN_KEY, "")).within(System.currentTimeMillis())
+    }.getOrNull() ?: YtSeenMemory()
+
+    /**
+     * A pull to refresh: remembers channel, title and id of the first 50 videos the home showed
+     * (with the two refreshes before, for half a day), so the new top is made of other videos,
+     * and picks a new shuffle. The home ranks again at once with what it has; the sources that
+     * load again ([loadExtras] with force, the charts, the subscriptions) follow.
+     */
+    fun markRefresh() {
+        val now = System.currentTimeMillis()
+        val top = lastTop
+        val memory = freshFlow.value.seen.remember(top, now)
+        var shuffle = Random.nextLong()
+        if (shuffle == 0L) shuffle = 1L
+        freshFlow.value = YtFeedFreshness(memory, shuffle)
+        turn++
+        runCatching { PreferenceHelper.putString(SEEN_KEY, memory.encode()) }
+        YtTestHooks.log("YtFeed") {
+            "refresh remembered=${top.size} refreshes=${memory.refreshes.size} top=" +
+                top.take(10).joinToString(" | ") { "${it.channel}: ${it.title}" }
+        }
+    }
+
     /** The chart the YouTube design's topic row picked: the engine lifts it a little instead of fighting it. */
     fun chosenChart(): YtFeedSource? =
         sourceOf(PreferenceHelper.getString(PreferenceKeys.TRENDING_CATEGORY, TrendingCategory.GAMING.name))
@@ -198,14 +243,16 @@ object YtFeed {
         extrasAt = now
         extrasJob?.cancel()
         val app = context.applicationContext
+        // a forced reload takes another part of each search and of the history than the last one
+        val round = if (force) turn else 0
         extrasJob = scope.launch {
             val found = HashMap<String, StreamItem>()
             val lists = withContext(Dispatchers.IO) {
                 coroutineScope {
                     val topicLists = topics.map { topic ->
-                        async { withTimeoutOrNull(LOAD_TIMEOUT_MS) { searchTopic(topic) }.orEmpty() }
+                        async { withTimeoutOrNull(LOAD_TIMEOUT_MS) { searchTopic(topic, round) }.orEmpty() }
                     }
-                    val relatedList = async { if (related) withTimeoutOrNull(LOAD_TIMEOUT_MS * 2) { loadRelated() }.orEmpty() else emptyList() }
+                    val relatedList = async { if (related) withTimeoutOrNull(LOAD_TIMEOUT_MS * 2) { loadRelated(round) }.orEmpty() else emptyList() }
                     val liveList = async {
                         if (!live) {
                             emptyList()
@@ -252,19 +299,38 @@ object YtFeed {
         }
     }
 
-    private suspend fun searchTopic(topic: YtTopic): List<StreamItem> = runCatching {
-        MediaServiceRepository.instance.getSearchResults(topic.query, "videos").items
-            .filter { it.type == StreamItem.TYPE_STREAM }
-            .map { it.toStreamItem() }
-            .take(PER_TOPIC)
+    /**
+     * One topic search. Round 0 takes the first [PER_TOPIC] results; a forced reload (round 1, 2,
+     * ...) also loads the second page and takes the next [PER_TOPIC] of both, round by round, so
+     * a pull brings other videos of the same topic instead of the same first page again.
+     */
+    private suspend fun searchTopic(topic: YtTopic, round: Int): List<StreamItem> = runCatching {
+        val repo = MediaServiceRepository.instance
+        val first = repo.getSearchResults(topic.query, "videos")
+        val next = first.nextpage
+        val items = if (round > 0 && next != null) {
+            first.items + runCatching { repo.getSearchResultsNextPage(topic.query, "videos", next).items }.getOrDefault(emptyList())
+        } else {
+            first.items
+        }
+        YtRotation.window(
+            items.filter { it.type == StreamItem.TYPE_STREAM }.map { it.toStreamItem() }.distinctBy { it.url },
+            round,
+            PER_TOPIC,
+        )
     }.getOrDefault(emptyList())
 
-    /** The related videos of the last [RELATED_FROM] watched videos, with the title they belong to. */
-    private suspend fun loadRelated(): List<Pair<StreamItem, String?>> {
-        val last = runCatching { Database.watchHistoryDao().getAll() }.getOrDefault(emptyList())
+    /**
+     * The related videos of [RELATED_FROM] watched videos, with the title they belong to: the last
+     * ones at first, on each forced reload ([round]) two others of the last [RELATED_POOL].
+     */
+    private suspend fun loadRelated(round: Int): List<Pair<StreamItem, String?>> {
+        val recent = runCatching { Database.watchHistoryDao().getAll() }.getOrDefault(emptyList())
             .filter { !it.isShort }
-            .takeLast(RELATED_FROM)
+            .distinctBy { it.videoId }
+            .takeLast(RELATED_POOL)
             .reversed()
+        val last = YtRotation.window(recent, round, RELATED_FROM)
         return coroutineScope {
             last.map { watched ->
                 async {
@@ -339,6 +405,7 @@ object YtFeed {
         personal: YtFeedPersonal = profileFlow.value.personal,
         extras: Map<YtFeedSource, List<YtFeedItem>> = extrasFlow.value,
         local: YtLocalSignals = signalsFlow.value,
+        fresh: YtFeedFreshness = freshFlow.value,
     ): YtFeedResult {
         val videos = HashMap<String, StreamItem>(256)
         val items = ArrayList<YtFeedItem>(256)
@@ -376,13 +443,16 @@ object YtFeed {
         val groupChannels = rules.groups.takeIf { it.isNotEmpty() }?.let { names ->
             names.flatMap { local.groups[it].orEmpty() }.toSet()
         }
+        val now = System.currentTimeMillis()
         val signals = YtFeedSignals(
-            nowMs = System.currentTimeMillis(),
+            nowMs = now,
             watched = watched,
             channelViews = local.channelViews,
             hearts = YtHearts.all(),
             groupChannels = groupChannels,
             chosenChart = chosen,
+            seen = fresh.seen.within(now),
+            shuffle = fresh.shuffle,
         )
         val ranked = YtFeedEngine.rank(items, rules, personal, signals)
         return YtFeedResult(
@@ -394,6 +464,11 @@ object YtFeed {
     /** Remembers [result]'s reasons for "Warum sehe ich das?". */
     fun publish(result: YtFeedResult) {
         reasonsFlow.value = result.reasons
+        // read on every ranking, kept only in memory until a refresh remembers it
+        lastTop = result.videos.asSequence()
+            .mapNotNull { video -> video.url?.toID()?.let { YtSeen(it, video.uploaderName, video.title.orEmpty()) } }
+            .take(YtSeenMemory.TOP)
+            .toList()
     }
 }
 
@@ -409,12 +484,14 @@ fun rememberYtFeed(input: YtFeedInput): List<StreamItem>? {
     val intent by YtFeed.intent.collectAsState()
     val extras by YtFeed.extras.collectAsState()
     val signals by YtFeed.signals.collectAsState()
+    val fresh by YtFeed.freshness.collectAsState()
     val rules = profile.rulesFor(intent ?: YtIntent.BROWSE)
     LaunchedEffect(rules.topics, rules.weights) { YtFeed.loadExtras(context) }
     LaunchedEffect(Unit) { YtFeed.loadSignals() }
     if (input.subscriptions == null && input.charts.isEmpty() && input.trending == null) return null
-    val result = remember(input, rules, profile.personal, extras, signals) {
-        YtFeed.rank(input, rules, profile.personal, extras, signals)
+    // ranked again at once on new rules (the Feed-Regler) and on a pull to refresh (fresh)
+    val result = remember(input, rules, profile.personal, extras, signals, fresh) {
+        YtFeed.rank(input, rules, profile.personal, extras, signals, fresh)
     }
     LaunchedEffect(result) { YtFeed.publish(result) }
     return result.videos

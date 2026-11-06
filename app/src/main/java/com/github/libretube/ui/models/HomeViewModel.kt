@@ -57,7 +57,8 @@ class HomeViewModel : ViewModel() {
         context: Context,
         subscriptionsViewModel: SubscriptionsViewModel,
         visibleItems: Set<String>,
-        onUnusualLoadTime: () -> Unit
+        onUnusualLoadTime: () -> Unit,
+        force: Boolean = false
     ) {
         isLoading.value = true
 
@@ -66,7 +67,7 @@ class HomeViewModel : ViewModel() {
             val result = async {
                 awaitAll(
                     async { if (visibleItems.contains(TRENDING)) loadTrending(context) },
-                    async { if (visibleItems.contains(FEATURED)) loadFeed(subscriptionsViewModel) },
+                    async { if (visibleItems.contains(FEATURED)) loadFeed(subscriptionsViewModel, force) },
                     async { if (visibleItems.contains(BOOKMARKS)) loadBookmarks() },
                     async { if (visibleItems.contains(PLAYLISTS)) loadPlaylists() },
                     async { if (visibleItems.contains(WATCHING)) loadVideosToContinueWatching() }
@@ -106,10 +107,10 @@ class HomeViewModel : ViewModel() {
         )
     }
 
-    private suspend fun loadFeed(subscriptionsViewModel: SubscriptionsViewModel) {
+    private suspend fun loadFeed(subscriptionsViewModel: SubscriptionsViewModel, force: Boolean) {
         runSafely(
             onSuccess = { videos -> feed.updateIfChanged(videos) },
-            ioBlock = { tryLoadFeed(subscriptionsViewModel) }
+            ioBlock = { tryLoadFeed(subscriptionsViewModel, force) }
         )
     }
 
@@ -147,10 +148,13 @@ class HomeViewModel : ViewModel() {
             .filterUnwatched(videos.map { it.video })
     }
 
-    private suspend fun tryLoadFeed(subscriptionsViewModel: SubscriptionsViewModel): List<StreamItem> {
-        // use cached feed if available, otherwise load feed from API/database
-        val feed = subscriptionsViewModel.videoFeed.value ?: run {
-            SubscriptionHelper.getFeed(FeedRefresh.Automatically).also {
+    private suspend fun tryLoadFeed(subscriptionsViewModel: SubscriptionsViewModel, force: Boolean): List<StreamItem> {
+        // use cached feed if available, otherwise load feed from API/database; YT: a pull to
+        // refresh (force) loads it again, as the subscriptions tab's pull does: with the cache
+        // a pull on the home never brought a new subscription video
+        val cached = if (force) null else subscriptionsViewModel.videoFeed.value
+        val feed = cached ?: run {
+            SubscriptionHelper.getFeed(if (force) FeedRefresh.All else FeedRefresh.Automatically).also {
                 subscriptionsViewModel.videoFeed.postValue(it)
             }
         }

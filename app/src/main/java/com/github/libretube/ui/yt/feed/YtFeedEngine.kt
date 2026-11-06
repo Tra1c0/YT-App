@@ -42,6 +42,10 @@ data class YtFeedSignals(
     val hearts: Set<String> = emptySet(),
     val groupChannels: Set<String>? = null,
     val chosenChart: YtFeedSource? = null,
+    /** What was on top at the last refreshes; the new top gets other videos (YtFreshTop). */
+    val seen: YtSeenMemory = YtSeenMemory(),
+    /** A number per refresh (0: none) that nudges videos of nearly the same score (YtRotation.jitter). */
+    val shuffle: Long = 0L,
 )
 
 /** Why a video is where it is; YtFeedSheet and the quick sheet word it ("Warum sehe ich das?"). */
@@ -62,6 +66,7 @@ enum class YtReasonKind {
     STARTED,
     WATCHED_LAST,
     SPACED,
+    NEW_ON_TOP,
 }
 
 /** One reason; [detail] is the source name, topic, title or word it is about. */
@@ -82,6 +87,10 @@ data class YtRanked(val item: YtFeedItem, val score: Double, val reasons: List<Y
  * 4. Diversity: a channel waits until [YtFeedRules.channelGap] others came between and shows at
  *    most [YtFeedRules.maxPerChannel] times among 10; nothing is dropped for it, only moved.
  * 5. Watched videos go to the end (or stay, as the rules say).
+ * 6. After a refresh the first places go to videos that were not on top at the last refreshes,
+ *    one per channel among ten, the sources mixed ([YtFreshTop]); the order "newest" is kept as
+ *    it is, it promises a date order. Each refresh also nudges near-equal scores a little
+ *    ([YtFeedSignals.shuffle]), so the rest of the list moves too. All of it on the phone.
  */
 object YtFeedEngine {
     private const val DAY_MS = 24L * 60 * 60 * 1000
@@ -97,6 +106,9 @@ object YtFeedEngine {
 
     /** The window [YtFeedRules.maxPerChannel] counts in. */
     const val WINDOW = 10
+
+    /** How far a refresh may nudge a score: about two places in a source, far less than any boost. */
+    const val JITTER = 0.12
 
     /** Words that mark a learning video, German and English. */
     val LEARN_WORDS = listOf(
@@ -138,8 +150,11 @@ object YtFeedEngine {
         }
         val lastly = watched.map { it.copy(reasons = it.reasons + YtReason(YtReasonKind.WATCHED_LAST)) }
 
+        // 6. a new top after a refresh (before the diversity pass, which then keeps its rules)
+        val renewed = if (rules.order == YtFeedOrder.NEWEST) fresh else YtFreshTop.apply(fresh, signals.seen)
+
         // 4. diversity
-        return spread(fresh, rules) + spread(lastly, rules)
+        return spread(renewed, rules) + spread(lastly, rules)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -259,6 +274,9 @@ object YtFeedEngine {
             score += 0.2
             reasons += YtReason(YtReasonKind.STARTED)
         }
+        // a refresh shuffles near-equal places a little (no effect without a refresh; only in
+        // the mixed order, "newest" and "most viewed" promise their order)
+        if (rules.order == YtFeedOrder.MIXED) score += YtRotation.jitter(item.id, signals.shuffle, JITTER)
         if (rules.onlyLearning) reasons += YtReason(YtReasonKind.LEARN)
         if (rules.onlyMusic) reasons += YtReason(YtReasonKind.MUSIC)
         return YtRanked(item, score, reasons)

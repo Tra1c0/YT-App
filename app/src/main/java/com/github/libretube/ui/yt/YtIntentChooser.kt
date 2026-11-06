@@ -50,6 +50,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -66,6 +68,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -135,6 +138,7 @@ private class ChoiceLook(
     val titleFont: FontFamily,
     val titleSize: TextUnit,
     val titleColor: Color,
+    /** The opaque ground of the chooser: the home below does not shine through the words. */
     val scrim: Color,
     /** Two by two tiles instead of rows. */
     val grid: Boolean,
@@ -143,9 +147,35 @@ private class ChoiceLook(
     /** Editorial: numbered rows on black rules. */
     val numbered: Boolean = false,
     val border: Color? = null,
-    /** A surface of the design's own (glass, clay, frost) instead of the flat fill. */
+    /** A surface of the design's own (glass, clay) instead of the flat fill. */
     val surface: ((Modifier, Shape) -> Modifier)? = null,
-)
+    /** The colour [surface] looks like, for the contrast of the words on it. */
+    val surfaceTone: Color = Color.Unspecified,
+    /** Space between the tile's edge and its content; round shapes need more so no word is cut. */
+    val inset: Dp = 18.dp,
+    /** Formen: the cookie as a badge behind the glyph (a cookie tile would cut its words). */
+    val badge: Shape? = null,
+    /** The minute buttons on the chooser's ground: fill and words. */
+    val minuteFill: Color,
+    val minuteInk: Color,
+) {
+    /** The opaque colour tile [index] shows, the ground the words have to read on. */
+    fun tone(index: Int): Color {
+        val fill = fills[index]
+        return when {
+            surface != null && surfaceTone != Color.Unspecified -> surfaceTone
+            fill.alpha <= 0f -> scrim
+            else -> fill.compositeOver(scrim)
+        }
+    }
+
+    /** Words of tile [index] in [color], made readable on the tile (at least 4.5:1). */
+    fun inkOn(index: Int, color: Color): Color = color.readableOn(tone(index))
+}
+
+/** [this] over [bg], pushed towards black or white as far as needed for [min]:1 (YtContrast). */
+internal fun Color.readableOn(bg: Color, min: Double = YtContrast.BODY): Color =
+    Color(YtContrast.readable(toArgb(), bg.compositeOver(Color.Black).toArgb(), min))
 
 private fun choiceLook(palette: YtPalette): ChoiceLook {
     val four = { a: Color -> listOf(a, a, a, a) }
@@ -153,71 +183,115 @@ private fun choiceLook(palette: YtPalette): ChoiceLook {
         YtSignature.YOUTUBE -> ChoiceLook(
             shape = RoundedCornerShape(16.dp), fills = four(palette.raised), inks = four(palette.text),
             font = YtFonts.geist, titleFont = YtFonts.geist, titleSize = 34.sp, titleColor = palette.text,
-            scrim = palette.background.copy(alpha = 0.96f), grid = false,
+            scrim = palette.background, grid = false,
+            minuteFill = palette.raised, minuteInk = palette.text,
         )
         YtSignature.MOVO -> ChoiceLook(
             shape = RoundedCornerShape(26.dp),
             fills = listOf(palette.accent, palette.pink, palette.lime, palette.lavender),
             inks = listOf(palette.onAccent, palette.ink, palette.ink, palette.ink),
             font = YtFonts.geist, titleFont = YtFonts.geist, titleSize = 42.sp, titleColor = palette.text,
-            scrim = palette.background.copy(alpha = 0.97f), grid = true,
+            scrim = palette.background, grid = true,
+            minuteFill = palette.raised, minuteInk = palette.text,
         )
         YtSignature.AFTER -> ChoiceLook(
             shape = RoundedCornerShape(6.dp), fills = four(palette.raised), inks = four(palette.text),
             font = YtFonts.archivoNarrow, titleFont = YtFonts.fraunces, titleSize = 34.sp, titleColor = palette.text,
-            scrim = palette.background.copy(alpha = 0.96f), grid = false, uppercase = true, letterSpacing = 1.sp,
+            scrim = palette.background, grid = false, uppercase = true, letterSpacing = 1.sp,
             border = palette.accent.copy(alpha = 0.6f),
+            minuteFill = palette.raised, minuteInk = palette.accent,
         )
         YtSignature.SIDE -> ChoiceLook(
             shape = RoundedCornerShape(22.dp), fills = four(palette.raised), inks = four(palette.text),
             font = YtFonts.figtree, titleFont = YtFonts.figtree, titleSize = 32.sp, titleColor = palette.text,
-            scrim = palette.background.copy(alpha = 0.97f), grid = false,
+            scrim = palette.background, grid = false,
+            minuteFill = palette.raised, minuteInk = palette.accent,
         )
         YtSignature.CLAY -> ChoiceLook(
             shape = RoundedCornerShape(30.dp), fills = four(palette.surface), inks = four(palette.text),
             font = YtFonts.nunito, titleFont = YtFonts.nunito, titleSize = 32.sp, titleColor = palette.text,
-            scrim = palette.background.copy(alpha = 0.95f), grid = true,
-            surface = { m, shape -> m.ytSurface(palette, shape) },
+            scrim = palette.background, grid = true,
+            surface = { m, shape -> m.ytSurface(palette, shape) }, surfaceTone = palette.surface, inset = 20.dp,
+            // the mauve accent as a filled clay button: white on mauve reads, mauve on peach did not
+            minuteFill = palette.accent, minuteInk = palette.onAccent,
         )
         YtSignature.EDITORIAL -> ChoiceLook(
             shape = RectangleShape, fills = four(Color.Transparent), inks = four(palette.text),
             font = YtFonts.inter, titleFont = YtFonts.inter, titleSize = 36.sp, titleColor = palette.text,
-            scrim = palette.background.copy(alpha = 0.98f), grid = false, numbered = true,
+            scrim = palette.background, grid = false, numbered = true,
+            // black blocks with white type, as the design's pills (white on white was invisible)
+            minuteFill = palette.text, minuteInk = palette.background,
         )
         YtSignature.GLASS -> ChoiceLook(
             shape = RoundedCornerShape(26.dp), fills = four(Color.Transparent), inks = four(palette.text),
             font = YtFonts.googleSans, titleFont = YtFonts.googleSans, titleSize = 32.sp, titleColor = palette.text,
-            scrim = palette.background.copy(alpha = 0.9f), grid = true,
-            surface = { m, shape -> m.ytGlass(shape, strong = true) },
+            scrim = palette.background, grid = true,
+            surface = { m, shape -> m.ytGlass(shape, strong = true) }, surfaceTone = GlassTileTone, inset = 20.dp,
+            // frosted white chips with the deep teal ink of the design (white words on mint did not read)
+            minuteFill = GlassTileTone, minuteInk = palette.text,
         )
         YtSignature.POP -> ChoiceLook(
-            shape = BlobShape(0.56f, 0.5f, 0.5f, 0.6f),
+            // softer blob corners than the pills: the big corners of the pill blob cut the words of a tile
+            shape = BlobShape(0.3f, 0.22f, 0.26f, 0.32f),
             fills = listOf(palette.lime, palette.pink, palette.lavender, palette.accent),
-            inks = listOf(palette.ink, Color.White, palette.ink, Color.White),
+            // plum on the pink: white on it stayed under 4:1
+            inks = listOf(palette.ink, palette.ink, palette.ink, Color.White),
             font = YtFonts.nunito, titleFont = YtFonts.nunito, titleSize = 34.sp, titleColor = palette.text,
-            scrim = palette.background.copy(alpha = 0.96f), grid = true,
+            scrim = palette.background, grid = true, inset = 22.dp,
+            minuteFill = palette.accent, minuteInk = Color.White,
         )
         YtSignature.SHAPES -> ChoiceLook(
-            shape = CookieShape(9, 0.05f),
+            shape = RoundedCornerShape(30.dp),
             fills = listOf(palette.lime, Color(0xFFF7C4D0), palette.lavender, palette.surface),
             inks = four(palette.ink),
             font = YtFonts.googleSans, titleFont = YtFonts.googleSans, titleSize = 32.sp, titleColor = palette.text,
-            scrim = palette.background.copy(alpha = 0.96f), grid = true,
+            scrim = palette.background, grid = true, badge = CookieShape(9, 0.08f),
+            minuteFill = palette.lime, minuteInk = palette.ink,
         )
         YtSignature.FROST -> ChoiceLook(
-            shape = RoundedCornerShape(24.dp), fills = four(Color.Transparent), inks = four(palette.text),
+            // the dark pill of the design as tiles: white on the frosted sage stayed under 4:1
+            shape = RoundedCornerShape(24.dp), fills = four(palette.ink), inks = four(palette.text),
             font = YtFonts.jakarta, titleFont = YtFonts.jakarta, titleSize = 32.sp, titleColor = palette.text,
-            scrim = palette.background.copy(alpha = 0.93f), grid = false,
-            surface = { m, shape -> m.ytSurface(palette, shape) },
+            scrim = FrostChooserGround, grid = false,
+            minuteFill = palette.ink, minuteInk = palette.accent,
         )
         YtSignature.KIESEL -> ChoiceLook(
             shape = RoundedCornerShape(50),
             fills = listOf(KieselInk, KieselLavender, palette.lime, KieselInk),
             inks = listOf(KieselCream, KieselInk, KieselInk, KieselCream),
             font = YtFonts.jakarta, titleFont = YtFonts.jakarta, titleSize = 32.sp, titleColor = KieselInk,
-            scrim = palette.background.copy(alpha = 0.97f), grid = false,
+            scrim = palette.background, grid = false, inset = 22.dp,
+            minuteFill = KieselLavender, minuteInk = KieselInk,
         )
     }
+}
+
+/** What the strong glass tile looks like over the mint: nearly white. */
+private val GlassTileTone = Color(0xFFF6FBFA)
+
+/** Frost's sage, a few shades deeper, so its white words read on it. */
+private val FrostChooserGround = Color(0xFF4E6359)
+
+/**
+ * The minute buttons of the chooser in the pill look of the design, but with a fill and words
+ * that sit on the chooser's ground (the pill look is made for its own dark or glass card).
+ */
+private fun minutesLook(palette: YtPalette, look: ChoiceLook): PillLook {
+    val pill = pillLook(palette)
+    val fill = look.minuteFill.compositeOver(look.scrim)
+    return PillLook(
+        surface = pill.surface,
+        text = palette.text.readableOn(look.scrim),
+        action = look.minuteInk.readableOn(fill),
+        font = pill.font,
+        size = pill.size,
+        uppercase = pill.uppercase,
+        letterSpacing = pill.letterSpacing,
+        actionShape = pill.actionShape,
+        actionFill = fill,
+        actionDecoration = null,
+        cardSurface = pill.cardSurface,
+    )
 }
 
 /**
@@ -254,7 +328,7 @@ internal fun YtIntentChooser(palette: YtPalette, visible: Boolean, timeBox: (() 
             ) {
                 Text(
                     text = stringResource(R.string.yt_intent_title).let { if (look.uppercase) it.uppercase() else it },
-                    color = look.titleColor,
+                    color = look.titleColor.readableOn(look.scrim),
                     style = TextStyle(
                         fontFamily = look.titleFont,
                         fontWeight = FontWeight.ExtraBold,
@@ -266,7 +340,8 @@ internal fun YtIntentChooser(palette: YtPalette, visible: Boolean, timeBox: (() 
                 )
                 Text(
                     text = stringResource(R.string.yt_intent_subtitle),
-                    color = palette.textSecondary,
+                    // the design's grey where it reads, darker (or lighter) where it would not
+                    color = palette.textSecondary.readableOn(look.scrim),
                     style = TextStyle(fontFamily = look.font, fontSize = 14.sp, lineHeight = 19.sp),
                     modifier = Modifier.padding(top = 8.dp, bottom = 20.dp),
                 )
@@ -293,12 +368,13 @@ internal fun YtIntentChooser(palette: YtPalette, visible: Boolean, timeBox: (() 
                 if (timeBox != null && YtTimeBoxPrefs.chip) {
                     Text(
                         text = stringResource(R.string.yt_intent_minutes).let { if (look.uppercase) it.uppercase() else it },
-                        color = palette.text,
+                        color = palette.text.readableOn(look.scrim),
                         style = TextStyle(fontFamily = look.font, fontWeight = FontWeight.Bold, fontSize = 15.sp, letterSpacing = look.letterSpacing),
                         modifier = Modifier.padding(top = 18.dp, bottom = 10.dp),
                     )
-                    YtMinutesRow(palette, onPick = { minutes ->
-                        YtTimeBoxStarter.start(context, minutes, timeBox(), onEmpty = {})
+                    val minutes = remember(palette) { minutesLook(palette, look) }
+                    MinutesGrid(minutes, onPick = { picked ->
+                        YtTimeBoxStarter.start(context, picked, timeBox(), onEmpty = {})
                         onClose()
                     })
                 }
@@ -314,7 +390,7 @@ internal fun YtIntentChooser(palette: YtPalette, visible: Boolean, timeBox: (() 
                 ) {
                     Text(
                         text = stringResource(R.string.yt_intent_skip).let { if (look.uppercase) it.uppercase() else it },
-                        color = palette.textSecondary,
+                        color = palette.textSecondary.readableOn(look.scrim),
                         style = TextStyle(
                             fontFamily = look.font,
                             fontWeight = FontWeight.Medium,
@@ -340,7 +416,9 @@ private fun ChoiceTile(look: ChoiceLook, intent: YtIntent, index: Int, current: 
     }
     val label = stringResource(intent.label())
     val hint = stringResource(intent.hint())
-    val ink = look.inks[index]
+    // the design's ink, pushed only as far as needed to read on the tile
+    val ink = look.inkOn(index, look.inks[index])
+    val hintInk = look.inkOn(index, look.inks[index].copy(alpha = 0.78f))
     val interaction = remember { MutableInteractionSource() }
     val base = modifier
         .testTag("yt_intent_" + intent.name.lowercase())
@@ -376,7 +454,7 @@ private fun ChoiceTile(look: ChoiceLook, intent: YtIntent, index: Int, current: 
                     )
                     Text(
                         text = hint.uppercase(),
-                        color = ink.copy(alpha = 0.6f),
+                        color = hintInk,
                         style = TextStyle(fontFamily = YtFonts.plexMono, fontSize = 10.5.sp, letterSpacing = 1.sp),
                         modifier = Modifier.padding(top = 4.dp),
                     )
@@ -397,9 +475,16 @@ private fun ChoiceTile(look: ChoiceLook, intent: YtIntent, index: Int, current: 
                 .then(filled)
                 .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick)
                 .heightIn(min = 148.dp)
-                .padding(horizontal = 18.dp, vertical = 18.dp),
+                .padding(horizontal = look.inset, vertical = look.inset),
         ) {
-            Icon(painterResource(intent.icon()), contentDescription = null, tint = ink, modifier = Modifier.size(28.dp))
+            if (look.badge != null) {
+                // Formen: the glyph on a cookie of its own
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(46.dp).clip(look.badge).background(ink.copy(alpha = 0.12f))) {
+                    Icon(painterResource(intent.icon()), contentDescription = null, tint = ink, modifier = Modifier.size(24.dp))
+                }
+            } else {
+                Icon(painterResource(intent.icon()), contentDescription = null, tint = ink, modifier = Modifier.size(28.dp))
+            }
             Column {
                 Text(
                     text = text,
@@ -409,7 +494,7 @@ private fun ChoiceTile(look: ChoiceLook, intent: YtIntent, index: Int, current: 
                 )
                 Text(
                     text = hint,
-                    color = ink.copy(alpha = 0.72f),
+                    color = hintInk,
                     style = TextStyle(fontFamily = look.font, fontSize = 12.sp, lineHeight = 15.sp),
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -422,7 +507,7 @@ private fun ChoiceTile(look: ChoiceLook, intent: YtIntent, index: Int, current: 
                 .then(filled)
                 .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick)
                 .heightIn(min = 72.dp)
-                .padding(horizontal = 18.dp, vertical = 14.dp),
+                .padding(horizontal = look.inset, vertical = 14.dp),
         ) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -433,7 +518,8 @@ private fun ChoiceTile(look: ChoiceLook, intent: YtIntent, index: Int, current: 
             ) {
                 Icon(painterResource(intent.icon()), contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
             }
-            Column(Modifier.padding(start = 14.dp)) {
+            // weight: long words wrap inside the row instead of running past its round end
+            Column(Modifier.weight(1f).padding(start = 14.dp)) {
                 Text(
                     text = text,
                     color = ink,
@@ -441,7 +527,7 @@ private fun ChoiceTile(look: ChoiceLook, intent: YtIntent, index: Int, current: 
                 )
                 Text(
                     text = hint,
-                    color = ink.copy(alpha = 0.7f),
+                    color = hintInk,
                     style = TextStyle(fontFamily = look.font, fontSize = 12.5.sp),
                     modifier = Modifier.padding(top = 2.dp),
                 )

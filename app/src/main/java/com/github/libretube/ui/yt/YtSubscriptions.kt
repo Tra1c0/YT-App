@@ -204,9 +204,11 @@ private fun YtSubscriptionsScreen(
         val now = System.currentTimeMillis()
         feed.orEmpty().filter { it.url != null && !it.isShort }.filter {
             when (filter) {
-                1 -> now - it.uploaded < DAY
+                // live and upcoming streams would sit on top (their date is now or later); they
+                // have the Live tab of the app and the Live filter here, so the others leave them out
+                1 -> !it.isLive && !it.isUpcoming && now - it.uploaded < DAY
                 2 -> it.isLive
-                else -> true
+                else -> !it.isLive && !it.isUpcoming
             }
         }
     }

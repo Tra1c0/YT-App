@@ -79,6 +79,14 @@ fun ytPlayable(videos: List<StreamItem>?): List<StreamItem>? =
     videos?.filter { !it.isShort && !it.isUpcoming && it.url != null }?.distinctBy { it.url }
 
 /**
+ * The subscription feed as the "Abos" lists show it: playable videos without live streams.
+ * Live and upcoming streams sort to the top of a feed ordered by date (their date is now or in
+ * the future), and they have the Live tab of their own, so the Abos lists leave them out.
+ */
+fun ytSubscriptionList(videos: List<StreamItem>?): List<StreamItem>? =
+    ytPlayable(videos)?.filter { !it.isLive }
+
+/**
  * [videos] without what the home screens leave out: videos swiped away ([hidden], video id to
  * day) and channels [paused] at [now] (YtVisibility). The same list when nothing goes.
  */
