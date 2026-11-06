@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Kiesel mini player: the counter capsule a dropped video pops on the pebble -->
+    <string name="yt_mini_kiesel_plus_one">+1</string>
+</resources>
