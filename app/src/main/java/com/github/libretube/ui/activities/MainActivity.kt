@@ -79,6 +79,9 @@ class MainActivity : AbstractPlayerHostActivity() {
     private var ytOpenSearch: (() -> Unit)? = null
     private var ytSearchFor: ((String) -> Unit)? = null
 
+    // YT: true while searchFor runs its steps, so the toolbar field's focus does not reopen the design search
+    private var ytSubmitting = false
+
     lateinit var navController: NavController
     private var startFragmentId = R.id.homeFragment
 
@@ -251,7 +254,11 @@ class MainActivity : AbstractPlayerHostActivity() {
         val ytDesign = com.github.libretube.helpers.YtDesign.current()
         binding.toolbar.setTitleTextAppearance(this, ytDesign.brandTextAppearance)
         val openSearch: () -> Unit = {
-            if (::searchItem.isInitialized) {
+            // YT: a design opens its own search over the screen (ui/yt/search); the downloads
+            // and playlists keep the toolbar's field, which filters them while typing
+            val designSearch = currentSearchType == SearchType.ONLINE &&
+                com.github.libretube.ui.yt.search.YtSearchEntry.open()
+            if (!designSearch && ::searchItem.isInitialized) {
                 searchItem.isVisible = true
                 searchItem.expandActionView()
             }
@@ -266,9 +273,14 @@ class MainActivity : AbstractPlayerHostActivity() {
         // card), the same way as a search query passed to the app
         val searchFor: (String) -> Unit = { query ->
             if (::searchItem.isInitialized && ::searchView.isInitialized) {
-                searchItem.isVisible = true
-                searchItem.expandActionView()
-                searchView.setQuery(query, true)
+                ytSubmitting = true
+                try {
+                    searchItem.isVisible = true
+                    searchItem.expandActionView()
+                    searchView.setQuery(query, true)
+                } finally {
+                    ytSubmitting = false
+                }
             }
         }
         ytSearchFor = searchFor
@@ -285,6 +297,8 @@ class MainActivity : AbstractPlayerHostActivity() {
         ytNavState = com.github.libretube.ui.yt.YtNav.attach(this, binding.bottomNav, navController)
         // YT: the layer for drags across the screens (a card onto the mini player), above all
         com.github.libretube.ui.yt.YtDragLayer.attach(this)
+        // YT: the design search ends in the same three steps as a search passed to the app
+        com.github.libretube.ui.yt.search.YtSearchEntry.attach(this, searchFor)
         com.github.libretube.ui.yt.YtHeader.overlayAfterHome(binding.appBarLayout, binding.fragment, navController)
 
         // handle error logs
@@ -556,6 +570,19 @@ class MainActivity : AbstractPlayerHostActivity() {
             }
         })
 
+        // YT: on the results screen the toolbar shows the query; tapping it opens the design's
+        // search with it instead of the old suggestions screen
+        searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
+            val entry = com.github.libretube.ui.yt.search.YtSearchEntry
+            if (hasFocus && !ytSubmitting && !entry.isOpen && entry.touchedRecently() &&
+                currentSearchType == SearchType.ONLINE &&
+                navController.currentDestination?.id == R.id.searchResultFragment &&
+                entry.open(searchView.query?.toString().orEmpty())
+            ) {
+                searchView.clearFocus()
+            }
+        }
+
         searchItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
             override fun onMenuItemActionExpand(item: MenuItem): Boolean {
                 if (currentSearchType == SearchType.ONLINE && navController.currentDestination?.id != R.id.searchResultFragment) {
@@ -784,6 +811,7 @@ class MainActivity : AbstractPlayerHostActivity() {
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         // don't forward key events to the player while the search text input is used
         if (searchItem.isActionViewExpanded) return false
+        if (com.github.libretube.ui.yt.search.YtSearchEntry.isOpen) return false
 
         if (runOnPlayerFragment { this@runOnPlayerFragment.onKeyUp(keyCode, event) }) {
             return true

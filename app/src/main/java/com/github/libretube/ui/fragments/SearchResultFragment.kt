@@ -69,6 +69,17 @@ class SearchResultFragment : DynamicLayoutManagerFragment(R.layout.fragment_sear
             )
         }
 
+        // YT: the filter picked under the design search of YouTube neu, once
+        if (savedInstanceState == null) {
+            when (com.github.libretube.ui.yt.search.YtSearchEntry.takeFilter()) {
+                "videos" -> R.id.chip_videos
+                "channels" -> R.id.chip_channels
+                "playlists" -> R.id.chip_playlists
+                "music_songs" -> R.id.chip_music_songs
+                else -> null
+            }?.let { binding.filterChipGroup.check(it) }
+        }
+
         val timeStamp = args.query.toHttpUrlOrNull()?.queryParameter("t")?.toTimeInSeconds()
         val searchResultsAdapter = SearchResultsAdapter(timeStamp ?: 0)
         binding.searchRecycler.adapter = searchResultsAdapter

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: Runde 12, die Suche der Designs (ui/yt/search). Gleiche Schlüssel in gleicher Reihenfolge wie in values. -->
+<resources>
+    <string name="yt_r12_search_category">Suche</string>
+    <string name="yt_r12_search_entry">Eigene Suche je Design</string>
+    <string name="yt_r12_search_entry_summary">Die Suche öffnet sich über dem Bildschirm im Stil des Designs, mit deinen bisherigen Suchen und Vorschlägen. Aus: das Suchfeld in der oberen Leiste</string>
+
+    <!-- das Feld -->
+    <string name="yt_r12_search_hint">Suchen</string>
+    <string name="yt_r12_search_back">Suche schließen</string>
+    <string name="yt_r12_search_clear">Suchtext löschen</string>
+
+    <!-- die Zeilen unter dem Feld: was Tippen, langes Drücken und die TalkBack-Aktionen tun -->
+    <string name="yt_r12_search_run">Suchen</string>
+    <string name="yt_r12_search_fill">Ins Suchfeld übernehmen</string>
+    <string name="yt_r12_search_delete">Aus dem Suchverlauf löschen</string>
+    <string name="yt_r12_search_history">Zuletzt gesucht</string>
+    <string name="yt_r12_search_empty">Noch keine Suchen. Tippe, um Vorschläge zu sehen.</string>
+    <string name="yt_r12_search_no_suggestions">Keine Vorschläge. Mit der Suchtaste trotzdem suchen.</string>
+
+    <!-- Side: die App fragt, das Feld ist deine Antwort -->
+    <string name="yt_r12_search_side_prompt">Wonach suchst du?</string>
+
+    <!-- YouTube neu: die Filter der Ergebnisse, vor der Suche gewählt -->
+    <string name="yt_r12_search_filter_all">Alle</string>
+    <string name="yt_r12_search_filter_videos">Videos</string>
+    <string name="yt_r12_search_filter_channels">Kanäle</string>
+    <string name="yt_r12_search_filter_playlists">Playlists</string>
+    <string name="yt_r12_search_filter_songs">Songs</string>
+</resources>
