@@ -507,7 +507,8 @@
     </style>
     <style name="Widget.YT.Glass.Sheet" parent="Widget.Material3.BottomSheet">
         <item name="shapeAppearance">@style/ShapeAppearance.YT.Glass.SheetTop</item>
-        <item name="backgroundTint">#E6F2FAF8</item>
+        <!-- nearly opaque: at 90 % the watch page's labels showed through the comment rows -->
+        <item name="backgroundTint">#F7F2FAF8</item>
     </style>
     <style name="ThemeOverlay.YT.Glass.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/Widget.YT.Glass.Sheet</item>

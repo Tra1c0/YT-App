@@ -76,6 +76,8 @@ fun YtQuickSheet(
     var height by remember { mutableStateOf(IntSize.Zero) }
     val square = palette.surfaceStyle == YtSurfaceStyle.EDITORIAL
     val shape = if (square) RectangleShape else RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+    // back closes the open sheet instead of leaving the screen under it
+    YtBackHandler(enabled = video != null, onBack = onDismiss)
 
     AnimatedVisibility(
         visible = video != null,
