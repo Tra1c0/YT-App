@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Side mini player: the next video as a reply bubble in the long-press preview -->
+    <string name="yt_mini_side_next_from">Als Nächstes · %1$s</string>
+    <!-- Side mini player: the badge a dropped video pops on the bubble -->
+    <string name="yt_mini_side_plus_one">+1</string>
+</resources>
