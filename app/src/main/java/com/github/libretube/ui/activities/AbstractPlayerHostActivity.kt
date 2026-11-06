@@ -15,6 +15,16 @@ abstract class AbstractPlayerHostActivity: BaseActivity() {
 
     abstract fun clearSearchViewFocus(): Boolean
 
+    /**
+     * YT: an open player page stops its playback service when the activity is destroyed, so a
+     * new design is not applied by recreating while it is open; BaseActivity asks for the
+     * restart instead.
+     */
+    override fun ytCanRecreateNow(): Boolean =
+        super.ytCanRecreateNow() && supportFragmentManager.fragments.none {
+            it is PlayerFragment || it is AudioPlayerFragment
+        }
+
 
     /**
      * Attempt to run code on the player fragment if running
