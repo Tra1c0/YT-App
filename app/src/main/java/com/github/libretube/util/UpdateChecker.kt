@@ -18,14 +18,16 @@ import java.util.Locale
 
 class UpdateChecker(private val context: Context) {
     suspend fun checkUpdate(isManualCheck: Boolean = false) {
-        val currentAppVersion = BuildConfig.VERSION_NAME.filter { it.isDigit() }.toInt()
+        // YT: builds are numbered ("32.1-yt.88", release "YT Build 88"); only a newer build is an
+        // update. Comparing all digits for inequality offered the latest release (an older build)
+        // to every test build of a branch.
+        val currentBuild = ytBuildNumber(BuildConfig.VERSION_NAME.substringAfterLast("yt.", ""))
 
         try {
             val response = RetrofitInstance.externalApi.getLatestRelease()
-            // version would be in the format "0.21.1"
-            val update = response.name.filter { it.isDigit() }.toInt()
+            val update = ytBuildNumber(response.name)
 
-            if (currentAppVersion != update) {
+            if (update != null && (currentBuild == null || update > currentBuild)) {
                 withContext(Dispatchers.Main) {
                     showUpdateAvailableDialog(response.body, response.htmlUrl)
                 }
@@ -37,6 +39,10 @@ class UpdateChecker(private val context: Context) {
             e.printStackTrace()
         }
     }
+
+    /** The last number in [text] ("YT Build 88" -> 88), null when it has none. */
+    private fun ytBuildNumber(text: String): Int? =
+        Regex("(\\d+)\\D*$").find(text)?.groupValues?.get(1)?.toIntOrNull()
 
     private fun showUpdateAvailableDialog(
         changelog: String,
