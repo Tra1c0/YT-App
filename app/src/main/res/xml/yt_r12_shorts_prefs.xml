@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: settings of the Shorts view (round 12, 8.1 and 8.2), a section of "Gesten & Interaktion". The keys are in YtShortsPrefs. -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:key="yt_r12_shorts_category"
+        app:title="@string/yt_r12_shorts_category">
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_play_circle"
+            android:summary="@string/yt_r12_shorts_view_summary"
+            app:defaultValue="true"
+            app:key="yt_shorts_view"
+            app:title="@string/yt_r12_shorts_view_title" />
+
+        <!-- YtShortsAutoscroll.DEFAULT: after one play; the toggle in the view changes it too -->
+        <ListPreference
+            android:icon="@drawable/ic_next"
+            app:defaultValue="1"
+            app:dependency="yt_shorts_view"
+            app:entries="@array/yt_r12_shorts_autoscroll_entries"
+            app:entryValues="@array/yt_r12_shorts_autoscroll_values"
+            app:key="yt_shorts_autoscroll"
+            app:title="@string/yt_r12_shorts_autoscroll_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_play"
+            android:summary="@string/yt_r12_shorts_line_summary"
+            app:defaultValue="true"
+            app:dependency="yt_shorts_view"
+            app:key="yt_shorts_progress_line"
+            app:title="@string/yt_r12_shorts_line_title" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -25,6 +25,7 @@ import com.github.libretube.ui.yt.mini.YtMiniTestHooks
 import com.github.libretube.ui.yt.mini.YtMinimizeTestHooks
 import com.github.libretube.ui.yt.player.YtPlayerGestureTestHooks
 import com.github.libretube.ui.yt.scene.YtSceneTestHooks
+import com.github.libretube.ui.yt.shorts.YtShortsTestHooks
 import com.github.libretube.util.PlayingQueue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -87,13 +88,14 @@ object YtTestHooks {
     private const val EXTRA_SEEK_TEST = "yt_seek_test"
     private const val EXTRA_AUDIO_TEST = "yt_audio_test"
 
-    // the packages' own parameters, one object each in its owner's folder (A, B, C, D, E)
+    // the packages' own parameters, one object each in its owner's folder (A, B, C, D, E, Shorts)
     private val packages: List<YtTestHandler> = listOf(
         YtMiniTestHooks,
         YtMinimizeTestHooks,
         YtPlayerGestureTestHooks,
         YtHomeTestHooks,
         YtSceneTestHooks,
+        YtShortsTestHooks,
     )
 
     /**

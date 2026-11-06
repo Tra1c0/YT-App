@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: Runde 12, die Shorts-Ansicht (8.1 versteckte Zeitleiste, 8.2 Autoscroll). Dieselben Schlüssel in derselben Reihenfolge wie in values. -->
+<resources>
+    <string name="yt_r12_shorts_category">Shorts</string>
+
+    <!-- Einstellungen -->
+    <string name="yt_r12_shorts_view_title">Shorts-Ansicht</string>
+    <string name="yt_r12_shorts_view_summary">Shorts öffnen bildschirmfüllend untereinander, nach oben wischen für den nächsten. Aus: im Videoplayer.</string>
+    <string name="yt_r12_shorts_autoscroll_title">Automatisch weiter</string>
+    <string name="yt_r12_shorts_autoscroll_off">Aus: ein Short wiederholt sich</string>
+    <string name="yt_r12_shorts_autoscroll_1">Nach 1 Wiedergabe</string>
+    <string name="yt_r12_shorts_autoscroll_2">Nach 2 Wiedergaben</string>
+    <string name="yt_r12_shorts_autoscroll_3">Nach 3 Wiedergaben</string>
+    <string name="yt_r12_shorts_autoscroll_5">Nach 5 Wiedergaben</string>
+    <string name="yt_r12_shorts_line_title">Dünne Fortschrittslinie</string>
+    <string name="yt_r12_shorts_line_summary">Eine feine Linie am unteren Rand zeigt, wie weit der Short ist. Die Zeitleiste selbst erscheint, wenn du den unteren Rand berührst.</string>
+
+    <!-- die Ansicht -->
+    <string name="yt_r12_shorts_close">Schließen</string>
+    <string name="yt_r12_shorts_timeline">Zeitleiste: unteren Rand berühren und zur Seite ziehen</string>
+    <string name="yt_r12_shorts_auto_on">Auto %1$d×</string>
+    <string name="yt_r12_shorts_auto_off">Auto aus</string>
+    <string name="yt_r12_shorts_next_in">Weiter in %1$d</string>
+    <string name="yt_r12_shorts_stay">Tippen zum Bleiben</string>
+    <string name="yt_r12_shorts_heart">Herz</string>
+    <string name="yt_r12_shorts_open_in_player">Im Videoplayer öffnen</string>
+    <string name="yt_r12_shorts_play">Abspielen</string>
+    <string name="yt_r12_shorts_failed">Dieser Short ließ sich nicht laden.</string>
+    <string name="yt_r12_shorts_retry">Erneut versuchen</string>
+</resources>
