@@ -14,7 +14,7 @@
 # controls, back to the app, and closing by dropping it on the ✕), YT_VIDEO (the online video id
 # of the player checks), YT_TEST_VIDEO (yes = per design: put scripts/fixtures/yt-test.mp4 into the
 # app's own files and open it as a downloaded video; the screens then show it), YT_GESTURES (yes =
-# per design: the gesture checks scripts/gestures/a.sh ... e.sh with the animations on).
+# per design: the gesture checks scripts/gestures/a.sh ... f.sh with the animations on).
 set -u
 PKG="app.tra1c0.yt"
 ACTIVITY="com.github.libretube.ui.activities.MainActivity"
@@ -604,7 +604,7 @@ for design in $DESIGNS; do
     sleep 5
     timeout 20 adb exec-out screencap -p > "screens/$design-3-mini.png" || true
   fi
-  # round 12: the gesture checks of the packages (scripts/gestures/a.sh ... e.sh, helpers in lib.sh),
+  # round 12: the gesture checks of the packages (scripts/gestures/a.sh ... f.sh, helpers in lib.sh),
   # with the animations on as on a phone; the runner turns them off for everything else
   if [ "${YT_GESTURES:-no}" = "yes" ]; then
     mkdir -p screens
@@ -616,7 +616,7 @@ for design in $DESIGNS; do
     . scripts/gestures/lib.sh
     anim_on
     # shellcheck source=/dev/null
-    for f in scripts/gestures/[a-e].sh; do . "$f"; done
+    for f in scripts/gestures/[a-f].sh; do . "$f"; done
     anim_off
     rm -f screens/*.raw
     echo "gesture checks failed: $gesture_fails"

@@ -40,6 +40,7 @@ import com.github.libretube.extensions.updateParameters
 import com.github.libretube.helpers.PlayerHelper
 import com.github.libretube.helpers.PlayerHelper.getCurrentSegment
 import com.github.libretube.ui.activities.MainActivity
+import com.github.libretube.ui.yt.YtTestHooks
 import com.github.libretube.util.DefaultTrackSelectorWithAudioQualitySupport
 import com.github.libretube.util.NowPlayingNotification
 import com.github.libretube.util.PlayingQueue
@@ -237,7 +238,10 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
 
         // YT: a module may hold autoplay back (e.g. once the time box is used up); a video
         // asked for by its id still plays
-        if (videoId == null && YtServiceModules.holdAutoplay()) return
+        if (videoId == null && YtServiceModules.holdAutoplay()) {
+            YtTestHooks.log("YtQueue") { "autoplay held" }
+            return
+        }
 
         if (!shouldHandleAutoplay) {
             return
@@ -248,6 +252,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
             ?.takeIf { PlayerHelper.autoPlayEnabled && PlayerHelper.relatedStreamsEnabled }
         ?: return
 
+        // YT: for the emulator check of a queue's end (scripts/gestures/f.sh)
+        YtTestHooks.log("YtQueue") { "autoplay next=$nextVideo audio=$isAudioOnlyPlayer" }
         navigateVideo(nextVideo)
     }
 

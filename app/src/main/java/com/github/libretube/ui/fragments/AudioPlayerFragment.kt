@@ -400,7 +400,14 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
         }
     }
 
+    // YT: the seek bar is set up once per view. Every new video (its metadata) called this
+    // again, adding another listener and another 200 ms update loop each time, so a long queue
+    // in audio mode piled up work on the main thread with every video that ended.
+    private var seekBarReady = false
+
     private fun initializeSeekBar() {
+        if (seekBarReady) return
+        seekBarReady = true
         binding.timeBar.addOnChangeListener { _, value, fromUser ->
             if (fromUser) playerController?.seekTo(value.toLong() * 1000)
         }
@@ -429,7 +436,8 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
         )
 
         // update the time bar current value and maximum value
-        binding.timeBar.valueTo = (duration / 1000).toFloat()
+        // YT: never at valueFrom (a duration under one second): the slider throws when it draws
+        binding.timeBar.valueTo = (duration / 1000).toFloat().coerceAtLeast(binding.timeBar.valueFrom + 1f)
         binding.timeBar.value = clamp(
             currentPosition / 1000,
             binding.timeBar.valueFrom,
@@ -484,6 +492,7 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        seekBarReady = false
     }
 
     override fun onSingleTap() {

@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# YT: helpers for the round-12 gesture checks (scripts/gestures/a.sh ... e.sh). crash-check.sh
+# YT: helpers for the round-12 gesture checks (scripts/gestures/a.sh ... f.sh). crash-check.sh
 # sources them once per design with YT_GESTURES=yes, after the screens, with the animations on.
 # They build on crash-check.sh's own helpers (mark, shot, rawshot, ui, texts, tap, frame_of,
 # back_to_yt, open_test_video) and variables (PKG, ACTIVITY, design, TEST_VIDEO), so they only

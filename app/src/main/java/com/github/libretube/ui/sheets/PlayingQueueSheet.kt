@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.core.os.bundleOf
 import androidx.fragment.app.setFragmentResult
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.Player
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.github.libretube.R
@@ -43,6 +44,14 @@ class PlayingQueueSheet : ExpandedBottomSheet(R.layout.queue_bottom_sheet) {
         }
         binding.optionsRecycler.adapter = adapter
 
+        // YT: the list follows the queue while the sheet is open (the next video, more pages of
+        // a playlist). Posted, so a change made while the list lays itself out (or by the
+        // sheet's own swipe or drag) never redraws it in the middle of that.
+        val recycler = binding.optionsRecycler
+        viewLifecycleOwner.lifecycleScope.launch {
+            PlayingQueue.revision.collect { recycler.post { if (_binding != null) adapter.refresh() } }
+        }
+
         // scroll to the currently playing video in the queue
         val currentPlayingIndex = PlayingQueue.currentIndex()
         if (currentPlayingIndex != -1) binding.optionsRecycler.scrollToPosition(currentPlayingIndex)
@@ -71,7 +80,7 @@ class PlayingQueueSheet : ExpandedBottomSheet(R.layout.queue_bottom_sheet) {
                         PlayingQueue.getStreams()
                             .filterIndexed { index, _ -> index == currentIndex }
                     )
-                    adapter.notifyDataSetChanged()
+                    adapter.refresh()
                 }
                 .setNegativeButton(R.string.cancel, null)
                 .show()
@@ -92,17 +101,27 @@ class PlayingQueueSheet : ExpandedBottomSheet(R.layout.queue_bottom_sheet) {
             allowSwipe = true,
             allowDrag = true,
             onDismissedListener = { position ->
-                if (position == PlayingQueue.currentIndex()) {
+                // YT: by video id, as the list is a copy of the queue that may lag behind it
+                val id = adapter.idAt(position)
+                val index = PlayingQueue.getStreams().indexOfFirst { it.url?.toID() == id }
+                if (id == null || index < 0 || index == PlayingQueue.currentIndex()) {
                     adapter.notifyItemChanged(position)
                     return@setActionListener
                 }
-                PlayingQueue.remove(position)
-                adapter.notifyItemRemoved(position)
-                adapter.notifyItemRangeChanged(position, adapter.itemCount)
+                PlayingQueue.remove(index)
+                adapter.removed(position)
             },
             onDragListener = { from, to ->
-                PlayingQueue.move(from, to)
-                adapter.notifyItemMoved(from, to)
+                // YT: only while the copy matches the queue at both places; else it is redrawn
+                val streams = PlayingQueue.getStreams()
+                val inStep = streams.getOrNull(from)?.url?.toID() == adapter.idAt(from) &&
+                    to in streams.indices
+                if (inStep) {
+                    PlayingQueue.move(from, to)
+                    adapter.moved(from, to)
+                } else {
+                    adapter.refresh()
+                }
             }
         )
     }
@@ -149,7 +168,7 @@ class PlayingQueueSheet : ExpandedBottomSheet(R.layout.queue_bottom_sheet) {
                     else -> throw IllegalArgumentException()
                 }
                 PlayingQueue.setStreams(newQueue)
-                _binding?.optionsRecycler?.adapter?.notifyDataSetChanged()
+                (_binding?.optionsRecycler?.adapter as? PlayingQueueAdapter)?.refresh()
             }
             .show()
     }
@@ -212,7 +231,7 @@ class PlayingQueueSheet : ExpandedBottomSheet(R.layout.queue_bottom_sheet) {
                             }
                             PlayingQueue.setStreams(streams)
                             withContext(Dispatchers.Main) {
-                                _binding?.optionsRecycler?.adapter?.notifyDataSetChanged()
+                                (_binding?.optionsRecycler?.adapter as? PlayingQueueAdapter)?.refresh()
                             }
                         }
                     }
