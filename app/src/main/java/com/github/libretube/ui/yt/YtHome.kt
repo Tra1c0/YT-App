@@ -60,7 +60,8 @@ object YtHome {
         fragment: Fragment,
         root: ViewGroup,
         viewModel: HomeViewModel,
-        refresh: () -> Unit,
+        /** Loads the home's lists again; true: past the caches (a pull to refresh). */
+        refresh: (force: Boolean) -> Unit,
     ): Boolean {
         val design = YtDesign.current()
         if (design == YtDesign.STANDARD) return false
@@ -107,7 +108,7 @@ object YtHome {
     )
 
     @Composable
-    private fun Screen(fragment: Fragment, design: YtDesign, viewModel: HomeViewModel, refresh: () -> Unit) {
+    private fun Screen(fragment: Fragment, design: YtDesign, viewModel: HomeViewModel, refresh: (Boolean) -> Unit) {
         val context = LocalContext.current
         // hidden videos and paused channels stay off the home (rememberYtVisible)
         val feed = rememberYtVisible(viewModel.feed.observeAsState().value)
@@ -125,8 +126,12 @@ object YtHome {
             rememberYtFeed(YtFeedInput(viewModel.feed.observeAsState().value, byCategory, trending?.second?.streams, viewModel.continueWatching.observeAsState().value)),
         )
         val intent by YtFeed.intent.collectAsState()
+        // a pull is a forced reload: the top shown so far is remembered and the home ranks again
+        // at once with other videos on top, while every source loads again past its cache (the
+        // subscriptions, the charts, the searches and the history with another part of each)
         val refreshAll = {
-            refresh()
+            YtFeed.markRefresh()
+            refresh(true)
             YtDiscovery.refresh(context)
             YtFeed.loadExtras(context, force = true)
             YtFeed.loadSignals()
@@ -144,7 +149,8 @@ object YtHome {
                     palette = YtPalettes.Side,
                     imageLoader = ImageHelper.loader(),
                     forYou = forYou ?: feed,
-                    people = feed,
+                    // the people without live streams: they are in the Live tab
+                    people = ytSubscriptionList(feed),
                     tab = sideTab,
                     hearts = hearts,
                     isLoading = isLoading,
@@ -212,7 +218,7 @@ object YtHome {
                     palette = YtPalettes.Movo,
                     imageLoader = ImageHelper.loader(),
                     discover = forYou,
-                    following = feed,
+                    following = ytSubscriptionList(feed),
                     tab = movoTab,
                     isLoading = isLoading,
                     onSelectTab = { movoTab = it },
@@ -237,7 +243,7 @@ object YtHome {
                     filter = key
                     if (key != YT_FILTER_ALL) {
                         PreferenceHelper.putString(PreferenceKeys.TRENDING_CATEGORY, key)
-                        refresh()
+                        refresh(false)
                     }
                 },
                 onRefresh = refreshAll,

@@ -78,7 +78,8 @@ internal fun YtRound2Home(
         }
     }
 
-    val subscriptions = ytPlayable(feed)
+    // the Abos tab without live streams: they are in the Live tab
+    val subscriptions = ytSubscriptionList(feed)
     val trendingVisible = rememberYtVisible(trending?.second?.streams)
     // the ranked feed (YtFeedEngine), else what has loaded so far
     val forYou = ytPlayable(ranked ?: subscriptions ?: trendingVisible)

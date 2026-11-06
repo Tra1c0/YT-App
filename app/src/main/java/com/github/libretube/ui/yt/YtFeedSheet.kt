@@ -161,6 +161,7 @@ fun ytReasonText(reason: YtReason): String {
         YtReasonKind.STARTED -> stringResource(R.string.yt_feed_reason_started)
         YtReasonKind.WATCHED_LAST -> stringResource(R.string.yt_feed_reason_watched_last)
         YtReasonKind.SPACED -> stringResource(R.string.yt_feed_reason_spaced, channel)
+        YtReasonKind.NEW_ON_TOP -> stringResource(R.string.yt_feed_reason_new_on_top)
     }
 }
 

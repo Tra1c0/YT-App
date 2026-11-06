@@ -25,6 +25,8 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -32,6 +34,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -50,7 +53,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -315,22 +320,20 @@ fun YtMinutesRow(palette: YtPalette, onPick: (Int) -> Unit, modifier: Modifier =
     MinutesGrid(look, onPick, modifier)
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun MinutesGrid(look: PillLook, onPick: (Int) -> Unit, modifier: Modifier = Modifier) {
     var custom by rememberSaveable { mutableStateOf(false) }
     val haptics = rememberYtHaptics()
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (!custom) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                YtTimeBox.MINUTES.take(3).forEach { minutes ->
-                    MinuteButton(look, minutesLabel(minutes), "yt_timebox_$minutes") {
-                        haptics.confirm()
-                        onPick(minutes)
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                YtTimeBox.MINUTES.drop(3).forEach { minutes ->
+            // a flow, not two fixed rows of three: with a large font the buttons grow with
+            // their words and move to the next line instead of being cut at the edge
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                YtTimeBox.MINUTES.forEach { minutes ->
                     MinuteButton(look, minutesLabel(minutes), "yt_timebox_$minutes") {
                         haptics.confirm()
                         onPick(minutes)
@@ -354,15 +357,18 @@ internal fun MinutesGrid(look: PillLook, onPick: (Int) -> Unit, modifier: Modifi
 @Composable
 private fun MinuteButton(look: PillLook, label: String, tag: String, width: Dp = 76.dp, onClick: () -> Unit) {
     val fill = look.actionFill ?: look.action.copy(alpha = 0.14f)
-    val ink = look.action
+    // on a card of known colour the words are made to read on the fill over it (4.5:1)
+    val ink = if (look.tone != Color.Unspecified) look.action.readableOn(fill.compositeOver(look.tone)) else look.action
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .testTag(tag)
-            .width(width)
-            .height(44.dp)
+            // at least the design's size, larger when the words need it (large font scale)
+            .widthIn(min = width)
+            .heightIn(min = 44.dp)
             .ytPressable(look.actionShape, onClick = onClick)
-            .background(fill),
+            .background(fill)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
     ) {
         Text(
             text = if (look.uppercase) label.uppercase() else label,
@@ -401,8 +407,8 @@ private fun Stepper(look: PillLook, onBack: () -> Unit, onGo: (Int) -> Unit) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .width(84.dp)
-                .height(44.dp)
+                .widthIn(min = 84.dp)
+                .heightIn(min = 44.dp)
                 .semantics { contentDescription = spoken }
                 .pointerInput(stepPx) {
                     var travel = 0f

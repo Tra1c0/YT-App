@@ -217,6 +217,7 @@
     <string name="yt_feed_reason_started">Du hast es angefangen</string>
     <string name="yt_feed_reason_watched_last">Schon gesehen, darum am Ende</string>
     <string name="yt_feed_reason_spaced">Nach unten gerückt, damit %1$s nicht gehäuft kommt</string>
+    <string name="yt_feed_reason_new_on_top">Nach oben geholt: Beim letzten Aktualisieren war es noch nicht oben</string>
     <string name="yt_feed_this_channel">diesem Kanal</string>
     <string-array name="yt_intent_ask_entries">
         <item>@string/yt_intent_ask_always</item>

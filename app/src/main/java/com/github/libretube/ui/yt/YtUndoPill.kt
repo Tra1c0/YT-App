@@ -426,6 +426,8 @@ internal class PillLook(
     val actionDecoration: TextDecoration? = null,
     /** A bigger card in the pill's look (the time box), where the pill's own shape does not fit. */
     val cardSurface: ((Modifier) -> Modifier)? = null,
+    /** The colour the card looks like (opaque), so its buttons can keep their words readable. */
+    val tone: Color = Color.Unspecified,
 ) {
     /** The surface of a card: [cardSurface], else the pill's. */
     fun card(modifier: Modifier): Modifier = (cardSurface ?: surface)(modifier)
@@ -440,12 +442,12 @@ internal fun pillLook(palette: YtPalette): PillLook {
     return when (palette.signature) {
         YtSignature.YOUTUBE -> PillLook(
             surface = flat(RoundedCornerShape(14.dp), palette.raised),
-            text = palette.text, action = palette.text, font = YtFonts.geist,
+            text = palette.text, action = palette.text, font = YtFonts.geist, tone = palette.raised,
         )
         YtSignature.MOVO -> PillLook(
             surface = flat(RoundedCornerShape(50), Color.White),
             text = palette.ink, action = palette.accent, font = YtFonts.geist,
-            cardSurface = flat(RoundedCornerShape(24.dp), Color.White),
+            cardSurface = flat(RoundedCornerShape(24.dp), Color.White), tone = Color.White,
         )
         YtSignature.AFTER -> PillLook(
             surface = { m ->
@@ -453,48 +455,48 @@ internal fun pillLook(palette: YtPalette): PillLook {
                 flat(shape, palette.raised)(m).border(1.dp, palette.accent.copy(alpha = 0.55f), shape)
             },
             text = palette.text, action = palette.accent, font = YtFonts.archivoNarrow,
-            uppercase = true, letterSpacing = 1.sp,
+            uppercase = true, letterSpacing = 1.sp, tone = palette.raised,
         )
         YtSignature.SIDE -> PillLook(
             surface = flat(RoundedCornerShape(50), palette.raised),
             text = palette.text, action = palette.accent, font = YtFonts.figtree,
-            cardSurface = flat(RoundedCornerShape(24.dp), palette.raised),
+            cardSurface = flat(RoundedCornerShape(24.dp), palette.raised), tone = palette.raised,
         )
         YtSignature.CLAY -> PillLook(
             surface = { m -> m.ytSurface(palette, RoundedCornerShape(24.dp)) },
-            text = palette.text, action = palette.accent, font = YtFonts.nunito,
+            text = palette.text, action = palette.accent, font = YtFonts.nunito, tone = palette.surface,
         )
         YtSignature.EDITORIAL -> PillLook(
             surface = flat(RectangleShape, Color.Black, Color(0x40000000)),
             text = Color.White, action = Color.White, font = YtFonts.plexMono,
             size = 11.sp, uppercase = true, letterSpacing = 1.sp,
-            actionShape = RectangleShape, actionDecoration = TextDecoration.Underline,
+            actionShape = RectangleShape, actionDecoration = TextDecoration.Underline, tone = Color.Black,
         )
         YtSignature.GLASS -> PillLook(
             surface = { m -> m.ytGlass(RoundedCornerShape(50), strong = true) },
             text = palette.text, action = Color(0xFF0A8F7F), font = YtFonts.googleSans,
-            cardSurface = { m -> m.ytGlass(RoundedCornerShape(26.dp), strong = true) },
+            cardSurface = { m -> m.ytGlass(RoundedCornerShape(26.dp), strong = true) }, tone = Color(0xFFF6FBFA),
         )
         YtSignature.POP -> PillLook(
             surface = flat(BlobShape(0.56f, 0.5f, 0.5f, 0.6f), palette.accent, Color(0x553B2054)),
             text = Color.White, action = palette.lime, font = YtFonts.nunito, size = 14.sp,
-            cardSurface = flat(RoundedCornerShape(30.dp), palette.accent, Color(0x553B2054)),
+            cardSurface = flat(RoundedCornerShape(30.dp), palette.accent, Color(0x553B2054)), tone = palette.accent,
         )
         YtSignature.SHAPES -> PillLook(
             surface = flat(RoundedCornerShape(50), palette.surface),
             text = palette.ink, action = Color(0xFF6656C4), font = YtFonts.googleSans,
-            cardSurface = flat(RoundedCornerShape(28.dp), palette.surface),
+            cardSurface = flat(RoundedCornerShape(28.dp), palette.surface), tone = palette.surface,
         )
         YtSignature.FROST -> PillLook(
             surface = flat(RoundedCornerShape(50), palette.ink, Color(0x661F2A26)),
             text = palette.text, action = palette.accent, font = YtFonts.jakarta,
-            cardSurface = flat(RoundedCornerShape(24.dp), palette.ink, Color(0x661F2A26)),
+            cardSurface = flat(RoundedCornerShape(24.dp), palette.ink, Color(0x661F2A26)), tone = palette.ink,
         )
         YtSignature.KIESEL -> PillLook(
             surface = flat(RoundedCornerShape(50), KieselInk, Color(0x400E0E0E)),
             text = KieselCream, action = KieselInk, font = YtFonts.jakarta, size = 12.5.sp,
             actionFill = KieselLavender,
-            cardSurface = flat(RoundedCornerShape(26.dp), KieselInk, Color(0x400E0E0E)),
+            cardSurface = flat(RoundedCornerShape(26.dp), KieselInk, Color(0x400E0E0E)), tone = KieselInk,
         )
     }
 }
