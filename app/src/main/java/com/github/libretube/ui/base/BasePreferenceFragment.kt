@@ -49,9 +49,18 @@ abstract class BasePreferenceFragment : PreferenceFragmentCompat() {
                 val prefIndex = preference.entryValues.indexOf(preference.value)
                 MaterialAlertDialogBuilder(requireContext())
                     .setTitle(preference.title)
-                    .setSingleChoiceItems(preference.entries, prefIndex) { dialog, index ->
+                    // YT: the current choice stands out in the colors of the design
+                    .setSingleChoiceItems(
+                        com.github.libretube.ui.yt.YtClassic.markChoice(requireContext(), preference.entries, prefIndex),
+                        prefIndex
+                    ) { dialog, index ->
                         // get the new ListPreference value
                         val newValue = preference.entryValues[index].toString()
+                        // YT: picking the current value again changes nothing
+                        if (newValue == preference.value) {
+                            dialog.dismiss()
+                            return@setSingleChoiceItems
+                        }
                         // invoke the on change listeners
                         if (preference.callChangeListener(newValue)) {
                             preference.value = newValue

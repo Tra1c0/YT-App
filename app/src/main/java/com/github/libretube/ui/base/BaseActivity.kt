@@ -15,6 +15,8 @@ import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.helpers.ThemeHelper
 import com.github.libretube.helpers.ThemeHelper.getThemeMode
 import com.github.libretube.helpers.WindowHelper
+import com.github.libretube.helpers.YtThemeRefresh
+import com.github.libretube.ui.dialogs.RequireRestartDialog
 import java.util.Locale
 
 /**
@@ -40,6 +42,12 @@ open class BaseActivity : AppCompatActivity() {
      * Whether the phone of the user has a cutout like a notch or not
      */
     var hasCutout: Boolean = false
+
+    /** YT: the look this activity was built with (see [YtThemeRefresh]). */
+    private var ytThemeGeneration = YtThemeRefresh.generation
+
+    /** YT: the look for which this activity already asked for a restart, if any. */
+    private var ytAskedRestartFor = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // YT: a start may choose the design, e.g. an emulator run: am start ... --es yt_design pop
@@ -69,6 +77,35 @@ open class BaseActivity : AppCompatActivity() {
         // put the design back on top (this was why light designs showed the base colors)
         ThemeHelper.applyOverlays(this)
     }
+
+    override fun onResume() {
+        super.onResume()
+        ytApplyNewLook()
+    }
+
+    /**
+     * YT: a design, theme or animation setting changed while this activity waited in the
+     * background; rebuild it so it shows the new look, instead of restarting the app. Where
+     * that is not safe right now (see [ytCanRecreateNow]), ask once for the restart as before.
+     */
+    private fun ytApplyNewLook() {
+        val now = YtThemeRefresh.generation
+        if (!YtThemeRefresh.isStale(ytThemeGeneration)) return
+        if (ytCanRecreateNow()) {
+            ytThemeGeneration = now
+            recreate()
+        } else if (ytAskedRestartFor != now) {
+            ytAskedRestartFor = now
+            RequireRestartDialog().show(supportFragmentManager, RequireRestartDialog::class.java.name)
+        }
+    }
+
+    /**
+     * YT: whether a recreate keeps what the user is doing. Not while YT's floating window or
+     * picture-in-picture shows the video: both hang on this activity's player.
+     */
+    protected open fun ytCanRecreateNow(): Boolean =
+        !com.github.libretube.ui.yt.YtFloatingPlayer.isShowing && !isInPictureInPictureMode
 
     override fun onNightModeChanged(mode: Int) {
         super.onNightModeChanged(mode)

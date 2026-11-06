@@ -9,6 +9,8 @@
     <string name="yt_design_motion">Animationen der Designs</string>
     <string name="yt_design_motion_summary">Bewegungen und Übergänge der Designs. Aus: direkte Wechsel.</string>
     <string name="yt_design_standard">Standard (YT)</string>
+    <string name="yt_design_fixed_light">%1$s · hell, Farben und Modus gibt das Design vor</string>
+    <string name="yt_design_fixed_dark">%1$s · dunkel, Farben und Modus gibt das Design vor</string>
     <string name="yt_design_youtube">YouTube neu gedacht</string>
     <string name="yt_design_movo">Movo: spielerisch, modular</string>
     <string name="yt_design_after">After: filmisch, warm</string>
