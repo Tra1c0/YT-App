@@ -238,9 +238,12 @@ fun LiquidSegments(
     BoxWithConstraints(modifier) {
         val gapPx = with(density) { look.gap.toPx() }
         val heightPx = with(density) { look.height.roundToPx() }
-        val free = constraints.maxWidth - gapPx * (count - 1)
-        val total = weights.sum()
-        val widths = weights.map { free * it / total }
+        // The width can be 0 for a frame (e.g. while a row animates in), so nothing here
+        // may go below 0: a negative segment width crashes Constraints.fixed.
+        val maxWidth = if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth
+        val free = (maxWidth - gapPx * (count - 1)).coerceAtLeast(0f)
+        val total = weights.sum().takeIf { it > 0f } ?: 1f
+        val widths = weights.map { (free * it / total).coerceAtLeast(0f) }
         val starts = widths.runningFold(0f) { x, w -> x + w + gapPx }
         val step = free / count + gapPx
 
@@ -326,8 +329,8 @@ fun LiquidSegments(
             Modifier
                 .layout { measurable, constraints ->
                     val (x, w) = lens()
-                    val placeable = measurable.measure(Constraints.fixed(w.fastRoundToInt(), heightPx))
-                    layout(constraints.maxWidth, heightPx) { placeable.place(x.fastRoundToInt(), 0) }
+                    val placeable = measurable.measure(Constraints.fixed(w.fastRoundToInt().coerceAtLeast(0), heightPx))
+                    layout(maxWidth, heightPx) { placeable.place(x.fastRoundToInt(), 0) }
                 }
                 .then(highlight.gestureModifier)
                 .then(drop.modifier)
@@ -364,7 +367,8 @@ fun LiquidSegments(
 
 /** Fills the width of the control at its height (the box has no size of its own). */
 private fun Modifier.matchParentSizeCompat(heightPx: Int): Modifier = this.layout { measurable, constraints ->
-    val placeable = measurable.measure(Constraints.fixed(constraints.maxWidth, heightPx))
+    val width = if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth
+    val placeable = measurable.measure(Constraints.fixed(width, heightPx))
     layout(placeable.width, placeable.height) { placeable.place(0, 0) }
 }
 
@@ -373,8 +377,9 @@ private fun SegmentStrip(count: Int, widths: List<Float>, starts: List<Float>, h
     Layout(
         content = { repeat(count) { i -> Box(propagateMinConstraints = true) { content(i) } } },
     ) { measurables, constraints ->
-        val placeables = measurables.mapIndexed { i, m -> m.measure(Constraints.fixed(widths[i].fastRoundToInt(), heightPx)) }
-        layout(constraints.maxWidth, heightPx) {
+        val placeables = measurables.mapIndexed { i, m -> m.measure(Constraints.fixed(widths[i].fastRoundToInt().coerceAtLeast(0), heightPx)) }
+        val width = if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth
+        layout(width, heightPx) {
             placeables.forEachIndexed { i, p -> p.place(starts[i].fastRoundToInt(), 0) }
         }
     }
