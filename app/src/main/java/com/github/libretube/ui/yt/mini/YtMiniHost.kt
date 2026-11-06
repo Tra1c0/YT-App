@@ -556,6 +556,16 @@ class YtMiniHost private constructor(
             y >= p.top + p.translationY - slop && y <= p.bottom + p.translationY + slop
     }
 
+    /** [x], [y] (the page's coordinates) as shares of the picture's width and height. */
+    private fun pressAt(x: Float, y: Float): androidx.compose.ui.geometry.Offset {
+        val p = binding.player
+        if (p.width <= 0 || p.height <= 0) return androidx.compose.ui.geometry.Offset.Unspecified
+        return androidx.compose.ui.geometry.Offset(
+            ((x - p.left - p.translationX) / p.width).coerceIn(0f, 1f),
+            ((y - p.top - p.translationY) / p.height).coerceIn(0f, 1f),
+        )
+    }
+
     /** A long press on the docked picture: the preview grows. False if it does not start. */
     fun peekStart(x: Float, y: Float): Boolean {
         if (!design.peeks || !YtMiniPrefs.peek) return false
@@ -566,6 +576,7 @@ class YtMiniHost private constructor(
             peekFull = false
             peekFrom = partAt(x, y)
             peekArmed = false
+            scene.press = pressAt(x, y)
             holdBack()
             play(YtMoment.PEEK_START)
             animatePeek(1f, design.motion.peekStiffness, design.motion.peekDamping)
@@ -592,6 +603,7 @@ class YtMiniHost private constructor(
         peekArmed = false
         scene.peekLayout = layout
         scene.target = YtMiniTarget.NONE
+        scene.press = pressAt(x, y)
         peekActive = true
         peekHeld = true
         peekFull = false
@@ -702,6 +714,7 @@ class YtMiniHost private constructor(
         peekLayout = null
         scene.peekLayout = null
         scene.target = YtMiniTarget.NONE
+        scene.press = androidx.compose.ui.geometry.Offset.Unspecified
         YtDock.peek = 0f
         YtDock.slabPx = extentPx
         if (motion.isAttachedToWindow) {
