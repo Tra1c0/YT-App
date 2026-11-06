@@ -39,6 +39,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.github.libretube.R
 import com.github.libretube.databinding.FragmentPlayerBinding
 import com.github.libretube.extensions.toID
+import com.github.libretube.helpers.NavBarHelper
 import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.ui.views.SingleViewTouchableMotionLayout
 import com.github.libretube.ui.yt.YtDock
@@ -338,6 +339,20 @@ class YtMiniHost private constructor(
         val bounds = android.graphics.Rect(windowAt[0], windowAt[1], windowAt[0] + box.width, windowAt[1] + box.height)
         YtDrag.miniBounds = bounds
         YtTestHooks.log("YtMini") { "bounds ${bounds.left} ${bounds.top} ${bounds.right} ${bounds.bottom}" }
+        logDockCheck(bounds.bottom)
+    }
+
+    /**
+     * For the emulator check (scripts/gestures/b.sh): how far the docked box's foot is from its
+     * place on the bar, each time the box moves (the last line is where it rests).
+     */
+    private fun logDockCheck(boxBottom: Int) {
+        if (!YtTestHooks.gestureLog) return
+        val bar = fragment.activity?.findViewById<View>(R.id.bottomNav) ?: return
+        if (!bar.isShown || bar.height == 0 || !NavBarHelper.hasTabs()) return
+        val at = IntArray(2)
+        bar.getLocationInWindow(at)
+        YtTestHooks.log("YtMini") { YtDockMath.checkLine(boxBottom, at[1], YtMiniPlayer.containerDockPx) }
     }
 
     private val boundsCheck = ViewTreeObserver.OnPreDrawListener {
@@ -406,6 +421,7 @@ class YtMiniHost private constructor(
             override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
                 val mini = currentId == R.id.end
                 YtMiniPlayer.keepDock()
+                if (YtDockMath.clearsOffsets(YtMinimizeModule.dragging, YtMinimizeModule.closing)) clearOffsets()
                 under.alpha = if (mini) 1f else 0f
                 over?.alpha = if (mini) 1f else 0f
                 YtDock.docked = mini
@@ -425,6 +441,22 @@ class YtMiniHost private constructor(
                 }
             }
         })
+    }
+
+    /**
+     * The views at rest where the transition lays them out. MotionLayout never resets a
+     * translation it does not animate itself, so whatever a landing or a drop reaction was
+     * cut off in, or a drag's sideways offset that no release took back, would stay on the box
+     * and the picture (the mini player off its place beside or under the bar). The landing that
+     * follows starts from here.
+     */
+    private fun clearOffsets() {
+        landing?.cancel()
+        reaction?.cancel()
+        for (view in views().all) {
+            view.translationX = 0f
+            view.translationY = 0f
+        }
     }
 
     /** The page's host is there: gestures, the next video, the drop target's feedback. */
@@ -750,6 +782,14 @@ class YtMiniHost private constructor(
             // the end set), so switching back keeps it docked
             motion.progress = 0f
             motion.setTransition(R.id.yt_transition)
+            // a progress the switch did not take for docked (the spring stopped a little before
+            // 0, the state not yet updated) would leave the box between the two sets
+            if (motion.currentState != R.id.end) motion.progress = 1f
+        } else {
+            // a detached MotionLayout keeps both for when it is attached again: the minimize
+            // transition, docked; it would otherwise come back on the preview's transition
+            motion.setTransition(R.id.yt_transition)
+            motion.progress = 1f
         }
         // the switch is applied in the next frames; until then the page's listeners stay muted
         motion.postOnAnimation {

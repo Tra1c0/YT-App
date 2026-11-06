@@ -186,6 +186,17 @@ class MainActivity : AbstractPlayerHostActivity() {
                 }
             }
             binding.root.scene.setTransition(transition)
+            // YT: the keyframes are read only when the transition sets up its views, which
+            // happened in the measure before this layout: at rest (a docked player, no player)
+            // the container would keep the shift of the old bar height until the next minimize,
+            // so the docked player sat in or under the bar after the bar changed its height
+            // (back from picture-in-picture, rotation, the bar's first composition, insets that
+            // came late). Moved to the new keyframes once the layout pass is over.
+            val keys = binding.bottomNav.height to com.github.libretube.ui.yt.YtMiniPlayer.containerDockPx
+            if (keys != containerKeys) {
+                containerKeys = keys
+                binding.root.post { applyContainerKeys() }
+            }
         }
 
         // Check update automatically
@@ -828,6 +839,20 @@ class MainActivity : AbstractPlayerHostActivity() {
 
     override fun maximizePlayerContainerLayout() {
         binding.mainMotionLayout.transitionToStart()
+    }
+
+    // YT: the bar height and dock offset the container's keyframes were last written with
+    private var containerKeys: Pair<Int, Int>? = null
+
+    /** YT: the views of the activity's transition where its keyframes now put them. */
+    private fun applyContainerKeys() {
+        val motion = binding.mainMotionLayout
+        if (!motion.isAttachedToWindow || isFinishing) return
+        androidx.constraintlayout.motion.widget.YtMotionAccess.reapply(motion)
+        com.github.libretube.ui.yt.YtTestHooks.log("YtMini") {
+            "dock keys bar=${binding.bottomNav.height} dock=${com.github.libretube.ui.yt.YtMiniPlayer.containerDockPx} " +
+                "shift=${binding.container.translationY.toInt()} p=${motion.progress}"
+        }
     }
 
     override fun setPlayerContainerProgress(progress: Float) {
