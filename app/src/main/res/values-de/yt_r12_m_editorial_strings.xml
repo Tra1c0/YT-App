@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Editorial mini player ("Druckspalte"): the preview's skybox and play slip, the drop label -->
+    <string name="yt_mini_editorial_next">Nächstes</string>
+    <string name="yt_mini_editorial_pause">Pause</string>
+    <string name="yt_mini_editorial_play">Weiter</string>
+    <string name="yt_mini_editorial_drop_next">Als Nächstes</string>
+    <string name="yt_mini_editorial_drop_end">Am Ende · Nr. %1$s</string>
+</resources>
