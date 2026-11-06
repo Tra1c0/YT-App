@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: round 12, the Movo mini player. Same keys in the same order in values and values-de. -->
+<resources>
+    <!-- The small lime tile of the long-press preview: how many videos are still to come. -->
+    <string name="yt_mini_movo_queue">Queue: %1$d</string>
+</resources>
