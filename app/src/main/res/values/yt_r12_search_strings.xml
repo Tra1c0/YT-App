@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: round 12, the search of the designs (ui/yt/search). Same keys in the same order in values and values-de. -->
+<resources>
+    <string name="yt_r12_search_category">Search</string>
+    <string name="yt_r12_search_entry">Own search per design</string>
+    <string name="yt_r12_search_entry_summary">The search opens over the screen in the look of the design, with your past searches and suggestions. Off: the search field in the top bar</string>
+
+    <!-- the field -->
+    <string name="yt_r12_search_hint">Search</string>
+    <string name="yt_r12_search_back">Close search</string>
+    <string name="yt_r12_search_clear">Clear search text</string>
+
+    <!-- the lines under the field: what a tap, a long press and TalkBack's actions do -->
+    <string name="yt_r12_search_run">Search</string>
+    <string name="yt_r12_search_fill">Put into the search field</string>
+    <string name="yt_r12_search_delete">Delete from search history</string>
+    <string name="yt_r12_search_history">Recent searches</string>
+    <string name="yt_r12_search_empty">No searches yet. Type to see suggestions.</string>
+    <string name="yt_r12_search_no_suggestions">No suggestions. Search anyway with the search key.</string>
+
+    <!-- Side: the app asks, the field is your answer -->
+    <string name="yt_r12_search_side_prompt">What are you looking for?</string>
+
+    <!-- YouTube neu: the filters of the results, picked before searching -->
+    <string name="yt_r12_search_filter_all">All</string>
+    <string name="yt_r12_search_filter_videos">Videos</string>
+    <string name="yt_r12_search_filter_channels">Channels</string>
+    <string name="yt_r12_search_filter_playlists">Playlists</string>
+    <string name="yt_r12_search_filter_songs">Songs</string>
+</resources>

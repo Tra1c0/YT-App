@@ -604,7 +604,7 @@ for design in $DESIGNS; do
     sleep 5
     timeout 20 adb exec-out screencap -p > "screens/$design-3-mini.png" || true
   fi
-  # round 12: the gesture checks of the packages (scripts/gestures/a.sh ... f.sh, helpers in lib.sh),
+  # round 12: the gesture checks of the packages (scripts/gestures/a.sh ... f.sh and search.sh, helpers in lib.sh),
   # with the animations on as on a phone; the runner turns them off for everything else
   if [ "${YT_GESTURES:-no}" = "yes" ]; then
     mkdir -p screens
@@ -616,7 +616,7 @@ for design in $DESIGNS; do
     . scripts/gestures/lib.sh
     anim_on
     # shellcheck source=/dev/null
-    for f in scripts/gestures/[a-f].sh; do . "$f"; done
+    for f in scripts/gestures/[a-f].sh scripts/gestures/search.sh; do . "$f"; done
     anim_off
     rm -f screens/*.raw
     echo "gesture checks failed: $gesture_fails"

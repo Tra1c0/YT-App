@@ -33,6 +33,7 @@ class YtInteractionSettings : BasePreferenceFragment() {
             R.xml.yt_r12_c_prefs,
             R.xml.yt_r12_d_prefs,
             R.xml.yt_r12_e_prefs,
+            R.xml.yt_r12_search_prefs,
         )
     }
 }
