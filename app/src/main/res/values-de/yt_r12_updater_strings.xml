@@ -20,7 +20,11 @@
     <string name="yt_update_error_no_permission">YT darf keine Apps installieren.</string>
     <string name="yt_update_error_install">Installation fehlgeschlagen: %1$s</string>
     <string name="yt_update_error_aborted">Installation abgebrochen.</string>
-    <string name="yt_update_unsure">Wird installiert… Android hat es noch nicht bestätigt (%1$s). Fragt Play Protect nach, wähle „Trotzdem installieren“; YT öffnet sich wieder, sobald das Update drin ist. Passiert nichts, versuche es erneut.</string>
+    <string name="yt_update_installing_hint">Wird installiert… Prüft Play Protect die App, warte das Ergebnis ab und tippe dort auf „Installieren“.</string>
+    <string name="yt_update_retrying">Neuer Versuch (%1$d von %2$d)… Bestätige gleich mit „Aktualisieren“.</string>
+    <string name="yt_update_retrying_play_protect">Play Protect hat die Installation unterbrochen. Neuer Versuch (%1$d von %2$d)…</string>
+    <string name="yt_update_system_installer">Der Android-Installer übernimmt. Tippe dort auf „Installieren“ bzw. „Aktualisieren“; danach bringt dich eine Mitteilung zurück zu YT.</string>
+    <string name="yt_update_open_installer">Mit dem Android-Installer öffnen</string>
     <string name="yt_update_channel_name">App-Updates</string>
     <string name="yt_update_channel_description">Update bestätigen und YT danach wieder öffnen</string>
     <string name="yt_update_ready_title">YT-Update bereit – tippen zum Installieren</string>

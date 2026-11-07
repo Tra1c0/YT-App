@@ -66,17 +66,54 @@ class YtUpdateRulesTest {
         assertFalse(YtUpdateRules.sameSigners(emptySet(), emptySet()))
     }
 
+    private fun step(status: Int, message: String? = null, retries: Int = 0, apk: Boolean = true) =
+        YtUpdateRules.nextStep(status, message, retries, apk)
+
     @Test
-    fun `only definite install failures say failed`() {
-        assertEquals(YtUpdateRules.InstallVerdict.DONE, YtUpdateRules.installVerdict(0))
-        assertEquals(YtUpdateRules.InstallVerdict.CONFIRM, YtUpdateRules.installVerdict(-1))
-        assertEquals(YtUpdateRules.InstallVerdict.ABORTED, YtUpdateRules.installVerdict(3))
-        // Play Protect: blocked, a plain failure or a timeout may still end installed
-        assertEquals(YtUpdateRules.InstallVerdict.UNSURE, YtUpdateRules.installVerdict(1))
-        assertEquals(YtUpdateRules.InstallVerdict.UNSURE, YtUpdateRules.installVerdict(2))
-        assertEquals(YtUpdateRules.InstallVerdict.UNSURE, YtUpdateRules.installVerdict(8))
-        assertEquals(YtUpdateRules.InstallVerdict.UNSURE, YtUpdateRules.installVerdict(42))
-        for (status in 4..7) assertEquals(YtUpdateRules.InstallVerdict.FAILED, YtUpdateRules.installVerdict(status))
+    fun `success and confirm pass through`() {
+        assertEquals(YtUpdateRules.NextStep.DONE, step(0))
+        assertEquals(YtUpdateRules.NextStep.CONFIRM, step(-1))
+        assertEquals(YtUpdateRules.NextStep.DONE, step(0, retries = 5, apk = false))
+    }
+
+    @Test
+    fun `a session ended around Play Protect is retried, then the system installer takes over`() {
+        for (status in listOf(1, 2, 3, 4, 5, 7, 8, 42)) {
+            assertEquals(YtUpdateRules.NextStep.RETRY, step(status, "INSTALL_FAILED_VERIFICATION_FAILURE", 0))
+            assertEquals(YtUpdateRules.NextStep.RETRY, step(status, null, 1))
+            assertEquals(YtUpdateRules.NextStep.SYSTEM_INSTALLER, step(status, null, 2))
+            assertEquals(YtUpdateRules.NextStep.SYSTEM_INSTALLER, step(status, null, 9))
+        }
+        // an abandoned session is no "no" from the user
+        assertEquals(YtUpdateRules.NextStep.RETRY, step(3, "INSTALL_FAILED_ABORTED: Session was abandoned"))
+    }
+
+    @Test
+    fun `only a definite end says failed`() {
+        assertEquals(YtUpdateRules.NextStep.FAILED, step(6))
+        assertEquals(YtUpdateRules.NextStep.FAILED, step(2, apk = false))
+        assertEquals(YtUpdateRules.NextStep.FAILED, step(1, retries = 2, apk = false))
+        assertEquals(
+            YtUpdateRules.NextStep.DECLINED,
+            step(3, "INSTALL_FAILED_ABORTED: User rejected permissions")
+        )
+        // a rejection message with another status is not the confirm dialog
+        assertEquals(YtUpdateRules.NextStep.RETRY, step(2, "rejected by verifier"))
+    }
+
+    @Test
+    fun `play protect and stale sessions`() {
+        assertTrue(YtUpdateRules.playProtectInvolved(2, null, null))
+        assertTrue(YtUpdateRules.playProtectInvolved(3, -22, null))
+        assertTrue(YtUpdateRules.playProtectInvolved(3, -23, null))
+        assertTrue(YtUpdateRules.playProtectInvolved(1, null, "INSTALL_FAILED_VERIFICATION_TIMEOUT"))
+        assertFalse(YtUpdateRules.playProtectInvolved(3, -115, "Session was abandoned"))
+
+        assertTrue(YtUpdateRules.isStale(4, 5))
+        assertFalse(YtUpdateRules.isStale(5, 5))
+        assertFalse(YtUpdateRules.isStale(null, 5))
+        assertFalse(YtUpdateRules.isStale(-1, 5))
+        assertFalse(YtUpdateRules.isStale(4, null))
     }
 
     @Test
@@ -84,6 +121,8 @@ class YtUpdateRulesTest {
         assertEquals(android.content.pm.PackageInstaller.STATUS_FAILURE_BLOCKED, YtUpdateRules.STATUS_FAILURE_BLOCKED)
         assertEquals(android.content.pm.PackageInstaller.STATUS_FAILURE_TIMEOUT, YtUpdateRules.STATUS_FAILURE_TIMEOUT)
         assertEquals(android.content.pm.PackageInstaller.STATUS_PENDING_USER_ACTION, YtUpdateRules.STATUS_PENDING_USER_ACTION)
+        assertEquals(android.content.pm.PackageInstaller.STATUS_FAILURE_ABORTED, YtUpdateRules.STATUS_FAILURE_ABORTED)
+        assertEquals(android.content.pm.PackageInstaller.STATUS_FAILURE_STORAGE, YtUpdateRules.STATUS_FAILURE_STORAGE)
     }
 }
 

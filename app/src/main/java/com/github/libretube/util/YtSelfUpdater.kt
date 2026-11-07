@@ -14,6 +14,7 @@ import android.util.Log
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.FileProvider
 import androidx.core.content.IntentCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
@@ -26,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,17 +54,27 @@ object YtSelfUpdater {
         data object Idle : State
         data class Downloading(val bytes: Long, val total: Long) : State
         data object Verifying : State
-        data object Installing : State
-        /** Android wants the user to confirm; [confirm] opens its dialog again. */
-        data class WaitingForUser(val confirm: Intent) : State
-        data class Failed(val message: String) : State
 
         /**
-         * Android ended the session without a clear verdict (see [YtUpdateRules.InstallVerdict.UNSURE]):
-         * Play Protect may still install it. Shown neutral; [detail] is the system's message.
+         * A session is written or waits for Android (and Play Protect). [attempt] counts from 1 to
+         * [attempts]; [playProtect] says the previous try ended while Play Protect checked the APK.
          */
-        data class Unsure(val detail: String) : State
+        data class Installing(
+            val attempt: Int = 1,
+            val attempts: Int = 1 + YtUpdateRules.MAX_AUTO_RETRIES,
+            val playProtect: Boolean = false,
+        ) : State
+
+        /** Android wants the user to confirm; [confirm] opens its dialog again. */
+        data class WaitingForUser(val confirm: Intent) : State
+
+        /** The sessions did not get through; [open] hands the verified APK to Android's installer. */
+        data class SystemInstaller(val open: Intent) : State
+
+        data class Failed(val message: String) : State
     }
+
+    private const val APK_MIME = "application/vnd.android.package-archive"
 
     const val ACTION_INSTALL_STATUS = "app.tra1c0.yt.action.UPDATE_INSTALL_STATUS"
 
@@ -72,12 +84,27 @@ object YtSelfUpdater {
     private const val CHANNEL_ID = "yt_app_update"
     private const val NOTIFICATION_ID = 0x7955
     private const val RESTART_WINDOW_MS = 60 * 60 * 1000L
+    private const val KEY_LAST_RESULT = "last_result"
+    private const val EXTRA_LEGACY_STATUS = "android.content.pm.extra.LEGACY_STATUS"
+
+    // gives Play Protect's window time to close before the next confirm dialog opens
+    private const val RETRY_DELAY_MS = 1500L
 
     private val _state = MutableStateFlow<State>(State.Idle)
     val state: StateFlow<State> = _state.asStateFlow()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var job: Job? = null
+
+    /** The try for the current download (1 = first session) and the session committed last. */
+    @Volatile private var attempt = 1
+    @Volatile private var currentSessionId: Int? = null
+
+    /** A confirm or installer screen that could not be opened from the background yet. */
+    @Volatile private var pendingLaunch: Intent? = null
+
+    /** Sessions that already ended; a repeated status of one of them must not start another try. */
+    private val finishedSessions = mutableSetOf<Int>()
 
     // A plain client: the shared one logs whole bodies in debug builds, which would buffer the APK.
     private val client by lazy {
@@ -101,7 +128,18 @@ object YtSelfUpdater {
     /** A failure shown once stays until the next attempt; a fresh dialog starts clean. */
     fun clearFailure() {
         val now = _state.value
-        if (now is State.Failed || now is State.Unsure) _state.value = State.Idle
+        if (now is State.Failed) _state.value = State.Idle
+    }
+
+    /**
+     * Opens a confirm or installer screen that arrived while YT was in the background; called by
+     * the dialog when it is in front again.
+     */
+    fun launchPending(context: Context) {
+        val intent = pendingLaunch ?: return
+        pendingLaunch = null
+        runCatching { context.startActivity(intent) }
+            .onFailure { Log.w(TAG, "could not open the installer", it) }
     }
 
     @Synchronized
@@ -109,13 +147,16 @@ object YtSelfUpdater {
         if (job?.isActive == true || isBusy()) return
         val app = context.applicationContext
         _state.value = State.Downloading(0, asset.size)
+        attempt = 1
+        currentSessionId = null
+        pendingLaunch = null
         job = scope.launch {
             val file = File(updateDir(app), "update.apk")
             try {
                 val sha256 = download(asset, file)
                 _state.value = State.Verifying
                 verify(app, asset, file, sha256)
-                _state.value = State.Installing
+                _state.value = State.Installing()
                 install(app, file)
             } catch (e: CancellationException) {
                 file.delete()
@@ -149,6 +190,8 @@ object YtSelfUpdater {
     }
 
     private fun updateDir(context: Context) = File(context.cacheDir, "update")
+
+    private fun apkFile(context: Context) = File(updateDir(context), "update.apk")
 
     /** Streams the APK into [file] and returns its SHA-256 in hex. */
     private suspend fun download(asset: UpdateAsset, file: File): String {
@@ -247,11 +290,14 @@ object YtSelfUpdater {
             setSize(file.length())
             setInstallReason(PackageManager.INSTALL_REASON_USER)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                // Android may then update without asking (an app updating itself, 12 and newer)
-                setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+                // Always Android's own confirm dialog: without it (USER_ACTION_NOT_REQUIRED) Play
+                // Protect checked the update outside any dialog, and the session ended after its
+                // "Install" without Android ever asking the user (user report, round 15).
+                setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED)
             }
         }
         val sessionId = installer.createSession(params)
+        currentSessionId = sessionId
         try {
             installer.openSession(sessionId).use { session ->
                 session.openWrite("base.apk", 0, file.length()).use { output ->
@@ -281,38 +327,128 @@ object YtSelfUpdater {
     fun onInstallStatus(context: Context, intent: Intent) {
         val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
         val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "status $status"
-        Log.i(TAG, "install status $status: $message")
-        when (YtUpdateRules.installVerdict(status)) {
-            YtUpdateRules.InstallVerdict.CONFIRM -> {
+        val legacy = intent.getIntExtra(EXTRA_LEGACY_STATUS, 0).takeIf { it != 0 }
+        val sessionId = intent.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1)
+        val line = "session $sessionId try $attempt: status $status legacy $legacy: $message"
+        Log.i(TAG, line)
+        // kept for the next report: the system's own words about the last try
+        prefs(context).edit { putString(KEY_LAST_RESULT, line) }
+        if (YtUpdateRules.isStale(sessionId, currentSessionId) || sessionId in finishedSessions) return
+        if (status != PackageInstaller.STATUS_PENDING_USER_ACTION && sessionId >= 0) {
+            finishedSessions += sessionId
+        }
+
+        val step = YtUpdateRules.nextStep(
+            status = status,
+            message = message,
+            retriesDone = attempt - 1,
+            apkAvailable = apkFile(context).isFile
+        )
+        when (step) {
+            YtUpdateRules.NextStep.CONFIRM -> {
                 val confirm = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_INTENT, Intent::class.java)
                 if (confirm == null) {
-                    fail(context, context.getString(R.string.yt_update_error_install, "no confirmation"))
+                    // nothing to show the user, so treat it like a session that did not get through
+                    afterUnfinished(context, status, legacy, message)
                     return
                 }
                 confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 _state.value = State.WaitingForUser(confirm)
-                // from the background Android would drop the start; a notification works there
-                val started = isForeground() && runCatching { context.startActivity(confirm) }.isSuccess
-                if (!started) {
-                    notify(context, context.getString(R.string.yt_update_ready_title), confirm)
-                }
+                show(context, confirm)
             }
-            YtUpdateRules.InstallVerdict.DONE -> {
+            YtUpdateRules.NextStep.DONE -> {
                 // an update of YT itself ends the process before this; anything else lands here
                 _state.value = State.Idle
+                pendingLaunch = null
                 updateDir(context).deleteRecursively()
             }
-            YtUpdateRules.InstallVerdict.ABORTED ->
+            YtUpdateRules.NextStep.DECLINED ->
                 fail(context, context.getString(R.string.yt_update_error_aborted))
-            YtUpdateRules.InstallVerdict.FAILED ->
+            YtUpdateRules.NextStep.FAILED ->
                 fail(context, context.getString(R.string.yt_update_error_install, message))
-            // Play Protect may still install it: keep the restart marker so the new version
-            // opens again, and say nothing about failing
-            YtUpdateRules.InstallVerdict.UNSURE -> _state.value = State.Unsure(message)
+            YtUpdateRules.NextStep.RETRY, YtUpdateRules.NextStep.SYSTEM_INSTALLER ->
+                afterUnfinished(context, status, legacy, message, step)
         }
     }
 
+    /** A session ended without installing: a fresh session, or Android's own installer. */
+    private fun afterUnfinished(
+        context: Context,
+        status: Int,
+        legacy: Int?,
+        message: String,
+        step: YtUpdateRules.NextStep = YtUpdateRules.nextStep(
+            status = YtUpdateRules.STATUS_FAILURE,
+            message = message,
+            retriesDone = attempt - 1,
+            apkAvailable = apkFile(context).isFile
+        ),
+    ) {
+        val app = context.applicationContext
+        when (step) {
+            YtUpdateRules.NextStep.RETRY -> {
+                attempt += 1
+                currentSessionId = null
+                _state.value = State.Installing(
+                    attempt = attempt,
+                    playProtect = YtUpdateRules.playProtectInvolved(status, legacy, message)
+                )
+                job = scope.launch {
+                    delay(RETRY_DELAY_MS)
+                    try {
+                        install(app, apkFile(app))
+                    } catch (e: UpdateError) {
+                        // the session could not even be written: straight to Android's installer
+                        Log.w(TAG, "retry failed", e)
+                        openSystemInstaller(app, e.message.orEmpty())
+                    }
+                }
+            }
+            YtUpdateRules.NextStep.SYSTEM_INSTALLER -> openSystemInstaller(app, message)
+            else -> fail(app, app.getString(R.string.yt_update_error_install, message))
+        }
+    }
+
+    /**
+     * The last way: the verified APK goes to Android's installer through the FileProvider, the
+     * same path as opening a downloaded APK, which Play Protect handles like any sideload.
+     */
+    private fun openSystemInstaller(context: Context, message: String) {
+        val file = apkFile(context)
+        val uri = runCatching {
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        }.getOrNull()
+        if (!file.isFile || uri == null) {
+            fail(context, context.getString(R.string.yt_update_error_install, message))
+            return
+        }
+        val open = Intent(Intent.ACTION_VIEW)
+            .setDataAndType(uri, APK_MIME)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (open.resolveActivity(context.packageManager) == null) {
+            fail(context, context.getString(R.string.yt_update_error_install, message))
+            return
+        }
+        // the replace that follows is still ours: keep the marker for the "updated" notification
+        prefs(context).edit(commit = true) { putLong(KEY_COMMITTED_AT, System.currentTimeMillis()) }
+        _state.value = State.SystemInstaller(open)
+        show(context, open)
+    }
+
+    /** Opens [target] now when YT is in front, else via a notification and on the next resume. */
+    private fun show(context: Context, target: Intent) {
+        // from the background Android would drop the start; a notification works there
+        val started = isForeground() && runCatching { context.startActivity(target) }.isSuccess
+        pendingLaunch = if (started) null else target
+        if (!started) notify(context, context.getString(R.string.yt_update_ready_title), target)
+    }
+
+    /** The system's words about the last install try ("session 12 try 2: status 3 …"). */
+    fun lastResult(context: Context): String? = prefs(context).getString(KEY_LAST_RESULT, null)
+
     private fun fail(context: Context, message: String) {
+        pendingLaunch = null
+        currentSessionId = null
         prefs(context).edit { remove(KEY_COMMITTED_AT) }
         updateDir(context).deleteRecursively()
         _state.value = State.Failed(message)

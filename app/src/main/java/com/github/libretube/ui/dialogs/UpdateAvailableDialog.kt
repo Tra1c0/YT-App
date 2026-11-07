@@ -89,6 +89,8 @@ class UpdateAvailableDialog : DialogFragment() {
             awaitingPermission = false
             asset?.let { YtSelfUpdater.start(requireContext(), it) }
         }
+        // a confirm or installer screen that came while YT was in the background
+        YtSelfUpdater.launchPending(requireContext())
         render(YtSelfUpdater.state.value)
     }
 
@@ -101,6 +103,10 @@ class UpdateAvailableDialog : DialogFragment() {
         val state = YtSelfUpdater.state.value
         if (state is State.WaitingForUser) {
             runCatching { startActivity(state.confirm) }
+            return
+        }
+        if (state is State.SystemInstaller) {
+            runCatching { startActivity(state.open) }
             return
         }
         val asset = asset
@@ -180,8 +186,15 @@ class UpdateAvailableDialog : DialogFragment() {
                 indeterminate(R.string.yt_update_verifying)
                 buttons(null, null, background = true)
             }
-            State.Installing -> {
+            is State.Installing -> {
                 indeterminate(R.string.yt_update_installing)
+                status.text = when {
+                    state.attempt <= 1 -> getString(R.string.yt_update_installing_hint)
+                    state.playProtect -> getString(
+                        R.string.yt_update_retrying_play_protect, state.attempt, state.attempts
+                    )
+                    else -> getString(R.string.yt_update_retrying, state.attempt, state.attempts)
+                }
                 buttons(null, null, background = true)
             }
             is State.WaitingForUser -> {
@@ -190,12 +203,12 @@ class UpdateAvailableDialog : DialogFragment() {
                 status.setText(R.string.yt_update_confirm)
                 buttons(R.string.yt_update_install, null, background = true)
             }
-            is State.Unsure -> {
-                // neutral: Play Protect often reports a failure and then installs it anyway
+            is State.SystemInstaller -> {
+                // neutral: the sessions did not get through, Android's installer takes over
                 progress.visibility = View.GONE
                 status.visibility = View.VISIBLE
-                status.text = getString(R.string.yt_update_unsure, state.detail)
-                buttons(R.string.yt_update_retry, R.string.tooltip_dismiss, background = false)
+                status.setText(R.string.yt_update_system_installer)
+                buttons(R.string.yt_update_open_installer, R.string.tooltip_dismiss, background = false)
             }
             is State.Failed -> {
                 progress.visibility = View.GONE
