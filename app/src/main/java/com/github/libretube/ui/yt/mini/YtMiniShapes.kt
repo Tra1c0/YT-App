@@ -45,6 +45,16 @@ object YtMiniShapes : YtMiniLookDesign(YtDesign.SHAPES) {
     override val dip: Float get() = 2f
     override val peekGrowth: Float get() = YtShapesLayout.GROWTH
 
+    /**
+     * The window paints the body colour over the picture: a translucent body or mask would let
+     * the picture's rectangle (and the screen behind the body) show through while the player is
+     * dragged between page and bar. The mask stays opaque and fades by its own shape (it matches
+     * the picture's rounded outline until the cookie turns in), the body is opaque before the
+     * cookie appears.
+     */
+    override fun underAlpha(progress: Float): Float = YtShapesLayout.underAlpha(progress)
+    override fun overAlpha(progress: Float): Float = YtShapesLayout.overAlpha(progress)
+
     /** The night blue of the body and the bar: the window's frame is painted in it. */
     val body = Color(0xFF1E1D44)
 

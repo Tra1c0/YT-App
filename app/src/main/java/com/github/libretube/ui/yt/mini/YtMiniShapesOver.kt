@@ -219,6 +219,7 @@ internal fun ShapesOver(design: YtMiniShapes, scene: YtMiniScene) {
     val hole = remember { Path() }
     val cover = remember { Path() }
     val wave = remember { Path() }
+    val ringPath = remember { Path() }
     val cookie = remember { Path() }
 
     Canvas(Modifier.fillMaxSize().clearAndSetSemantics {}) {
@@ -255,7 +256,9 @@ internal fun ShapesOver(design: YtMiniShapes, scene: YtMiniScene) {
             hole.close()
             cover.reset()
             cover.fillType = PathFillType.EvenOdd
-            cover.addRect(Rect(-1f, -1f, w + 1f, h + 1f))
+            // past the picture's edges on every side: the mask covers all of the picture's
+            // rectangle outside the cookie (the layer is clipped to the picture's outline)
+            cover.addRect(Rect(-w, -h, 2f * w, 2f * h))
             cover.addPath(hole)
             drawPath(cover, body)
 
@@ -268,11 +271,22 @@ internal fun ShapesOver(design: YtMiniShapes, scene: YtMiniScene) {
             // 3: the lime wave of progress around the cookie, from the top, clockwise
             val shown = shape.cookie * YtShapesWindow.smoothstep(0.85f, 1f, progress)
             if (shown > 0.01f) {
-                val base = min(a, b) * YtShapesLayout.COOKIE_SCALE + YtShapesLayout.RING_GAP * density
-                drawCircle(
+                // the track runs around the cookie's own ellipse (from this frame's size, as the
+                // window does), so it stays on the cookie when the picture is not square
+                val gap = YtShapesLayout.RING_GAP * density
+                ringPath.reset()
+                val steps = YtShapesLayout.POINTS
+                for (k in 0..steps) {
+                    val angle = 2f * PI.toFloat() * k / steps
+                    val radius = YtShapesWindow.ringBase(angle, a, b, gap)
+                    val x = center.x + radius * sin(angle)
+                    val y = center.y - radius * cos(angle)
+                    if (k == 0) ringPath.moveTo(x, y) else ringPath.lineTo(x, y)
+                }
+                ringPath.close()
+                drawPath(
+                    ringPath,
                     if (hover > 0f) androidx.compose.ui.graphics.lerp(track, lime.copy(alpha = 0.5f), hover) else track,
-                    radius = base,
-                    center = center,
                     alpha = shown,
                     style = Stroke(1.5f * density),
                 )
@@ -285,6 +299,7 @@ internal fun ShapesOver(design: YtMiniShapes, scene: YtMiniScene) {
                     wave.reset()
                     for (k in 0..n) {
                         val angle = sweep * k / n
+                        val base = YtShapesWindow.ringBase(side * angle, a, b, gap)
                         val radius = YtShapesWindow.ring(angle, base, YtShapesLayout.RING_AMPLITUDE * density, phase)
                         val x = center.x + side * radius * sin(angle)
                         val y = center.y - radius * cos(angle)
