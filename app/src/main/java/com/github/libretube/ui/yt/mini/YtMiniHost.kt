@@ -97,6 +97,10 @@ class YtMiniHost private constructor(
     private var over: ComposeView? = null
 
     private var landing: Animator? = null
+
+    // the restored player's rise onto the bar: armed before its page docks, run once it has
+    private var risePending = false
+    private var rise: android.animation.ValueAnimator? = null
     private var reaction: Animator? = null
     private var resizeBefore: Int? = null
     private var page: YtPlayerHost? = null
@@ -382,7 +386,8 @@ class YtMiniHost private constructor(
      * page's own coordinates, which move with the translation, so it is moved back up by it.
      */
     private fun clipToBar() {
-        if (design.classic) return
+        // the classic player rises from behind the bar's edge too (it is thrown the classic way)
+        if (design.classic && rise == null) return
         val shift = motion.translationY
         val box = binding.mainContainer
         if (shift > 0.5f && YtDock.progress >= 0.999f && box.height > 0 && motion.width > 0) {
@@ -442,14 +447,18 @@ class YtMiniHost private constructor(
         motion.addTransitionListener(object : TransitionAdapter() {
             override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {
                 // opened again while it was still landing: the landing stops (and resets) first
-                if (progress < 1f) landing?.cancel()
+                if (progress < 1f) {
+                    landing?.cancel()
+                    rise?.cancel()
+                }
                 YtMiniPlayer.keepDock()
                 val p = progress.coerceIn(0f, 1f)
                 under.alpha = design.underAlpha(p)
                 over?.alpha = design.overAlpha(p)
                 YtDock.docked = progress > 0.02f
                 YtDock.progress = p
-                YtDock.slabPx = extentPx * p
+                // a page that will rise keeps the bar's slab down until it rises with it
+                YtDock.slabPx = if (risePending) 0f else extentPx * p
                 binding.player.invalidateOutline()
                 if (progress < 0.98f) crop(false)
             }
@@ -470,14 +479,100 @@ class YtMiniHost private constructor(
                     // a restored player's dock haptic was played by the long press already
                     if (!YtMiniRestore.takeDockMute()) play(YtMoment.DOCK)
                     YtTestHooks.log("YtMini") { "dock ${design.design.key}" }
-                    if (YtMotionPrefs.enabled) {
-                        landing?.cancel()
-                        landing = design.land(views())
-                        scene.landings++
+                    if (risePending) {
+                        // brought back: it rises onto the bar first and lands when it arrives
+                        risePending = false
+                        startRise()
+                    } else {
+                        land()
                     }
+                } else if (risePending) {
+                    risePending = false
+                    motion.translationY = 0f
                 }
             }
         })
+    }
+
+    /** The design's landing on the bar (motion on): its View animation and its composables'. */
+    private fun land() {
+        if (!YtMotionPrefs.enabled) return
+        landing?.cancel()
+        landing = design.land(views())
+        scene.landings++
+    }
+
+    /**
+     * For the mini player brought back by a long press on "Abos" (YtPageStart, motion on): the
+     * page is moved out of sight before its first frame; once its transition has docked it, it
+     * rises from behind the bar's edge ([startRise]) instead of appearing in place.
+     */
+    fun armRise() {
+        risePending = true
+        motion.translationY = (motion.rootView?.height?.takeIf { it > 0 } ?: context.resources.displayMetrics.heightPixels).toFloat()
+    }
+
+    /**
+     * The throw-away reversed: the whole page (picture, overlays and body move together, so what
+     * is drawn over the video follows it) rises from below the line its foot rests on, cut there
+     * by [clipToBar], with the duration and curve of the design's minimize; the bar's slab grows
+     * with it. At its place the design lands as after any minimize. The dock haptic was played
+     * by the long press.
+     */
+    private fun startRise() {
+        rise?.cancel()
+        val from = YtMiniRiseRules.from(binding.mainContainer.height, density)
+        if (from <= 0f || !YtMotionPrefs.enabled) {
+            motion.translationY = 0f
+            land()
+            return
+        }
+        motion.translationY = from
+        YtDock.slabPx = 0f
+        rise = android.animation.ValueAnimator.ofFloat(from, 0f).apply {
+            duration = design.motion.duration.toLong()
+            interpolator = riseCurve()
+            var cancelled = false
+            addUpdateListener {
+                // a drag that takes the page moves it from here itself
+                if (YtMinimizeModule.dragging || YtMinimizeModule.closing) {
+                    cancel()
+                    return@addUpdateListener
+                }
+                val offset = it.animatedValue as Float
+                motion.translationY = offset
+                YtDock.slabPx = YtMiniRiseRules.slab(offset.coerceAtLeast(0f), from, extentPx)
+            }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationCancel(animation: Animator) {
+                    cancelled = true
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    val handedOver = YtMinimizeModule.dragging || YtMinimizeModule.closing
+                    if (!handedOver) {
+                        motion.translationY = 0f
+                        if (YtDock.docked) YtDock.slabPx = extentPx
+                    }
+                    // the cut goes with the offset (the classic page's too, while rise is set)
+                    clipToBar()
+                    rise = null
+                    if (!cancelled && motion.currentState == R.id.end) land()
+                }
+            })
+            start()
+        }
+    }
+
+    /** The curve of the design's minimize, as MotionScene makes it (MotionScene.getInterpolator). */
+    private fun riseCurve(): android.animation.TimeInterpolator? = when (YtMiniRiseRules.curve(design.motion.interpolator)) {
+        YtMiniRiseRules.Curve.EASE_IN_OUT -> android.view.animation.AccelerateDecelerateInterpolator()
+        YtMiniRiseRules.Curve.EASE_IN -> android.view.animation.AccelerateInterpolator()
+        YtMiniRiseRules.Curve.EASE_OUT -> android.view.animation.DecelerateInterpolator()
+        YtMiniRiseRules.Curve.LINEAR -> android.view.animation.LinearInterpolator()
+        YtMiniRiseRules.Curve.BOUNCE -> android.view.animation.BounceInterpolator()
+        YtMiniRiseRules.Curve.OVERSHOOT -> android.view.animation.OvershootInterpolator()
+        YtMiniRiseRules.Curve.ANTICIPATE -> android.view.animation.AnticipateInterpolator()
     }
 
     /**
@@ -841,6 +936,8 @@ class YtMiniHost private constructor(
         scene.finger = null
         landing?.cancel()
         reaction?.cancel()
+        risePending = false
+        rise?.cancel()
         peekSpring.cancel()
         peekBack?.remove()
         peekBack = null
@@ -872,6 +969,9 @@ class YtMiniHost private constructor(
         fun attach(fragment: Fragment, binding: FragmentPlayerBinding, design: YtMiniDesign, palette: YtPalette?) {
             YtMiniHost(fragment, binding, design, palette).attach()
         }
+
+        /** The mini player of the player page [page] (its MotionLayout), if it has one. */
+        fun of(page: View): YtMiniHost? = hosts[page]
 
         /** The mini player of [host]'s page, if it has one. */
         fun of(host: YtPlayerHost): YtMiniHost? = host.pageBinding()?.playerMotionLayout?.let { hosts[it] }
