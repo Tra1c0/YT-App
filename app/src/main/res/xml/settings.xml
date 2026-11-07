@@ -79,6 +79,13 @@
             app:key="crashlog"
             app:title="@string/crashlog"/>
 
+        <!-- YT: diagnosis page (build, update result, network, crash reports) -->
+        <Preference
+            android:icon="@drawable/ic_device"
+            app:key="yt_diagnosis"
+            app:summary="@string/yt_diag_summary"
+            app:title="@string/yt_diag_title" />
+
     </PreferenceCategory>
 
 </PreferenceScreen>

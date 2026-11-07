@@ -13,6 +13,8 @@ class ExceptionHandler(
         // for example this catches crashes when there are invalid values in the header
         if (thread.name == OKHTTP_THREAD_NAME) return
 
+        // YT: keep the last few crashes on disk for the report dialog on the next start
+        YtCrashLog.record(com.github.libretube.LibreTubeApp.instance, thread, exc)
         // save the error log
         PreferenceHelper.saveErrorLog(exc.stackTraceToString())
         // throw the exception with the default exception handler to make the app crash

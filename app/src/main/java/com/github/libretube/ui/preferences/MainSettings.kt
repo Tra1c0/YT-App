@@ -37,6 +37,12 @@ class MainSettings : BasePreferenceFragment() {
             crashlog.isVisible = false
             true
         }
+
+        // YT: the diagnosis page (text to copy)
+        findPreference<Preference>("yt_diagnosis")?.setOnPreferenceClickListener {
+            com.github.libretube.ui.yt.YtDiagnosisUi.showDiagnosis(requireContext())
+            true
+        }
         
         listOf(
             "general" to R.id.action_global_generalSettings,
