@@ -83,7 +83,7 @@ Stand: Build 95.
 | Video folgt dem Finger | Video nach unten ziehen → schrumpft unter dem Finger in den Miniplayer; hochziehen öffnet es; Miniplayer runterziehen schließt. | E T |
 | Miniplayer im Querformat | Dockt nach dem Drehen (in beide Richtungen) sauber an der Leiste an; Leiste und Miniplayer weichen seitlichen Systemleisten und der Kamera aus. | – |
 | Vorschau beim Gedrückthalten | Miniplayer gedrückt halten → leicht vergrößert, mit dem nächsten Video; Loslassen darauf spielt es. | E |
-| Miniplayer zurückholen | Bis 10 Min. nach dem Wegwischen „Abos“ in der Leiste gedrückt halten: kurze Vibration, das Video kommt an derselben Stelle mit Warteschlange als angedockter Miniplayer zurück (noch ohne Animation). Alle Designs mit Abos-Reiter, auch Standard; After fehlt noch. | T |
+| Miniplayer zurückholen | Bis 10 Min. nach dem Wegwischen „Abos“ in der Leiste gedrückt halten: kurze Vibration, das Video kommt an derselben Stelle mit Warteschlange als angedockter Miniplayer zurück: er schiebt sich hinter der Leiste hervor und landet mit der Animation des Designs (bei ausgeschalteten Animationen sofort). Alle Designs mit Abos-Reiter, auch Standard; After fehlt noch. | T |
 | Schwebender Player mit Klangwelle | Beim Verlassen der App spielt das Video in einem eigenen Fenster weiter, darunter eine Klangwelle, die auf Stimmen und Frequenzen reagiert. Braucht „Über anderen Apps einblenden“. | E T |
 
 ## Shorts
@@ -142,7 +142,7 @@ mit Rückgängig (S)
 **Downloads:** nur WLAN / nur beim Laden (S) · gesehene Downloads automatisch löschen (S) · Platzanzeige (S) ·
 Offline-Paket aus der Warteschlange (M)
 
-**Komfort:** ★ Miniplayer zurückholen: Animation und After-Design (M) · Zurück-Taste in Ebenen (S) ·
+**Komfort:** ★ Miniplayer zurückholen: After-Design und Reiterwechsel bei Pop/Glas/Frost (S) · Zurück-Taste in Ebenen (S) ·
 Nur-Audio-Steuerung ±10 s in der Benachrichtigung (S) · verständliche Fehlermeldungen (S) · Offline-Banner statt
 Spinner (S) · Scrollposition nach dem Player behalten (S–M) · App-Shortcuts (S) · geteilte Links „In Warteschlange“ (S)
 

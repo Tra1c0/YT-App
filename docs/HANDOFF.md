@@ -8,15 +8,18 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 97 (fix: silent sound after the 2x hold). Build 96 = round 16 ( crash report + Diagnose page, calm titles, hide watched,
+- Latest release: build 99 (mini player restore rises with the design's landing). 97: fix for
+  silent sound after the 2x hold. 98: docs only. Build 96 = round 16 ( crash report + Diagnose page, calm titles, hide watched,
   watched marks in search, mini player restore by holding "Abos"). Before: build 95. Repo `Tra1c0/YT-App` is PUBLIC (needed: when
   private, GitHub Actions does not start jobs because of billing). Patch repo
   `Tra1c0/YT-Revanced-Revanced-` is a separate, older project (branch `ccr-06da63aa-8a5ovt` only).
 - Waiting for the user's phone: whether the update 95 → 96 works, and round-16 feedback;
   the app now stores the last install status in prefs `yt_self_updater/last_result`.
+- The user reports only what does not work: no report = fine, not a priority, or untested but
+  harmless. Do not wait for confirmations.
 - Roadmap: the "Ideen" list in FEATURES.md (★ = chosen by the user). Next round planned: intro/outro
   per channel (with tolerance sliders), gesture edge margin, hidden/paused collection page, dead
-  subscriptions, description link groups + sponsor links, mini restore animation + After design.
+  subscriptions, description link groups + sponsor links, mini restore for After + tab re-select quirk.
 - Queue restore after restart: paused by the user; unreviewed WIP commit only on local branch
   `r16/queue` (not pushed, lost with this container). Restart it from `main` when asked.
 - `MODIFICATIONS.md` (GPL change list) is current up to build 95 (rows split into LibreTube /
@@ -87,6 +90,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 99: mini player restore rises from behind the bar and lands with each design's animation.
 
 - 97: loudness stage sent its limiter tail on every repeated end-of-stream, so the drain before a
   speed change (2x hold) never ended and the sound stopped until a seek (the docs-only push before built nothing).

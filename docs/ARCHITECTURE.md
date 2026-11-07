@@ -213,6 +213,10 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   `ytNavHoldTarget(id)` on the Abos tab, initial pass); classic bar via `setOnLongClickListener`.
   Start docked through `YtPageStart.start(docked = true)` (`takeStartDocked`), 1.5 s settle after close
   so the dying service does not clear the restored queue; host dock haptic muted once.
+  Rise animation: `YtPageStart.start(rise = true)` → `YtMiniHost.armRise` hides the page after
+  attach, the docking runs unseen, then `startRise` moves it up from behind the bar (reverse of the
+  shared throw-away, cut by clipToBar) with the design's minimize curve, then `design.land()`.
+  Pure rules `Y/mini/YtMiniRiseRules.kt`; motion off or rotation → no rise.
 
 ## Open points
 
