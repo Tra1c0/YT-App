@@ -35,6 +35,9 @@ import com.github.libretube.extensions.updateParameters
 import com.github.libretube.helpers.PlayerHelper
 import com.github.libretube.helpers.PlayerHelper.getSubtitleRoleFlags
 import com.github.libretube.helpers.ProxyHelper
+import com.github.libretube.helpers.YtChannelPause
+import com.github.libretube.helpers.YtChannelSpeed
+import com.github.libretube.helpers.YtSpeedRules
 import com.github.libretube.parcelable.PlayerData
 import com.github.libretube.player.SabrMediaSource
 import com.github.libretube.player.manifest.SabrManifest
@@ -77,6 +80,9 @@ open class OnlinePlayerService : AbstractPlayerService() {
     // YT: attempts to bring a failed live stream back, in a row (see YtLiveRecovery)
     private var liveAttempts = 0
 
+    // YT: whether the video before started with its channel's own speed (see applyChannelSpeed)
+    private var lastWasChannelSpeed = false
+
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             // the stream plays again: a later error gets its attempts anew
@@ -92,8 +98,9 @@ open class OnlinePlayerService : AbstractPlayerService() {
                 Player.STATE_IDLE -> {
                     // YT: a fatal error also ends in IDLE; a live stream gets another try
                     // instead of the end of the service
+                    // and a video one that the player gets over by preparing again (YtPlayRecovery)
                     val error = exoPlayer?.playerError
-                    if (error != null && recoverLive(error)) return
+                    if (error != null && tryRecover(error)) return
                     onDestroy()
                 }
 
@@ -192,8 +199,8 @@ open class OnlinePlayerService : AbstractPlayerService() {
 
     private fun isLive() = streams?.isLive == true || exoPlayer?.isCurrentMediaItemLive == true
 
-    override fun recoversFrom(error: PlaybackException) =
-        YtLiveRecovery.decide(isLive(), error.errorCode, liveAttempts) != YtLiveRecovery.Action.GIVE_UP
+    override fun recover(error: PlaybackException): Boolean =
+        if (isLive()) recoverLive(error) else recoverPlayback(error)
 
     /** YT: starts the live stream anew after [error]; false if the service gives up (VOD, too many tries). */
     private fun recoverLive(error: PlaybackException): Boolean {
@@ -219,6 +226,18 @@ open class OnlinePlayerService : AbstractPlayerService() {
         return true
     }
 
+    /**
+     * YT: a channel with its own speed ("Für diesen Kanal merken") starts with it; the next video
+     * of another channel goes back to the general speed.
+     */
+    private fun applyChannelSpeed() {
+        val channelId = YtChannelPause.channelId(streams?.uploaderUrl)
+        val stored = YtChannelSpeed.find(channelId)?.speed
+        val speed = YtSpeedRules.startSpeed(stored, YtChannelSpeed.generalSpeed(), lastWasChannelSpeed)
+        lastWasChannelSpeed = stored != null
+        if (speed != null) exoPlayer?.setPlaybackSpeed(speed)
+    }
+
     private fun configurePlayer(seekToPositionMs: Long) {
         // YT: a live stream starts at its live edge; a saved position or a link's time belongs
         // to a window that has moved on since (and a position outside the live window fails
@@ -230,6 +249,8 @@ open class OnlinePlayerService : AbstractPlayerService() {
             }
             return
         }
+
+        applyChannelSpeed()
 
         // seek to the previous position if available
         if (seekToPositionMs != 0L) {
