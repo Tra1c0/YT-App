@@ -8,8 +8,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 99 (mini player restore rises with the design's landing). 97: fix for
-  silent sound after the 2x hold. 98: docs only. Build 96 = round 16 ( crash report + Diagnose page, calm titles, hide watched,
+- Latest release: build 98 (mini player restore rises with the design's landing). 97: fix for
+  silent sound after the 2x hold. Docs-only pushes build nothing. Build 96 = round 16 ( crash report + Diagnose page, calm titles, hide watched,
   watched marks in search, mini player restore by holding "Abos"). Before: build 95. Repo `Tra1c0/YT-App` is PUBLIC (needed: when
   private, GitHub Actions does not start jobs because of billing). Patch repo
   `Tra1c0/YT-Revanced-Revanced-` is a separate, older project (branch `ccr-06da63aa-8a5ovt` only).
@@ -91,7 +91,7 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Build log (one line per build, newest first)
 
-- 99: mini player restore rises from behind the bar and lands with each design's animation.
+- 98: mini player restore rises from behind the bar and lands with each design's animation.
 
 - 97: loudness stage sent its limiter tail on every repeated end-of-stream, so the drain before a
   speed change (2x hold) never ended and the sound stopped until a seek (the docs-only push before built nothing).
