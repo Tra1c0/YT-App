@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the self-updater (download, check, install, restart). Same keys in the same order in values and values-de. -->
+<resources>
+    <string name="yt_update_connecting">Connecting…</string>
+    <string name="yt_update_progress">%1$s of %2$s MB · %3$d%%</string>
+    <string name="yt_update_progress_unknown">%1$s MB</string>
+    <string name="yt_update_verifying">Checking the download…</string>
+    <string name="yt_update_installing">Installing…</string>
+    <string name="yt_update_confirm">Please confirm the installation.</string>
+    <string name="yt_update_install">Install</string>
+    <string name="yt_update_in_background">In background</string>
+    <string name="yt_update_retry">Try again</string>
+    <string name="yt_update_allow">Allow</string>
+    <string name="yt_update_allow_hint">To update itself, YT needs permission to install apps. Allow it in the settings, then come back here.</string>
+    <string name="yt_update_error_download">Download failed: %1$s</string>
+    <string name="yt_update_error_size">The download is incomplete and was deleted.</string>
+    <string name="yt_update_error_checksum">The download is damaged (checksum mismatch) and was deleted.</string>
+    <string name="yt_update_error_package">The file is not an update of this app and was deleted.</string>
+    <string name="yt_update_error_signature">The APK is not signed with this app\'s key and was deleted.</string>
+    <string name="yt_update_error_no_permission">YT is not allowed to install apps.</string>
+    <string name="yt_update_error_install">Installation failed: %1$s</string>
+    <string name="yt_update_error_aborted">Installation cancelled.</string>
+    <string name="yt_update_channel_name">App updates</string>
+    <string name="yt_update_channel_description">Confirming an update and reopening YT after it</string>
+    <string name="yt_update_ready_title">YT update ready – tap to install</string>
+    <string name="yt_update_done_title">YT was updated – tap to open</string>
+</resources>

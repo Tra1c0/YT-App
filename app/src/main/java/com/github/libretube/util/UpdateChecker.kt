@@ -11,6 +11,7 @@ import com.github.libretube.constants.IntentData.appUpdateChangelog
 import com.github.libretube.constants.IntentData.appUpdateURL
 import com.github.libretube.extensions.TAG
 import com.github.libretube.extensions.toastFromMainDispatcher
+import com.github.libretube.obj.update.UpdateAsset
 import com.github.libretube.ui.dialogs.UpdateAvailableDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,15 +22,18 @@ class UpdateChecker(private val context: Context) {
         // YT: builds are numbered ("32.1-yt.88", release "YT Build 88"); only a newer build is an
         // update. Comparing all digits for inequality offered the latest release (an older build)
         // to every test build of a branch.
-        val currentBuild = ytBuildNumber(BuildConfig.VERSION_NAME.substringAfterLast("yt.", ""))
+        val currentBuild = YtUpdateRules.currentBuild(BuildConfig.VERSION_NAME)
 
         try {
             val response = RetrofitInstance.externalApi.getLatestRelease()
-            val update = ytBuildNumber(response.name)
+            val update = YtUpdateRules.buildNumber(response.name)
+                ?: YtUpdateRules.buildNumber(response.tagName)
 
-            if (update != null && (currentBuild == null || update > currentBuild)) {
+            if (YtUpdateRules.isNewer(currentBuild, update)) {
+                // the APK of that build, downloaded and installed in the app; null -> release page
+                val apk = YtUpdateRules.pickApk(response.assets, update)
                 withContext(Dispatchers.Main) {
-                    showUpdateAvailableDialog(response.body, response.htmlUrl)
+                    showUpdateAvailableDialog(response.body, response.htmlUrl, apk)
                 }
                 Log.i(TAG(), response.toString())
             } else if (isManualCheck) {
@@ -40,19 +44,17 @@ class UpdateChecker(private val context: Context) {
         }
     }
 
-    /** The last number in [text] ("YT Build 88" -> 88), null when it has none. */
-    private fun ytBuildNumber(text: String): Int? =
-        Regex("(\\d+)\\D*$").find(text)?.groupValues?.get(1)?.toIntOrNull()
-
     private fun showUpdateAvailableDialog(
         changelog: String,
-        url: String
+        url: String,
+        apk: UpdateAsset?
     ) {
         val dialog = UpdateAvailableDialog()
         val args =
             Bundle().apply {
                 putString(appUpdateChangelog, sanitizeChangelog(changelog))
                 putString(appUpdateURL, url)
+                putParcelable(UpdateAvailableDialog.APP_UPDATE_ASSET, apk)
             }
         dialog.arguments = args
         val fragmentManager = (context as? FragmentActivity)?.supportFragmentManager

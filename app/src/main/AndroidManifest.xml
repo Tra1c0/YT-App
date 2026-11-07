@@ -24,6 +24,10 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- YT: the designs' own haptic patterns (switch "Eigene Haptik"); no prompt, granted at install -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- YT: installs its own updates (asked for once, in the system settings) -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- YT: lets Android 12+ update YT without asking again where it allows that (no prompt) -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
 
     <application
         android:name=".LibreTubeApp"
@@ -461,6 +465,15 @@
             android:name=".receivers.NotificationReceiver"
             android:enabled="true"
             android:exported="false" />
+
+        <!-- YT: self-update install results and the restart after the update -->
+        <receiver
+            android:name=".receivers.YtUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"
