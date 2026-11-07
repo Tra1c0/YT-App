@@ -26,12 +26,13 @@ import java.util.Locale
 open class BaseActivity : AppCompatActivity() {
     open val isDialogActivity: Boolean = false
 
-    val screenOrientationPref by lazy {
+    // YT: read each time (was once per activity), so the emulator check can turn the app
+    val screenOrientationPref: Int get() {
         val orientationPref = PreferenceHelper.getString(
             PreferenceKeys.ORIENTATION,
             resources.getString(R.string.config_default_orientation_pref)
         )
-        when (orientationPref) {
+        return when (orientationPref) {
             "portrait" -> ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT
             "landscape" -> ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
             "auto" -> ActivityInfo.SCREEN_ORIENTATION_USER

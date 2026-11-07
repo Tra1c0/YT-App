@@ -10,15 +10,18 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.Player
 import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.constants.IntentData
+import com.github.libretube.constants.PreferenceKeys
 import com.github.libretube.db.DatabaseHolder.Database
 import com.github.libretube.db.obj.Download
 import com.github.libretube.db.obj.DownloadChapter
 import com.github.libretube.db.obj.DownloadItem
 import com.github.libretube.enums.FileType
 import com.github.libretube.helpers.NavigationHelper
+import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.helpers.YtGuard
 import com.github.libretube.parcelable.PlayerData
 import com.github.libretube.ui.activities.AbstractPlayerHostActivity
+import com.github.libretube.ui.base.BaseActivity
 import com.github.libretube.ui.fragments.DownloadTab
 import com.github.libretube.ui.yt.feed.YtHomeTestHooks
 import com.github.libretube.ui.yt.mini.YtMiniTestHooks
@@ -49,6 +52,8 @@ import java.nio.file.Files
  *   download of its own that plays the test video's file. With the test video in the same
  *   intent, or while it plays; a test video opened without it gets an empty queue again.
  * - `--el yt_seek_test <ms>`: the player seeks there once it is ready.
+ * - `--es yt_orientation portrait|landscape|auto`: the app's orientation setting, applied at
+ *   once (scripts/gestures/b.sh turns the emulator with it).
  * - `--ez yt_audio_test true`: after that, the video player switches to the audio player (as
  *   its audio button does), so a queue's end can be checked in audio mode (scripts/gestures/f.sh).
  *
@@ -87,6 +92,8 @@ object YtTestHooks {
     private const val EXTRA_QUEUE_TEST = "yt_queue_test"
     private const val EXTRA_SEEK_TEST = "yt_seek_test"
     private const val EXTRA_AUDIO_TEST = "yt_audio_test"
+    private const val EXTRA_ORIENTATION = "yt_orientation"
+    private val ORIENTATIONS = setOf("portrait", "landscape", "auto")
 
     // the packages' own parameters, one object each in its owner's folder (A, B, C, D, E, Shorts)
     private val packages: List<YtTestHandler> = listOf(
@@ -114,6 +121,13 @@ object YtTestHooks {
         if (!YtGuard.isEmulator) return
         if (intent.hasExtra("yt_gesture_log")) {
             gestureLog = intent.getBooleanExtra("yt_gesture_log", false)
+        }
+        // the app's orientation setting (portrait, landscape, auto), so the checks can turn it
+        intent.getStringExtra(EXTRA_ORIENTATION)?.takeIf { it in ORIENTATIONS }?.let { value ->
+            intent.removeExtra(EXTRA_ORIENTATION)
+            PreferenceHelper.putString(PreferenceKeys.ORIENTATION, value)
+            (activity as? BaseActivity)?.requestOrientationChange()
+            Log.i(TAG, "orientation $value")
         }
         val host = activity as? AbstractPlayerHostActivity ?: return
 

@@ -11,7 +11,7 @@
 # The last check throws the mini player away, so the player is closed afterwards.
 #
 # b_dock_checks then docks the player by each way there is (back, a slow drag, a flick, after the
-# long-press peek, after a rotation, after a trip to the home screen) and checks where it rests:
+# long-press peek, turned to landscape and back, after a trip to the home screen) and checks where it rests:
 # the foot of its box (main_container) on the top of the bar's view plus the design's dock
 # offset. The app logs that as "dock check box=<foot> bar=<top> dock=<offset> err=<px>" (tag
 # YtMini) each time the box moves; uiautomator's bounds of main_container and bottomNav tell
@@ -98,7 +98,7 @@ b_checks() {
 
 # the place of the docked player after the way named by $1 ("back", "drag", ...)
 b_dock_at() {
-  local what="$1" line err dock box bar bb bt e slack=3
+  local what="$1" line err dock box bar bb bt e side slack=3
   sleep 3
   line=$(tag_messages YtMini | grep -a -E '^dock check ' | tail -n 1)
   if [ -z "$line" ]; then
@@ -119,6 +119,11 @@ b_dock_at() {
     mark "B dock ($what): the box rests off its place: $line"
     expect_log YtMini "^dock check .* err=-?[0-$slack] after $what\$"
   fi
+  # turned: the box keeps out of the side bars and the cutout (upright this is always 0)
+  side=$(tag_messages YtMini | grep -a -E '^dock side ' | tail -n 1)
+  if [ -n "$side" ]; then
+    expect_log YtMini "^dock side .* err=0\$" || mark "B dock ($what): the box reaches under a side bar: $side"
+  fi
   # the same from the views as uiautomator sees them (translations included)
   if box=$(bounds_of 'id/main_container$') && bar=$(bounds_of 'id/bottomNav$') && numbers "${dock:-}"; then
     read -r _ _ _ bb <<< "$box"
@@ -132,6 +137,64 @@ b_dock_at() {
     mark "B dock ($what): no main_container or bottomNav in the view tree"
   fi
   rawshot "$design-b-dock-$what"
+}
+
+# the display's rotation as dumpsys tells it (ROTATION_0 ... or 0 ... 3), empty if unknown
+b_rotation_now() {
+  timeout 10 adb shell dumpsys window displays 2>/dev/null | grep -a -o -m1 'mCurrentRotation=[A-Z_0-9]*' | tr -d '\r'
+}
+
+# turns the display to $1 (0 upright, 1 landscape) and waits until it has turned; status 1 if not
+b_turn() {
+  local want="$1" now waited=0
+  timeout 10 adb shell settings put system accelerometer_rotation 0 || true
+  timeout 10 adb shell settings put system user_rotation "$want" || true
+  while [ "$waited" -lt 8 ]; do
+    sleep 1
+    waited=$((waited + 1))
+    now=$(b_rotation_now)
+    case "$want:$now" in
+      0:*ROTATION_0|0:*=0|1:*ROTATION_90|1:*=1) sleep 3; return 0 ;;
+    esac
+  done
+  mark "B turn: the display did not turn to $want (${now:-rotation unknown})"
+  return 1
+}
+
+b_turned_checks() {
+  local rotation auto x0 y0 h
+  rotation=$(timeout 5 adb shell settings get system user_rotation 2>/dev/null | tr -d '\r')
+  auto=$(timeout 5 adb shell settings get system accelerometer_rotation 2>/dev/null | tr -d '\r')
+  timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es yt_orientation auto >/dev/null || true
+  sleep 2
+  log_mark
+  if b_turn 1; then
+    rawshot "$design-b-dock-landscape"
+    b_dock_at landscape
+    # opened and dragged down again in landscape
+    if b_open_docked; then
+      read -r _ h <<< "$(screen_size)"
+      read -r x0 y0 <<< "$(center_of 'id/player$')"
+      if numbers "${x0:-}" "${y0:-}" "${h:-}"; then
+        log_mark
+        drag "$x0" "$y0" "$x0" $(( h * 90 / 100 )) 10
+        sleep 1
+        b_docked_center >/dev/null || timeout 10 adb shell input keyevent KEYCODE_BACK || true
+        b_dock_at landscape-drag
+      fi
+    fi
+    log_mark
+    if b_turn 0; then
+      b_dock_at upright-again
+    fi
+  else
+    expect_log YtMini "^dock check .* after the turn to landscape$"
+  fi
+  timeout 10 adb shell settings put system user_rotation "${rotation:-0}" || true
+  timeout 10 adb shell settings put system accelerometer_rotation "${auto:-0}" || true
+  # back to the default for the designs that follow
+  timeout 30 adb shell am start -n "$PKG/$ACTIVITY" --es yt_orientation portrait >/dev/null || true
+  sleep 2
 }
 
 # the docked player's middle, or nothing (status 1) when the player is not docked
@@ -154,7 +217,7 @@ b_open_docked() {
 }
 
 b_dock_checks() {
-  local h x0 y0 c rotation auto turned
+  local h x0 y0 c
   if ! open_test_video; then
     mark "B dock: no test video, the dock checks are skipped"
     return 0
@@ -201,25 +264,12 @@ b_dock_checks() {
     b_dock_at peek
   fi
 
-  # 5. docked through a rotation and back (the activity keeps its orientation where it is locked)
+  # 5. turned: the app's orientation setting goes to "auto" (portrait, the default, keeps the
+  # display upright whatever the emulator does), then the display turns to landscape and back
+  # while the player is docked. The activity is created again each time: the page must come back
+  # docked on the bar, out of the side bars, and dock again after a drag in landscape
   if b_docked_center >/dev/null; then
-    rotation=$(timeout 5 adb shell settings get system user_rotation 2>/dev/null | tr -d '\r')
-    auto=$(timeout 5 adb shell settings get system accelerometer_rotation 2>/dev/null | tr -d '\r')
-    log_mark
-    timeout 10 adb shell settings put system accelerometer_rotation 0 || true
-    timeout 10 adb shell settings put system user_rotation 1 || true
-    sleep 3
-    rawshot "$design-b-dock-landscape"
-    # the activity's orientation is locked (screenOrientation="locked"): then the display stays
-    # upright, nothing moves and the app has no new place to log
-    turned=$(timeout 10 adb shell dumpsys window displays 2>/dev/null | grep -a -o -m1 'mCurrentRotation=[A-Z_0-9]*' | tr -d '\r')
-    timeout 10 adb shell settings put system user_rotation "${rotation:-0}" || true
-    timeout 10 adb shell settings put system accelerometer_rotation "${auto:-0}" || true
-    case "$turned" in
-      *ROTATION_0|*=0|"")
-        mark "B dock (rotation): the display did not turn (${turned:-rotation unknown}); nothing to check" ;;
-      *) b_dock_at rotation ;;
-    esac
+    b_turned_checks
   fi
 
   # 6. home and back (with a video playing, home may take it into picture-in-picture)

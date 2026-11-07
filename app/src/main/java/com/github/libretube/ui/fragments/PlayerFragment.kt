@@ -457,14 +457,18 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         val createNewSession = !requireArguments().getBoolean(IntentData.alreadyStarted)
         requireArguments().putBoolean(IntentData.alreadyStarted, true)
 
-        changeOrientationMode()
+        // YT: the page of a player that goes on (the activity was created again, e.g. by a
+        // rotation) comes back docked if it was docked
+        val restoreDocked = !createNewSession && viewModel.ytDocked
+
+        if (restoreDocked) baseActivity.requestOrientationChange() else changeOrientationMode()
 
         playerLayoutOrientation = resources.configuration.orientation
 
-        initializeTransitionLayout()
+        initializeTransitionLayout(restoreDocked)
         initializeOnClickActions()
 
-        if (PlayerHelper.autoFullscreenEnabled && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        if (!restoreDocked && PlayerHelper.autoFullscreenEnabled && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             setFullscreen()
         }
 
@@ -634,7 +638,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun initializeTransitionLayout() {
+    private fun initializeTransitionLayout(restoreDocked: Boolean = false) {
         baseActivity.setPlayerContainerProgress(0f)
 
         var transitionStartId = 0
@@ -661,6 +665,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
 
                 if (currentId == transitionStartId) {
                     commonPlayerViewModel.isMiniPlayerVisible.value = false
+                    viewModel.ytDocked = false
                     // re-enable captions
                     binding.player.updateCurrentSubtitle(viewModel.currentCaptionId)
                     binding.player.useController = true
@@ -672,6 +677,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
                     baseActivity.clearSearchViewFocus()
                 } else if (currentId == transitionEndId) {
                     commonPlayerViewModel.isMiniPlayerVisible.value = true
+                    viewModel.ytDocked = true
                     // disable captions temporarily
                     binding.player.updateCurrentSubtitle(null)
                     disableController()
@@ -694,7 +700,13 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
             }
 
         binding.playerMotionLayout.progress = 1F
-        binding.playerMotionLayout.transitionToStart()
+        // YT: a page created while the activity is not in its window yet (the activity was
+        // created again: rotation, a new look) keeps a progress set now only until it is attached
+        // and then jumps to it, without a transition: transitionToStart() here did nothing (the
+        // layout's last position is still 0), so a rotated player came back as a docked one the
+        // page, the bar and the mini player had not heard of, under the bar and not usable. The
+        // page starts once it is attached: open as always, or docked again if it was docked.
+        com.github.libretube.ui.yt.mini.YtPageStart.start(binding.playerMotionLayout, restoreDocked)
 
         val activity = requireActivity()
         PictureInPictureCompat.setPictureInPictureParams(activity, pipParams)
@@ -1618,7 +1630,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
             return
         }
 
-        if (PlayerHelper.autoFullscreenEnabled) {
+        // YT: a docked player stays docked when the phone turns (it is no video to fill the screen)
+        if (PlayerHelper.autoFullscreenEnabled && commonPlayerViewModel.isMiniPlayerVisible.value != true) {
             when (newConfig.orientation) {
                 // go to fullscreen mode
                 Configuration.ORIENTATION_LANDSCAPE -> setFullscreen()
