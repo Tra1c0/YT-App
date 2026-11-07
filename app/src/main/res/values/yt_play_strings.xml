@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: playback in the player service (queue in the background, live streams). Same keys in the same order in values and values-de. -->
+<resources>
+    <string name="yt_play_resume_title">Playback paused – tap to resume</string>
+    <string name="yt_play_resume_text">Android stopped the playback in the background.</string>
+    <!-- a player error: the player's own message, then its error code (for example "Source error (ERROR_CODE_BEHIND_LIVE_WINDOW)") -->
+    <string name="yt_play_error">%1$s (%2$s)</string>
+</resources>

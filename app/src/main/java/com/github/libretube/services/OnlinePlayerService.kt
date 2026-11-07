@@ -9,6 +9,7 @@ import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaItem.SubtitleConfiguration
 import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.hls.HlsMediaSource
@@ -38,6 +39,7 @@ import com.github.libretube.parcelable.PlayerData
 import com.github.libretube.player.SabrMediaSource
 import com.github.libretube.player.manifest.SabrManifest
 import com.github.libretube.repo.UserDataRepositoryHelper
+import com.github.libretube.ui.yt.YtTestHooks
 import com.github.libretube.util.DeArrowUtil
 import com.github.libretube.util.PlayingQueue
 import com.github.libretube.util.YoutubeHlsPlaylistParser
@@ -72,7 +74,15 @@ open class OnlinePlayerService : AbstractPlayerService() {
      */
     private var fetchVideoInfoJob: Job? = null
 
+    // YT: attempts to bring a failed live stream back, in a row (see YtLiveRecovery)
+    private var liveAttempts = 0
+
     private val playerListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            // the stream plays again: a later error gets its attempts anew
+            if (isPlaying) liveAttempts = 0
+        }
+
         override fun onPlaybackStateChanged(playbackState: Int) {
             when (playbackState) {
                 Player.STATE_ENDED -> {
@@ -80,6 +90,10 @@ open class OnlinePlayerService : AbstractPlayerService() {
                 }
 
                 Player.STATE_IDLE -> {
+                    // YT: a fatal error also ends in IDLE; a live stream gets another try
+                    // instead of the end of the service
+                    val error = exoPlayer?.playerError
+                    if (error != null && recoverLive(error)) return
                     onDestroy()
                 }
 
@@ -176,7 +190,47 @@ open class OnlinePlayerService : AbstractPlayerService() {
         fetchVideoInfoJob = null
     }
 
+    private fun isLive() = streams?.isLive == true || exoPlayer?.isCurrentMediaItemLive == true
+
+    override fun recoversFrom(error: PlaybackException) =
+        YtLiveRecovery.decide(isLive(), error.errorCode, liveAttempts) != YtLiveRecovery.Action.GIVE_UP
+
+    /** YT: starts the live stream anew after [error]; false if the service gives up (VOD, too many tries). */
+    private fun recoverLive(error: PlaybackException): Boolean {
+        val action = YtLiveRecovery.decide(isLive(), error.errorCode, liveAttempts)
+        if (action == YtLiveRecovery.Action.GIVE_UP) return false
+        val delay = YtLiveRecovery.delayMs(liveAttempts)
+        liveAttempts++
+        Log.w(TAG(), "live stream failed (${error.errorCodeName}), $action, attempt $liveAttempts")
+        YtTestHooks.log("YtLive") { "error=${error.errorCodeName} action=$action attempt=$liveAttempts" }
+        val id = videoId
+        handler.postDelayed({
+            // a different video was picked meanwhile
+            if (id != videoId) return@postDelayed
+            when (action) {
+                YtLiveRecovery.Action.SEEK_TO_LIVE_EDGE -> exoPlayer?.apply {
+                    seekToDefaultPosition()
+                    prepare()
+                }
+                // fresh stream urls: the old ones may have expired or been refused
+                else -> navigateVideo(id)
+            }
+        }, delay)
+        return true
+    }
+
     private fun configurePlayer(seekToPositionMs: Long) {
+        // YT: a live stream starts at its live edge; a saved position or a link's time belongs
+        // to a window that has moved on since (and a position outside the live window fails
+        // with ERROR_CODE_BEHIND_LIVE_WINDOW)
+        if (streams?.isLive == true) {
+            exoPlayer?.apply {
+                playWhenReady = PlayerHelper.playAutomatically || isAudioOnlyPlayer
+                prepare()
+            }
+            return
+        }
+
         // seek to the previous position if available
         if (seekToPositionMs != 0L) {
             exoPlayer?.seekTo(seekToPositionMs)
@@ -209,6 +263,8 @@ open class OnlinePlayerService : AbstractPlayerService() {
 
     override fun navigateVideo(videoId: String) {
         this.streams = null
+        // YT: another video starts with its own attempts; a retry of the same live stream keeps them
+        if (!isVideoIdSet() || videoId != this.videoId) liveAttempts = 0
 
         super.navigateVideo(videoId)
     }

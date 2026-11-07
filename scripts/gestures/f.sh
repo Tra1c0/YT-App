@@ -11,6 +11,8 @@
 # runs. In the audio case the made-up videos have no audio file of their own: the offline player
 # then plays the video file's sound (YtQueue "audio only from the video file"); before, it
 # stopped the service at the next video.
+# A fourth case sends the audio player to the background with HOME before its end: the next item
+# has to start without a refused foreground start (the crash ForegroundServiceStartNotAllowedException).
 # Sourced by crash-check.sh once per design with YT_GESTURES=yes; the helpers are in lib.sh.
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh" || return 0
@@ -22,6 +24,18 @@ f_alive() {
   echo "$result ${design:-?} f: app running after $1"
   if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     printf -- '- **%s** %s, f: app running after %s\n' "$result" "${design:-?}" "$1" >> "$GITHUB_STEP_SUMMARY"
+  fi
+}
+
+# no refused foreground start of the player service since log_mark (the crash of case 4, or
+# the "tap to resume" fallback, which would mean the hold did not keep the foreground)
+f_no_refusal() {
+  local result=OK line
+  line=$(gesture_log | grep -a -E "ForegroundServiceStartNotAllowedException|foreground start denied" | head -n 1)
+  if [ -n "$line" ]; then result=FAIL; gesture_fails=$(( ${gesture_fails:-0} + 1 )); fi
+  echo "$result ${design:-?} f: no refused foreground start after $1${line:+: $line}" | cut -c1-260
+  if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+    printf -- '- **%s** %s, f: no refused foreground start after %s\n' "$result" "${design:-?}" "$1" >> "$GITHUB_STEP_SUMMARY"
   fi
 }
 
@@ -70,6 +84,26 @@ f_checks() {
     mark "f: the test video did not open for the audio case"
   fi
   show_log YtQueue 12
+  back_to_yt || true
+
+  # 4. the audio player in the background (HOME, no picture-in-picture there): the user's crash,
+  # ForegroundServiceStartNotAllowedException when the next item started. The service has to
+  # stay in the foreground across the transition (YtForegroundHold in AbstractPlayerService)
+  log_mark
+  if open_test_video --ei yt_queue_test 3 --el yt_seek_test 168000 --ez yt_audio_test true; then
+    if expect_log YtTest 'audio test switched=true'; then
+      timeout 10 adb shell input keyevent KEYCODE_HOME || true
+      expect_log YtQueue 'foreground hold for ytTestQ0001'
+      expect_log YtQueue 'autoplay next=ytTestQ0001 audio=true'
+      expect_log YtQueue 'foreground hold released'
+      sleep 3
+      f_no_refusal "the next item in the background"
+      f_alive "the end of a video in the background (HOME)"
+    fi
+    show_log YtQueue 12
+  else
+    mark "f: the test video did not open for the background case"
+  fi
   back_to_yt || true
 }
 
