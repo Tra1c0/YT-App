@@ -147,15 +147,18 @@ fun FrostHomeScreen(
                         )
                     }
                     item {
+                        // scrolling under the header, the field becomes the header's search button
+                        // (YtSearchMorph); from halfway on, that button is the one to tap
+                        val searchLive by rememberSearchFieldLive()
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(46.dp)
+                                .ytSearchMorphField()
                                 .frost(RoundedCornerShape(23.dp))
                                 // held: a frosted lens lifts off and drags onto a card to search its channel
-                                .ytSearchDragSource(palette)
-                                .clickable(onClick = actions.onSearch)
+                                .then(if (searchLive) Modifier.ytSearchDragSource(palette).clickable(onClick = actions.onSearch) else Modifier)
                                 .padding(horizontal = 6.dp),
                         ) {
                             Box(
@@ -176,7 +179,9 @@ fun FrostHomeScreen(
                             Spacer(Modifier.weight(1f))
                             // the Feed-Regler: a frost circle at the end of the search row, orange while open
                             val frostCircle = Modifier.frost(CircleShape)
-                            YtTuneCircle(
+                            if (!searchLive) {
+                                Spacer(Modifier.size(34.dp))
+                            } else YtTuneCircle(
                                 fill = Color(0x33FFFFFF),
                                 ink = palette.text,
                                 activeFill = palette.accent,
@@ -190,8 +195,9 @@ fun FrostHomeScreen(
                     item {
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             item { FrostStat(palette, stringResource(R.string.yt_frost_new), newVideos, stringResource(R.string.yt_tab_subscriptions), actions.onShowSubscriptions) }
-                            item { FrostStat(palette, stringResource(R.string.yt_frost_live), live, stringResource(R.string.yt_live_badge), actions.onShowSubscriptions) }
-                            item { FrostStat(palette, stringResource(R.string.yt_frost_shorts), shorts, stringResource(R.string.yt_nav_shorts), actions.onShowShorts) }
+                            // the title already says Live and Shorts; a second chip saying it again is left out
+                            item { FrostStat(palette, stringResource(R.string.yt_frost_live), live, null, actions.onShowSubscriptions) }
+                            item { FrostStat(palette, stringResource(R.string.yt_frost_shorts), shorts, null, actions.onShowShorts) }
                         }
                     }
                     item { FrostSection(palette, stringResource(R.string.yt_frost_for_you), null) }
@@ -238,7 +244,7 @@ private fun FrostSection(palette: YtPalette, title: String, onSeeAll: (() -> Uni
 }
 
 @Composable
-private fun FrostStat(palette: YtPalette, label: String, value: Int?, tag: String, onClick: () -> Unit) {
+private fun FrostStat(palette: YtPalette, label: String, value: Int?, tag: String?, onClick: () -> Unit) {
     val press = remember { MutableInteractionSource() }
     val thaw by rememberThaw(press)
     Column(
@@ -263,7 +269,7 @@ private fun FrostStat(palette: YtPalette, label: String, value: Int?, tag: Strin
         )
         Spacer(Modifier.weight(1f))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
+            if (tag != null) Text(
                 text = tag,
                 color = FrostDark,
                 style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.SemiBold, fontSize = 11.sp),

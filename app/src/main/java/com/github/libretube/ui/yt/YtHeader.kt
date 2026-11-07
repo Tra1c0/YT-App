@@ -99,6 +99,24 @@ object YtHeader {
             header,
             Toolbar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
         )
+        if (design in YtSearchMorph.designs) letSearchOverflow(toolbar, header)
+    }
+
+    /**
+     * The home's search field morphs into the header's search button from below the header
+     * (YtSearchMorph), drawn by the header: its views must not clip it, and the app bar must
+     * draw above the screens. Its background is transparent, so the raise casts no shadow.
+     */
+    private fun letSearchOverflow(toolbar: MaterialToolbar, header: ComposeView) {
+        header.clipChildren = false
+        toolbar.clipChildren = false
+        toolbar.clipToPadding = false
+        val appBar = toolbar.parent as? ViewGroup ?: return
+        appBar.clipChildren = false
+        // it has the status bar as top padding, which would otherwise also clip at the bottom edge
+        appBar.clipToPadding = false
+        (appBar.parent as? ViewGroup)?.clipChildren = false
+        appBar.translationZ = maxOf(appBar.translationZ, toolbar.resources.displayMetrics.density)
     }
 
     /**
@@ -350,43 +368,56 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
     val interaction = remember { MutableInteractionSource() }
     // Formen: the scalloped search button turns slowly
     val spin = if (design == YtDesign.SHAPES && kind == HeaderButton.SEARCH) rememberSpin(24000) else null
+    // the home's own search field turns into this button as it scrolls away (YtSearchMorph);
+    // until then the button is not drawn and not tapped, so there is one search on screen
+    val morph = if (kind == HeaderButton.SEARCH) rememberSearchMorph(design, palette) else null
+    val live by rememberSearchButtonLive()
+    val usable = morph == null || live
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(look.size)
+            .then(if (morph != null) Modifier.searchMorph(morph) { spin?.value ?: 0f } else Modifier)
             .ytPressScale(interaction)
             // search: held, the icon lifts as a lens that drags onto a card to search its channel
-            .then(if (kind == HeaderButton.SEARCH) Modifier.ytSearchDragSource(palette, ytSearchLabel()) else Modifier)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .then(if (kind == HeaderButton.SEARCH && usable) Modifier.ytSearchDragSource(palette, ytSearchLabel()) else Modifier)
+            .clickable(enabled = usable, interactionSource = interaction, indication = null, onClick = onClick),
     ) {
         Box(
-            Modifier
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
                 .matchParentSize()
-                .graphicsLayer { rotationZ = spin?.value ?: 0f }
-                .then(if (look.shadow > 0.dp) Modifier.shadow(look.shadow, look.shape, clip = false) else Modifier)
-                .clip(look.shape)
-                .then(if (look.fill != null) Modifier.background(look.fill) else Modifier)
-                .then(if (look.outline != null) Modifier.border(look.outlineWidth, look.outline, look.shape) else Modifier),
-        )
-        val account by YtAccount.state.collectAsState()
-        val photo = if (kind == HeaderButton.PROFILE) account?.photo else null
-        if (photo != null) {
-            AsyncImage(
-                model = photo,
-                contentDescription = null,
-                imageLoader = ImageHelper.loader(),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(look.size - 4.dp)
-                    .clip(look.shape),
+                .then(if (morph != null) Modifier.graphicsLayer { alpha = YtSearchMorph.handoff } else Modifier),
+        ) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .graphicsLayer { rotationZ = spin?.value ?: 0f }
+                    .then(if (look.shadow > 0.dp) Modifier.shadow(look.shadow, look.shape, clip = false) else Modifier)
+                    .clip(look.shape)
+                    .then(if (look.fill != null) Modifier.background(look.fill) else Modifier)
+                    .then(if (look.outline != null) Modifier.border(look.outlineWidth, look.outline, look.shape) else Modifier),
             )
-        } else {
-            Icon(
-                painterResource(if (look.filled) activeIcon else icon),
-                contentDescription = null,
-                tint = look.tint,
-                modifier = Modifier.size(look.iconSize),
-            )
+            val account by YtAccount.state.collectAsState()
+            val photo = if (kind == HeaderButton.PROFILE) account?.photo else null
+            if (photo != null) {
+                AsyncImage(
+                    model = photo,
+                    contentDescription = null,
+                    imageLoader = ImageHelper.loader(),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(look.size - 4.dp)
+                        .clip(look.shape),
+                )
+            } else {
+                Icon(
+                    painterResource(if (look.filled) activeIcon else icon),
+                    contentDescription = null,
+                    tint = look.tint,
+                    modifier = Modifier.size(look.iconSize),
+                )
+            }
         }
     }
 }

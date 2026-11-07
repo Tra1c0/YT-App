@@ -188,16 +188,19 @@ fun ShapesHomeScreen(
                                 }
                             }
                         }
+                        // scrolling under the header, the pill becomes the header's lime cookie
+                        // (YtSearchMorph); from halfway on, that button is the one to tap
+                        val searchLive by rememberSearchFieldLive()
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(46.dp)
+                                .ytSearchMorphField()
                                 .clip(RoundedCornerShape(23.dp))
                                 .background(palette.surface)
                                 // held: the cookie lens lifts off and drags onto a card to search its channel
-                                .ytSearchDragSource(palette)
-                                .clickable(onClick = actions.onSearch)
+                                .then(if (searchLive) Modifier.ytSearchDragSource(palette).clickable(onClick = actions.onSearch) else Modifier)
                                 .padding(horizontal = 14.dp),
                         ) {
                             Icon(painterResource(R.drawable.ic_yt_search), contentDescription = null, tint = palette.ink, modifier = Modifier.size(18.dp))
