@@ -532,7 +532,7 @@ private fun SubsCardFace(
                         .aspectRatio(16f / 10f)
                         .clip(RoundedCornerShape(12.dp)),
                 ) {
-                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
                     DurationBadge(video, Color(0xCC111114), Color.White, palette.font, Modifier.align(Alignment.BottomEnd).padding(6.dp))
                 }
                 Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
@@ -558,7 +558,7 @@ private fun SubsCardFace(
                         .height(70.dp)
                         .background(Color.Black),
                 ) {
-                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxWidth().height(56.dp))
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxWidth().height(56.dp).ytSeen(video, palette))
                     DurationBadge(video, Color(0xCC000000), Color.White, YtFonts.robotoCondensed, Modifier.align(Alignment.BottomEnd).padding(4.dp))
                 }
                 Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
@@ -591,7 +591,7 @@ private fun SubsCardFace(
                         .aspectRatio(16f / 9f)
                         .clip(RoundedCornerShape(14.dp)),
                 ) {
-                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
                     DurationBadge(video, Color(0xCC111114), Color.White, palette.font, Modifier.align(Alignment.BottomEnd).padding(8.dp))
                 }
             }
@@ -613,7 +613,7 @@ private fun SubsCardFace(
                         .aspectRatio(16f / 9f)
                         .clip(RoundedCornerShape(18.dp)),
                 ) {
-                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
                     DurationBadge(video, ClayLight, ClayInk, palette.font, Modifier.align(Alignment.BottomEnd).padding(10.dp))
                 }
                 Text(title, color = ClayInk, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 6.dp, top = 8.dp, end = 6.dp))
@@ -650,7 +650,8 @@ private fun SubsCardFace(
                         colorFilter = if (color == 0f) ytGrayscale else ytSaturation(color),
                         modifier = Modifier
                             .width(104.dp)
-                            .height(58.dp),
+                            .height(58.dp)
+                            .ytSeen(video, palette),
                     )
                 }
                 Box(
@@ -676,7 +677,7 @@ private fun SubsCardFace(
                     .background(palette.lime)
                     .combinedClickable(interactionSource = press, indication = LocalIndication.current, onLongClick = onQuick, onClick = onOpen),
             ) {
-                YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().layerBackdrop(still))
+                YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().layerBackdrop(still).ytSeen(video, palette))
                 Column(
                     Modifier
                         .align(Alignment.BottomCenter)
@@ -713,7 +714,7 @@ private fun SubsCardFace(
                         .aspectRatio(16f / 9f)
                         .clip(RoundedCornerShape(20.dp)),
                 ) {
-                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
                     DurationBadge(video, PopFrames[0], PopInk, YtFonts.nunito, Modifier.align(Alignment.BottomEnd).padding(10.dp))
                 }
                 Text(title, color = PopInk, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 14.5.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp))
@@ -740,7 +741,7 @@ private fun SubsCardFace(
                         .aspectRatio(16f / 9f)
                         .clip(shape),
                 ) {
-                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
                     DurationBadge(video, tag, ShapesInk, YtFonts.googleSans, Modifier.align(if (index % 2 == 0) Alignment.BottomStart else Alignment.BottomEnd).padding(12.dp))
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp, top = 8.dp, end = 10.dp, bottom = 6.dp)) {
@@ -775,7 +776,7 @@ private fun SubsCardFace(
                         .aspectRatio(16f / 9f)
                         .clip(RoundedCornerShape(16.dp)),
                 ) {
-                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
                     DurationBadge(video, Color(0x59FFFFFF), Color.White, YtFonts.jakarta, Modifier.align(Alignment.BottomEnd).padding(10.dp))
                 }
                 Text(title, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 6.dp, top = 8.dp, end = 6.dp))
@@ -798,7 +799,7 @@ private fun SubsCardFace(
                         .aspectRatio(16f / 9f)
                         .clip(RoundedCornerShape(12.dp)),
                 ) {
-                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
                 }
                 Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
                     Text(title, color = KieselInk, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, lineHeight = 18.sp))
@@ -832,7 +833,7 @@ private fun SubsCardFace(
                         .aspectRatio(16f / 9f)
                         .clip(RoundedCornerShape(14.dp)),
                 ) {
-                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
                     DurationBadge(video, Color(0xCC111114), Color.White, palette.font, Modifier.align(Alignment.BottomEnd).padding(8.dp))
                 }
                 Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(top = 10.dp, start = 2.dp, end = 2.dp)) {

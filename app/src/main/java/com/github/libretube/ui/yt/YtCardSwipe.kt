@@ -94,6 +94,7 @@ import com.github.libretube.helpers.YtHidden
 import com.github.libretube.ui.yt.feed.YtFlightSpring
 import com.github.libretube.ui.yt.feed.YtQueueMove
 import com.github.libretube.ui.yt.feed.YtSwipePhysics
+import com.github.libretube.ui.yt.feed.YtSwipeTuningPrefs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -245,10 +246,12 @@ fun Modifier.ytCardSwipe(
         if (state.offset.value != 0f) state.offset.animateTo(0f, spring(dampingRatio = 0.78f, stiffness = 260f))
     }
     val density = LocalDensity.current
-    val threshold = with(density) { 96.dp.toPx() }
+    // the user's tolerance (Wisch-Empfindlichkeit / Fein einstellen / calibration); 96 dp, 24 dp, 30° by default
+    val tuning = YtSwipeTuningPrefs.current()
+    val threshold = with(density) { tuning.distanceDp.dp.toPx() }
     val margin = with(density) { 32.dp.toPx() }
     // how far a claimed swipe may wander up or down before it counts as a scroll and is dropped
-    val drift = with(density) { 24.dp.toPx() }
+    val drift = with(density) { tuning.driftDp.dp.toPx() }
     val measurer = rememberTextMeasurer()
     val queueIcon = painterResource(R.drawable.ic_queue)
     val hideIcon = painterResource(R.drawable.ic_yt_hide)
@@ -310,7 +313,7 @@ fun Modifier.ytCardSwipe(
         if (!queued) haptics.reject()
     }
 
-    val gesture = Modifier.pointerInput(state, threshold, drift) {
+    val gesture = Modifier.pointerInput(state, threshold, drift, tuning) {
         val width = size.width.toFloat().coerceAtLeast(1f)
         val slop = viewConfiguration.touchSlop
         awaitEachGesture {
@@ -341,7 +344,7 @@ fun Modifier.ytCardSwipe(
                 if (!change.pressed || change.isConsumed) break
                 tracker.addPointerInputChange(change)
                 val moved = change.position - origin
-                val claim = YtSwipePhysics.claim(moved.x, moved.y, slop)
+                val claim = YtSwipePhysics.claim(moved.x, moved.y, slop, tuning.claimRatio)
                 if (claim == YtSwipePhysics.Claim.SCROLL) break
                 if (claim == YtSwipePhysics.Claim.SWIPE) {
                     change.consume()
@@ -372,7 +375,7 @@ fun Modifier.ytCardSwipe(
                 tracker.addPointerInputChange(change)
                 // turned into a scroll after all (too far down, or too steep): dropped, never committed
                 val moved = change.position - origin
-                if (change.pressed && YtSwipePhysics.drifted(moved.x, moved.y, drift, slop)) {
+                if (change.pressed && YtSwipePhysics.drifted(moved.x, moved.y, drift, slop, tuning.steep)) {
                     drifted = true
                     break
                 }
@@ -390,7 +393,7 @@ fun Modifier.ytCardSwipe(
             val shown = YtSwipePhysics.band(raw, threshold, width)
             val fling = if (lifted) tracker.calculateVelocity() else Velocity.Zero
             val velocity = fling.x
-            val way = if (lifted) YtSwipePhysics.decide(shown, velocity, threshold, fling.y) else 0
+            val way = if (lifted) YtSwipePhysics.decide(shown, velocity, threshold, fling.y, tuning.steep, tuning.flickVelocity) else 0
             YtTestHooks.log("YtSwipe") {
                 "release id=$id x=${shown.roundToInt()} moves=$moves v=${velocity.roundToInt()} vy=${fling.y.roundToInt()} " +
                     "lifted=$lifted drifted=$drifted way=$way"

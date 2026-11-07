@@ -578,7 +578,7 @@ private fun AfterPoster(
             contentDescription = null,
             imageLoader = imageLoader,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().ytSeen(video, palette),
         )
         Box(
             Modifier

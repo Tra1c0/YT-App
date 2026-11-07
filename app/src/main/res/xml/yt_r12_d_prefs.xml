@@ -15,6 +15,59 @@
             app:key="yt_card_swipe"
             app:title="@string/yt_home_card_swipe" />
 
+        <com.github.libretube.ui.yt.feed.YtSwipeSensitivityPreference
+            android:dependency="yt_card_swipe"
+            android:icon="@drawable/ic_yt_tune"
+            app:key="yt_swipe_sensitivity_row"
+            app:title="@string/yt_swipe_sensitivity" />
+
+        <com.github.libretube.ui.yt.feed.YtSwipeFinePreference
+            android:dependency="yt_card_swipe"
+            android:summary="@string/yt_swipe_fine_summary"
+            app:defaultValue="false"
+            app:iconSpaceReserved="true"
+            app:key="yt_swipe_fine"
+            app:title="@string/yt_swipe_fine" />
+
+        <com.github.libretube.ui.yt.feed.YtSwipeValuePreference
+            android:dependency="yt_swipe_fine"
+            app:iconSpaceReserved="true"
+            app:key="yt_swipe_angle"
+            app:title="@string/yt_swipe_angle" />
+
+        <com.github.libretube.ui.yt.feed.YtSwipeValuePreference
+            android:dependency="yt_swipe_fine"
+            app:iconSpaceReserved="true"
+            app:key="yt_swipe_drift"
+            app:title="@string/yt_swipe_drift" />
+
+        <com.github.libretube.ui.yt.feed.YtSwipeValuePreference
+            android:dependency="yt_swipe_fine"
+            app:iconSpaceReserved="true"
+            app:key="yt_swipe_distance"
+            app:title="@string/yt_swipe_distance" />
+
+        <com.github.libretube.ui.yt.feed.YtSwipeCalibratePreference
+            android:dependency="yt_card_swipe"
+            android:icon="@drawable/ic_swipe_gesture"
+            android:summary="@string/yt_swipe_calibrate_summary"
+            app:key="yt_swipe_calibrate_row"
+            app:title="@string/yt_swipe_calibrate" />
+
+        <com.github.libretube.ui.yt.feed.YtSwipeResetPreference
+            android:dependency="yt_card_swipe"
+            android:icon="@drawable/ic_reset"
+            android:summary="@string/yt_swipe_reset_summary"
+            app:key="yt_swipe_reset_row"
+            app:title="@string/yt_swipe_reset" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_yt_eye"
+            android:summary="@string/yt_seen_marks_summary"
+            app:defaultValue="true"
+            app:key="yt_seen_marks"
+            app:title="@string/yt_seen_marks" />
+
         <SwitchPreferenceCompat
             android:icon="@drawable/ic_queue"
             android:summary="@string/yt_home_drag_summary"

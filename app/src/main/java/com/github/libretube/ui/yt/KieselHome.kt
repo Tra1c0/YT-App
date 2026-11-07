@@ -82,6 +82,7 @@ import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.github.libretube.R
 import com.github.libretube.api.obj.StreamItem
+import com.github.libretube.helpers.YtDesign
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -566,7 +567,7 @@ private fun KieselCardItem(video: StreamItem, imageLoader: ImageLoader, color: C
                 .clip(RoundedCornerShape(14.dp))
                 .background(KieselInk.copy(alpha = 0.08f)),
         ) {
-            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, YtDesign.KIESEL.palette ?: YtPalettes.Kiesel))
             ytDuration(video)?.let {
                 Text(
                     text = it,
@@ -632,7 +633,8 @@ private fun KieselRow(
             modifier = Modifier
                 .size(84.dp, 48.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(KieselBeige),
+                .background(KieselBeige)
+                .ytSeen(video, palette),
         )
         Column(Modifier.weight(1f).padding(start = 12.dp, end = 6.dp)) {
             Text(

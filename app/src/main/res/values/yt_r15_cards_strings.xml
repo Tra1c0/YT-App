@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- card swipe tolerance -->
+    <string name="yt_swipe_sensitivity">Swipe sensitivity</string>
+    <string name="yt_swipe_level">%1$s (%2$d)</string>
+    <string name="yt_swipe_level_default">Default</string>
+    <string name="yt_swipe_level_very_strict">Very strict</string>
+    <string name="yt_swipe_level_strict">Strict</string>
+    <string name="yt_swipe_level_loose">Loose</string>
+    <string name="yt_swipe_level_very_loose">Very loose</string>
+    <string name="yt_swipe_sensitivity_fine_on">%1$s · fine values active</string>
+    <string name="yt_swipe_fine">Fine-tune</string>
+    <string name="yt_swipe_fine_summary">Set angle, drift and distance yourself instead of by the slider</string>
+    <string name="yt_swipe_angle">Angle</string>
+    <string name="yt_swipe_angle_summary">%1$s: how slanted a swipe may be before it counts as scrolling</string>
+    <string name="yt_swipe_drift">Drift</string>
+    <string name="yt_swipe_drift_summary">%1$s: how far a swipe may wander up or down</string>
+    <string name="yt_swipe_distance">Distance</string>
+    <string name="yt_swipe_distance_summary">%1$s: how far to pull until the swipe triggers</string>
+    <string name="yt_swipe_degrees">%1$d°</string>
+    <string name="yt_swipe_dp">%1$d dp</string>
+    <string name="yt_swipe_calibrate">Calibrate swipe gestures</string>
+    <string name="yt_swipe_calibrate_summary">Scroll and swipe a few times; the app measures your movements and suggests values</string>
+    <string name="yt_swipe_calibrate_scroll">Scroll down the list %1$d times, just the way you always do.</string>
+    <string name="yt_swipe_calibrate_swipe">Now swipe the test card sideways %1$d times on purpose, left or right.</string>
+    <string name="yt_swipe_calibrate_result">Suggested from your movements:</string>
+    <string name="yt_swipe_calibrate_score_now">Current values: %1$d of %2$d swipes recognised, %3$d of %4$d scrolls left alone</string>
+    <string name="yt_swipe_calibrate_score_new">New values: %1$d of %2$d swipes recognised, %3$d of %4$d scrolls left alone</string>
+    <string name="yt_swipe_calibrate_conflict">Some of your swipes were as slanted as your scrolls. Scrolling takes priority; swipe a little flatter.</string>
+    <string name="yt_swipe_calibrate_too_few">Not enough movements were recorded. Please try again.</string>
+    <string name="yt_swipe_calibrate_again">Again</string>
+    <string name="yt_swipe_calibrate_apply">Apply</string>
+    <string name="yt_swipe_reset">Reset</string>
+    <string name="yt_swipe_reset_summary">Back to the original swipe values</string>
+    <string name="yt_swipe_reset_message">Sensitivity, fine values and calibration go back to the original values.</string>
+    <string name="yt_swipe_reset_confirm">Reset</string>
+    <!-- watched marks on the home cards -->
+    <string name="yt_seen_marks">Mark watched videos</string>
+    <string name="yt_seen_marks_summary">Started videos get a thin progress bar, watched ones are dimmed with a small badge</string>
+    <string name="yt_seen_badge">Watched</string>
+</resources>

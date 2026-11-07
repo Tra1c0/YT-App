@@ -356,6 +356,8 @@ private fun Thumbnail(
     corner: Int,
     modifier: Modifier = Modifier,
     ratio: Float = 16f / 9f,
+    // YT: drawn inside the clip (the watched mark)
+    over: Modifier = Modifier,
 ) {
     AsyncImage(
         model = url,
@@ -364,7 +366,8 @@ private fun Thumbnail(
         contentScale = ContentScale.Crop,
         modifier = modifier
             .aspectRatio(ratio)
-            .clip(RoundedCornerShape(corner.dp)),
+            .clip(RoundedCornerShape(corner.dp))
+            .then(over),
     )
 }
 
@@ -416,7 +419,7 @@ private fun LargeVideo(
             .padding(start = 4.dp, end = 4.dp, bottom = 16.dp),
     ) {
         Box {
-            Thumbnail(imageLoader, video.thumbnail, corner = 14, modifier = Modifier.fillMaxWidth(), ratio = 2f)
+            Thumbnail(imageLoader, video.thumbnail, corner = 14, modifier = Modifier.fillMaxWidth(), ratio = 2f, over = Modifier.ytSeen(video, palette))
             formatDuration(video.duration)?.let {
                 DurationChip(
                     it,

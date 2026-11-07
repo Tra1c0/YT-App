@@ -335,7 +335,7 @@ private fun EditorialItem(
                     imageLoader = imageLoader,
                     contentScale = ContentScale.Crop,
                     colorFilter = if (color == 0f) ytGrayscale else ytSaturation(color),
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().ytSeen(video, palette),
                 )
                 EditorialBadge(
                     palette,
@@ -476,7 +476,7 @@ private fun EditorialShorts(
                             imageLoader = imageLoader,
                             contentScale = ContentScale.Crop,
                             colorFilter = ytGrayscale,
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxSize().ytSeen(short, palette),
                         )
                         EditorialBadge(
                             palette,
