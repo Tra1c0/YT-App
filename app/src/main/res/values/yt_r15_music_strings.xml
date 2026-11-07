@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_music_category">Music</string>
+    <string name="yt_music_audio_background">Music in the background as audio only</string>
+    <string name="yt_music_audio_background_summary">When YT goes to the background during a music video, only the sound keeps loading. Saves battery and data; the picture is back when you return. Not while a floating window or picture-in-picture is showing.</string>
+    <string name="yt_music_from_start">Start music from the beginning</string>
+    <string name="yt_music_from_start_summary">Music videos start at 0:00 instead of where you left off. A link with its own time (t=) still jumps there.</string>
+</resources>

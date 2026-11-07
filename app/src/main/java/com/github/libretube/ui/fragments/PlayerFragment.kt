@@ -314,6 +314,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
                 this@PlayerFragment.streams = streams
                 viewModel.segments.postValue(emptyList())
                 updatePlayerView()
+                // YT: the queue moved on to a music video while YT is in the background
+                ytMusicAudioIfHidden()
             }
         }
 
@@ -1022,6 +1024,31 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         isEnteringPiPMode = false
 
         super.onPause()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // YT: music in the background needs no picture (setting "Musik im Hintergrund nur als Audio");
+        // onResume turns the video track on again at the same position
+        ytMusicAudioIfHidden(stopped = true)
+    }
+
+    /** YT: rests the video track of a music video while this page is hidden and no picture shows. */
+    private fun ytMusicAudioIfHidden(stopped: Boolean = false) {
+        if (isOffline || !this::streams.isInitialized) return
+        if (!stopped && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return
+        val activity = activity ?: return
+        val pictureVisible = activity.isInPictureInPictureMode ||
+            com.github.libretube.ui.yt.YtFloatingPlayer.isShowing
+        if (com.github.libretube.util.YtMusicRules.audioInBackground(
+                com.github.libretube.helpers.YtMusicPlayback.audioInBackground,
+                com.github.libretube.helpers.YtMusicPlayback.isMusic(streams),
+                pictureVisible,
+                activity.isChangingConfigurations,
+            )
+        ) {
+            setVideoTrackTypeDisabled(true)
+        }
     }
 
     override fun onResume() {

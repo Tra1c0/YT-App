@@ -234,7 +234,13 @@ open class OnlinePlayerService : AbstractPlayerService() {
         // seek to the previous position if available
         if (seekToPositionMs != 0L) {
             exoPlayer?.seekTo(seekToPositionMs)
-        } else if (watchPositionsEnabled) {
+        } else if (com.github.libretube.util.YtMusicRules.restoreSavedPosition(
+                watchPositionsEnabled,
+                com.github.libretube.helpers.YtMusicPlayback.isMusic(streams),
+                com.github.libretube.helpers.YtMusicPlayback.fromStart,
+            )
+        ) {
+            // YT: music starts at 0:00 instead of where it was left (setting "Musik von vorn")
             scope.launch(Dispatchers.IO) {
                 UserDataRepositoryHelper.userDataRepository.getFromWatchHistory(videoId)?.metadata?.positionMillis?.let {
                     if (!DatabaseHelper.isVideoWatched(it, streams?.duration)) {

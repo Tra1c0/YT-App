@@ -161,4 +161,25 @@
 
     </PreferenceCategory>
 
+    <!-- YT: music playback (YtMusicPlayback) -->
+    <PreferenceCategory
+        app:key="yt_music"
+        app:title="@string/yt_music_category">
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:icon="@drawable/ic_headphones"
+            android:summary="@string/yt_music_audio_background_summary"
+            app:key="yt_music_audio_background"
+            app:title="@string/yt_music_audio_background" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:icon="@drawable/ic_restart"
+            android:summary="@string/yt_music_from_start_summary"
+            app:key="yt_music_from_start"
+            app:title="@string/yt_music_from_start" />
+
+    </PreferenceCategory>
+
 </PreferenceScreen>
