@@ -210,8 +210,7 @@ object YtFeedEngine {
         if (item.source == YtFeedSource.MUSIC) return true
         val key = item.channelKey
         if (key != null && key in personal.musicChannels) return true
-        val name = item.channelName.orEmpty()
-        return name.endsWith(" - Topic") || name.contains("VEVO", ignoreCase = false) || name.endsWith("Music", ignoreCase = true)
+        return com.github.libretube.util.YtMusicRules.channelLooksMusic(item.channelName)
     }
 
     /** A learning video: from a marked channel, long enough, or with a learning word (a guess, said in the sheet). */

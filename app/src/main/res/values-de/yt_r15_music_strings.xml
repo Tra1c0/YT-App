@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_music_category">Musik</string>
+    <string name="yt_music_audio_background">Musik im Hintergrund nur als Audio</string>
+    <string name="yt_music_audio_background_summary">Geht YT bei einem Musikvideo in den Hintergrund, wird nur noch der Ton geladen. Spart Akku und Daten; das Bild ist wieder da, wenn du zurückkommst. Nicht, solange ein schwebendes Fenster oder Bild-im-Bild zu sehen ist.</string>
+    <string name="yt_music_from_start">Musik von vorn starten</string>
+    <string name="yt_music_from_start_summary">Musikvideos beginnen bei 0:00 statt dort, wo du aufgehört hast. Ein Link mit eigener Zeit (t=) springt weiterhin dorthin.</string>
+</resources>
