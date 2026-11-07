@@ -30,6 +30,7 @@ object YtDiagnosis {
             add("Last update" to runCatching { YtSelfUpdater.lastResult(context) }.getOrNull())
             add("YouTube account" to if (runCatching { YtAccount.signedIn }.getOrDefault(false)) "yes" else "no")
             add("Queue" to runCatching { PlayingQueue.size().toString() }.getOrNull())
+            add("Mini restore" to runCatching { com.github.libretube.ui.yt.mini.YtMiniRestore.traceText() }.getOrNull())
             add("Crashes stored" to crashes.size.toString())
             add("Last crash" to crashes.firstOrNull()?.let(YtCrashText::summary))
         }

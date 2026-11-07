@@ -48,6 +48,23 @@ object YtMiniRestore {
 
     private fun now() = SystemClock.elapsedRealtime()
 
+    // the steps of the last restores with their time since the long press, for the Diagnose
+    // page: a slow restore shows which step waited
+    private val traces = ArrayDeque<StringBuilder>()
+    private var traceStart = 0L
+
+    /** Notes [step] of the restore that runs now (the long press starts a new trace). */
+    fun mark(step: String) {
+        val trace = traces.lastOrNull() ?: return
+        if (now() - traceStart > TRACE_MS) return
+        trace.append(' ').append(step).append('+').append(now() - traceStart)
+    }
+
+    /** The last restores, one line each, oldest first; null if none happened. */
+    fun traceText(): String? = traces.takeIf { it.isNotEmpty() }?.joinToString(" | ") { it.toString().trim() }
+
+    private const val TRACE_MS = 30_000L
+
     /** The player page was closed by the user (swipe away, close button). */
     fun closed(videoId: String?, positionMs: Long, durationMs: Long, offline: Boolean) {
         if (videoId.isNullOrEmpty() || offline) {
@@ -78,12 +95,16 @@ object YtMiniRestore {
         if (verdict == YtMiniRestoreRules.Verdict.EXPIRED) saved = null
         if (verdict != YtMiniRestoreRules.Verdict.RESTORE || session == null) return false
         saved = null
+        traceStart = now()
+        traces.addLast(StringBuilder("hold+0"))
+        while (traces.size > 3) traces.removeFirst()
 
         YtHaptics.of(feedback).play(YtMiniDesigns.current().haptic(YtMoment.DOCK))
         muteDockUntil = now() + MUTE_MS
 
         val start = Runnable {
             if (activity.isFinishing || activity.isDestroyed || playerShowing(activity)) return@Runnable
+            mark("navigate")
             PlayingQueue.setStreams(session.queue)
             dockVideoId = session.videoId
             dockAt = now()
@@ -102,7 +123,9 @@ object YtMiniRestore {
     fun takeStartDocked(videoId: String?): Boolean {
         val pending = dockVideoId ?: return false
         dockVideoId = null
-        return pending == videoId && now() - dockAt in 0..PENDING_MS
+        val docked = pending == videoId && now() - dockAt in 0..PENDING_MS
+        if (docked) mark("page")
+        return docked
     }
 
     /** For the mini player's landing: whether its dock haptic was played already. Asks once. */

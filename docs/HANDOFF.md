@@ -91,6 +91,10 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Build log (one line per build, newest first)
 
+- next: restore rise no longer waits for a late docking completion (450 ms fallback); restore
+  step times in Diagnose. Cause of "every other restore is slow" not confirmed: if it stays, ask
+  for the Diagnose line "Mini restore" (steps hold/navigate/page/armed/docked|fallback/rise/landed).
+
 - 98: mini player restore rises from behind the bar and lands with each design's animation.
 
 - 97: loudness stage sent its limiter tail on every repeated end-of-stream, so the drain before a

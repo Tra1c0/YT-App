@@ -116,7 +116,7 @@ Bekannt: Wischen zum nächsten Short hat im Emulator nicht reagiert; auf dem Han
 | YouTube-Anmeldung | Echte Google-Seite mit Autofill; Daten übernehmen (Abos, Playlists, Später ansehen, Mag ich, Verlauf) oder Takeout-Import. | – |
 | Update in der App | „Download“ lädt mit Fortschrittsleiste, prüft Prüfsumme und Schlüssel und installiert mit Androids Bestätigungsdialog. Bricht Play Protect ab, versucht YT es bis zu zweimal selbst neu („Neuer Versuch (2 von 3)…“), danach öffnet es die geprüfte APK mit dem Android-Installer. „Fehlgeschlagen“ nur, wenn nichts mehr geht. Danach „YT wurde aktualisiert – tippen zum Öffnen“. Nur neuere Builds gelten als Update. | T |
 | Absturz-Report | Nach einem Absturz beim nächsten Start einmal „YT ist beim letzten Mal abgestürzt“ mit „Bericht kopieren“ / „Teilen“; die letzten 3 Berichte bleiben nur auf dem Gerät, Tokens werden geschwärzt. | T |
-| Diagnose | Einstellungen → „Diagnose“: Build, Android/Gerät, Design, Sync-Server, Netz, letztes Update-Ergebnis, Konto ja/nein, Warteschlange, letzter Absturz – als Text zum Kopieren, ohne Konto- oder Tokendaten. | T |
+| Diagnose | Einstellungen → „Diagnose“: Build, Android/Gerät, Design, Sync-Server, Netz, letztes Update-Ergebnis, Konto ja/nein, Warteschlange, letzter Absturz, Zeiten der letzten 3 Miniplayer-Rückholungen – als Text zum Kopieren, ohne Konto- oder Tokendaten. | T |
 | Sicherheit | 22 Befunde geschlossen, Anmeldung verschlüsselt gespeichert und nicht im Backup, nur HTTPS. Details in [SICHERHEIT.md](SICHERHEIT.md). | T |
 
 ## Ideen (noch nicht gebaut)

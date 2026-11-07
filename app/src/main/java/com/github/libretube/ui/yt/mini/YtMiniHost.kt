@@ -482,8 +482,10 @@ class YtMiniHost private constructor(
                     if (risePending) {
                         // brought back: it rises onto the bar first and lands when it arrives
                         risePending = false
+                        YtMiniRestore.mark("docked")
                         startRise()
-                    } else {
+                    } else if (rise == null) {
+                        // (a rise the fallback in armRise started lands by itself)
                         land()
                     }
                 } else if (risePending) {
@@ -509,7 +511,16 @@ class YtMiniHost private constructor(
      */
     fun armRise() {
         risePending = true
+        YtMiniRestore.mark("armed")
         motion.translationY = (motion.rootView?.height?.takeIf { it > 0 } ?: context.resources.displayMetrics.heightPixels).toFloat()
+        // reported on a phone: every other restore waited a long time hidden, i.e. the docking's
+        // completion came late; the rise must not depend on it alone
+        motion.postDelayed({
+            if (!risePending) return@postDelayed
+            risePending = false
+            YtMiniRestore.mark("fallback")
+            startRise()
+        }, RISE_FALLBACK_MS)
     }
 
     /**
@@ -520,6 +531,7 @@ class YtMiniHost private constructor(
      * by the long press.
      */
     private fun startRise() {
+        YtMiniRestore.mark("rise")
         rise?.cancel()
         val from = YtMiniRiseRules.from(binding.mainContainer.height, density)
         if (from <= 0f || !YtMotionPrefs.enabled) {
@@ -557,6 +569,7 @@ class YtMiniHost private constructor(
                     // the cut goes with the offset (the classic page's too, while rise is set)
                     clipToBar()
                     rise = null
+                    YtMiniRestore.mark(if (cancelled) "cancelled" else "landed")
                     if (!cancelled && motion.currentState == R.id.end) land()
                 }
             })
@@ -963,6 +976,9 @@ class YtMiniHost private constructor(
     }
 
     companion object {
+        // how long a restored page waits hidden for its docking before it rises anyway
+        private const val RISE_FALLBACK_MS = 450L
+
         private val hosts = WeakHashMap<View, YtMiniHost>()
 
         /** Gives the mini player of [binding] the form of the current design. */
