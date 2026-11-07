@@ -51,6 +51,13 @@
             app:valueFrom="5.0"
             app:valueTo="60.0" />
 
+        <!-- YT: speeds stored per channel from the speed sheet -->
+        <com.github.libretube.ui.preferences.YtChannelSpeedsPreference
+            android:icon="@drawable/ic_speed"
+            app:key="yt_channel_speeds_list"
+            app:persistent="false"
+            app:title="@string/yt_channel_speeds" />
+
         <SwitchPreferenceCompat
             android:disableDependentsState="true"
             android:icon="@drawable/ic_rotating_circle"

@@ -1203,7 +1203,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         // set the default resolution
         binding.player.setToDefaultResolution()
 
-        if (streams.category == Streams.CATEGORY_MUSIC) {
+        // YT: a speed the user stored for this channel wins over the music rule
+        if (streams.category == Streams.CATEGORY_MUSIC &&
+            com.github.libretube.helpers.YtChannelSpeed.find(streams.uploaderUrl?.toID()) == null
+        ) {
             playerController.setPlaybackSpeed(1f)
         }
     }

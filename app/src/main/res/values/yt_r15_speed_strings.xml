@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- YT: speed per channel (speed sheet and player settings) -->
+    <string name="yt_speed_channel_remember">Remember for this channel</string>
+    <string name="yt_channel_speeds">Speed per channel</string>
+    <string name="yt_channel_speeds_none">No channel has its own speed yet. Set one in the speed menu of a video with \"Remember for this channel\".</string>
+    <plurals name="yt_channel_speeds_count">
+        <item quantity="one">%d channel with its own speed</item>
+        <item quantity="other">%d channels with their own speed</item>
+    </plurals>
+    <string name="yt_channel_speeds_remove">Remove</string>
+    <string name="yt_channel_speed_entry">%1$s · %2$s×</string>
+</resources>

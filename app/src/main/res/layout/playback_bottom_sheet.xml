@@ -32,6 +32,26 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
+                    <!-- YT: speed per channel; hidden when the video names no channel -->
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/yt_channel_speed"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="23dp"
+                        android:text="@string/yt_speed_channel_remember"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/yt_channel_speed_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="23dp"
+                        android:layout_marginBottom="12dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textAppearance="?textAppearanceBodySmall"
+                        android:visibility="gone" />
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

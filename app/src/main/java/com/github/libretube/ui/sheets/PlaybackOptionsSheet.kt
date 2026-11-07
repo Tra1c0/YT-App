@@ -2,6 +2,9 @@ package com.github.libretube.ui.sheets
 
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -16,6 +19,9 @@ import com.github.libretube.databinding.PlaybackBottomSheetBinding
 import com.github.libretube.enums.PlayerCommand
 import com.github.libretube.extensions.round
 import com.github.libretube.helpers.PreferenceHelper
+import com.github.libretube.helpers.YtChannelSpeed
+import com.github.libretube.helpers.YtSpeedRules
+import com.github.libretube.helpers.YtThrottle
 import com.github.libretube.services.AbstractPlayerService
 import com.github.libretube.ui.adapters.SliderLabelsAdapter
 import kotlin.math.absoluteValue
@@ -28,6 +34,18 @@ class PlaybackOptionsSheet(
     private var _binding: PlaybackBottomSheetBinding? = null
     private val binding get() = _binding!!
 
+    // YT: slider drags are sent at most every 150 ms (the last value always arrives), so the
+    // audio processors are not rebuilt for every pixel (see YtSpeedRules)
+    private val handler = Handler(Looper.getMainLooper())
+    private val throttle = YtThrottle()
+    private var lastSent: PlaybackParameters? = null
+    private var sendPending = false
+    private val sendNow = Runnable { sendParameters() }
+
+    // YT: the channel of the video, for "Für diesen Kanal merken" (null: no channel known)
+    private var channelId: String? = null
+    private var channelName: String = ""
+
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = PlaybackBottomSheetBinding.bind(view)
@@ -39,8 +57,11 @@ class PlaybackOptionsSheet(
             binding.speed.value = it
         }
 
-        binding.speed.value = player.playbackParameters.speed
-        binding.pitch.value = playbackPitchToSemitone(player.playbackParameters.pitch)
+        // YT: snapped to the sliders' grid and range, which throw for any other value
+        binding.speed.value = YtSpeedRules.sliderSpeed(player.playbackParameters.speed)
+        binding.pitch.value = YtSpeedRules.quantizeSemitone(playbackPitchToSemitone(player.playbackParameters.pitch))
+        lastSent = player.playbackParameters
+        setupChannelSpeed()
 
         val currentSemitone = binding.pitch.value.round(2)
         binding.semitoneEditText.setText(currentSemitone.toString())
@@ -58,8 +79,9 @@ class PlaybackOptionsSheet(
                 return@setOnEditorActionListener false
             }
 
-            val enteredSemitoneValue = editText.text.toString().toFloat()
-            if (enteredSemitoneValue.absoluteValue > SEMITONES_IN_ONE_OCTAVE) {
+            // YT: "-" or "." alone do not parse; treated like a value out of range
+            val enteredSemitoneValue = editText.text.toString().toFloatOrNull() ?: Float.NaN
+            if (enteredSemitoneValue.isNaN() || enteredSemitoneValue.absoluteValue > SEMITONES_IN_ONE_OCTAVE) {
                 editText.error = context?.getString(
                     R.string.playback_pitch_semitone_error_input,
                     SEMITONES_IN_ONE_OCTAVE
@@ -69,7 +91,7 @@ class PlaybackOptionsSheet(
                 // the user entered a wrong value
                 return@setOnEditorActionListener true
             }
-            changePlaybackPitchInSemitone(enteredSemitoneValue)
+            changePlaybackPitchInSemitone(YtSpeedRules.quantizeSemitone(enteredSemitoneValue))
             clearEditTextFocusAndHideKeyboard()
 
             true
@@ -118,20 +140,68 @@ class PlaybackOptionsSheet(
     }
 
     override fun onDestroyView() {
+        // YT: a change still waiting for its turn is sent before the sheet goes
+        handler.removeCallbacks(sendNow)
+        if (sendPending) sendParameters()
         super.onDestroyView()
         _binding = null
     }
 
     private fun onChange() {
-        player.playbackParameters = PlaybackParameters(
-            binding.speed.value.round(2),
-            semitoneToPlaybackPitch(binding.pitch.value)
-        )
         binding.semitoneEditText.setText((binding.pitch.value).round(2).toString())
         binding.pitchResetButton.isGone = binding.pitch.value == 0f
 
-        val currentSpeed = player.playbackParameters.speed.toString()
-        PreferenceHelper.putString(PreferenceKeys.PLAYBACK_SPEED, currentSpeed)
+        // YT: throttled instead of one MediaController call per slider pixel
+        sendPending = true
+        handler.removeCallbacks(sendNow)
+        val delay = throttle.delayAt(SystemClock.uptimeMillis())
+        if (delay == 0L) sendParameters() else handler.postDelayed(sendNow, delay)
+    }
+
+    /** YT: sends what the sliders show now, clamped, unless it is what was sent last. */
+    private fun sendParameters() {
+        sendPending = false
+        val b = _binding ?: return
+        val params = PlaybackParameters(
+            YtSpeedRules.clampSpeed(b.speed.value),
+            YtSpeedRules.clampPitch(semitoneToPlaybackPitch(YtSpeedRules.quantizeSemitone(b.pitch.value)))
+        )
+        if (params == lastSent) return
+        lastSent = params
+        throttle.sent(SystemClock.uptimeMillis())
+        player.playbackParameters = params
+
+        // YT: with "Für diesen Kanal merken" on, the speed belongs to the channel, not to the
+        // general setting
+        val id = channelId
+        if (id != null && b.ytChannelSpeed.isChecked) {
+            YtChannelSpeed.put(id, channelName, params.speed)
+        } else {
+            PreferenceHelper.putString(PreferenceKeys.PLAYBACK_SPEED, params.speed.toString())
+        }
+    }
+
+    /** YT: the "Für diesen Kanal merken" switch with the channel's name below it. */
+    private fun setupChannelSpeed() {
+        val metadata = player.mediaMetadata
+        val id = metadata.composer?.toString()?.takeIf { it.isNotBlank() }
+        channelId = id
+        channelName = metadata.artist?.toString().orEmpty()
+        binding.ytChannelSpeed.isGone = id == null
+        binding.ytChannelSpeedName.isGone = id == null || channelName.isBlank()
+        if (id == null) return
+        binding.ytChannelSpeedName.text = channelName
+        binding.ytChannelSpeed.isChecked = YtChannelSpeed.find(id) != null
+        binding.ytChannelSpeed.setOnCheckedChangeListener { _, on ->
+            if (on) {
+                YtChannelSpeed.put(id, channelName, YtSpeedRules.clampSpeed(binding.speed.value))
+            } else {
+                // the channel has no speed of its own any more: back to the general one
+                YtChannelSpeed.remove(id)
+                val general = YtSpeedRules.sliderSpeed(YtChannelSpeed.generalSpeed())
+                if (binding.speed.value != general) binding.speed.value = general
+            }
+        }
     }
 
     private fun clearEditTextFocusAndHideKeyboard() {

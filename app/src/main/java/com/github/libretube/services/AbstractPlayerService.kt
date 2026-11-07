@@ -15,6 +15,7 @@ import androidx.media3.common.C
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.Log
@@ -36,6 +37,7 @@ import com.github.libretube.enums.PlayerCommand
 import com.github.libretube.enums.PlayerEvent
 import com.github.libretube.enums.SbSkipOptions
 import com.github.libretube.extensions.TAG
+import com.github.libretube.helpers.YtSpeedRules
 import com.github.libretube.extensions.parcelableExtra
 import com.github.libretube.extensions.toID
 import com.github.libretube.extensions.toastFromMainThread
@@ -98,6 +100,9 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
             } else {
                 // YT: playing again, so the service is in the foreground: the "tap to resume" note is stale
                 YtResumeNotification.cancel(this@AbstractPlayerService)
+                // YT: it plays again, so a later error gets its attempts anew
+                playAttempts = 0
+                recoveringFrom = null
             }
         }
 
@@ -111,7 +116,7 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
             // YT: no toast for an error the service recovers from by itself (a live stream that
             // fell behind its window); the others name their error code, since media3's text
             // alone ("Source error") does not tell what went wrong
-            if (recoversFrom(error)) return
+            if (tryRecover(error)) return
             toastFromMainThread(
                 getString(R.string.yt_play_error, error.localizedMessage.orEmpty(), error.errorCodeName)
             )
@@ -165,8 +170,39 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
         return super.onCustomCommand(session, controller, customCommand, args)
     }
 
-    /** YT: true if the service handles [error] by itself (then no toast). */
-    protected open fun recoversFrom(error: PlaybackException): Boolean = false
+    // YT: attempts to get over a playback error in a row (see YtPlayRecovery), and the error
+    // being recovered from: onPlayerError and STATE_IDLE both report it, only one attempt counts
+    private var playAttempts = 0
+    private var recoveringFrom: PlaybackException? = null
+
+    /** YT: true if the service handles [error] by itself (then no toast and no end of the service). */
+    protected fun tryRecover(error: PlaybackException): Boolean {
+        if (error === recoveringFrom) return true
+        if (!recover(error)) return false
+        recoveringFrom = error
+        return true
+    }
+
+    /** YT: starts the recovery from [error]; false if there is none. Live streams add their own. */
+    protected open fun recover(error: PlaybackException): Boolean = recoverPlayback(error)
+
+    /** YT: prepares the player again at the same position after an error it can get over. */
+    protected fun recoverPlayback(error: PlaybackException): Boolean {
+        val player = exoPlayer ?: return false
+        if (YtPlayRecovery.decide(error.errorCode, playAttempts) != YtPlayRecovery.Action.PREPARE_AGAIN) return false
+        val delay = YtPlayRecovery.delayMs(playAttempts)
+        playAttempts++
+        Log.w(TAG(), "playback failed (${error.errorCodeName}), prepare again, attempt $playAttempts", error)
+        val id = if (isVideoIdSet()) videoId else null
+        handler.postDelayed({
+            // another video or another player meanwhile, or it got going by itself
+            if (exoPlayer !== player || (isVideoIdSet() && videoId != id)) return@postDelayed
+            if (player.playbackState != Player.STATE_IDLE || player.playerError == null) return@postDelayed
+            // ExoPlayer keeps the position of the failure; prepare() resumes there
+            player.prepare()
+        }, delay)
+        return true
+    }
 
     /**
      * YT: skips media3's notification updates while the queue moves to its next item, so the
@@ -646,6 +682,21 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
             return super.getAvailableCommands().buildUpon()
                 .addAll(COMMAND_SEEK_TO_PREVIOUS, COMMAND_SEEK_TO_NEXT)
                 .build()
+        }
+
+        // YT: speed and pitch from any controller stay in a range the audio processors handle
+        // (see YtSpeedRules)
+        override fun setPlaybackParameters(playbackParameters: PlaybackParameters) {
+            super.setPlaybackParameters(
+                PlaybackParameters(
+                    YtSpeedRules.clampSpeed(playbackParameters.speed),
+                    YtSpeedRules.clampPitch(playbackParameters.pitch)
+                )
+            )
+        }
+
+        override fun setPlaybackSpeed(speed: Float) {
+            setPlaybackParameters(PlaybackParameters(speed, playbackParameters.pitch))
         }
 
         override fun isCommandAvailable(command: Int): Boolean {
