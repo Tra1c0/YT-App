@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: Return YouTube Dislike numbers on the video pages of the designs. Same keys in the same order in values and values-de. -->
+<resources>
+    <!-- accessibility: the small green-red bar at the like button; %1$d is the liked share in percent, %2$s the dislike count -->
+    <string name="yt_ryd_bar_description">%1$d %% positiv, %2$s „Mag ich nicht“. Die Mag-ich-nicht-Zahlen sind Schätzungen von Return YouTube Dislike.</string>
+    <!-- accessibility: the same when the video has no visible likes -->
+    <string name="yt_ryd_count_description">%1$s „Mag ich nicht“. Die Mag-ich-nicht-Zahlen sind Schätzungen von Return YouTube Dislike.</string>
+    <!-- small line under the dislike count in the held tile -->
+    <string name="yt_ryd_estimate">Schätzung</string>
+</resources>

@@ -1,6 +1,20 @@
 package com.github.libretube.ui.yt
 
 import android.content.Context
+import android.os.SystemClock
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import com.github.libretube.helpers.PlayerHelper
+import kotlin.math.PI
+import kotlin.math.sin
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Animatable
@@ -83,6 +97,9 @@ import kotlinx.coroutines.launch
  * onto one arms it (a tick), letting go there chooses it (a confirm); letting go elsewhere
  * changes nothing. Choosing the rating the video already has takes it back. The chosen rating
  * stays on the button as a tiny mark: a dot for a like, a small down thumb for a dislike.
+ * Resting on the dislike tile for a moment (YtRevealTimer) reveals the Return YouTube Dislike
+ * count in it, with a tick; and a small green-red bar at the button shows the liked share
+ * (YtSentiment), in the form of the design.
  */
 
 private val TileWidth = 76.dp
@@ -102,6 +119,16 @@ internal class YtRateState(val videoId: String?, private val context: Context, p
         private set
     var hovered by mutableStateOf<YtRate?>(null)
         internal set
+
+    /** The Return YouTube Dislike count of the video, negative when there is none. */
+    var dislikes by mutableStateOf(-1L)
+        internal set
+
+    /** The dislike count was revealed by a hover; it then shows at once on every later hold. */
+    var revealed by mutableStateOf(false)
+        internal set
+
+    val canReveal: Boolean get() = videoId != null && dislikes >= 0
 
     /** The button in window coordinates, taken when the hold starts. */
     var anchor by mutableStateOf<Rect?>(null)
@@ -187,13 +214,47 @@ internal fun rememberYtRateState(videoId: String?): YtRateState {
 }
 
 /**
+ * What the small bar at the like button shows: the liked [share] (0 to 1) between the design's
+ * [green] and [red]. [description] is read out with the button.
+ */
+@Immutable
+internal class YtSentimentBar(
+    val share: Float,
+    val green: Color,
+    val red: Color,
+    val style: YtSentimentStyle,
+    val description: String,
+)
+
+/** The bar for [likes] and [dislikes] in [palette], or null when RYD has no numbers or is off. */
+@Composable
+internal fun rememberYtSentimentBar(likes: Long, dislikes: Long, palette: YtPalette): YtSentimentBar? {
+    val share = YtSentiment.share(likes, dislikes)
+    val text = if (share != null) {
+        stringResource(R.string.yt_ryd_bar_description, YtSentiment.percent(share), YtCountFormat.format(dislikes))
+    } else {
+        null
+    }
+    return remember(share, palette, text) {
+        if (share == null || text == null || !PlayerHelper.localRYD) return@remember null
+        val (green, red) = YtSentiment.colors(palette.signature, palette.background.toArgb())
+        YtSentimentBar(share, Color(green), Color(red), YtSentimentStyle.of(palette.signature), text)
+    }
+}
+
+/**
  * The hold gesture and the tiny rating mark of the like button. Goes in front of the button's
  * own modifiers (as [WatchAction.gesture]); it draws nothing but the mark.
  */
 @Composable
-internal fun Modifier.ytRateHold(state: YtRateState, markColor: Color): Modifier {
+internal fun Modifier.ytRateHold(state: YtRateState, markColor: Color, bar: YtSentimentBar? = null): Modifier {
     if (state.videoId == null) return this
     val view = LocalView.current
+    // the bar grows out from the like end once, when the numbers are there
+    val grow = remember(state.videoId) { Animatable(0f) }
+    val growSpec = ytSpec(tween<Float>(560, easing = YtEaseOut))
+    LaunchedEffect(bar != null) { if (bar != null) grow.animateTo(1f, growSpec) }
+    val countText = if (state.dislikes >= 0) stringResource(R.string.yt_ryd_count_description, YtCountFormat.format(state.dislikes)) else null
     val haptics = rememberYtHaptics()
     val down = painterResource(R.drawable.ic_dislike)
     val likeLabel = stringResource(R.string.yt_rate_like)
@@ -204,11 +265,14 @@ internal fun Modifier.ytRateHold(state: YtRateState, markColor: Color): Modifier
     return this
         .onGloballyPositioned { state.coordinates = it }
         .semantics {
-            when (rating) {
-                YtRate.LIKE -> stateDescription = likedText
-                YtRate.DISLIKE -> stateDescription = dislikedText
-                YtRate.NONE -> {}
+            val rated = when (rating) {
+                YtRate.LIKE -> likedText
+                YtRate.DISLIKE -> dislikedText
+                YtRate.NONE -> null
             }
+            // a contentDescription would replace the button's own label, so the numbers go here
+            val numbers = bar?.description ?: countText?.takeIf { state.revealed }
+            listOfNotNull(rated, numbers).joinToString(". ").takeIf { it.isNotEmpty() }?.let { stateDescription = it }
             customActions = listOf(
                 CustomAccessibilityAction(likeLabel) { state.choose(YtRate.LIKE); true },
                 CustomAccessibilityAction(dislikeLabel) { state.choose(YtRate.DISLIKE); true },
@@ -216,6 +280,7 @@ internal fun Modifier.ytRateHold(state: YtRateState, markColor: Color): Modifier
         }
         .drawWithContent {
             drawContent()
+            if (bar != null) drawSentiment(bar, grow.value)
             // the mark sits inside the top end corner, also inside a pill's rounding
             val inset = 9.dp.toPx()
             val center = Offset(size.width - inset, inset)
@@ -254,9 +319,23 @@ internal fun Modifier.ytRateHold(state: YtRateState, markColor: Color): Modifier
                 view.parent?.requestDisallowInterceptTouchEvent(true)
                 state.openAt(Rect(coordinates.localToWindow(Offset.Zero), coordinates.size.toSize()))
                 haptics.tick()
+                val reveal = YtRevealTimer()
                 try {
                     while (true) {
-                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        // resting on the dislike tile: wake up when the reveal is due, even without a move
+                        val wait = if (state.canReveal && !state.revealed) reveal.remaining(SystemClock.uptimeMillis()) else null
+                        val event = if (wait != null) {
+                            withTimeoutOrNull(wait.coerceAtLeast(1L)) { awaitPointerEvent(PointerEventPass.Initial) }
+                        } else {
+                            awaitPointerEvent(PointerEventPass.Initial)
+                        }
+                        if (event == null) {
+                            if (reveal.due(SystemClock.uptimeMillis()) && state.hovered == YtRate.DISLIKE) {
+                                state.revealed = true
+                                haptics.threshold(true)
+                            }
+                            continue
+                        }
                         // ours now: the button's tap and the scrollers above see it consumed
                         event.changes.forEach { it.consume() }
                         val change = event.changes.firstOrNull { it.id == first.id } ?: break
@@ -274,6 +353,7 @@ internal fun Modifier.ytRateHold(state: YtRateState, markColor: Color): Modifier
                         }
                         if (over != state.hovered) {
                             state.hovered = over
+                            reveal.hover(over == YtRate.DISLIKE, SystemClock.uptimeMillis())
                             if (over != null) haptics.tick()
                         }
                     }
@@ -332,7 +412,8 @@ internal fun YtRateTiles(state: YtRateState) {
                 .padding(TilePad),
         ) {
             RateTile(style, YtHoldDir.UP, R.drawable.ic_like, stringResource(R.string.yt_rate_like), state.hovered == YtRate.LIKE, state.rating == YtRate.LIKE)
-            RateTile(style, YtHoldDir.DOWN, R.drawable.ic_dislike, stringResource(R.string.yt_rate_dislike), state.hovered == YtRate.DISLIKE, state.rating == YtRate.DISLIKE)
+            val count = if (state.revealed && state.dislikes >= 0) YtCountFormat.format(state.dislikes) else null
+            RateTile(style, YtHoldDir.DOWN, R.drawable.ic_dislike, stringResource(R.string.yt_rate_dislike), state.hovered == YtRate.DISLIKE, state.rating == YtRate.DISLIKE, count)
         }
     }
 }
@@ -346,6 +427,7 @@ private fun RateTile(
     label: String,
     armed: Boolean,
     current: Boolean,
+    count: String? = null,
 ) {
     val fill = Color(if (armed) style.armedFill else style.fill(dir))
     val content = Color(style.on(fill.toArgb()))
@@ -382,17 +464,32 @@ private fun RateTile(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(painterResource(icon), contentDescription = null, tint = content, modifier = Modifier.size(22.dp))
-            Text(
-                text = label,
-                color = content,
-                maxLines = 1,
-                style = TextStyle(
-                    fontFamily = style.typeface?.let { FontFamily(it) },
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 11.sp,
-                ),
-                modifier = Modifier.padding(top = 3.dp, start = 4.dp, end = 4.dp),
-            )
+            val family = style.typeface?.let { FontFamily(it) }
+            // the revealed dislike count takes the label's place, marked as an estimate
+            Crossfade(targetState = count, animationSpec = ytFinite(tween(200)), label = "rateCount") { shown ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = shown ?: label,
+                        color = content,
+                        maxLines = 1,
+                        style = TextStyle(
+                            fontFamily = family,
+                            fontWeight = if (shown != null) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = if (shown != null) 12.sp else 11.sp,
+                        ),
+                        modifier = Modifier.padding(top = 3.dp, start = 4.dp, end = 4.dp),
+                    )
+                    if (shown != null) {
+                        Text(
+                            text = stringResource(R.string.yt_ryd_estimate),
+                            color = content.copy(alpha = 0.75f),
+                            maxLines = 1,
+                            style = TextStyle(fontFamily = family, fontSize = 8.5.sp),
+                            modifier = Modifier.padding(horizontal = 4.dp),
+                        )
+                    }
+                }
+            }
         }
         // the rating the video has now: a small dot in the corner, so choosing it again reads as "take back"
         if (current) {
@@ -403,6 +500,74 @@ private fun RateTile(
                     .size(5.dp)
                     .background(content, CircleShape),
             )
+        }
+    }
+}
+
+/** The green-red bar of [bar] at this button, grown to [grow] (0 to 1) from the like end. */
+private fun DrawScope.drawSentiment(bar: YtSentimentBar, grow: Float) {
+    if (grow <= 0f) return
+    val s = bar.style
+    val rtl = layoutDirection == LayoutDirection.Rtl
+    val thick = s.thicknessDp.dp.toPx()
+    val gap = s.gapDp.dp.toPx()
+    val cap = if (s.roundCaps) StrokeCap.Round else StrokeCap.Butt
+    // round caps reach past the ends: keep the whole bar inside its width
+    val capRoom = if (s.roundCaps) thick / 2f else 0f
+    val stops = YtSentiment.stops(bar.share, bar.green.toArgb(), bar.red.toArgb(), rtl)
+        .map { (at, color) -> at to Color(color) }.toTypedArray()
+
+    val left: Float
+    val width: Float
+    if (s.placement == YtSentimentPlacement.ARC) {
+        val radius = minOf(size.width, size.height) / 2f + gap + thick / 2f
+        val half = (s.sweepDegrees / 2f) * (PI.toFloat() / 180f)
+        width = 2f * radius * sin(half) + thick
+        left = center.x - width / 2f
+    } else {
+        width = size.width * s.widthFraction
+        left = s.startDp?.let { start -> if (rtl) size.width - start.dp.toPx() - width else start.dp.toPx() }
+            ?: ((size.width - width) / 2f)
+    }
+    if (width <= thick) return
+    val brush = Brush.horizontalGradient(*stops, startX = left, endX = left + width)
+    val shown = width * grow.coerceIn(0f, 1f)
+    val clipLeft = if (rtl) left + width - shown else left
+    clipRect(clipLeft, -size.height, clipLeft + shown, size.height * 3f) {
+        when (s.placement) {
+            YtSentimentPlacement.UNDER, YtSentimentPlacement.INSIDE -> {
+                val y = if (s.placement == YtSentimentPlacement.UNDER) size.height + gap + thick / 2f else size.height - gap - thick / 2f
+                drawLine(brush, Offset(left + capRoom, y), Offset(left + width - capRoom, y), thick, cap)
+            }
+            YtSentimentPlacement.ARC -> {
+                val radius = minOf(size.width, size.height) / 2f + gap + thick / 2f
+                drawArc(
+                    brush = brush,
+                    startAngle = 90f - s.sweepDegrees / 2f,
+                    sweepAngle = s.sweepDegrees,
+                    useCenter = false,
+                    topLeft = Offset(center.x - radius, center.y - radius),
+                    size = Size(radius * 2f, radius * 2f),
+                    style = Stroke(thick, cap = cap),
+                )
+            }
+            YtSentimentPlacement.WAVE -> {
+                val amp = s.amplitudeDp.dp.toPx()
+                val y0 = size.height + gap + amp
+                val wave = 8.dp.toPx()
+                val from = left + capRoom
+                val to = left + width - capRoom
+                val path = Path().apply {
+                    moveTo(from, y0)
+                    var x = from
+                    val step = 1.dp.toPx()
+                    while (x < to) {
+                        x = minOf(x + step, to)
+                        lineTo(x, y0 + amp * sin((x - from) / wave * 2f * PI.toFloat()))
+                    }
+                }
+                drawPath(path, brush, style = Stroke(thick, cap = cap, join = StrokeJoin.Round))
+            }
         }
     }
 }
