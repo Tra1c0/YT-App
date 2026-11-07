@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the self-updater (download, check, install, restart). Same keys in the same order in values and values-de. -->
+<resources>
+    <string name="yt_update_connecting">Verbinde…</string>
+    <string name="yt_update_progress">%1$s von %2$s MB · %3$d %%</string>
+    <string name="yt_update_progress_unknown">%1$s MB</string>
+    <string name="yt_update_verifying">Download wird geprüft…</string>
+    <string name="yt_update_installing">Wird installiert…</string>
+    <string name="yt_update_confirm">Bitte bestätige die Installation.</string>
+    <string name="yt_update_install">Installieren</string>
+    <string name="yt_update_in_background">Im Hintergrund</string>
+    <string name="yt_update_retry">Erneut versuchen</string>
+    <string name="yt_update_allow">Erlauben</string>
+    <string name="yt_update_allow_hint">Damit sich YT selbst aktualisieren kann, braucht es die Erlaubnis, Apps zu installieren. Erlaube das in den Einstellungen und komm dann hierher zurück.</string>
+    <string name="yt_update_error_download">Download fehlgeschlagen: %1$s</string>
+    <string name="yt_update_error_size">Der Download ist unvollständig und wurde gelöscht.</string>
+    <string name="yt_update_error_checksum">Der Download ist beschädigt (Prüfsumme stimmt nicht) und wurde gelöscht.</string>
+    <string name="yt_update_error_package">Die Datei ist kein Update dieser App und wurde gelöscht.</string>
+    <string name="yt_update_error_signature">Die APK ist nicht mit dem Schlüssel dieser App signiert und wurde gelöscht.</string>
+    <string name="yt_update_error_no_permission">YT darf keine Apps installieren.</string>
+    <string name="yt_update_error_install">Installation fehlgeschlagen: %1$s</string>
+    <string name="yt_update_error_aborted">Installation abgebrochen.</string>
+    <string name="yt_update_channel_name">App-Updates</string>
+    <string name="yt_update_channel_description">Update bestätigen und YT danach wieder öffnen</string>
+    <string name="yt_update_ready_title">YT-Update bereit – tippen zum Installieren</string>
+    <string name="yt_update_done_title">YT wurde aktualisiert – tippen zum Öffnen</string>
+</resources>
