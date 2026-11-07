@@ -462,14 +462,15 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         // YT: the page of a player that goes on (the activity was created again, e.g. by a
         // rotation) comes back docked if it was docked
         // or docked from the start: the closed mini player brought back by a long press on Abos
-        val restoreDocked = (!createNewSession && viewModel.ytDocked) ||
-            (createNewSession && com.github.libretube.ui.yt.mini.YtMiniRestore.takeStartDocked(playerData.videoId))
+        // (that one rises onto the bar in the design's motion, the rotated one stays put)
+        val ytRestored = createNewSession && com.github.libretube.ui.yt.mini.YtMiniRestore.takeStartDocked(playerData.videoId)
+        val restoreDocked = (!createNewSession && viewModel.ytDocked) || ytRestored
 
         if (restoreDocked) baseActivity.requestOrientationChange() else changeOrientationMode()
 
         playerLayoutOrientation = resources.configuration.orientation
 
-        initializeTransitionLayout(restoreDocked)
+        initializeTransitionLayout(restoreDocked, ytRestored)
         initializeOnClickActions()
 
         if (!restoreDocked && PlayerHelper.autoFullscreenEnabled && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -642,7 +643,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun initializeTransitionLayout(restoreDocked: Boolean = false) {
+    private fun initializeTransitionLayout(restoreDocked: Boolean = false, ytRestored: Boolean = false) {
         baseActivity.setPlayerContainerProgress(0f)
 
         var transitionStartId = 0
@@ -710,7 +711,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         // layout's last position is still 0), so a rotated player came back as a docked one the
         // page, the bar and the mini player had not heard of, under the bar and not usable. The
         // page starts once it is attached: open as always, or docked again if it was docked.
-        com.github.libretube.ui.yt.mini.YtPageStart.start(binding.playerMotionLayout, restoreDocked)
+        com.github.libretube.ui.yt.mini.YtPageStart.start(binding.playerMotionLayout, restoreDocked, rise = ytRestored)
 
         val activity = requireActivity()
         PictureInPictureCompat.setPictureInPictureParams(activity, pipParams)

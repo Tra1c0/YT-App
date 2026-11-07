@@ -18,8 +18,10 @@ import com.github.libretube.util.PlayingQueue
  * playing queue (the closing service clears the queue). For [YtMiniRestoreRules.KEEP_MS] a long
  * press puts the queue back and starts the video at that position, opened straight into the
  * docked mini player: the page takes the path a rotated, docked page uses
- * ([YtPageStart] with docked = true), which is known to dock cleanly after attach. No animation
- * yet; the design's dock haptic plays at the long press (the landing's own one is muted once).
+ * ([YtPageStart] with docked = true), which is known to dock cleanly after attach. With motion
+ * on it then rises onto the bar from behind its edge, the throw-away reversed, and lands in the
+ * design's landing (YtMiniHost.armRise); the design's dock haptic plays at the long press (the
+ * landing's own one is muted once, so there is exactly one).
  *
  * Kept in memory only: it survives a configuration change (this object outlives activities),
  * not the process. Offline players are not kept (their queue is built by the offline service).
