@@ -1141,7 +1141,11 @@ class CustomExoPlayerView(
 
         player.sendCustomCommand(
             AbstractPlayerService.runPlayerActionCommand, bundleOf(
-                PlayerCommand.SET_RESOLUTION.name to transformedResolution
+                PlayerCommand.SET_RESOLUTION.name to transformedResolution,
+                // YT: a pick by hand wins over the low-battery cap; shorts widen the cap too
+                com.github.libretube.services.YtBatteryQualityModule.EXTRA_BY_USER to isSelectedByUser,
+                com.github.libretube.services.YtBatteryQualityModule.EXTRA_SHORT to
+                    (!isSelectedByUser && playerCallback.isVideoShort())
             )
         )
 

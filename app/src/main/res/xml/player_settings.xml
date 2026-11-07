@@ -189,4 +189,53 @@
 
     </PreferenceCategory>
 
+    <!-- YT: low battery: lower quality (YtBatteryQualityModule) and the cue (YtBatteryCueModule) -->
+    <PreferenceCategory
+        app:key="yt_battery"
+        app:title="@string/yt_battery_category">
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:icon="@drawable/ic_yt_battery_low"
+            android:summary="@string/yt_battery_quality_summary"
+            app:key="yt_battery_quality"
+            app:title="@string/yt_battery_quality" />
+
+        <ListPreference
+            android:defaultValue="20"
+            android:dependency="yt_battery_quality"
+            android:icon="@drawable/ic_yt_battery_low"
+            app:entries="@array/yt_battery_threshold_entries"
+            app:entryValues="@array/yt_battery_threshold_values"
+            app:key="yt_battery_threshold"
+            app:title="@string/yt_battery_threshold"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:defaultValue="480"
+            android:dependency="yt_battery_quality"
+            android:icon="@drawable/ic_hd"
+            app:entries="@array/yt_battery_cap_entries"
+            app:entryValues="@array/yt_battery_cap_values"
+            app:key="yt_battery_cap"
+            app:title="@string/yt_battery_cap"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:dependency="yt_battery_quality"
+            android:icon="@drawable/ic_yt_battery_low"
+            android:summary="@string/yt_battery_power_save_summary"
+            app:key="yt_battery_power_save"
+            app:title="@string/yt_battery_power_save" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:icon="@drawable/ic_notification"
+            android:summary="@string/yt_battery_cue_summary"
+            app:key="yt_battery_cue"
+            app:title="@string/yt_battery_cue" />
+
+    </PreferenceCategory>
+
 </PreferenceScreen>

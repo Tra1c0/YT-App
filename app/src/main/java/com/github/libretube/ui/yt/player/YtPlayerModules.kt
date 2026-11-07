@@ -61,6 +61,7 @@ object YtPlayerModules {
         YtMinimizeModule,
         YtPlayerGestureModule,
         YtSceneModule,
+        YtBatteryCueModule,
     )
 
     fun onViewCreated(host: YtPlayerHost) = modules.forEach { it.onViewCreated(host) }

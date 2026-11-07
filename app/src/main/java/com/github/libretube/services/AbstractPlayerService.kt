@@ -280,9 +280,13 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
 
             args.containsKey(PlayerCommand.SET_RESOLUTION.name) -> {
                 trackSelector?.updateParameters {
-                    val resolution = args.getInt(PlayerCommand.SET_RESOLUTION.name)
+                    // YT: on a low battery the height may be capped, with 30 fps (YtBatteryQualityModule)
+                    val resolution = YtBatteryQualityModule.resolution(
+                        args.getInt(PlayerCommand.SET_RESOLUTION.name), args
+                    )
                     setMinVideoSize(Int.MIN_VALUE, resolution)
                     setMaxVideoSize(Int.MAX_VALUE, resolution)
+                    setMaxVideoFrameRate(YtBatteryQualityModule.maxFrameRate())
                 }
             }
 
