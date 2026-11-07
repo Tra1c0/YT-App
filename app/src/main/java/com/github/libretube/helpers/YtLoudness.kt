@@ -66,6 +66,12 @@ class YtLoudnessProcessor : BaseAudioProcessor() {
     private var buffer = FloatArray(0)
     private var float = false
 
+    // the limiter's tail goes out once per end of stream: media3's pipeline calls
+    // queueEndOfStream again on every pass while the stage before is ended, and a fresh tail each
+    // time kept this stage from ever ending. A speed change drains the chain and waits for that
+    // end, so the sound stopped (the picture ran on its own clock) until a seek flushed it.
+    private var tailSent = false
+
     @Volatile
     private var itemGeneration = 0
     private var seenGeneration = 0
@@ -88,6 +94,7 @@ class YtLoudnessProcessor : BaseAudioProcessor() {
     // the new format only takes over at the flush that follows configure (media3 may still
     // drain the old one in between), so the leveller is set up here
     override fun onFlush(streamMetadata: AudioProcessor.StreamMetadata) {
+        tailSent = false
         val format = inputAudioFormat
         if (outputAudioFormat == AudioProcessor.AudioFormat.NOT_SET) {
             leveller = null
@@ -136,6 +143,8 @@ class YtLoudnessProcessor : BaseAudioProcessor() {
     }
 
     override fun onQueueEndOfStream() {
+        if (tailSent) return
+        tailSent = true
         val lev = leveller ?: return
         val tail = lev.drain()
         write(tail, tail.size)
@@ -156,6 +165,7 @@ class YtLoudnessProcessor : BaseAudioProcessor() {
     }
 
     override fun onReset() {
+        tailSent = false
         leveller = null
         buffer = FloatArray(0)
     }

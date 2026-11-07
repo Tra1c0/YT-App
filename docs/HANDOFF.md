@@ -8,7 +8,7 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 96 (round 16: crash report + Diagnose page, calm titles, hide watched,
+- Latest release: build 98 (fix: silent sound after the 2x hold). Build 96 = round 16 ( crash report + Diagnose page, calm titles, hide watched,
   watched marks in search, mini player restore by holding "Abos"). Before: build 95. Repo `Tra1c0/YT-App` is PUBLIC (needed: when
   private, GitHub Actions does not start jobs because of billing). Patch repo
   `Tra1c0/YT-Revanced-Revanced-` is a separate, older project (branch `ccr-06da63aa-8a5ovt` only).
@@ -21,11 +21,6 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   `r16/queue` (not pushed, lost with this container). Restart it from `main` when asked.
 - `MODIFICATIONS.md` (GPL change list) is current up to build 95 (rows split into LibreTube /
   YT files); add a row for every change to an upstream file.
-- Open bug (build 96, not reproducible yet): after a long session without restart, holding the
-  video (long press 2x fast forward) left the picture running without sound until the next seek;
-  gone after restarting the app, not tied to the loudness switch alone (a switch change applies only
-  at the next video). Idea: add audio pipeline state (speed, processors active, last audio error)
-  to the Diagnose text so the next report carries it.
 - Unverified on a phone: most features of rounds 12-15 (see FEATURES.md status column).
 
 ## How to work (cheap and safe)
@@ -83,12 +78,18 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 - media3: empty timeline between queue items drops the foreground service; Android 12+ then refuses
   to restart it from the background (`YtForegroundHold`).
 - Google Sans needs `includeFontPadding=false` in the classic screens (lines twice as tall).
+- media3 audio processors: `queueEndOfStream` is called again on every pipeline pass while the
+  stage before is ended; output for the end must be produced once (reset in onFlush), or the drain
+  that every speed change runs never ends (sound gone, picture runs on). Test: YtLoudnessDrainTest.
 - Agents guess APIs when they cannot compile: always compile locally now.
 - A fresh container has no Android SDK: install cmdline-tools to `/opt/android-sdk`
   (`platforms;android-36`, `build-tools;36.0.0`) and write `local.properties` per worktree.
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 98: loudness stage sent its limiter tail on every repeated end-of-stream, so the drain before a
+  speed change (2x hold) never ended and the sound stopped until a seek. 97: docs only.
 
 - 96: crash report + Diagnose, calm titles (caps, !!!, emoji), hide watched (Feed-Regler), watched
   marks in search, mini player restore by holding "Abos" (no animation yet).

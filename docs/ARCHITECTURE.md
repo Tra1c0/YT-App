@@ -187,7 +187,9 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
 - Loudness: pure DSP `J/helpers/YtLoudnessMeter.kt` (BS.1770 gated), `YtPeakLimiter.kt` (look-ahead,
   −1 dBTP), `YtLeveller.kt`; media3 glue `J/helpers/YtLoudness.kt` (prefs `yt_loud*`, processor after
   Sonic). Pitfall: set per-format state in `onFlush`, not `onConfigure`; `isActive` is fixed per
-  configure, so switching off takes effect at the next video. NewPipe exposes no loudness value.
+  configure, so switching off takes effect at the next video. The limiter tail goes out once per
+  end of stream (`tailSent`): media3 re-queues the end on every pass, and a fresh tail each time
+  kept the speed-change drain from ending (sound stopped after the 2x hold). NewPipe exposes no loudness value.
 - Music: `J/util/YtMusicRules.kt` (also used by `YtFeedEngine.isMusic`), `J/helpers/YtMusicPlayback.kt`
   (prefs `yt_music_audio_background`, `yt_music_from_start`); `OnlinePlayerService.configurePlayer`
   skips the watch-position restore for music.
