@@ -1,5 +1,6 @@
 package com.github.libretube.api
 
+import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.api.obj.Subscription
 import com.github.libretube.db.obj.SubscriptionsFeedItem
 import com.github.libretube.repo.FeedProgress
@@ -7,6 +8,7 @@ import com.github.libretube.repo.FeedRefresh
 import com.github.libretube.repo.FeedRepository
 import com.github.libretube.repo.UserDataRepository
 import com.github.libretube.repo.UserDataRepositoryHelper
+import com.github.libretube.repo.YtFeedFlight
 
 object SubscriptionHelper {
     @Suppress("DEPRECATION")
@@ -33,8 +35,24 @@ object SubscriptionHelper {
         userDataRepository.getSubscriptions().sortedBy { it.name.lowercase() }
 
     suspend fun getSubscriptionChannelIds() = userDataRepository.getSubscriptionChannelIds()
-    suspend fun getFeed(refresh: FeedRefresh, onProgressUpdate: (FeedProgress) -> Unit = {}) =
-        feedRepository.getFeed(refresh, onProgressUpdate)
+    // YT: a network refresh joins the one already running (YtFeedFlight); reading the cached
+    // feed (Automatically) never waits for it
+    private val feedFlight = YtFeedFlight<List<StreamItem>>()
+
+    suspend fun getFeed(refresh: FeedRefresh, onProgressUpdate: (FeedProgress) -> Unit = {}): List<StreamItem> {
+        if (refresh is FeedRefresh.Automatically) {
+            val cached = feedRepository.getFeed(refresh, onProgressUpdate)
+            // nothing cached yet (first start, account switch): there is nothing to show, so
+            // fetch every channel now. Channels without a recent video leave the cache empty,
+            // so that waits for the next due time instead of running on every open.
+            if (cached.isNotEmpty() || !isFeedRefreshDue()) return cached
+            return getFeed(FeedRefresh.All, onProgressUpdate)
+        }
+        return feedFlight.run(onProgressUpdate) { progress -> feedRepository.getFeed(refresh, progress) }
+    }
+
+    /** YT: whether the cached feed is old enough for a refresh in the background. */
+    fun isFeedRefreshDue() = feedRepository.isRefreshDue()
 
     suspend fun submitFeedItemChange(feedItem: SubscriptionsFeedItem) =
         feedRepository.submitFeedItemChange(feedItem)

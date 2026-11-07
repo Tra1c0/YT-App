@@ -24,5 +24,8 @@ interface FeedRepository {
         onProgressUpdate: (FeedProgress) -> Unit = {}
     ): List<StreamItem>
     suspend fun removeChannel(channelId: String) {}
+
+    /** YT: whether the cached feed should be refreshed in the background (see LocalFeedRepository). */
+    fun isRefreshDue(): Boolean = false
     suspend fun submitFeedItemChange(feedItem: SubscriptionsFeedItem) {}
 }
