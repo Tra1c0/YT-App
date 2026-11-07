@@ -8,7 +8,7 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 98 (mini player restore rises with the design's landing). 97: fix for
+- Latest release: build 99 (restore rise fallback + restore times in Diagnose). 98: rise animation. 97: fix for
   silent sound after the 2x hold. Docs-only pushes build nothing. Build 96 = round 16 ( crash report + Diagnose page, calm titles, hide watched,
   watched marks in search, mini player restore by holding "Abos"). Before: build 95. Repo `Tra1c0/YT-App` is PUBLIC (needed: when
   private, GitHub Actions does not start jobs because of billing). Patch repo
@@ -91,7 +91,7 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Build log (one line per build, newest first)
 
-- next: restore rise no longer waits for a late docking completion (450 ms fallback); restore
+- 99: restore rise no longer waits for a late docking completion (450 ms fallback); restore
   step times in Diagnose. Cause of "every other restore is slow" not confirmed: if it stays, ask
   for the Diagnose line "Mini restore" (steps hold/navigate/page/armed/docked|fallback/rise/landed).
 
