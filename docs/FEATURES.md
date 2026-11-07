@@ -7,7 +7,7 @@ im Einzelnen in [DESIGNS.md](DESIGNS.md).
 Status: **E** = im Emulator geprüft · **T** = durch Tests abgedeckt · **–** = noch nicht geprüft.
 Getestet auf einem echten Handy wurde bisher nur, was du selbst benutzt hast.
 
-Stand: Build 94.
+Stand: Build 95.
 
 ## Designs und Aussehen
 
@@ -40,6 +40,8 @@ Stand: Build 94.
 | Halte-Menü auf Karten | Speichern, Teilen, Kanal, Ans Ende, Ausblenden, Kanal pausieren, Warum sehe ich das. | E |
 | Zeitangaben | „37 Min.“, „~3,5 Std.“, „4 Tage“, „3 Wochen“, „~2,5 Jahre“ statt Datum, auch in den klassischen Zeilen. | T |
 | Kompakte Zahlen | 0–999 genau, dann „~1,5k“, „~27k“, „~1,2 Mio.“, „~1,1 Mrd.“ für Aufrufe und Abonnenten. | T |
+| Gesehenes markieren | Angefangene Videos bekommen auf den Karten einen dünnen Fortschrittsbalken in der Akzentfarbe, gesehene werden leicht abgedunkelt und bekommen ein kleines „Gesehen“-Abzeichen im Stil des Designs. Abschaltbar unter Gesten & Interaktion → Startseite. | T |
+| Wisch-Toleranz einstellen | Gesten & Interaktion → Startseite: „Wisch-Empfindlichkeit“ (streng … locker, Mitte = bisher), „Fein einstellen“ (Winkel, Abweichung, Weg), „Wischgesten kalibrieren“ (scrollen und wischen, die App schlägt Werte vor) und „Zurücksetzen“. | T |
 | Abos ohne Live | Livestreams stehen im Live-Reiter, nicht oben in den Abos. | – |
 | Abos-Reiter schnell | Zeigt sofort die gespeicherten Videos; sind sie älter als 3 Std., lädt er im Hintergrund nach (8 Kanäle gleichzeitig, nie doppelt). Der Lade-Kreis hört auch auf, wenn nichts Neues kam. | T |
 | Abos „Alle“ gemischt | Bei jedem Öffnen und Ziehen neu zufällig sortiert, beim Scrollen stabil; Ungesehenes oben, Angefangenes danach, Gesehenes unten. „Heute“ bleibt nach Datum. | T |
@@ -65,7 +67,9 @@ Stand: Build 94.
 | Teilen mit Zeitstempel | Teilen gedrückt halten und auf die Zeitleiste ziehen; die genaue Stelle bestimmst du in derselben Bewegung. | E T |
 | Kommentare folgen der Szene | Spoilerschutz (spätere Kommentare verschwommen) oder „Diese Stelle“ (nur Kommentare zum aktuellen Abschnitt). | E T |
 | Upstream-Funktionen | Qualität, Geschwindigkeit, Tonhöhe, Stille überspringen, Untertitel, Kapitel, SponsorBlock, DeArrow, Einschlaf-Timer, Statistiken, Wischgesten für Helligkeit und Lautstärke, Doppeltippen, Zoom. | – |
-| Dislike-Zahlen | Werden von Return YouTube Dislike geholt, aber nur im Standard-Design angezeigt. | – |
+| Dislike-Zahlen | In allen Designs mit Like-Knopf: eine kleine grün-rote Leiste am Like-Knopf zeigt das Verhältnis (grün-lastig = positiv). Gedrückt halten, auf „Mag ich nicht“ ziehen und kurz warten: ein Tick, dann steht die geschätzte Zahl in der Kachel. Zahlen von Return YouTube Dislike (Schätzung), nur wenn die Einstellung an ist. | T |
+| Kein Hänger nach Tempo/Tonhöhe | Schnelles Drehen an Geschwindigkeit und Tonhöhe führt nicht mehr zu „Unexpected runtime error“ mit stehendem Bild: Änderungen höchstens alle 150 ms, sichere Werte, und bei so einem Fehler startet das Video an derselben Stelle von selbst neu (bis zu 3×). | T |
+| Geschwindigkeit je Kanal | Im Geschwindigkeitsmenü „Für diesen Kanal merken“: gilt dann automatisch für jedes Video des Kanals. Liste mit Entfernen unter Einstellungen → Player → „Geschwindigkeit je Kanal“. | T |
 
 ## Miniplayer
 
@@ -96,24 +100,21 @@ Bekannt: Wischen zum nächsten Short hat im Emulator nicht reagiert; auf dem Han
 | Kein Absturz im Hintergrund | Der Dienst bleibt beim Wechsel zum nächsten Video im Vordergrund; sonst pausiert er mit „Wiedergabe pausiert – zum Fortsetzen tippen“. | T |
 | Livestreams erholen sich | Bis zu drei Neuversuche; die Fehlermeldung nennt den genauen Code. | T |
 | Downloads | Videos und Ton herunterladen und offline abspielen. | E |
+| Lautstärke angleichen | Bringt Videos auf etwa −14 LUFS (einstellbar −16 bis −12, höchstens +12 dB), hebt leise Stellen sanft an (abschaltbar) und begrenzt bei −1 dBTP, damit nichts übersteuert. Globale Lautstärke −10 bis +6 dB. Einstellungen → Audio & Video → Lautstärke; ganz aus = Ton unverändert (ab dem nächsten Video). | T |
+| Musik im Hintergrund nur als Audio | Geht YT bei einem Musikvideo in den Hintergrund, lädt nur noch der Ton; beim Zurückkommen ist das Bild wieder da. Erkannt an markierten Kanälen, „- Topic“, VEVO, „… Music“, Kategorie Musik. Abschaltbar unter Player. | T |
+| Musik von vorn | Musikvideos beginnen bei 0:00 statt an der gemerkten Stelle; ein Link mit Zeit (t=) springt weiterhin dorthin. Abschaltbar unter Player. | T |
 
 ## Konto, Updates, Sicherheit
 
 | Funktion | Was sie macht | Status |
 | --- | --- | --- |
 | YouTube-Anmeldung | Echte Google-Seite mit Autofill; Daten übernehmen (Abos, Playlists, Später ansehen, Mag ich, Verlauf) oder Takeout-Import. | – |
-| Update in der App | „Download“ lädt mit Fortschrittsleiste, prüft Prüfsumme und Schlüssel und installiert. Danach erscheint „YT wurde aktualisiert – tippen zum Öffnen“ (kein Selbststart mehr, den Sicherheits-Apps abwürgen). Meldet Play Protect zwischendurch einen Fehler, steht „Wird installiert…“ statt „fehlgeschlagen“. Nur neuere Builds gelten als Update. | T |
+| Update in der App | „Download“ lädt mit Fortschrittsleiste, prüft Prüfsumme und Schlüssel und installiert mit Androids Bestätigungsdialog. Bricht Play Protect ab, versucht YT es bis zu zweimal selbst neu („Neuer Versuch (2 von 3)…“), danach öffnet es die geprüfte APK mit dem Android-Installer. „Fehlgeschlagen“ nur, wenn nichts mehr geht. Danach „YT wurde aktualisiert – tippen zum Öffnen“. Nur neuere Builds gelten als Update. | T |
 | Sicherheit | 22 Befunde geschlossen, Anmeldung verschlüsselt gespeichert und nicht im Backup, nur HTTPS. Details in [SICHERHEIT.md](SICHERHEIT.md). | T |
 
 ## Ideen (noch nicht gebaut)
 
 Viel Wirkung bei wenig neuem Code. Sortiert nach Wirkung pro Aufwand.
 
-1. **Dislike-Zahlen in den Designs**: die Zahl ist schon da (Return YouTube Dislike), nur nicht in den Design-Seiten. Als Schätzung beschriften.
-2. **Lautstärke angleichen**: Androids `LoudnessEnhancer` plus Schalter; gleiche Lautstärke für Musik, Podcasts und Videos.
-3. **Kapitel aus Kommentaren**: fehlen Kapitel, Zeitmarken aus einem Kommentar übernehmen (Parser gibt es schon).
-4. **Geschwindigkeit pro Kanal merken**: z. B. Podcasts automatisch 1,5×.
-5. **DeArrow in den Design-Startseiten**: prüfen und anschließen, falls es dort noch fehlt.
-6. **Automatisch Audio bei Musik mit Bildschirm aus**: spart Akku und Daten.
-7. **Gesehenes dezent markieren**: Karten leicht abdunkeln, mit Fortschrittsbalken.
-8. **Wisch-Toleranz kalibrieren**: in den Einstellungen die eigene Toleranz für die Karten-Wischgesten einstellen und feinjustieren (vom Nutzer gewünscht, für später).
+1. **Kapitel aus Kommentaren**: fehlen Kapitel, Zeitmarken aus einem Kommentar übernehmen (Parser gibt es schon).
+2. **DeArrow in den Design-Startseiten**: prüfen und anschließen, falls es dort noch fehlt.

@@ -169,6 +169,32 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   installiert…"); after the replace only a notification is posted (an OEM security app killed the
   background relaunch). Play Protect warnings come from sideloading, not from removable code.
 
+## Round 15 notes
+
+- Update: `YtUpdateRules.nextStep` decides done / confirm / retry (`MAX_AUTO_RETRIES` = 2, fresh
+  session with the kept, verified `cache/update/update.apk`) / system installer (`ACTION_VIEW` via
+  `${applicationId}.fileprovider`, path `update/`) / declined / failed. Sessions use
+  `USER_ACTION_REQUIRED`; the last result is kept in prefs `yt_self_updater/last_result`.
+  Pitfall: `USER_ACTION_NOT_REQUIRED` let Play Protect scan outside any dialog and end the session.
+- Speed/pitch: `J/helpers/YtSpeedRules.kt` (clamps, slider grid, `YtThrottle` 150 ms in
+  `PlaybackOptionsSheet`). Playback errors 1000/1004/4001/4003/5001/5002 on VOD → `prepare()` again
+  via `J/services/YtPlayRecovery.kt` + `AbstractPlayerService.tryRecover`. Pitfall: the service used
+  to end itself on any IDLE error while the page called play(), leaving a running clock over a dead
+  player. Speed per channel: `J/helpers/YtChannelSpeed.kt` (pref `yt_channel_speeds`), applied in
+  `OnlinePlayerService.applyChannelSpeed`; Material Slider throws for values off its step grid.
+- RYD in the designs: `Y/YtSentiment.kt` (pure: share, colour stops, per-design bar), drawn by
+  `ytRateHold` in `Y/YtRateHold.kt`; 600 ms hover reveals the count in the dislike tile.
+- Loudness: pure DSP `J/helpers/YtLoudnessMeter.kt` (BS.1770 gated), `YtPeakLimiter.kt` (look-ahead,
+  −1 dBTP), `YtLeveller.kt`; media3 glue `J/helpers/YtLoudness.kt` (prefs `yt_loud*`, processor after
+  Sonic). Pitfall: set per-format state in `onFlush`, not `onConfigure`; `isActive` is fixed per
+  configure, so switching off takes effect at the next video. NewPipe exposes no loudness value.
+- Music: `J/util/YtMusicRules.kt` (also used by `YtFeedEngine.isMusic`), `J/helpers/YtMusicPlayback.kt`
+  (prefs `yt_music_audio_background`, `yt_music_from_start`); `OnlinePlayerService.configurePlayer`
+  skips the watch-position restore for music.
+- Watched marks: `Y/YtSeen.kt` (one shared `WatchPositionDao.observeAll()` flow, `Modifier.ytSeen`,
+  pref `yt_seen_marks`), rules `Y/feed/YtSeenMark.kt`. Swipe tuning: `Y/feed/YtSwipeTuning.kt`,
+  `YtSwipeCalibration.kt`, `YtSwipeCalibrationScreen.kt`, `YtSwipeSettings.kt` (keys `yt_swipe_*`).
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).
