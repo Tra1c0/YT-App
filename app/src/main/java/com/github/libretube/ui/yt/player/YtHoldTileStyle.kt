@@ -8,6 +8,7 @@ import androidx.core.graphics.ColorUtils
 import com.github.libretube.helpers.YtDesign
 import com.github.libretube.ui.yt.KieselPanel
 import com.github.libretube.ui.yt.YtSignature
+import com.github.libretube.ui.yt.YtContrast
 import com.github.libretube.ui.yt.palette
 import com.github.libretube.ui.yt.ytNight
 
@@ -85,7 +86,9 @@ class YtHoldTileStyle private constructor(
         val opaque = ColorUtils.setAlphaComponent(fill, 255)
         val inkContrast = ColorUtils.calculateContrast(dark, opaque)
         val lightContrast = ColorUtils.calculateContrast(light, opaque)
-        return if (inkContrast >= lightContrast) dark else light
+        val pick = if (inkContrast >= lightContrast) dark else light
+        // the better of the two is not always good enough (a mid-tone fill): push it until it reads
+        return YtContrast.readable(pick, opaque)
     }
 
     companion object {

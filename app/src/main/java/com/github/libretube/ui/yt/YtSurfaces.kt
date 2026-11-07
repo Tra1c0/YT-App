@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 
 /**
@@ -79,4 +80,21 @@ fun Modifier.ytSurface(palette: YtPalette, shape: Shape): Modifier = when (palet
     YtSurfaceStyle.FLAT -> this
         .clip(shape)
         .background(palette.surface)
+}
+
+/**
+ * The opaque colours a [ytSurface] pill or card shows when drawn over [under] (ARGB): the two ends
+ * of its gradient, or its one fill twice. Keep in step with [ytSurface]; words on such a surface
+ * are checked against both ends (YtInk).
+ */
+fun ytSurfaceTones(palette: YtPalette, under: Int): IntArray {
+    fun on(top: Color, bottom: Color = top) = intArrayOf(YtContrast.over(top.toArgb(), under), YtContrast.over(bottom.toArgb(), under))
+    return when (palette.surfaceStyle) {
+        YtSurfaceStyle.CLAY -> on(ytDayNight(Color(0xFFFBEDE2), Color(0xFF46352E)), palette.surface)
+        YtSurfaceStyle.GLASS -> on(ytDayNight(Color(0x9EFFFFFF), Color(0x4D6FB5AA)), ytDayNight(Color(0x5CFFFFFF), Color(0x296FB5AA)))
+        YtSurfaceStyle.EDITORIAL -> on(palette.background)
+        YtSurfaceStyle.POP, YtSurfaceStyle.SHAPES -> on(palette.raised)
+        YtSurfaceStyle.FROST -> on(Color(0x40FFFFFF), Color(0x1FFFFFFF))
+        YtSurfaceStyle.FLAT -> on(palette.surface)
+    }
 }

@@ -83,6 +83,7 @@ fun YtQuickSheet(
     // the title and channel sit on the sheet itself, not on the rows' surfaces: their colours
     // are checked against the sheet's own background (Formen: a light sheet in a dark design)
     val sheetText = remember(palette, square) { quickSheetText(palette, square) }
+    val sheetBack = remember(palette, square) { quickSheetBackground(palette, square) }
 
     AnimatedVisibility(
         visible = video != null,
@@ -103,6 +104,7 @@ fun YtQuickSheet(
             exit = ytExitTransition(slideOutVertically(tween(220, easing = YtEaseOut)) { it }),
         ) {
             val item = shown[0] ?: return@AnimatedVisibility
+            ProvideYtInk(palette, sheetBack) {
             Column(
                 Modifier
                     .onSizeChanged { height = it }
@@ -121,7 +123,7 @@ fun YtQuickSheet(
                         .align(Alignment.CenterHorizontally)
                         .size(36.dp, 4.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(palette.textSecondary.copy(alpha = 0.5f)),
+                        .background(sheetText.second.copy(alpha = 0.5f)),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 14.dp, bottom = 6.dp)) {
                     AsyncImage(
@@ -175,6 +177,7 @@ fun YtQuickSheet(
                     YtWhyList(palette, item, Modifier.padding(start = 6.dp, end = 6.dp, top = 12.dp))
                 }
             }
+            }
         }
     }
 }
@@ -185,18 +188,12 @@ fun YtQuickSheet(
  * square sheet is drawn in the background colour).
  */
 internal fun quickSheetText(palette: YtPalette, square: Boolean): Pair<Color, Color> {
-    val back = quickSheetBackground(palette, square)
-    return Color(YtContrast.readable(palette.text.toArgb(), back)) to
-        Color(YtContrast.readable(palette.textSecondary.toArgb(), back))
+    val ink = YtInk.on(palette, quickSheetBackground(palette, square))
+    return ink.text to ink.textSecondary
 }
 
-/** The opaque colour the sheet shows behind its title, as ARGB. */
-internal fun quickSheetBackground(palette: YtPalette, square: Boolean): Int {
-    // what is behind the sheet: the screen under the half black scrim
-    val dimmed = YtContrast.over(0x80000000.toInt(), palette.background.toArgb())
-    val sheet = YtContrast.over(palette.surface.toArgb(), dimmed)
-    return if (square) YtContrast.over(palette.background.toArgb(), sheet) else sheet
-}
+/** The opaque colour the sheet shows behind its title, as ARGB (the screen under the half black scrim). */
+internal fun quickSheetBackground(palette: YtPalette, square: Boolean): Int = ytScrimSheetBack(palette, square)
 
 @Composable
 private fun QuickRow(palette: YtPalette, @DrawableRes icon: Int, label: String, onClick: () -> Unit) {
@@ -209,11 +206,13 @@ private fun QuickRow(palette: YtPalette, @DrawableRes icon: Int, label: String, 
             .ytSurface(palette, ytCardShape(palette, 14))
             .padding(horizontal = 16.dp, vertical = 13.dp),
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = palette.text, modifier = Modifier.size(22.dp))
+        // the row's own surface over the sheet decides the colour of its words
+        val ink = ytSurfaceInk(palette)
+        Icon(painterResource(icon), contentDescription = null, tint = ink.text, modifier = Modifier.size(22.dp))
         Box(Modifier.width(14.dp))
         Text(
             text = label,
-            color = palette.text,
+            color = ink.text,
             style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 15.sp),
         )
     }

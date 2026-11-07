@@ -51,7 +51,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -174,10 +173,6 @@ private class ChoiceLook(
     /** Words of tile [index] in [color], made readable on the tile (at least 4.5:1). */
     fun inkOn(index: Int, color: Color): Color = color.readableOn(tone(index))
 }
-
-/** [this] over [bg], pushed towards black or white as far as needed for [min]:1 (YtContrast). */
-internal fun Color.readableOn(bg: Color, min: Double = YtContrast.BODY): Color =
-    Color(YtContrast.readable(toArgb(), bg.compositeOver(Color.Black).toArgb(), min))
 
 private fun choiceLook(palette: YtPalette): ChoiceLook {
     val four = { a: Color -> listOf(a, a, a, a) }
