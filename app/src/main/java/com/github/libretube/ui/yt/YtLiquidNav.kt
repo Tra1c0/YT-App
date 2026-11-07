@@ -430,7 +430,8 @@ fun LiquidNav(
                     Box(
                         Modifier
                             .fillMaxSize()
-                            .clickable(interactionSource = null, indication = null) { select(i) },
+                            .clickable(interactionSource = null, indication = null) { select(i) }
+                            .ytNavHoldTarget(item.id),
                     ) {
                         Box(
                             Modifier

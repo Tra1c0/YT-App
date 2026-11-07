@@ -461,7 +461,9 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
 
         // YT: the page of a player that goes on (the activity was created again, e.g. by a
         // rotation) comes back docked if it was docked
-        val restoreDocked = !createNewSession && viewModel.ytDocked
+        // or docked from the start: the closed mini player brought back by a long press on Abos
+        val restoreDocked = (!createNewSession && viewModel.ytDocked) ||
+            (createNewSession && com.github.libretube.ui.yt.mini.YtMiniRestore.takeStartDocked(playerData.videoId))
 
         if (restoreDocked) baseActivity.requestOrientationChange() else changeOrientationMode()
 
@@ -715,6 +717,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
     }
 
     private fun closeMiniPlayer() {
+        ytRememberClosed()
         // YT: the bar no longer carries the player that is swiped away
         com.github.libretube.ui.yt.YtMiniPlayer.undock()
         binding
@@ -729,9 +732,11 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
     // actions that don't depend on video information
     private fun initializeOnClickActions() {
         binding.closeImageView.setOnClickListener {
+            ytRememberClosed()
             killPlayerFragment()
         }
         playerControlsBinding.closeImageButton.setOnClickListener {
+            ytRememberClosed()
             killPlayerFragment()
         }
 
@@ -1773,7 +1778,21 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
     }
 
     override fun close() {
-        if (_binding != null) killPlayerFragment()
+        if (_binding != null) {
+            ytRememberClosed()
+            killPlayerFragment()
+        }
+    }
+
+    /** YT: the user closes the player; a long press on Abos can bring it back for a while. */
+    private fun ytRememberClosed() {
+        val controller = if (::playerController.isInitialized) playerController else null
+        com.github.libretube.ui.yt.mini.YtMiniRestore.closed(
+            videoId = if (::videoId.isInitialized) videoId else null,
+            positionMs = controller?.currentPosition ?: 0L,
+            durationMs = controller?.duration ?: 0L,
+            offline = isOffline,
+        )
     }
 
     override fun audioMode() {

@@ -55,6 +55,8 @@ object NavigationHelper {
         forceVideo: Boolean = false,
         audioOnlyPlayerRequested: Boolean = false,
     ) {
+        // YT: another video starts; the closed one is no longer brought back by a long press
+        com.github.libretube.ui.yt.mini.YtMiniRestore.forget()
         // attempt to attach to the current media session first by using the corresponding
         // video/audio player instance
         val activity = ContextHelper.unwrapActivity<AbstractPlayerHostActivity>(context)
