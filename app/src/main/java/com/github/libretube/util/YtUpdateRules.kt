@@ -53,43 +53,90 @@ object YtUpdateRules {
     fun sameSigners(installed: Set<String>, archive: Set<String>): Boolean =
         installed.isNotEmpty() && installed == archive
 
-    /** What the dialog says about an install session's status (PackageInstaller.STATUS_*). */
-    enum class InstallVerdict {
-        /** Installed (an update of YT itself usually ends the process before this). */
-        DONE,
-
-        /** Android wants the user to confirm. */
-        CONFIRM,
-
-        /** The user said no. */
-        ABORTED,
-
-        /** A definite failure: invalid, conflicting signer, no space, incompatible. */
-        FAILED,
-
-        /**
-         * Not a definite failure. Play Protect answers a sideloaded update it does not know with
-         * BLOCKED (or a plain FAILURE, or a TIMEOUT while its dialog waits) and then installs the
-         * same APK itself once the user picks "Install anyway"; the update then arrives after a
-         * failure. The dialog stays neutral ("Installing…") instead of saying it failed.
-         */
-        UNSURE,
-    }
-
-    // the values of PackageInstaller.STATUS_*, here so the rule needs no Android classes
+    // the values of PackageInstaller.STATUS_*, here so the rules need no Android classes
     const val STATUS_PENDING_USER_ACTION = -1
     const val STATUS_SUCCESS = 0
     const val STATUS_FAILURE = 1
     const val STATUS_FAILURE_BLOCKED = 2
     const val STATUS_FAILURE_ABORTED = 3
+    const val STATUS_FAILURE_INVALID = 4
+    const val STATUS_FAILURE_CONFLICT = 5
+    const val STATUS_FAILURE_STORAGE = 6
+    const val STATUS_FAILURE_INCOMPATIBLE = 7
     const val STATUS_FAILURE_TIMEOUT = 8
 
-    fun installVerdict(status: Int): InstallVerdict = when (status) {
-        STATUS_SUCCESS -> InstallVerdict.DONE
-        STATUS_PENDING_USER_ACTION -> InstallVerdict.CONFIRM
-        STATUS_FAILURE_ABORTED -> InstallVerdict.ABORTED
-        STATUS_FAILURE, STATUS_FAILURE_BLOCKED, STATUS_FAILURE_TIMEOUT -> InstallVerdict.UNSURE
-        // INVALID, CONFLICT, STORAGE, INCOMPATIBLE and anything unknown below them
-        else -> if (status in 4..7) InstallVerdict.FAILED else InstallVerdict.UNSURE
+    // hidden PackageManager.INSTALL_FAILED_* codes Android sends as EXTRA_LEGACY_STATUS
+    const val LEGACY_VERIFICATION_TIMEOUT = -22
+    const val LEGACY_VERIFICATION_FAILURE = -23
+
+    /** Fresh sessions committed by themselves after the first one ended without installing. */
+    const val MAX_AUTO_RETRIES = 2
+
+    /** What happens after an install session reported its status. */
+    enum class NextStep {
+        /** Installed (an update of YT itself usually ends the process before this). */
+        DONE,
+
+        /** Android wants the user to confirm; show its dialog. */
+        CONFIRM,
+
+        /**
+         * Commit a fresh session with the same verified APK. Play Protect scans a sideloaded update
+         * it does not know while the session waits; when the scan outlasts the verification
+         * window, or Play Protect takes over and the session is dropped, Android ends it with
+         * ABORTED/BLOCKED/FAILURE/TIMEOUT even though the user tapped "Install". Play Protect now
+         * knows the APK, so the next session usually goes through (the user needed 3-4 tries).
+         */
+        RETRY,
+
+        /** Hand the verified APK to Android's own installer, which treats it like any sideload. */
+        SYSTEM_INSTALLER,
+
+        /** The user said no in Android's confirm dialog. */
+        DECLINED,
+
+        /** Nothing more to try (no space, or the APK is gone). */
+        FAILED,
     }
+
+    /**
+     * The step after a session ended with [status] ([message] = EXTRA_STATUS_MESSAGE). [retriesDone]
+     * counts the fresh sessions already committed for this download; [apkAvailable] says whether
+     * the verified file is still there. "Failed" is only said when neither a retry nor the
+     * system installer is left.
+     */
+    fun nextStep(
+        status: Int,
+        message: String?,
+        retriesDone: Int,
+        apkAvailable: Boolean,
+        maxRetries: Int = MAX_AUTO_RETRIES,
+    ): NextStep {
+        when (status) {
+            STATUS_SUCCESS -> return NextStep.DONE
+            STATUS_PENDING_USER_ACTION -> return NextStep.CONFIRM
+            STATUS_FAILURE_STORAGE -> return NextStep.FAILED
+        }
+        if (userDeclined(status, message)) return NextStep.DECLINED
+        if (!apkAvailable) return NextStep.FAILED
+        return if (retriesDone < maxRetries) NextStep.RETRY else NextStep.SYSTEM_INSTALLER
+    }
+
+    /**
+     * Only Android's own confirm dialog answers "User rejected permissions"; an abandoned or
+     * Play Protect-ended session is ABORTED too, but with another message.
+     */
+    fun userDeclined(status: Int, message: String?): Boolean =
+        status == STATUS_FAILURE_ABORTED && message?.contains("rejected", ignoreCase = true) == true
+
+    /** The session ended while Play Protect checked the APK, as far as Android tells. */
+    fun playProtectInvolved(status: Int, legacyStatus: Int?, message: String?): Boolean =
+        status == STATUS_FAILURE_BLOCKED ||
+            legacyStatus == LEGACY_VERIFICATION_TIMEOUT ||
+            legacyStatus == LEGACY_VERIFICATION_FAILURE ||
+            message?.contains("VERIFICATION", ignoreCase = true) == true
+
+    /** A status for a session other than the one committed last belongs to an earlier try. */
+    fun isStale(sessionId: Int?, currentSessionId: Int?): Boolean =
+        sessionId != null && sessionId >= 0 && currentSessionId != null && sessionId != currentSessionId
 }
