@@ -23,6 +23,7 @@ import androidx.core.net.toUri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Format
+import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
@@ -436,7 +437,10 @@ object PlayerHelper {
     }
 
     @OptIn(UnstableApi::class)
-    private fun createRendererFactory(context: Context): DefaultRenderersFactory {
+    private fun createRendererFactory(
+        context: Context,
+        loudness: YtLoudnessProcessor
+    ): DefaultRenderersFactory {
         val renderersFactory = object : DefaultRenderersFactory(context) {
             override fun buildTextRenderers(
                 context: Context,
@@ -452,14 +456,17 @@ object PlayerHelper {
 
             // YT: the sound passes YtAudioTap on its way out, for the wave at the floating
             // player (only analysed while that wave is shown); the sink's own buffer size tells
-            // the wave how far the sound handed on runs ahead of what is heard
+            // the wave how far the sound handed on runs ahead of what is heard. The loudness
+            // levelling with its limiter runs last, after speed and pitch.
             override fun buildAudioSink(
                 context: Context,
                 enableFloatOutput: Boolean,
                 enableAudioTrackPlaybackParams: Boolean
             ): AudioSink = DefaultAudioSink.Builder(context)
                 .setEnableFloatOutput(enableFloatOutput)
-                .setAudioProcessors(arrayOf<androidx.media3.common.audio.AudioProcessor>(YtAudioTap.processor()))
+                .setAudioProcessorChain(
+                    YtAudioChain(arrayOf(YtAudioTap.processor()), loudness)
+                )
                 .build()
                 .also { sink -> YtAudioTap.bufferSizeUs = { sink.audioTrackBufferSizeUs } }
         }
@@ -477,9 +484,10 @@ object PlayerHelper {
             .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
             .build()
 
+        val loudness = YtLoudnessProcessor()
         return ExoPlayer.Builder(context)
             .setUsePlatformDiagnostics(false)
-            .setRenderersFactory(createRendererFactory(context))
+            .setRenderersFactory(createRendererFactory(context, loudness))
             .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
             .setTrackSelector(trackSelector)
             .setHandleAudioBecomingNoisy(true)
@@ -488,6 +496,13 @@ object PlayerHelper {
             .build()
             .apply {
                 loadPlaybackParams()
+                // YT: each video gets its own loudness estimate
+                addListener(object : Player.Listener {
+                    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                        // a loop replays the same video: keep what was learnt
+                        if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) loudness.newItem()
+                    }
+                })
             }
     }
 

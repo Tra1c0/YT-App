@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_loud_category">Lautstärke</string>
+    <string name="yt_loud_title">Lautstärke angleichen</string>
+    <string name="yt_loud_summary">Bringt alle Videos auf die gleiche Lautstärke. Ein Begrenzer verhindert, dass der Ton übersteuert. Bei Problemen mit dem Ton hier ausschalten (gilt ab dem nächsten Video).</string>
+    <string name="yt_loud_dynamic_title">Leise Stellen anheben</string>
+    <string name="yt_loud_dynamic_summary">Hebt sehr leise Stellen sanft an, etwa Flüstern oder ein leises Intro. Stille bleibt still.</string>
+    <string name="yt_loud_target_title">Ziel-Lautheit (LUFS)</string>
+    <string name="yt_loud_trim_title">Lautstärke anpassen (dB)</string>
+</resources>
