@@ -55,8 +55,16 @@ object NavigationHelper {
         forceVideo: Boolean = false,
         audioOnlyPlayerRequested: Boolean = false,
     ) {
-        // YT: another video starts; the closed one is no longer brought back by a long press
-        com.github.libretube.ui.yt.mini.YtMiniRestore.forget()
+        // YT: another video starts; the closed one is no longer brought back by a long press, and
+        // a closed player still kept paused (YtSoftClose) goes first: then this runs once more
+        // when its service is gone
+        if (com.github.libretube.ui.yt.mini.YtMiniRestore.beforeNavigate(playerData.videoId, playerData.keepQueue) {
+                val activity = ContextHelper.tryUnwrapActivity<android.app.Activity>(context)
+                if (activity == null || !(activity.isFinishing || activity.isDestroyed)) {
+                    navigateVideo(context, playerData, alreadyStarted, forceVideo, audioOnlyPlayerRequested)
+                }
+            }
+        ) return
         // attempt to attach to the current media session first by using the corresponding
         // video/audio player instance
         val activity = ContextHelper.unwrapActivity<AbstractPlayerHostActivity>(context)

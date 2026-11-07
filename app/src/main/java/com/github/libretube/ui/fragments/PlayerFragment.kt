@@ -164,6 +164,9 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
 
     private var autoPlayCountdownEnabled = PlayerHelper.autoPlayCountdown
 
+    // YT: the user closed this page and its player is kept paused for a minute (YtSoftClose)
+    private var ytSoftClosed = false
+
     /**
      * The orientation of the `fragment_player.xml` that's currently used
      * This is needed in order to figure out if the current layout is the landscape one or not.
@@ -463,7 +466,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         // rotation) comes back docked if it was docked
         // or docked from the start: the closed mini player brought back by a long press on Abos
         // (that one rises onto the bar in the design's motion, the rotated one stays put)
-        val ytRestored = createNewSession && com.github.libretube.ui.yt.mini.YtMiniRestore.takeStartDocked(playerData.videoId)
+        // (a page made anew: the restart starts a new session, the kept player is attached to)
+        val ytRestored = savedInstanceState == null && com.github.libretube.ui.yt.mini.YtMiniRestore.takeStartDocked(playerData.videoId)
         val restoreDocked = (!createNewSession && viewModel.ytDocked) || ytRestored
 
         if (restoreDocked) baseActivity.requestOrientationChange() else changeOrientationMode()
@@ -621,6 +625,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
             updatePlayPauseButton()
             // YT: the features of round 12 get the connected controller
             com.github.libretube.ui.yt.player.YtPlayerModules.onController(this, playerController)
+            // YT: a page that attaches to a closed player still kept (soft close) takes it back
+            com.github.libretube.ui.yt.mini.YtSoftClose.attached(playerController, if (::videoId.isInitialized) videoId else null)
 
             if (!startNewSession) {
                 // JSON-encode as work-around for https://github.com/androidx/media/issues/564
@@ -1113,12 +1119,15 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
 
         if (::playerController.isInitialized && playerController.isConnected) {
             playerController.removeListener(playerListener)
-            playerController.pause()
+            // YT: a player closed softly stays paused in its service for a minute (YtSoftClose)
+            if (!ytSoftClosed) {
+                playerController.pause()
 
-            playerController.sendCustomCommand(
-                AbstractPlayerService.stopServiceCommand,
-                Bundle.EMPTY
-            )
+                playerController.sendCustomCommand(
+                    AbstractPlayerService.stopServiceCommand,
+                    Bundle.EMPTY
+                )
+            }
             playerController.release()
         }
 
@@ -1794,6 +1803,16 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
             durationMs = controller?.duration ?: 0L,
             offline = isOffline,
         )
+        // the player itself is kept paused for a minute, so a long press brings it back as it is
+        if (controller != null && !ytSoftClosed) {
+            ytSoftClosed = com.github.libretube.ui.yt.mini.YtSoftClose.close(
+                requireContext(),
+                controller,
+                videoId = if (::videoId.isInitialized) videoId else null,
+                offline = isOffline,
+                live = (this::streams.isInitialized && streams.isLive) || controller.isCurrentMediaItemLive,
+            )
+        }
     }
 
     override fun audioMode() {

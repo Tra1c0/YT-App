@@ -90,6 +90,9 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     private val foregroundHold = YtForegroundHold()
     private val releaseHold = Runnable { releaseForegroundHold(null) }
 
+    // YT: a closed mini player kept paused for a minute (see YtServiceSoftClose)
+    val ytSoftClose = YtServiceSoftClose(this) { mediaLibrarySession }
+
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             super.onIsPlayingChanged(isPlaying)
@@ -145,6 +148,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     ): ListenableFuture<SessionResult> {
         when (customCommand.customAction) {
             START_SERVICE_ACTION -> {
+                // YT: a new start ends a soft close (the kept player is this service's again)
+                ytSoftClose.open(play = false)
                 PlayingQueue.queueMode =
                     if (isOfflinePlayer) PlayingQueueMode.OFFLINE else PlayingQueueMode.ONLINE
 
@@ -210,6 +215,11 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
      * goes to media3 as before.
      */
     override fun onUpdateNotification(session: MediaSession, startInForegroundRequired: Boolean) {
+        // YT: softly closed: no notification; only the removal (session taken out) goes through
+        if (ytSoftClose.closed) {
+            if (!isSessionAdded(session)) super.onUpdateNotification(session, false)
+            return
+        }
         if (foregroundHold.skip()) return
         super.onUpdateNotification(session, startInForegroundRequired)
     }
@@ -363,6 +373,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
      */
     @CallSuper
     open fun navigateVideo(videoId: String) {
+        // YT: another video in this service ends a soft close
+        ytSoftClose.open(play = false)
         // YT: the modules drop what belonged to the video before (a loop, an end point)
         YtServiceModules.onNavigate(videoId)
         sponsorBlockSegments = emptyList()
@@ -476,8 +488,11 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
         get() =
             (PlayerHelper.watchPositionsAudio && isAudioOnlyPlayer) || (PlayerHelper.watchPositionsVideo && !isAudioOnlyPlayer)
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? =
-        mediaLibrarySession
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
+        // YT: a softly closed player takes no outside controllers (lock screen, car, Bluetooth)
+        if (ytSoftClose.closed && controllerInfo.packageName != packageName) return null
+        return mediaLibrarySession
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -582,6 +597,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
         controllerInfo: MediaSession.ControllerInfo,
         intent: Intent
     ): Boolean {
+        // YT: a softly closed player ignores media buttons (it must not start again by itself)
+        if (ytSoftClose.closed) return true
         val event: KeyEvent = intent.parcelableExtra(Intent.EXTRA_KEY_EVENT) ?: return false
         when (event.keyCode) {
             KeyEvent.KEYCODE_MEDIA_NEXT -> {
@@ -646,7 +663,9 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
             stopSelf()
 
             super.onDestroy()
-            // YT: a mini player brought back meanwhile may start now (see YtMiniRestore)
+            // YT: a mini player brought back meanwhile may start now (see YtMiniRestore); a
+            // softly closed player is over
+            ytSoftClose.gone()
             com.github.libretube.ui.yt.mini.YtMiniRestore.serviceGone()
         }
     }
@@ -657,6 +676,12 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
         onDestroy()
+    }
+
+    // YT: memory runs low: a softly closed player goes now (the restart path stays)
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (ytSoftClose.closed && com.github.libretube.ui.yt.mini.YtSoftCloseRules.releasesOnTrim(level)) onDestroy()
     }
 
     /**
@@ -673,11 +698,25 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
         }
 
         override fun seekToPrevious() {
+            if (ytSoftClose.closed) return
             handlePlayerAction(PlayerEvent.Prev)
         }
 
         override fun seekToNext() {
+            if (ytSoftClose.closed) return
             handlePlayerAction(PlayerEvent.Next)
+        }
+
+        // YT: a softly closed player does not play for any controller; the page that brings it
+        // back ends the soft close first (YtServiceSoftClose.open)
+        override fun play() {
+            if (ytSoftClose.closed) return
+            super.play()
+        }
+
+        override fun setPlayWhenReady(playWhenReady: Boolean) {
+            if (playWhenReady && ytSoftClose.closed) return
+            super.setPlayWhenReady(playWhenReady)
         }
 
         override fun getAvailableCommands(): Player.Commands {
