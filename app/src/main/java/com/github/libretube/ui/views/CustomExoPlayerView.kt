@@ -1383,6 +1383,8 @@ class CustomExoPlayerView(
     }
 
     override fun onLongPress(x: Float, y: Float) {
+        // YT: without controls (minimizing, mini player) a long press neither holds nor plays faster
+        if (!useController) return
         val fastForward = startFastForward()
         val hold = ytHold
         // YT: in fullscreen not at the left and right edge, where the system's back gesture lives
@@ -1531,9 +1533,21 @@ class CustomExoPlayerView(
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event == null) return false
-        if (!useController) return false
+        if (!useController) {
+            // YT: the controls can go off mid-gesture (the minimize drag turns them off right
+            // before the parent's CANCEL reaches this view); the gesture still has to end, or the
+            // detector's pending long press fires later and leaves a hold running
+            playerGestureController.abort()
+            return false
+        }
 
         return playerGestureController.onTouchEvent(event)
+    }
+
+    override fun onDetachedFromWindow() {
+        // YT: a gesture of a view that left the window never hears its UP
+        playerGestureController.abort()
+        super.onDetachedFromWindow()
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {

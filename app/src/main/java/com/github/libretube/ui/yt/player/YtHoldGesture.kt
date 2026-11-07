@@ -63,6 +63,8 @@ class YtHoldGesture(
             .filterValues { it != YtHoldAction.NONE }
         if (actions.isEmpty()) return false
 
+        // a hold that never heard its end does not stay under the new one
+        if (holding) end(0f, 0f, cancelled = true)
         val context = player.context
         val targets = actions.mapValues { (_, action) -> target(context, action) }
         state = YtHoldState()

@@ -190,6 +190,13 @@ class UpdateAvailableDialog : DialogFragment() {
                 status.setText(R.string.yt_update_confirm)
                 buttons(R.string.yt_update_install, null, background = true)
             }
+            is State.Unsure -> {
+                // neutral: Play Protect often reports a failure and then installs it anyway
+                progress.visibility = View.GONE
+                status.visibility = View.VISIBLE
+                status.text = getString(R.string.yt_update_unsure, state.detail)
+                buttons(R.string.yt_update_retry, R.string.tooltip_dismiss, background = false)
+            }
             is State.Failed -> {
                 progress.visibility = View.GONE
                 status.visibility = View.VISIBLE

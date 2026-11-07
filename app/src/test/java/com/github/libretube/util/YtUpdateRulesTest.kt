@@ -65,4 +65,25 @@ class YtUpdateRulesTest {
         assertFalse(YtUpdateRules.sameSigners(setOf("k1"), setOf("k1", "k2")))
         assertFalse(YtUpdateRules.sameSigners(emptySet(), emptySet()))
     }
+
+    @Test
+    fun `only definite install failures say failed`() {
+        assertEquals(YtUpdateRules.InstallVerdict.DONE, YtUpdateRules.installVerdict(0))
+        assertEquals(YtUpdateRules.InstallVerdict.CONFIRM, YtUpdateRules.installVerdict(-1))
+        assertEquals(YtUpdateRules.InstallVerdict.ABORTED, YtUpdateRules.installVerdict(3))
+        // Play Protect: blocked, a plain failure or a timeout may still end installed
+        assertEquals(YtUpdateRules.InstallVerdict.UNSURE, YtUpdateRules.installVerdict(1))
+        assertEquals(YtUpdateRules.InstallVerdict.UNSURE, YtUpdateRules.installVerdict(2))
+        assertEquals(YtUpdateRules.InstallVerdict.UNSURE, YtUpdateRules.installVerdict(8))
+        assertEquals(YtUpdateRules.InstallVerdict.UNSURE, YtUpdateRules.installVerdict(42))
+        for (status in 4..7) assertEquals(YtUpdateRules.InstallVerdict.FAILED, YtUpdateRules.installVerdict(status))
+    }
+
+    @Test
+    fun `the status values match the platform`() {
+        assertEquals(android.content.pm.PackageInstaller.STATUS_FAILURE_BLOCKED, YtUpdateRules.STATUS_FAILURE_BLOCKED)
+        assertEquals(android.content.pm.PackageInstaller.STATUS_FAILURE_TIMEOUT, YtUpdateRules.STATUS_FAILURE_TIMEOUT)
+        assertEquals(android.content.pm.PackageInstaller.STATUS_PENDING_USER_ACTION, YtUpdateRules.STATUS_PENDING_USER_ACTION)
+    }
 }
+
