@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
@@ -76,8 +77,12 @@ fun YtQuickSheet(
     var height by remember { mutableStateOf(IntSize.Zero) }
     val square = palette.surfaceStyle == YtSurfaceStyle.EDITORIAL
     val shape = if (square) RectangleShape else RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
-    // back closes the open sheet instead of leaving the screen under it
+    // back closes the open sheet instead of leaving the screen under it (and, as for every
+    // overlay, the floating chips of the home give way while it is open)
     YtBackHandler(enabled = video != null, onBack = onDismiss)
+    // the title and channel sit on the sheet itself, not on the rows' surfaces: their colours
+    // are checked against the sheet's own background (Formen: a light sheet in a dark design)
+    val sheetText = remember(palette, square) { quickSheetText(palette, square) }
 
     AnimatedVisibility(
         visible = video != null,
@@ -132,14 +137,14 @@ fun YtQuickSheet(
                     Column(Modifier.padding(start = 12.dp)) {
                         Text(
                             text = item.title.orEmpty(),
-                            color = palette.text,
+                            color = sheetText.first,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 18.sp),
                         )
                         Text(
                             text = item.uploaderName.orEmpty(),
-                            color = palette.textSecondary,
+                            color = sheetText.second,
                             maxLines = 1,
                             style = TextStyle(fontFamily = palette.font, fontSize = 12.sp),
                         )
@@ -172,6 +177,25 @@ fun YtQuickSheet(
             }
         }
     }
+}
+
+/**
+ * The colours of the title and the channel on the quick sheet: the design's text roles, pushed
+ * until they read on the sheet's background (its surface over the dimmed screen; Editorial's
+ * square sheet is drawn in the background colour).
+ */
+internal fun quickSheetText(palette: YtPalette, square: Boolean): Pair<Color, Color> {
+    val back = quickSheetBackground(palette, square)
+    return Color(YtContrast.readable(palette.text.toArgb(), back)) to
+        Color(YtContrast.readable(palette.textSecondary.toArgb(), back))
+}
+
+/** The opaque colour the sheet shows behind its title, as ARGB. */
+internal fun quickSheetBackground(palette: YtPalette, square: Boolean): Int {
+    // what is behind the sheet: the screen under the half black scrim
+    val dimmed = YtContrast.over(0x80000000.toInt(), palette.background.toArgb())
+    val sheet = YtContrast.over(palette.surface.toArgb(), dimmed)
+    return if (square) YtContrast.over(palette.background.toArgb(), sheet) else sheet
 }
 
 @Composable

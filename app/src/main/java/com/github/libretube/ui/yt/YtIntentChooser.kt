@@ -122,6 +122,8 @@ internal fun YtBackHandler(enabled: Boolean, onBack: () -> Unit) {
         }
     }
     LaunchedEffect(enabled) { callback.isEnabled = enabled }
+    // an open overlay: the floating chips and pills of the home give way (YtOverlays)
+    YtOverlays.Open(enabled)
     DisposableEffect(context) {
         ContextHelper.tryUnwrapActivity<ComponentActivity>(context)?.onBackPressedDispatcher?.addCallback(callback)
         onDispose { callback.remove() }

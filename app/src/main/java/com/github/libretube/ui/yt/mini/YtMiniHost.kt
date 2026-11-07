@@ -357,7 +357,32 @@ class YtMiniHost private constructor(
 
     private val boundsCheck = ViewTreeObserver.OnPreDrawListener {
         publishBounds()
+        clipToBar()
         true
+    }
+
+    private val barClip = android.graphics.Rect()
+
+    /**
+     * The docked player dragged down (towards closing) moves the whole page by its translationY:
+     * it would slide over the bar and cover its active tab. While it does, the page is cut at the
+     * line where the box's foot rests on the bar, so the player sinks behind the bar's top edge
+     * and only the joint the design means (its overlap into the bar) stays. The clip is in the
+     * page's own coordinates, which move with the translation, so it is moved back up by it.
+     */
+    private fun clipToBar() {
+        if (design.classic) return
+        val shift = motion.translationY
+        val box = binding.mainContainer
+        if (shift > 0.5f && YtDock.progress >= 0.999f && box.height > 0 && motion.width > 0) {
+            val line = (box.bottom - shift).roundToInt().coerceAtLeast(0)
+            if (motion.clipBounds?.let { it.bottom == line && it.right == motion.width } != true) {
+                barClip.set(0, 0, motion.width, line)
+                motion.clipBounds = barClip
+            }
+        } else if (motion.clipBounds != null) {
+            motion.clipBounds = null
+        }
     }
 
     private fun publishBoundsOnLayout() {
@@ -409,8 +434,8 @@ class YtMiniHost private constructor(
                 if (progress < 1f) landing?.cancel()
                 YtMiniPlayer.keepDock()
                 val p = progress.coerceIn(0f, 1f)
-                under.alpha = p
-                over?.alpha = p
+                under.alpha = design.underAlpha(p)
+                over?.alpha = design.overAlpha(p)
                 YtDock.docked = progress > 0.02f
                 YtDock.progress = p
                 YtDock.slabPx = extentPx * p

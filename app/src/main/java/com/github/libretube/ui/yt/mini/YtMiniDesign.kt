@@ -208,6 +208,19 @@ abstract class YtMiniDesign(val design: YtDesign) {
     /** True where the picture rounds only its top corners (Glas: its foot tucks under the bar). */
     open val roundsTopOnly: Boolean get() = false
 
+    /**
+     * The alpha of the composable behind the picture at minimize [progress] (0 to 1). By default
+     * it fades in with the progress.
+     */
+    open fun underAlpha(progress: Float): Float = progress
+
+    /**
+     * The alpha of the composable over the picture at minimize [progress]. By default it fades in
+     * with the progress; a design that paints a mask over the picture keeps it opaque and fades
+     * the mask's shape itself, or the picture's rectangle would show through it.
+     */
+    open fun overAlpha(progress: Float): Float = progress
+
     /** Whether a long press on the picture opens the preview. */
     open val peeks: Boolean get() = true
 

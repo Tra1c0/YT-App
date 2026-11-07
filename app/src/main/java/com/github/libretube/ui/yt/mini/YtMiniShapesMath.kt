@@ -127,6 +127,22 @@ object YtShapesLayout {
         return YtShapesPeek(YtMiniPeekGeometry(box, player, title, pill, next), thumb)
     }
 
+    /** The minimize progress from which the body is opaque (before the cookie turns in at 0.72). */
+    const val BODY_OPAQUE = 0.6f
+
+    /** The alpha of the body at minimize [progress]: in quickly, opaque from [BODY_OPAQUE]. */
+    fun underAlpha(progress: Float): Float = (progress / BODY_OPAQUE).coerceIn(0f, 1f)
+
+    /** The alpha of the window's layer: opaque whenever the player is not the page's video. */
+    fun overAlpha(progress: Float): Float = if (progress > 0f) 1f else 0f
+
+    /**
+     * How far the body has grown above its rest height in a box [height] px tall that rests at
+     * [restHeight]: by the preview and while it is dragged between page and bar alike, so the
+     * body always fills its box down to the bar.
+     */
+    fun grow(height: Float, restHeight: Float): Float = (height - restHeight).coerceAtLeast(0f)
+
     /** [box] of a box [height] px tall seen in one [current] px tall: its foot stays on the bar. */
     fun fromFoot(box: YtMiniBox, height: Float, current: Float): YtMiniBox = box.offset(0f, current - height)
 }
@@ -247,6 +263,14 @@ object YtShapesWindow {
      */
     fun ring(angle: Float, base: Float, amplitude: Float, phase: Float, waves: Int = YtShapesLayout.RING_WAVES): Float =
         base + amplitude * sin(waves * angle - 2f * PI.toFloat() * phase)
+
+    /**
+     * The middle of the wave's track at [angle] in a picture with half sizes [a], [b]: [gap] px
+     * outside the cookie's unscalloped ellipse, the same ellipse the window is cut from, so the
+     * wave follows the cookie in a picture that is not square (the preview, a drag) as well.
+     */
+    fun ringBase(angle: Float, a: Float, b: Float, gap: Float, scale: Float = YtShapesLayout.COOKIE_SCALE): Float =
+        cookie(angle, a, b, 0f, 0f, scale) + gap
 }
 
 /** How long the accept's turn takes, in ms; the first [ACCEPT_LIFT_MS] the cookie only lifts. */

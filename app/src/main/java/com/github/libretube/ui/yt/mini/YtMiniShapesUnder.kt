@@ -234,7 +234,10 @@ internal fun ShapesUnder(design: YtMiniShapes, scene: YtMiniScene) {
                 .fillMaxSize()
                 .drawBehind {
                     val s = spaceAt(size)
-                    val grow = if (YtDock.peek > 0f) (size.height - s.restHeight).coerceAtLeast(0f) else 0f
+                    // the body fills its box down to the bar at every size: grown by the preview or between
+                    // page and bar while minimizing or dragged (a rest-sized body at the top of a
+                    // taller box left the screen behind visible between body and bar)
+                    val grow = YtShapesLayout.grow(size.height, s.restHeight)
                     val body = design.bodyPath(look, size.width, size.height, density, open = false, grow = grow)
                     drawPath(body, look.fill)
                     val rim = design.bodyPath(look, size.width, size.height, density, open = true, grow = grow)

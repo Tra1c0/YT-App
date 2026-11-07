@@ -2,6 +2,7 @@ package com.github.libretube.ui.yt
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -186,7 +187,13 @@ fun YtHomePills(palette: YtPalette, modifier: Modifier = Modifier, timeBox: (() 
     val enter = ytEnterTransition(slideInVertically(spring(dampingRatio = 0.75f, stiffness = 420f)) { it } + fadeIn(tween(140)))
     val exit = ytExitTransition(slideOutVertically(tween(200, easing = YtEaseOut)) { it / 2 } + fadeOut(tween(160)))
 
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+    // a sheet or overlay is open (they are drawn below this layer or beside it): the chips and
+    // pills fade out instead of covering its rows, and come back when it closes
+    val covered = YtOverlays.any || YtFeedUi.sheet || YtFeedUi.chooser || YtFeedUi.why != null
+    val shownAlpha by animateFloatAsState(if (covered) 0f else 1f, ytSpec(tween<Float>(160)), label = "pillsCovered")
+    if (shownAlpha <= 0f && covered) return
+
+    Box(modifier.fillMaxSize().graphicsLayer { alpha = shownAlpha }, contentAlignment = Alignment.BottomCenter) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
