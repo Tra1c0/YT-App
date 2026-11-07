@@ -222,6 +222,20 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   450 ms after `armRise` if the docking's completion has not come (phone: every other restore
   waited long hidden). Step times (`YtMiniRestore.mark`) show in Diagnose as "Mini restore".
 
+## Round 17 notes
+
+- Soft close (60 s): page side `Y/mini/YtSoftClose.kt` (own MediaController keeps the service,
+  60 s timer, resume, release, `beforeNavigate` gate in `NavigationHelper.navigateVideo`), service
+  side `J/services/YtServiceSoftClose.kt` + `YtSoftCloseModule` (commands `soft_close`/`soft_open`),
+  pure `Y/mini/YtSoftCloseRules.kt`. The fragment is removed as on a normal close; only service,
+  ExoPlayer, buffer and queue live on. Soft close: pause, audio focus off, `removeSession` (media3
+  drops the notification and foreground), backstop end after 65 s. While soft-closed the session
+  forwarder ignores play/next/prev, media buttons are swallowed, other packages get no session,
+  `onTrimMemory` (moderate and worse) releases. Resume: new PlayerFragment with `alreadyStarted`,
+  docked + rise, `soft_open(play)` once its controller connects. Another video: the kept player is
+  released first, navigation reruns on `serviceGone` (max 1.5 s, then the START path reuses the
+  service and ends the soft close). Only online non-live videos in READY/BUFFERING are kept.
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).
