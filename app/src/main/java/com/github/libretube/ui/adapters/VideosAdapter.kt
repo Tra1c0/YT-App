@@ -72,7 +72,8 @@ class VideosAdapter(
                     NavigationHelper.navigateChannel(root.context, video.uploaderUrl)
                 }
             } else {
-                channelImageContainer.isGone = true
+                // YT: hide the whole uploader line; the empty name kept a blank line under every row
+                channelContainer.isGone = true
             }
 
             root.setOnClickListener {

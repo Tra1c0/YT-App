@@ -986,6 +986,9 @@
         <item name="ytUppercase">false</item>
         <item name="fontFamily">@font/font_google_sans_400</item>
         <item name="android:fontFamily">@font/font_google_sans_400</item>
+        <!-- Google Sans has a very tall bounding box (-0.99 to 1.46 em against an ascent of 0.97 and a
+             descent of 0.29), so the default font padding nearly doubled every line of the classic screens -->
+        <item name="android:includeFontPadding">false</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Glass.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.YT.Glass.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.YT.Glass.DisplaySmall</item>
@@ -1270,6 +1273,9 @@
         <item name="ytUppercase">false</item>
         <item name="fontFamily">@font/font_google_sans_400</item>
         <item name="android:fontFamily">@font/font_google_sans_400</item>
+        <!-- Google Sans has a very tall bounding box (-0.99 to 1.46 em against an ascent of 0.97 and a
+             descent of 0.29), so the default font padding nearly doubled every line of the classic screens -->
+        <item name="android:includeFontPadding">false</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Shapes.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.YT.Shapes.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.YT.Shapes.DisplaySmall</item>

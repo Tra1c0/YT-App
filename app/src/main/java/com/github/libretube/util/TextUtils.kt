@@ -5,8 +5,7 @@ import android.icu.text.RelativeDateTimeFormatter
 import android.net.Uri
 import android.text.format.DateUtils
 import com.github.libretube.BuildConfig
-import com.github.libretube.R
-import com.github.libretube.extensions.formatShort
+import com.github.libretube.ui.yt.ytViewsAndAge
 import com.github.libretube.extensions.toLocalDate
 import com.google.common.math.IntMath.pow
 import kotlinx.datetime.toJavaLocalDate
@@ -136,15 +135,9 @@ object TextUtils {
         return "${context.packageName}/${BuildConfig.VERSION_NAME}"
     }
 
-    fun formatViewsString(context: Context, views: Long, uploaded: Long, uploader: String? = null): String {
-        val viewsString = views.takeIf { it != -1L }?.formatShort()?.let {
-            context.getString(R.string.view_count, it)
-        }
-        val uploadDate = uploaded.takeIf { it > 0 }?.let {
-            formatRelativeDate(it)
-        }
-        return listOfNotNull(uploader, viewsString, uploadDate).joinToString(SEPARATOR)
-    }
+    // YT: the classic rows tell views and age like the designs do ("~27k Aufrufe • vor 3 Wochen")
+    fun formatViewsString(context: Context, views: Long, uploaded: Long, uploader: String? = null): String =
+        ytViewsAndAge(context, views, uploaded, uploader)
 
     /**
      * Timestamp of the current time which doesn't use any forbidden characters for file names like ':'

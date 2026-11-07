@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- compact counts (YtCountFormat): %s is the amount, e.g. "27" or "1.5" -->
+    <string name="yt_count_thousands" formatted="false">~%sk</string>
+    <string name="yt_count_millions" formatted="false">~%sM</string>
+    <string name="yt_count_billions" formatted="false">~%sB</string>
+</resources>
