@@ -340,6 +340,17 @@ class YtMiniHost private constructor(
         YtDrag.miniBounds = bounds
         YtTestHooks.log("YtMini") { "bounds ${bounds.left} ${bounds.top} ${bounds.right} ${bounds.bottom}" }
         logDockCheck(bounds.bottom)
+        logSideCheck(bounds)
+    }
+
+    /** For the same check, turned: whether the box keeps out of the system's side bars and cutout. */
+    private fun logSideCheck(bounds: android.graphics.Rect) {
+        if (!YtTestHooks.gestureLog) return
+        val root = binding.root.rootView ?: return
+        val insets = ViewCompat.getRootWindowInsets(root)?.getInsets(
+            androidx.core.view.WindowInsetsCompat.Type.systemBars() or androidx.core.view.WindowInsetsCompat.Type.displayCutout(),
+        ) ?: return
+        YtTestHooks.log("YtMini") { YtDockMath.sideLine(bounds.left, bounds.right, root.width, insets.left, insets.right) }
     }
 
     /**

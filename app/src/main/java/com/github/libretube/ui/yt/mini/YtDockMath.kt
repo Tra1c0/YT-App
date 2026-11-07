@@ -27,6 +27,18 @@ internal object YtDockMath {
         "dock check box=$boxBottom bar=$barTop dock=$dockPx err=${footError(boxBottom, barTop, dockPx)}"
 
     /**
+     * px the box reaches into what the system covers at the window's sides (the three-button
+     * navigation and a cutout, turned): 0 when it keeps out of both.
+     */
+    fun sideError(boxLeft: Int, boxRight: Int, windowWidth: Int, insetLeft: Int, insetRight: Int): Int =
+        maxOf(0, insetLeft - boxLeft) + maxOf(0, boxRight - (windowWidth - insetRight))
+
+    /** The side line of the emulator check (scripts/gestures/b.sh); its format is part of it. */
+    fun sideLine(boxLeft: Int, boxRight: Int, windowWidth: Int, insetLeft: Int, insetRight: Int): String =
+        "dock side box=$boxLeft,$boxRight window=$windowWidth insets=$insetLeft,$insetRight " +
+            "err=${sideError(boxLeft, boxRight, windowWidth, insetLeft, insetRight)}"
+
+    /**
      * Whether the offsets a drag, a landing or a drop reaction left on the mini player's views
      * may be cleared when a minimize or open completes: not while a drag or its release still
      * moves them (it puts them back itself) and not while the player is thrown away.

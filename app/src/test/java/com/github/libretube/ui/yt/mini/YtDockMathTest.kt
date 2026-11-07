@@ -46,4 +46,18 @@ class YtDockMathTest {
         assertFalse(YtDockMath.clearsOffsets(dragging = true, closing = false))
         assertFalse(YtDockMath.clearsOffsets(dragging = false, closing = true))
     }
+
+    @Test
+    fun turnedTheBoxKeepsOutOfTheSideBars() {
+        // 2400 px wide, the three-button navigation 132 px at the right, a cutout 96 px at the left
+        assertEquals(0, YtDockMath.sideError(96 + 24, 2400 - 132 - 24, 2400, 96, 132))
+        // the box as wide as the window: under both
+        assertEquals(96 + 132, YtDockMath.sideError(0, 2400, 2400, 96, 132))
+        // upright nothing covers the sides
+        assertEquals(0, YtDockMath.sideError(0, 1080, 1080, 0, 0))
+        assertEquals(
+            "dock side box=0,2400 window=2400 insets=96,132 err=228",
+            YtDockMath.sideLine(0, 2400, 2400, 96, 132),
+        )
+    }
 }

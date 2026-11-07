@@ -153,14 +153,19 @@ class MainActivity : AbstractPlayerHostActivity() {
                             paddingBottom
                         )
                     }
+                    // YT: in landscape the system's navigation (three buttons) and a camera
+                    // cutout sit at a side: the bar and the player (docked on the bar too) keep
+                    // out of them, so their ends stay visible and can be tapped
+                    val (sideLeft, sideRight) = com.github.libretube.ui.yt.YtSideInsets.of(binding.root, systemBarInsets)
                     with(binding.bottomNav) {
                         setPadding(
-                            paddingLeft,
+                            sideLeft,
                             paddingTop,
-                            paddingRight,
+                            sideRight,
                             systemBarInsets.bottom
                         )
                     }
+                    binding.container.setPadding(sideLeft, 0, sideRight, 0)
                     binding.root.viewTreeObserver.removeOnGlobalLayoutListener(this)
                 }
             })
@@ -881,6 +886,16 @@ class MainActivity : AbstractPlayerHostActivity() {
             "dock keys bar=${binding.bottomNav.height} dock=${com.github.libretube.ui.yt.YtMiniPlayer.containerDockPx} " +
                 "shift=${binding.container.translationY.toInt()} p=${motion.progress}"
         }
+    }
+
+    // YT: turned (this activity handles rotation itself): the container's docked shift is
+    // written and applied again once the bar has its new size, even if its height stayed
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (!this::binding.isInitialized) return
+        containerKeys = null
+        binding.bottomNav.requestLayout()
+        binding.root.post { applyContainerKeys() }
     }
 
     override fun setPlayerContainerProgress(progress: Float) {
