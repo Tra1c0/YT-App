@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -442,7 +443,23 @@ internal class PillLook(
     fun style(weight: FontWeight) = TextStyle(fontFamily = font, fontWeight = weight, fontSize = size, letterSpacing = letterSpacing)
 }
 
-internal fun pillLook(palette: YtPalette): PillLook {
+internal fun pillLook(palette: YtPalette): PillLook = designPillLook(palette).readable()
+
+/**
+ * The pill's words made to read on the colour the pill shows ([PillLook.tone]); the actions on
+ * their own capsule where they have one. Where the design's colour already reads it stays.
+ */
+private fun PillLook.readable(): PillLook {
+    if (tone == Color.Unspecified) return this
+    val actionBack = actionFill?.compositeOver(tone) ?: tone
+    return PillLook(
+        surface = surface, text = text.readableOn(tone), action = action.readableOn(actionBack), font = font, size = size,
+        uppercase = uppercase, letterSpacing = letterSpacing, actionShape = actionShape, actionFill = actionFill,
+        actionDecoration = actionDecoration, cardSurface = cardSurface, tone = tone,
+    )
+}
+
+private fun designPillLook(palette: YtPalette): PillLook {
     fun flat(shape: Shape, color: Color, shadow: Color = Color(0x66000000)) = { m: Modifier ->
         m.shadow(10.dp, shape, ambientColor = shadow, spotColor = shadow).clip(shape).background(color)
     }

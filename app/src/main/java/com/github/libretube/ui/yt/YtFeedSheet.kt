@@ -64,6 +64,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -178,6 +179,7 @@ internal fun ytSheetFill(palette: YtPalette): Color =
  */
 @Composable
 fun YtWhyList(palette: YtPalette, video: StreamItem, modifier: Modifier = Modifier) {
+    val ink = ytInk(palette)
     val reasons by YtFeed.reasons.collectAsState()
     val profile by YtFeed.profile.collectAsState()
     val haptics = rememberYtHaptics()
@@ -189,7 +191,7 @@ fun YtWhyList(palette: YtPalette, video: StreamItem, modifier: Modifier = Modifi
         if (list.isNullOrEmpty()) {
             Text(
                 text = stringResource(R.string.yt_feed_why_none),
-                color = palette.textSecondary,
+                color = ink.textSecondary,
                 style = TextStyle(fontFamily = palette.font, fontSize = 13.sp),
             )
         } else {
@@ -204,7 +206,7 @@ fun YtWhyList(palette: YtPalette, video: StreamItem, modifier: Modifier = Modifi
                     )
                     Text(
                         text = ytReasonText(reason),
-                        color = palette.text,
+                        color = ink.text,
                         style = TextStyle(fontFamily = palette.font, fontSize = 13.5.sp, lineHeight = 18.sp),
                     )
                 }
@@ -248,6 +250,9 @@ internal fun YtWhyCard(palette: YtPalette, video: StreamItem?, onDismiss: () -> 
         ) {
             val item = shown[0] ?: return@AnimatedVisibility
             val shape = if (palette.surfaceStyle == YtSurfaceStyle.EDITORIAL) RectangleShape else RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+            val back = remember(palette) { ytFillSheetBack(palette) }
+            val ink = remember(palette, back) { YtInk.on(palette, back) }
+            ProvideYtInk(palette, back) {
             Column(
                 Modifier
                     .testTag("yt_why_card")
@@ -259,19 +264,20 @@ internal fun YtWhyCard(palette: YtPalette, video: StreamItem?, onDismiss: () -> 
             ) {
                 Text(
                     text = stringResource(R.string.yt_feed_why),
-                    color = palette.text,
+                    color = ink.text,
                     style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 17.sp),
                     modifier = Modifier.semantics { heading() },
                 )
                 Text(
                     text = item.title.orEmpty(),
-                    color = palette.textSecondary,
+                    color = ink.textSecondary,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(fontFamily = palette.font, fontSize = 13.sp),
                     modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
                 )
                 YtWhyList(palette, item)
+            }
             }
         }
     }
@@ -332,6 +338,13 @@ private fun SheetBody(palette: YtPalette, preview: () -> YtFeedInput, onClose: (
     val input = remember { preview() }
     val ranked = remember(input, rules, personal, extras, signals) { YtFeed.rank(input, rules, personal, extras, signals) }
 
+    // the sheet's own fill decides the colour of the words on it (Formen: a light sheet in a dark
+    // design; Frost: pale frosted glass), not the background the palette's roles are made for
+    val back = remember(palette) { ytFillSheetBack(palette) }
+    val ink = remember(palette, back) { YtInk.on(palette, back) }
+    val noteInk = remember(palette, back) { YtInk.on(palette, YtContrast.over(palette.accent.copy(alpha = 0.12f).toArgb(), back)) }
+
+    ProvideYtInk(palette, back) {
     Column(
         Modifier
             .testTag("yt_feed_sheet")
@@ -341,7 +354,7 @@ private fun SheetBody(palette: YtPalette, preview: () -> YtFeedInput, onClose: (
             .offset { IntOffset(0, swipe.offset.value.roundToInt().coerceAtLeast(-48)) }
             .clip(shape)
             .background(ytSheetFill(palette))
-            .then(if (square) Modifier.border(1.dp, palette.text, shape) else Modifier)
+            .then(if (square) Modifier.border(1.dp, ink.text, shape) else Modifier)
             // taps on the sheet stay on it
             .clickable(interactionSource = null, indication = null) {},
     ) {
@@ -357,26 +370,26 @@ private fun SheetBody(palette: YtPalette, preview: () -> YtFeedInput, onClose: (
                     .align(Alignment.CenterHorizontally)
                     .size(36.dp, 4.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(palette.textSecondary.copy(alpha = 0.5f)),
+                    .background(ink.textSecondary.copy(alpha = 0.5f)),
             )
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.yt_feed_title),
-                        color = palette.text,
+                        color = ink.text,
                         style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, letterSpacing = (-0.4).sp),
                         modifier = Modifier.semantics { heading() },
                     )
                     Text(
                         text = stringResource(R.string.yt_feed_for_intent, stringResource(intent.label())),
-                        color = palette.textSecondary,
+                        color = ink.textSecondary,
                         style = TextStyle(fontFamily = palette.font, fontSize = 13.sp),
                     )
                 }
                 Icon(
                     painterResource(R.drawable.ic_close),
                     contentDescription = stringResource(R.string.yt_feed_close),
-                    tint = palette.text,
+                    tint = ink.text,
                     modifier = Modifier
                         .testTag("yt_feed_close")
                         .clip(CircleShape)
@@ -400,7 +413,7 @@ private fun SheetBody(palette: YtPalette, preview: () -> YtFeedInput, onClose: (
             // honest about what this is
             Text(
                 text = stringResource(R.string.yt_feed_honest),
-                color = palette.text,
+                color = noteInk.text,
                 style = TextStyle(fontFamily = palette.font, fontSize = 13.sp, lineHeight = 18.sp),
                 modifier = Modifier
                     .padding(top = 6.dp)
@@ -438,7 +451,7 @@ private fun SheetBody(palette: YtPalette, preview: () -> YtFeedInput, onClose: (
                 val region = remember(regionTick) { PreferenceHelper.getTrendingRegion(context) }
                 Text(
                     text = java.util.Locale("", region).displayCountry.ifBlank { region },
-                    color = palette.text,
+                    color = ink.text,
                     style = TextStyle(fontFamily = palette.font, fontSize = 15.sp, fontWeight = FontWeight.Medium),
                     modifier = Modifier.weight(1f),
                 )
@@ -541,6 +554,7 @@ private fun SheetBody(palette: YtPalette, preview: () -> YtFeedInput, onClose: (
             Note(palette, stringResource(R.string.yt_feed_music_note))
         }
     }
+    }
 }
 
 private val LENGTHS = listOf(
@@ -562,19 +576,20 @@ private val AGES = listOf(
 /** The first videos as ranked now; tapped, one shows why it is there and what its channel gets. */
 @Composable
 private fun PreviewStrip(palette: YtPalette, videos: List<StreamItem>) {
+    val ink = ytInk(palette)
     var picked by remember { mutableStateOf<StreamItem?>(null) }
     val loader = remember { ImageHelper.loader() }
     Column(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
         Text(
             text = stringResource(R.string.yt_feed_preview),
-            color = palette.textSecondary,
+            color = ink.textSecondary,
             style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 0.6.sp),
             modifier = Modifier.padding(start = 20.dp, bottom = 6.dp),
         )
         if (videos.isEmpty()) {
             Text(
                 text = stringResource(R.string.yt_feed_preview_empty),
-                color = palette.text,
+                color = ink.text,
                 style = TextStyle(fontFamily = palette.font, fontSize = 13.sp),
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
@@ -633,7 +648,7 @@ private fun PreviewStrip(palette: YtPalette, videos: List<StreamItem>) {
             Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp)) {
                 Text(
                     text = shown.title.orEmpty(),
-                    color = palette.text,
+                    color = ink.text,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp),
@@ -652,6 +667,7 @@ private fun PreviewStrip(palette: YtPalette, videos: List<StreamItem>) {
  */
 @Composable
 private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: String, onChange: (Int) -> Unit) {
+    val ink = ytInk(palette)
     val haptics = rememberYtHaptics()
     val motion = LocalYtMotion.current
     val scope = rememberCoroutineScope()
@@ -673,7 +689,7 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
     val spoken = stringResource(R.string.yt_feed_weight, label, weight)
     val off = stringResource(R.string.yt_feed_weight_off)
     val accent = palette.accent
-    val track = palette.text.copy(alpha = 0.12f)
+    val track = ink.text.copy(alpha = 0.12f)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -682,7 +698,7 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
     ) {
         Text(
             text = label,
-            color = palette.text,
+            color = ink.text,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = TextStyle(fontFamily = palette.font, fontSize = 14.sp),
@@ -762,7 +778,7 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
                     // the steps as small marks
                     for (i in 1 until max) {
                         val x = size.width * i / max
-                        drawCircle(palette.text.copy(alpha = 0.18f), radius = 1.5.dp.toPx(), center = Offset(x, size.height / 2))
+                        drawCircle(ink.text.copy(alpha = 0.18f), radius = 1.5.dp.toPx(), center = Offset(x, size.height / 2))
                     }
                     // the knob, a little past the end while pulled
                     val knobX = (size.width * (fill.value / max)).coerceIn(-12f, size.width + 12f)
@@ -776,7 +792,7 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
         }
         Text(
             text = if (weight == 0) off else weight.toString(),
-            color = if (weight == 0) palette.textSecondary else palette.text,
+            color = if (weight == 0) ink.textSecondary else ink.text,
             style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 13.sp),
             modifier = Modifier.width(30.dp).padding(start = 4.dp),
         )
@@ -785,6 +801,7 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
 
 @Composable
 private fun StepButton(palette: YtPalette, icon: Int, description: String, tag: String, onClick: () -> Unit) {
+    val ink = ytInk(palette)
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -794,16 +811,17 @@ private fun StepButton(palette: YtPalette, icon: Int, description: String, tag: 
             .clickable(onClick = onClick)
             .semantics { role = Role.Button },
     ) {
-        Icon(painterResource(icon), contentDescription = description, tint = palette.textSecondary, modifier = Modifier.size(16.dp))
+        Icon(painterResource(icon), contentDescription = description, tint = ink.textSecondary, modifier = Modifier.size(16.dp))
     }
 }
 
 @Composable
 private fun Section(palette: YtPalette, title: String) {
+    val ink = ytInk(palette)
     val editorial = palette.surfaceStyle == YtSurfaceStyle.EDITORIAL
     Text(
         text = if (editorial) title.uppercase() else title,
-        color = palette.text,
+        color = ink.text,
         style = TextStyle(
             fontFamily = if (editorial) YtFonts.plexMono else palette.font,
             fontWeight = FontWeight.Bold,
@@ -818,9 +836,10 @@ private fun Section(palette: YtPalette, title: String) {
 
 @Composable
 private fun Label(palette: YtPalette, text: String) {
+    val ink = ytInk(palette)
     Text(
         text = text,
-        color = palette.textSecondary,
+        color = ink.textSecondary,
         style = TextStyle(fontFamily = palette.font, fontSize = 13.sp),
         modifier = Modifier.padding(top = 6.dp, bottom = 6.dp),
     )
@@ -828,9 +847,10 @@ private fun Label(palette: YtPalette, text: String) {
 
 @Composable
 private fun Note(palette: YtPalette, text: String) {
+    val ink = ytInk(palette)
     Text(
         text = text,
-        color = palette.textSecondary,
+        color = ink.textSecondary,
         style = TextStyle(fontFamily = palette.font, fontSize = 12.sp, lineHeight = 16.sp),
         modifier = Modifier.padding(top = 6.dp),
     )
@@ -858,7 +878,9 @@ internal fun FeedChip(
 ) {
     val shape = ytPillShape(palette)
     val fill by animateColorAsState(if (active) palette.accent else palette.raised, ytStateSpec(), label = "feedChip")
-    val ink by animateColorAsState(if (active) palette.onAccent else palette.text, ytStateSpec(), label = "feedChipInk")
+    // on a sheet the chip's words are checked against the chip as it looks there (Frost's see-through raised)
+    val rest = ytInkOnFill(palette, palette.raised)?.text ?: palette.text
+    val ink by animateColorAsState(if (active) palette.onAccent else rest, ytStateSpec(), label = "feedChipInk")
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -925,6 +947,7 @@ private fun FeedField(
         if (YtFeedRules.parseWords(text) != YtFeedRules.parseWords(initial)) text = initial
     }
     val shape = ytCardShape(palette, 12)
+    val ink = ytInkOnFill(palette, palette.raised) ?: YtInk(0, palette.text, palette.textSecondary)
     Row(verticalAlignment = Alignment.CenterVertically) {
         BasicTextField(
             value = text,
@@ -933,7 +956,7 @@ private fun FeedField(
                 onType?.invoke(it)
             },
             singleLine = true,
-            textStyle = TextStyle(fontFamily = palette.font, fontSize = 14.sp, color = palette.text),
+            textStyle = TextStyle(fontFamily = palette.font, fontSize = 14.sp, color = ink.text),
             cursorBrush = SolidColor(palette.accent),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { text = onDone(text) }),
@@ -947,7 +970,7 @@ private fun FeedField(
             decorationBox = { inner ->
                 Box(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
                     if (text.isEmpty()) {
-                        Text(hint, color = palette.textSecondary, style = TextStyle(fontFamily = palette.font, fontSize = 14.sp))
+                        Text(hint, color = ink.textSecondary, style = TextStyle(fontFamily = palette.font, fontSize = 14.sp))
                     }
                     inner()
                 }
@@ -991,6 +1014,7 @@ private fun WordsField(palette: YtPalette, words: List<String>, tag: String, onC
 /** The topics as chips (tap: weight 1 to 5 in turn, ×: remove) and a field to add one. */
 @Composable
 private fun Topics(palette: YtPalette, topics: List<YtTopic>, onChange: (List<YtTopic>) -> Unit) {
+    val ink = ytInk(palette)
     val haptics = rememberYtHaptics()
     if (topics.isNotEmpty()) {
         Chips {
@@ -1009,7 +1033,7 @@ private fun Topics(palette: YtPalette, topics: List<YtTopic>, onChange: (List<Yt
                     Icon(
                         painterResource(R.drawable.ic_close),
                         contentDescription = stringResource(R.string.yt_feed_topic_remove, topic.query),
-                        tint = palette.textSecondary,
+                        tint = ink.textSecondary,
                         modifier = Modifier
                             .clip(CircleShape)
                             .clickable {
@@ -1076,6 +1100,9 @@ private fun ChannelList(palette: YtPalette) {
         return
     }
     val haptics = rememberYtHaptics()
+    val cardFill = palette.raised.copy(alpha = 0.6f)
+    val sheetBack = LocalYtInk.current?.back
+    val cardBack = remember(palette, sheetBack) { YtContrast.over(cardFill.toArgb(), sheetBack ?: palette.background.toArgb()) }
     keys.forEach { key ->
         val pause = pauses.firstOrNull { it.id == key || (it.id == null && it.name == key) }
         val name = personal.channelNames[key] ?: pause?.name?.takeIf { it.isNotBlank() } ?: key
@@ -1085,12 +1112,13 @@ private fun ChannelList(palette: YtPalette) {
                 .padding(bottom = 8.dp)
                 .fillMaxWidth()
                 .clip(ytCardShape(palette, 14))
-                .background(palette.raised.copy(alpha = 0.6f))
+                .background(cardFill)
                 .padding(12.dp),
         ) {
+            ProvideYtInk(palette, cardBack) {
             Text(
                 text = name,
-                color = palette.text,
+                color = ytInk(palette).text,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
@@ -1112,6 +1140,7 @@ private fun ChannelList(palette: YtPalette) {
                 Toggle(palette, stringResource(R.string.yt_feed_channel_learn), key in personal.learnChannels, "yt_feed_channel_learn") { on ->
                     YtFeed.updatePersonal { it.copy(learnChannels = if (on) it.learnChannels + key else it.learnChannels - key) }
                 }
+            }
             }
         }
     }

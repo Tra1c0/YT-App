@@ -81,7 +81,11 @@ import com.github.libretube.ui.yt.YtSurfaceStyle
 import com.github.libretube.ui.yt.YtTheme
 import com.github.libretube.ui.yt.rememberYtHaptics
 import com.github.libretube.ui.yt.rememberYtSwipe
+import com.github.libretube.ui.yt.ProvideYtInk
 import com.github.libretube.ui.yt.ytCardShape
+import com.github.libretube.ui.yt.ytInk
+import com.github.libretube.ui.yt.ytScrimSheetBack
+import com.github.libretube.ui.yt.ytSurfaceInk
 import com.github.libretube.ui.yt.ytEnterTransition
 import com.github.libretube.ui.yt.ytExitTransition
 import com.github.libretube.ui.yt.ytPressable
@@ -157,6 +161,9 @@ private fun AccountSheet(
     val square = palette.surfaceStyle == YtSurfaceStyle.EDITORIAL
     val shape = if (square) RectangleShape else RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.88f).dp
+    // the words on the sheet are checked against the sheet itself (Formen: a light sheet in a
+    // dark design), the rows against their own surfaces over it
+    val sheetBack = remember(palette, square) { ytScrimSheetBack(palette, square) }
 
     fun signIn() {
         activity.startActivity(Intent(activity, YtSignInActivity::class.java))
@@ -186,6 +193,8 @@ private fun AccountSheet(
             enter = ytEnterTransition(slideInVertically(spring(dampingRatio = 0.8f, stiffness = 300f)) { it }),
             exit = ytExitTransition(slideOutVertically(tween(220, easing = YtEaseOut)) { it }),
         ) {
+            ProvideYtInk(palette, sheetBack) {
+            val ink = ytInk(palette)
             Column(
                 Modifier
                     .onSizeChanged { height = it }
@@ -211,7 +220,7 @@ private fun AccountSheet(
                         Modifier
                             .size(36.dp, 4.dp)
                             .clip(RoundedCornerShape(2.dp))
-                            .background(palette.textSecondary.copy(alpha = 0.5f)),
+                            .background(ink.textSecondary.copy(alpha = 0.5f)),
                     )
                 }
                 Column(
@@ -223,12 +232,12 @@ private fun AccountSheet(
                     if (signedIn == null) {
                         Text(
                             text = stringResource(if (focus == YtAccountSheet.Focus.WELCOME) R.string.yt_account_welcome_title else R.string.yt_account_title),
-                            color = palette.text,
+                            color = ink.text,
                             style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 22.sp),
                         )
                         Text(
                             text = stringResource(R.string.yt_account_pitch),
-                            color = palette.textSecondary,
+                            color = ink.textSecondary,
                             style = TextStyle(fontFamily = palette.font, fontSize = 14.sp, lineHeight = 19.sp),
                             modifier = Modifier.padding(top = 6.dp, bottom = 14.dp),
                         )
@@ -240,7 +249,7 @@ private fun AccountSheet(
                             Column(Modifier.padding(start = 14.dp)) {
                                 Text(
                                     text = signedIn.name.ifBlank { stringResource(R.string.yt_account_row_title) },
-                                    color = palette.text,
+                                    color = ink.text,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 19.sp),
@@ -248,7 +257,7 @@ private fun AccountSheet(
                                 if (signedIn.handle.isNotBlank()) {
                                     Text(
                                         text = signedIn.handle,
-                                        color = palette.textSecondary,
+                                        color = ink.textSecondary,
                                         maxLines = 1,
                                         style = TextStyle(fontFamily = palette.font, fontSize = 13.sp),
                                     )
@@ -294,7 +303,7 @@ private fun AccountSheet(
                     } else if (focus == YtAccountSheet.Focus.WELCOME) {
                         Text(
                             text = stringResource(R.string.yt_account_later),
-                            color = palette.textSecondary,
+                            color = ink.textSecondary,
                             style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
                             modifier = Modifier
                                 .align(Alignment.CenterHorizontally)
@@ -310,7 +319,7 @@ private fun AccountSheet(
                             Modifier
                                 .fillMaxWidth()
                                 .height(1.dp)
-                                .background(palette.textSecondary.copy(alpha = 0.2f)),
+                                .background(ink.textSecondary.copy(alpha = 0.2f)),
                         )
                         entries.forEach { entry ->
                             YtSheetRow(palette, entry.icon, entry.label, null) {
@@ -320,6 +329,7 @@ private fun AccountSheet(
                         }
                     }
                 }
+            }
             }
         }
     }
@@ -397,7 +407,8 @@ internal fun YtPrimaryButton(palette: YtPalette, label: String, @DrawableRes ico
 }
 
 @Composable
-internal fun YtSecondaryButton(palette: YtPalette, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+internal fun YtSecondaryButton(palette: YtPalette, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {    val ink = ytSurfaceInk(palette)
+
     val shape = ytCardShape(palette, 14)
     Box(
         contentAlignment = Alignment.Center,
@@ -408,7 +419,7 @@ internal fun YtSecondaryButton(palette: YtPalette, label: String, modifier: Modi
     ) {
         Text(
             text = label,
-            color = palette.text,
+            color = ink.text,
             maxLines = 2,
             style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
         )
@@ -416,20 +427,22 @@ internal fun YtSecondaryButton(palette: YtPalette, label: String, modifier: Modi
 }
 
 @Composable
-internal fun YtFootnote(palette: YtPalette, @DrawableRes icon: Int, text: String) {
+internal fun YtFootnote(palette: YtPalette, @DrawableRes icon: Int, text: String) {    val ink = ytInk(palette)
+
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp, bottom = 6.dp)) {
-        Icon(painterResource(icon), contentDescription = null, tint = palette.textSecondary, modifier = Modifier.size(14.dp))
+        Icon(painterResource(icon), contentDescription = null, tint = ink.textSecondary, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(6.dp))
         Text(
             text = text,
-            color = palette.textSecondary,
+            color = ink.textSecondary,
             style = TextStyle(fontFamily = palette.font, fontSize = 12.sp, lineHeight = 16.sp),
         )
     }
 }
 
 @Composable
-internal fun YtSheetRow(palette: YtPalette, @DrawableRes icon: Int, label: String, summary: String?, onClick: () -> Unit) {
+internal fun YtSheetRow(palette: YtPalette, @DrawableRes icon: Int, label: String, summary: String?, onClick: () -> Unit) {    val ink = ytSurfaceInk(palette)
+
     val shape = ytCardShape(palette, 14)
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -440,18 +453,18 @@ internal fun YtSheetRow(palette: YtPalette, @DrawableRes icon: Int, label: Strin
             .ytSurface(palette, shape)
             .padding(horizontal = 16.dp, vertical = 13.dp),
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = palette.text, modifier = Modifier.size(22.dp))
+        Icon(painterResource(icon), contentDescription = null, tint = ink.text, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(14.dp))
         Column {
             Text(
                 text = label,
-                color = palette.text,
+                color = ink.text,
                 style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 15.sp),
             )
             if (summary != null) {
                 Text(
                     text = summary,
-                    color = palette.textSecondary,
+                    color = ink.textSecondary,
                     style = TextStyle(fontFamily = palette.font, fontSize = 12.sp, lineHeight = 16.sp),
                 )
             }
@@ -461,7 +474,8 @@ internal fun YtSheetRow(palette: YtPalette, @DrawableRes icon: Int, label: Strin
 
 /** The question what to bring over, with one switch per list. */
 @Composable
-internal fun YtImportOptionsPanel(palette: YtPalette, onStart: (YtImportOptions) -> Unit) {
+internal fun YtImportOptionsPanel(palette: YtPalette, onStart: (YtImportOptions) -> Unit) {    val ink = ytInk(palette)
+
     var subscriptions by remember { mutableStateOf(true) }
     var playlists by remember { mutableStateOf(true) }
     var watchLater by remember { mutableStateOf(true) }
@@ -470,7 +484,7 @@ internal fun YtImportOptionsPanel(palette: YtPalette, onStart: (YtImportOptions)
     Column(Modifier.fillMaxWidth()) {
         Text(
             text = stringResource(R.string.yt_account_import_question),
-            color = palette.text,
+            color = ink.text,
             style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
             modifier = Modifier.padding(bottom = 4.dp),
         )
@@ -481,7 +495,7 @@ internal fun YtImportOptionsPanel(palette: YtPalette, onStart: (YtImportOptions)
         OptionRow(palette, stringResource(R.string.yt_account_opt_history), history) { history = it }
         Text(
             text = stringResource(R.string.yt_account_local_note),
-            color = palette.textSecondary,
+            color = ink.textSecondary,
             style = TextStyle(fontFamily = palette.font, fontSize = 12.sp),
             modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
         )
@@ -492,7 +506,8 @@ internal fun YtImportOptionsPanel(palette: YtPalette, onStart: (YtImportOptions)
 }
 
 @Composable
-private fun OptionRow(palette: YtPalette, label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun OptionRow(palette: YtPalette, label: String, checked: Boolean, onChange: (Boolean) -> Unit) {    val ink = ytInk(palette)
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -504,13 +519,13 @@ private fun OptionRow(palette: YtPalette, label: String, checked: Boolean, onCha
             onCheckedChange = onChange,
             colors = CheckboxDefaults.colors(
                 checkedColor = palette.accent,
-                uncheckedColor = palette.textSecondary,
+                uncheckedColor = ink.textSecondary,
                 checkmarkColor = palette.onAccent,
             ),
         )
         Text(
             text = label,
-            color = palette.text,
+            color = ink.text,
             style = TextStyle(fontFamily = palette.font, fontSize = 15.sp),
         )
     }
@@ -518,7 +533,8 @@ private fun OptionRow(palette: YtPalette, label: String, checked: Boolean, onCha
 
 /** Progress of a running import or the result of the last one. */
 @Composable
-internal fun YtImportStatus(palette: YtPalette, state: YtImportState) {
+internal fun YtImportStatus(palette: YtPalette, state: YtImportState) {    val ink = ytSurfaceInk(palette)
+
     if (!state.running && state.result == null) return
     val shape = ytCardShape(palette, 14)
     Column(
@@ -530,7 +546,7 @@ internal fun YtImportStatus(palette: YtPalette, state: YtImportState) {
     ) {
         Text(
             text = if (state.running) state.progress else state.result.orEmpty(),
-            color = if (state.failed) palette.live else palette.text,
+            color = if (state.failed) palette.live else ink.text,
             style = TextStyle(fontFamily = palette.font, fontSize = 14.sp, lineHeight = 18.sp),
         )
         if (state.running) {

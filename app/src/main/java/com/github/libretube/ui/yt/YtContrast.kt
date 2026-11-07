@@ -61,6 +61,20 @@ object YtContrast {
         return target
     }
 
+    /**
+     * [fg] made readable on every one of [backs] (the ends of a gradient, say): pushed against
+     * the back it reads worst on until it reads on all of them, or as far as it can go.
+     */
+    fun readableOnAll(fg: Int, backs: IntArray, min: Double = BODY): Int {
+        var ink = over(fg, backs.first())
+        repeat(6) {
+            val worst = backs.minBy { ratio(ink, it) }
+            if (ratio(ink, worst) >= min) return ink
+            ink = readable(ink, worst, min)
+        }
+        return ink
+    }
+
     /** [from] mixed with [to] by [t] (0 all [from], 1 all [to]), opaque. */
     fun mix(from: Int, to: Int, t: Double): Int {
         fun channel(shift: Int): Int {
