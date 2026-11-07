@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -115,6 +116,19 @@ fun GlassHomeScreen(
     val chrome = 89.dp
     val searchPress = remember { MutableInteractionSource() }
     val searchSwell by rememberSwell(searchPress)
+    // the search pill floats in place, so the list's scroll drives its morph into the header's
+    // search button (YtSearchMorph): it starts with the first pixel and ends after the pill
+    // and a little more have gone by
+    val list = rememberLazyListState()
+    val density = LocalDensity.current
+    val morphRange = with(density) { 72.dp.toPx() }
+    val morph: () -> Float = remember(list, morphRange) {
+        {
+            val scrolled = if (list.firstVisibleItemIndex == 0) list.firstVisibleItemScrollOffset.toFloat() else morphRange
+            scrolled / morphRange
+        }
+    }
+    val searchLive by rememberSearchFieldLive()
 
     Box(Modifier.fillMaxSize()) {
         Box(
@@ -135,6 +149,7 @@ fun GlassHomeScreen(
                 indicatorTop = chrome,
             ) {
                 LazyColumn(
+                    state = list,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(top = chrome, bottom = 16.dp + ytNavPadding()),
                 ) {
@@ -167,10 +182,19 @@ fun GlassHomeScreen(
                     .padding(start = 18.dp, end = 18.dp, top = 4.dp)
                     .fillMaxWidth()
                     .height(38.dp)
+                    .ytSearchMorphField(morph)
                     .liquidGlass(screen, RoundedCornerShape(19.dp), ytDayNight(Color(0x80FFFFFF), Color(0x33A8E0D6)), GlassShadow, swell = { searchSwell })
-                    // held: a glass lens lifts off the pill and drags onto a card to search its channel
-                    .ytSearchDragSource(palette)
-                    .clickable(interactionSource = searchPress, indication = null, onClick = actions.onSearch)
+                    // held: a glass lens lifts off the pill and drags onto a card to search its channel;
+                    // once it has become the header's button, that one is the search to tap
+                    .then(
+                        if (searchLive) {
+                            Modifier
+                                .ytSearchDragSource(palette)
+                                .clickable(interactionSource = searchPress, indication = null, onClick = actions.onSearch)
+                        } else {
+                            Modifier
+                        },
+                    )
                     .padding(horizontal = 16.dp),
             ) {
                 Icon(
@@ -186,8 +210,11 @@ fun GlassHomeScreen(
                     modifier = Modifier.padding(start = 15.dp),
                 )
                 Spacer(Modifier.weight(1f))
-                // the Feed-Regler: a glass circle at the right end of the pill, teal while open
-                YtTuneCircle(
+                // the Feed-Regler: a glass circle at the right end of the pill, teal while open;
+                // it leaves with the pill, so an invisible circle cannot be tapped
+                if (!searchLive) {
+                    Spacer(Modifier.size(30.dp))
+                } else YtTuneCircle(
                     fill = ytDayNight(Color(0x99FFFFFF), Color(0x336FB5AA)),
                     ink = palette.text,
                     activeFill = ytDayNight(Color(0xFF0A8F7F), Color(0xFF7FE0D2)),
@@ -223,6 +250,8 @@ fun GlassHomeScreen(
                 selected = tab,
                 onSelect = onSelectTab,
                 modifier = Modifier
+                    // the tabs move up into the room the pill leaves as it becomes the header button
+                    .offset { IntOffset(0, -(YtSearchMorph.travel * 44.dp.toPx()).roundToInt()) }
                     .padding(start = 21.dp, end = 20.dp, top = 6.dp, bottom = 10.dp)
                     .fillMaxWidth()
                     .height(31.dp),
