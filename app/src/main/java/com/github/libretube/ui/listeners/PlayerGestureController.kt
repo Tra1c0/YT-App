@@ -13,6 +13,7 @@ import androidx.activity.viewModels
 import com.github.libretube.ui.base.BaseActivity
 import com.github.libretube.ui.interfaces.PlayerGestureOptions
 import com.github.libretube.ui.models.CommonPlayerViewModel
+import com.github.libretube.ui.yt.player.YtPlayerTouch
 import java.time.Instant
 import kotlin.math.abs
 
@@ -30,7 +31,10 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
     private var isFullscreen = false
     private var scaleGestureWasInProgress = false
     private var isMoving = false
-    var longPressInProgress = false
+
+    // YT: the finger and its long press, ended on every path (see YtPlayerTouch)
+    private val touch = YtPlayerTouch()
+    val longPressInProgress get() = touch.longPress
 
     // YT: where the long press began, for the drag after it
     private var longPressX = 0f
@@ -54,11 +58,18 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 scaleGestureWasInProgress = false
+                // YT: a hold an earlier gesture left running ends before this one starts
+                if (touch.down()) listener.onLongPressEnd(0f, 0f, cancelled = true)
+                if (isMoving) {
+                    isMoving = false
+                    listener.onSwipeEnd()
+                }
 
                 val (_, height) = listener.getViewMeasures()
                 if (event.y < height * 0.1f && orientation == Configuration.ORIENTATION_LANDSCAPE) {
                     // when in landscape mode, don't consume this event if touch down area is at the
                     // top of the player
+                    touch.end()
                     return false
                 }
 
@@ -67,16 +78,14 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
                     listener.onSingleTap(true)
 
                     // controls locked, no need to consume this event
+                    touch.end()
                     return false
                 }
             }
 
             MotionEvent.ACTION_POINTER_DOWN -> {
                 // YT: a second finger (a pinch) cancels the hold
-                if (longPressInProgress) {
-                    longPressInProgress = false
-                    listener.onLongPressEnd(0f, 0f, cancelled = true)
-                }
+                if (touch.secondFinger()) listener.onLongPressEnd(0f, 0f, cancelled = true)
             }
 
             MotionEvent.ACTION_MOVE -> {
@@ -104,17 +113,20 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
             }
 
             MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
-                if (isMoving) listener.onSwipeEnd()
+                // YT: state first, then the callbacks: ending a swipe can move the player into
+                // fullscreen, which detaches this view and calls abort() from inside
+                val wasMoving = isMoving
                 isMoving = false
+                val wasHolding = touch.end()
+                if (wasMoving) listener.onSwipeEnd()
 
-                if (longPressInProgress) {
+                if (wasHolding) {
                     listener.onLongPressEnd(
                         event.x - longPressX,
                         event.y - longPressY,
                         cancelled = event.actionMasked == MotionEvent.ACTION_CANCEL,
                     )
                 }
-                longPressInProgress = false
             }
         }
 
@@ -122,6 +134,28 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
         if (!scaleGestureWasInProgress) gestureDetector.onTouchEvent(event)
 
         return true
+    }
+
+    /**
+     * YT: ends the current gesture without an event from the system: the view stopped taking
+     * touches mid-gesture (controls turned off by the minimize drag before the parent's CANCEL
+     * arrived) or left the window. The detectors drop their pending long press and tap, a running
+     * hold ends cancelled. Nothing happens when no gesture runs.
+     */
+    fun abort() {
+        if (!touch.active && !isMoving) return
+        val now = SystemClock.uptimeMillis()
+        MotionEvent.obtain(now, now, MotionEvent.ACTION_CANCEL, 0f, 0f, 0).also { cancel ->
+            scaleGestureDetector.onTouchEvent(cancel)
+            gestureDetector.onTouchEvent(cancel)
+            cancel.recycle()
+        }
+        scaleGestureWasInProgress = false
+        val wasMoving = isMoving
+        isMoving = false
+        val wasHolding = touch.end()
+        if (wasMoving) listener.onSwipeEnd()
+        if (wasHolding) listener.onLongPressEnd(0f, 0f, cancelled = true)
     }
 
     private inner class ScaleGestureListener : ScaleGestureDetector.OnScaleGestureListener {
@@ -159,7 +193,8 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
         override fun onLongPress(e: MotionEvent) {
             super.onLongPress(e)
 
-            longPressInProgress = true
+            // YT: a long press whose finger is gone (its CANCEL never came) starts nothing
+            if (!touch.longPressFired()) return
             longPressX = e.x
             longPressY = e.y
             listener.onLongPress(e.x, e.y)

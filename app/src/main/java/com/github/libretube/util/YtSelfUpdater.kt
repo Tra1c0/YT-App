@@ -56,6 +56,12 @@ object YtSelfUpdater {
         /** Android wants the user to confirm; [confirm] opens its dialog again. */
         data class WaitingForUser(val confirm: Intent) : State
         data class Failed(val message: String) : State
+
+        /**
+         * Android ended the session without a clear verdict (see [YtUpdateRules.InstallVerdict.UNSURE]):
+         * Play Protect may still install it. Shown neutral; [detail] is the system's message.
+         */
+        data class Unsure(val detail: String) : State
     }
 
     const val ACTION_INSTALL_STATUS = "app.tra1c0.yt.action.UPDATE_INSTALL_STATUS"
@@ -94,7 +100,8 @@ object YtSelfUpdater {
 
     /** A failure shown once stays until the next attempt; a fresh dialog starts clean. */
     fun clearFailure() {
-        if (_state.value is State.Failed) _state.value = State.Idle
+        val now = _state.value
+        if (now is State.Failed || now is State.Unsure) _state.value = State.Idle
     }
 
     @Synchronized
@@ -273,8 +280,10 @@ object YtSelfUpdater {
     /** Result of the install session (see [YtUpdateReceiver]). */
     fun onInstallStatus(context: Context, intent: Intent) {
         val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
-        when (status) {
-            PackageInstaller.STATUS_PENDING_USER_ACTION -> {
+        val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "status $status"
+        Log.i(TAG, "install status $status: $message")
+        when (YtUpdateRules.installVerdict(status)) {
+            YtUpdateRules.InstallVerdict.CONFIRM -> {
                 val confirm = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_INTENT, Intent::class.java)
                 if (confirm == null) {
                     fail(context, context.getString(R.string.yt_update_error_install, "no confirmation"))
@@ -288,18 +297,18 @@ object YtSelfUpdater {
                     notify(context, context.getString(R.string.yt_update_ready_title), confirm)
                 }
             }
-            PackageInstaller.STATUS_SUCCESS -> {
+            YtUpdateRules.InstallVerdict.DONE -> {
                 // an update of YT itself ends the process before this; anything else lands here
                 _state.value = State.Idle
                 updateDir(context).deleteRecursively()
             }
-            PackageInstaller.STATUS_FAILURE_ABORTED ->
+            YtUpdateRules.InstallVerdict.ABORTED ->
                 fail(context, context.getString(R.string.yt_update_error_aborted))
-            else -> {
-                val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
-                    ?: "status $status"
+            YtUpdateRules.InstallVerdict.FAILED ->
                 fail(context, context.getString(R.string.yt_update_error_install, message))
-            }
+            // Play Protect may still install it: keep the restart marker so the new version
+            // opens again, and say nothing about failing
+            YtUpdateRules.InstallVerdict.UNSURE -> _state.value = State.Unsure(message)
         }
     }
 

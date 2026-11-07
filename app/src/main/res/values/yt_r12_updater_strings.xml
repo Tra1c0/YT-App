@@ -20,6 +20,7 @@
     <string name="yt_update_error_no_permission">YT is not allowed to install apps.</string>
     <string name="yt_update_error_install">Installation failed: %1$s</string>
     <string name="yt_update_error_aborted">Installation cancelled.</string>
+    <string name="yt_update_unsure">Installing… Android has not confirmed it yet (%1$s). If Play Protect asks, choose “Install anyway”; YT opens again once the update is in place. If nothing happens, try again.</string>
     <string name="yt_update_channel_name">App updates</string>
     <string name="yt_update_channel_description">Confirming an update and reopening YT after it</string>
     <string name="yt_update_ready_title">YT update ready – tap to install</string>

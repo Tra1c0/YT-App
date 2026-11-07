@@ -52,4 +52,44 @@ object YtUpdateRules {
     /** The download must be signed by exactly the keys of the installed app. */
     fun sameSigners(installed: Set<String>, archive: Set<String>): Boolean =
         installed.isNotEmpty() && installed == archive
+
+    /** What the dialog says about an install session's status (PackageInstaller.STATUS_*). */
+    enum class InstallVerdict {
+        /** Installed (an update of YT itself usually ends the process before this). */
+        DONE,
+
+        /** Android wants the user to confirm. */
+        CONFIRM,
+
+        /** The user said no. */
+        ABORTED,
+
+        /** A definite failure: invalid, conflicting signer, no space, incompatible. */
+        FAILED,
+
+        /**
+         * Not a definite failure. Play Protect answers a sideloaded update it does not know with
+         * BLOCKED (or a plain FAILURE, or a TIMEOUT while its dialog waits) and then installs the
+         * same APK itself once the user picks "Install anyway"; the update then arrives after a
+         * failure. The dialog stays neutral ("Installing…") instead of saying it failed.
+         */
+        UNSURE,
+    }
+
+    // the values of PackageInstaller.STATUS_*, here so the rule needs no Android classes
+    const val STATUS_PENDING_USER_ACTION = -1
+    const val STATUS_SUCCESS = 0
+    const val STATUS_FAILURE = 1
+    const val STATUS_FAILURE_BLOCKED = 2
+    const val STATUS_FAILURE_ABORTED = 3
+    const val STATUS_FAILURE_TIMEOUT = 8
+
+    fun installVerdict(status: Int): InstallVerdict = when (status) {
+        STATUS_SUCCESS -> InstallVerdict.DONE
+        STATUS_PENDING_USER_ACTION -> InstallVerdict.CONFIRM
+        STATUS_FAILURE_ABORTED -> InstallVerdict.ABORTED
+        STATUS_FAILURE, STATUS_FAILURE_BLOCKED, STATUS_FAILURE_TIMEOUT -> InstallVerdict.UNSURE
+        // INVALID, CONFLICT, STORAGE, INCOMPATIBLE and anything unknown below them
+        else -> if (status in 4..7) InstallVerdict.FAILED else InstallVerdict.UNSURE
+    }
 }
