@@ -23,6 +23,9 @@ import com.github.libretube.util.PlayingQueue
  * design's landing (YtMiniHost.armRise); the design's dock haptic plays at the long press (the
  * landing's own one is muted once, so there is exactly one).
  *
+ * Within a minute of the close the player itself is still kept (YtSoftClose): then the press
+ * brings that same player back instead of starting the video again.
+ *
  * Kept in memory only: it survives a configuration change (this object outlives activities),
  * not the process. Offline players are not kept (their queue is built by the offline service).
  */
@@ -101,6 +104,18 @@ object YtMiniRestore {
     }
 
     /**
+     * NavigationHelper.navigateVideo starts a video: the closed one is forgotten, and a player
+     * kept after its close (YtSoftClose) goes first. True if the navigation has to wait for that
+     * player's service to be gone: [again] then runs it once more. The page that brings the kept
+     * player back passes through.
+     */
+    fun beforeNavigate(videoId: String?, keepQueue: Boolean, again: Runnable): Boolean {
+        if (YtSoftClose.isResuming(videoId)) return false
+        forget()
+        return YtSoftClose.releaseThen(keepQueue, again)
+    }
+
+    /**
      * The long press on the tab. Restores the closed player and plays the haptic on [feedback],
      * or returns false (nothing saved, too old, a player is showing) so the press does what it
      * did before.
@@ -118,6 +133,25 @@ object YtMiniRestore {
         YtHaptics.of(feedback).play(YtMiniDesigns.current().haptic(YtMoment.DOCK))
         muteDockUntil = now() + MUTE_MS
 
+        // closed less than a minute ago: the same player is still kept, paused (YtSoftClose); a
+        // page attaches to it docked, rises and plays on, nothing is loaded again
+        if (YtSoftClose.resumes(session.videoId)) {
+            mark("soft")
+            YtSoftClose.beginResume(session.videoId)
+            dockVideoId = session.videoId
+            dockAt = now()
+            NavigationHelper.navigateVideo(
+                activity,
+                PlayerData(videoId = session.videoId, keepQueue = true),
+                alreadyStarted = true,
+                forceVideo = true,
+            )
+            return true
+        }
+        // a kept player past its minute (its timer came late) goes first; the restart then
+        // waits for its service to be gone, at most the settle time
+        val softReleased = YtSoftClose.release()
+
         val start = Runnable {
             if (activity.isFinishing || activity.isDestroyed || playerShowing(activity)) return@Runnable
             mark("navigate")
@@ -131,7 +165,11 @@ object YtMiniRestore {
             )
         }
         // the old service gone already: no wait; else at its end, the settle time as the limit
-        val delay = if (goneAt >= session.closedAt) 0L else YtMiniRestoreRules.startDelay(session.closedAt, now())
+        val delay = when {
+            softReleased -> YtMiniRestoreRules.SETTLE_MS
+            goneAt >= session.closedAt -> 0L
+            else -> YtMiniRestoreRules.startDelay(session.closedAt, now())
+        }
         if (delay <= 0L) {
             start.run()
         } else {

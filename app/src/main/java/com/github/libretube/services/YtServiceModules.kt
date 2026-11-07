@@ -53,6 +53,7 @@ object YtServiceModules {
         YtLoopModule,
         YtScrubModule,
         YtSessionModule,
+        YtSoftCloseModule,
     )
 
     /** True if a module handled the command; the first one that does wins. */
