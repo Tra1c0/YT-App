@@ -36,6 +36,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +51,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.lifecycleScope
 import com.github.libretube.ui.yt.mini.ytDockedBar
+import com.github.libretube.ui.yt.mini.YtMiniRestore
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
@@ -171,7 +174,7 @@ object YtNav {
         navController: NavController,
     ): YtNavState? {
         val design = YtDesign.current()
-        val palette = design.palette ?: return null
+        val palette = design.palette ?: return null.also { classicHold(activity, bottomNav) }
         val items = items(design)
 
         for (item in bottomNav.menu.children) {
@@ -192,9 +195,18 @@ object YtNav {
         // the screens below, seen through the glass of the liquid designs
         val backdrop = activity.findViewById<View>(R.id.fragment)?.let { YtViewBackdrop(it, palette.background) }
         val bar = ComposeView(activity).apply {
+            val view = this
             setContent {
                 YtTheme(palette) {
-                    YtNavBar(design, palette, items, state, backdrop) { id ->
+                    YtNavBar(
+                        design,
+                        palette,
+                        items,
+                        state,
+                        backdrop,
+                        // YT: a long press on Abos brings back the closed mini player
+                        onHold = { id -> id == R.id.subscriptionsFragment && YtMiniRestore.restore(activity, view) },
+                    ) { id ->
                         if (YtMotionPrefs.enabled && id != state.selected) {
                             bottomNav.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
                         }
@@ -214,6 +226,19 @@ object YtNav {
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT),
         )
         return state
+    }
+
+    /**
+     * The classic bar: a long press on Abos brings back the closed mini player. Without one to
+     * bring back the press stays the item's (its tooltip). The item views are built after the
+     * menu, hence the post.
+     */
+    private fun classicHold(activity: AppCompatActivity, bottomNav: BottomNavigationView) {
+        bottomNav.post {
+            bottomNav.findViewById<View>(R.id.subscriptionsFragment)?.setOnLongClickListener { item ->
+                YtMiniRestore.restore(activity, item)
+            }
+        }
     }
 
     /**
@@ -342,11 +367,21 @@ fun YtNavBar(
     items: List<YtNavItem>,
     state: YtNavState,
     backdrop: Backdrop?,
+    onHold: (Int) -> Boolean = { false },
     onSelect: (Int) -> Unit,
 ) {
+    // a long press on a tab (Abos: bring back the closed mini player), see YtNavHold
+    val hold = remember { YtNavHold() }
+    val currentOnHold by rememberUpdatedState(onHold)
     // the bar dips together with the mini player that lands on it
-    Box(Modifier.graphicsLayer { translationY = YtDock.dip }) {
-        YtNavBarOf(design, palette, items, state, backdrop, onSelect)
+    Box(
+        Modifier
+            .graphicsLayer { translationY = YtDock.dip }
+            .ytNavHoldArea(hold) { currentOnHold(it) },
+    ) {
+        CompositionLocalProvider(LocalYtNavHold provides hold) {
+            YtNavBarOf(design, palette, items, state, backdrop, onSelect)
+        }
     }
 }
 
@@ -406,7 +441,8 @@ private fun FloatingNav(
                     onClick = { onSelect(item.id) },
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight(),
+                        .fillMaxHeight()
+                        .ytNavHoldTarget(item.id),
                 )
             }
         }

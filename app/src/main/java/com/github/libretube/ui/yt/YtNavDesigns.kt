@@ -197,7 +197,8 @@ fun ClayNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSel
                     .clip(tile.shape)
                     .background(Brush.verticalGradient(listOf(lighten(color, 0.16f), color, darken(color, 0.06f))))
                     .border(1.5.dp, Color.White.copy(alpha = if (ytNight) 0.1f else 0.35f), tile.shape)
-                    .clickable(interactionSource = interaction, indication = null) { onSelect(item.id) },
+                    .clickable(interactionSource = interaction, indication = null) { onSelect(item.id) }
+                    .ytNavHoldTarget(item.id),
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -270,7 +271,8 @@ fun EditorialNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .noRippleClick { onSelect(item.id) },
+                        .noRippleClick { onSelect(item.id) }
+                        .ytNavHoldTarget(item.id),
                 ) {
                     Text(
                         text = stringResource(item.label),
@@ -328,7 +330,8 @@ fun GlassNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
                         .clip(pill)
                         .background(if (active) ytDayNight(Color(0xF2FFFFFF), Color(0xF22E5452)) else ytDayNight(Color(0x40FFFFFF), Color(0x1FCFEDE7)))
                         .border(1.dp, ytDayNight(Color(0xB3FFFFFF), Color(0x33CFEDE7)), pill)
-                        .noRippleClick { onSelect(item.id) },
+                        .noRippleClick { onSelect(item.id) }
+                        .ytNavHoldTarget(item.id),
                 ) {
                     if (active) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -476,7 +479,8 @@ fun PopNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSele
                         .noRippleClick {
                             blob.animateToValue(i.toFloat())
                             onSelect(item.id)
-                        },
+                        }
+                        .ytNavHoldTarget(item.id),
                 ) {
                     PopTab(palette, item, state, active = false, palette.text, Modifier.graphicsLayer { alpha = 1f - activeness(i) })
                     PopTab(palette, item, state, active = true, palette.onAccent, Modifier.graphicsLayer { alpha = activeness(i) })
@@ -541,7 +545,8 @@ fun ShapesNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .noRippleClick { onSelect(item.id) },
+                    .noRippleClick { onSelect(item.id) }
+                    .ytNavHoldTarget(item.id),
             ) {
                 // the shape of the active tab blooms out of a circle (lobes grow, corners
                 // square up) while it turns into place; the scalloped ones keep turning slowly
@@ -619,7 +624,8 @@ fun FrostNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
                         .clip(RoundedCornerShape(24.dp))
                         .background(if (active) Color.White else Color(0x1AFFFFFF))
                         .border(1.dp, if (active) Color.Transparent else Color(0x33FFFFFF), RoundedCornerShape(24.dp))
-                        .noRippleClick { onSelect(item.id) },
+                        .noRippleClick { onSelect(item.id) }
+                        .ytNavHoldTarget(item.id),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box {
@@ -688,7 +694,8 @@ fun KieselNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
                                 ripple.animateTo(1f, rippleSpec)
                             }
                             onSelect(item.id)
-                        },
+                        }
+                        .ytNavHoldTarget(item.id),
                 ) {
                     Box(
                         Modifier

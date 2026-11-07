@@ -467,7 +467,8 @@ class YtMiniHost private constructor(
                 publishBounds()
                 crop(mini)
                 if (mini) {
-                    play(YtMoment.DOCK)
+                    // a restored player's dock haptic was played by the long press already
+                    if (!YtMiniRestore.takeDockMute()) play(YtMoment.DOCK)
                     YtTestHooks.log("YtMini") { "dock ${design.design.key}" }
                     if (YtMotionPrefs.enabled) {
                         landing?.cancel()
