@@ -14,12 +14,15 @@ import com.github.libretube.R
 import com.github.libretube.enums.NotificationId
 import com.github.libretube.enums.PlayerEvent
 import com.github.libretube.helpers.PlayerHelper
+import com.github.libretube.services.YtResumeNotification
 import com.google.common.collect.ImmutableList
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class NowPlayingNotification(
     private val context: Context,
     var notificationIntent: Intent = Intent(),
+    // YT: called when Android refused to start the service in the foreground (see createNotification)
+    private val onForegroundStartDenied: () -> Unit = {},
 ): MediaNotification.Provider {
     private val nProvider = DefaultMediaNotificationProvider.Builder(context)
         .setNotificationId(NotificationId.PLAYER_PLAYBACK.id)
@@ -56,7 +59,20 @@ class NowPlayingNotification(
     ): MediaNotification {
         createCurrentContentIntent()?.let { mediaSession.setSessionActivity(it) }
         nProvider.setSmallIcon(R.drawable.ic_launcher_lockscreen)
-        return nProvider.createNotification(mediaSession, customLayout, actionFactory, onNotificationChangedCallback)
+        // YT: when the thumbnail has loaded, the provider calls back on the main thread and media3
+        // runs its foreground update inline (MediaNotificationManager.onNotificationUpdated). That
+        // path is not covered by MediaSessionService.Listener in media3 1.9, so a refused
+        // startForegroundService from the background (Android 12+) would crash the app on the
+        // main looper. Catch exactly that refusal here and let the service handle it.
+        val guarded = MediaNotification.Provider.Callback { notification ->
+            try {
+                onNotificationChangedCallback.onNotificationChanged(notification)
+            } catch (e: IllegalStateException) {
+                if (!YtResumeNotification.isStartNotAllowed(e)) throw e
+                onForegroundStartDenied()
+            }
+        }
+        return nProvider.createNotification(mediaSession, customLayout, actionFactory, guarded)
     }
 
     override fun handleCustomCommand(

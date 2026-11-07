@@ -7,6 +7,7 @@ import android.os.Looper
 import android.view.KeyEvent
 import androidx.annotation.CallSuper
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.core.app.ServiceCompat
 import androidx.core.os.bundleOf
 import androidx.core.os.postDelayed
@@ -15,6 +16,7 @@ import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Timeline
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -22,6 +24,7 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.github.libretube.R
@@ -61,6 +64,9 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
 
     lateinit var videoId: String
 
+    /** Whether [videoId] holds a video yet. */
+    protected fun isVideoIdSet() = ::videoId.isInitialized
+
     var isTransitioning = false
         private set
 
@@ -78,6 +84,10 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
      */
     protected var shouldHandleAutoplay = true
 
+    // YT: keeps the service in the foreground from one queue item to the next (see YtForegroundHold)
+    private val foregroundHold = YtForegroundHold()
+    private val releaseHold = Runnable { releaseForegroundHold(null) }
+
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             super.onIsPlayingChanged(isPlaying)
@@ -85,12 +95,26 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
             // Start or pause watch position timer
             if (!isPlaying) {
                 saveWatchPosition()
+            } else {
+                // YT: playing again, so the service is in the foreground: the "tap to resume" note is stale
+                YtResumeNotification.cancel(this@AbstractPlayerService)
             }
         }
 
+        override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+            // YT: the next item is in the player: end the hold once media3's notification
+            // controller has seen it too
+            if (!timeline.isEmpty && foregroundHold.holding) scheduleHoldRelease(YtForegroundHold.GRACE_MS)
+        }
+
         override fun onPlayerError(error: PlaybackException) {
-            // show a toast on errors
-            toastFromMainThread(error.localizedMessage.orEmpty())
+            // YT: no toast for an error the service recovers from by itself (a live stream that
+            // fell behind its window); the others name their error code, since media3's text
+            // alone ("Source error") does not tell what went wrong
+            if (recoversFrom(error)) return
+            toastFromMainThread(
+                getString(R.string.yt_play_error, error.localizedMessage.orEmpty(), error.errorCodeName)
+            )
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
@@ -139,6 +163,45 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
         }
 
         return super.onCustomCommand(session, controller, customCommand, args)
+    }
+
+    /** YT: true if the service handles [error] by itself (then no toast). */
+    protected open fun recoversFrom(error: PlaybackException): Boolean = false
+
+    /**
+     * YT: skips media3's notification updates while the queue moves to its next item, so the
+     * service does not leave the foreground in between (see YtForegroundHold). Everything else
+     * goes to media3 as before.
+     */
+    override fun onUpdateNotification(session: MediaSession, startInForegroundRequired: Boolean) {
+        if (foregroundHold.skip()) return
+        super.onUpdateNotification(session, startInForegroundRequired)
+    }
+
+    private fun scheduleHoldRelease(delayMs: Long) {
+        handler.removeCallbacks(releaseHold)
+        handler.postDelayed(releaseHold, delayMs)
+    }
+
+    private fun releaseForegroundHold(forSeq: Int?) {
+        if (forSeq == null) handler.removeCallbacks(releaseHold)
+        val held = foregroundHold.holding
+        if (foregroundHold.release(forSeq)) triggerNotificationUpdate()
+        if (held && !foregroundHold.holding) YtTestHooks.log("YtQueue") { "foreground hold released" }
+    }
+
+    /**
+     * YT: Android refused to start the service in the foreground (Android 12+, the app in the
+     * background). media3 catches the exception on most paths and reports it here; the thumbnail
+     * path is caught in NowPlayingNotification. A service outside the foreground may be stopped
+     * by the system at any time, so playback pauses and a note offers to continue with a tap
+     * (which may start the foreground again).
+     */
+    private fun onForegroundStartDenied() {
+        YtTestHooks.log("YtQueue") { "foreground start denied, paused" }
+        Log.w(TAG(), "the system refused to start the player service in the foreground")
+        exoPlayer?.pause()
+        YtResumeNotification.show(this, playerIntent(), exoPlayer?.mediaMetadata?.title)
     }
 
     open fun runPlayerCommand(args: Bundle) {
@@ -267,12 +330,27 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
         // YT: the modules drop what belonged to the video before (a loop, an end point)
         YtServiceModules.onNavigate(videoId)
         sponsorBlockSegments = emptyList()
+        // YT: hold the foreground before the player is emptied (media3 would leave it at the
+        // empty timeline and could not get back into it from the background)
+        val holdSeq = foregroundHold.begin()
+        scheduleHoldRelease(YtForegroundHold.MAX_MS)
+        YtTestHooks.log("YtQueue") { "foreground hold for $videoId" }
         exoPlayer?.clearMediaItems()
 
         this.videoId = videoId
 
         CoroutineScope(Dispatchers.IO).launch {
-            startPlayback()
+            try {
+                startPlayback()
+            } finally {
+                // loaded or failed: a failed load (no streams, no network) must not keep the
+                // old notification; the item that did arrive releases earlier (onTimelineChanged)
+                handler.post {
+                    if (foregroundHold.holding && foregroundHold.seq == holdSeq) {
+                        scheduleHoldRelease(YtForegroundHold.GRACE_MS)
+                    }
+                }
+            }
         }
     }
 
@@ -343,14 +421,16 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
      * Trigger a notification update with an updated PendingIntent.
      */
     private fun updateNotification() {
-        val notificationIntent = Intent(this, getIntentActivity()).apply {
-            putExtra(IntentData.maximizePlayer, true)
-            putExtra(IntentData.offlinePlayer, isOfflinePlayer)
-            putExtra(IntentData.audioOnly, isAudioOnlyPlayer)
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        }
-        notificationProvider?.notificationIntent = notificationIntent
+        notificationProvider?.notificationIntent = playerIntent()
         triggerNotificationUpdate()
+    }
+
+    /** The intent that opens this player in the app (the notification's tap). */
+    private fun playerIntent() = Intent(this, getIntentActivity()).apply {
+        putExtra(IntentData.maximizePlayer, true)
+        putExtra(IntentData.offlinePlayer, isOfflinePlayer)
+        putExtra(IntentData.audioOnly, isAudioOnlyPlayer)
+        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
     }
 
     abstract val isOfflinePlayer: Boolean
@@ -366,8 +446,13 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     override fun onCreate() {
         super.onCreate()
 
-        notificationProvider = NowPlayingNotification(this)
+        notificationProvider = NowPlayingNotification(this) { onForegroundStartDenied() }
         setMediaNotificationProvider(notificationProvider!!)
+        // YT: media3 reports a refused foreground start here instead of crashing (Android 12+)
+        setListener(object : MediaSessionService.Listener {
+            @RequiresApi(31)
+            override fun onForegroundServiceStartNotAllowedException() = onForegroundStartDenied()
+        })
 
         createPlayerAndMediaSession()
     }
@@ -501,6 +586,9 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
             notificationProvider = null
 
             handler.removeCallbacksAndMessages(null)
+            // YT: the service goes away, and with it what the note would bring back
+            YtResumeNotification.cancel(this)
+            clearListener()
 
             // YT: the modules let go of this service's player before it is released (unless a
             // newer service handed its player over meanwhile)
