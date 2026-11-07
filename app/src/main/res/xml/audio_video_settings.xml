@@ -2,6 +2,45 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- YT: loudness levelling (YtLoudness) -->
+    <PreferenceCategory app:title="@string/yt_loud_category">
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_volume_up"
+            android:summary="@string/yt_loud_summary"
+            app:defaultValue="true"
+            app:key="yt_loud"
+            app:title="@string/yt_loud_title" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_audio"
+            android:summary="@string/yt_loud_dynamic_summary"
+            app:defaultValue="true"
+            app:dependency="yt_loud"
+            app:key="yt_loud_dynamic"
+            app:title="@string/yt_loud_dynamic_title" />
+
+        <com.github.libretube.ui.views.SliderPreference
+            android:icon="@drawable/ic_yt_tune"
+            app:defValue="-14"
+            app:dependency="yt_loud"
+            app:key="yt_loud_target"
+            app:stepSize="1"
+            app:title="@string/yt_loud_target_title"
+            app:valueFrom="-16"
+            app:valueTo="-12" />
+
+        <com.github.libretube.ui.views.SliderPreference
+            android:icon="@drawable/ic_volume_up"
+            app:defValue="0"
+            app:key="yt_loud_trim"
+            app:stepSize="1"
+            app:title="@string/yt_loud_trim_title"
+            app:valueFrom="-10"
+            app:valueTo="6" />
+
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/wifi">
 
         <ListPreference

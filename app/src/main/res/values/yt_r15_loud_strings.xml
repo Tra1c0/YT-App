@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_loud_category">Volume</string>
+    <string name="yt_loud_title">Even out loudness</string>
+    <string name="yt_loud_summary">Brings every video to the same loudness. A limiter keeps the sound from clipping. Turn off if the sound behaves oddly (applies from the next video).</string>
+    <string name="yt_loud_dynamic_title">Lift quiet passages</string>
+    <string name="yt_loud_dynamic_summary">Gently raises very quiet parts, such as whispering or a soft intro. Silence stays silent.</string>
+    <string name="yt_loud_target_title">Target loudness (LUFS)</string>
+    <string name="yt_loud_trim_title">Adjust volume (dB)</string>
+</resources>
