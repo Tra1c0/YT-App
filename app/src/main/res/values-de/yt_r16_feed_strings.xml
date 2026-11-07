@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- calmer titles (Gesten & Interaktion → Startseite) -->
+    <string name="yt_title_case">Titel in normaler Schreibung</string>
+    <string name="yt_title_case_summary">Titel ganz in Großbuchstaben erscheinen in normaler Schreibung; Abkürzungen wie NASA oder 4K bleiben</string>
+    <string name="yt_title_marks">Clickbait-Satzzeichen glätten</string>
+    <string name="yt_title_marks_summary">Zeigt !!! als !, ??? als ? und eine Emoji-Kette als ein Emoji. Nur auf dem Bildschirm, beim Teilen bleibt der Originaltitel</string>
+    <!-- Feed-Regler: hide what was watched -->
+    <string name="yt_feed_hide_seen">Gesehenes ausblenden</string>
+    <string name="yt_feed_hide_seen_note" formatted="false">Für alle Startseiten und den Abos-Tab: Videos, die zu 90 % oder bis in die letzten 30 Sekunden gesehen sind, verschwinden. Angefangene bleiben.</string>
+</resources>

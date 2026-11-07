@@ -447,7 +447,7 @@ private fun LargeVideo(
             Spacer(Modifier.width(13.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = video.title.orEmpty(),
+                    text = video.ytTitle,
                     color = palette.text,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -529,7 +529,7 @@ private fun LiveCard(
             }
         }
         Text(
-            text = video.title.orEmpty(),
+            text = video.ytTitle,
             color = palette.text,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

@@ -138,7 +138,7 @@ fun YtQuickSheet(
                     )
                     Column(Modifier.padding(start = 12.dp)) {
                         Text(
-                            text = item.title.orEmpty(),
+                            text = item.ytTitle,
                             color = sheetText.first,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,

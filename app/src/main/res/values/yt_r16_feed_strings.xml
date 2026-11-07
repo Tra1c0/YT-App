@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- calmer titles (Gesten & Interaktion → Startseite) -->
+    <string name="yt_title_case">Titles in normal case</string>
+    <string name="yt_title_case_summary">Titles written entirely in capitals are shown in normal case; acronyms such as NASA or 4K stay</string>
+    <string name="yt_title_marks">Calm clickbait punctuation</string>
+    <string name="yt_title_marks_summary">Shows !!! as !, ??? as ? and a row of emoji as one emoji. Only on screen, shares keep the original title</string>
+    <!-- Feed-Regler: hide what was watched -->
+    <string name="yt_feed_hide_seen">Hide watched</string>
+    <string name="yt_feed_hide_seen_note" formatted="false">For all home screens and the Subscriptions tab: videos watched to 90 % or to the last 30 seconds disappear. Started videos stay.</string>
+</resources>

@@ -619,7 +619,7 @@ private fun KieselCategorySheet(
                         )
                         Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
                             Text(
-                                text = video.title.orEmpty(),
+                                text = video.ytTitle,
                                 color = KieselInk,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,

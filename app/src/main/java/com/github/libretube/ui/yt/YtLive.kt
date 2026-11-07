@@ -322,7 +322,7 @@ private fun LiveCard(
             )
             Column(Modifier.padding(start = 10.dp)) {
                 Text(
-                    text = video.title.orEmpty(),
+                    text = video.ytTitle,
                     color = palette.text,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

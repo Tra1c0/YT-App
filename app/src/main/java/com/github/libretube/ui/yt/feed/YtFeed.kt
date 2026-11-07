@@ -436,9 +436,11 @@ object YtFeed {
             }
         }
         val watched = HashMap<String, Float>()
+        val finished = HashSet<String>()
         for (item in items) {
             val position = local.positionsMs[item.id] ?: continue
             if (item.durationSec > 0) watched[item.id] = (position / 1000f / item.durationSec).coerceIn(0f, 1f)
+            if (YtSeenHide.finished(position, item.durationSec)) finished += item.id
         }
         val groupChannels = rules.groups.takeIf { it.isNotEmpty() }?.let { names ->
             names.flatMap { local.groups[it].orEmpty() }.toSet()
@@ -453,6 +455,7 @@ object YtFeed {
             chosenChart = chosen,
             seen = fresh.seen.within(now),
             shuffle = fresh.shuffle,
+            finished = finished,
         )
         val ranked = YtFeedEngine.rank(items, rules, personal, signals)
         return YtFeedResult(

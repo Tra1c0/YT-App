@@ -151,6 +151,8 @@ data class YtFeedPersonal(
     /** Channels the user marked as music or as learning, by the same keys. */
     val musicChannels: Set<String> = emptySet(),
     val learnChannels: Set<String> = emptySet(),
+    /** "Gesehenes ausblenden": videos seen to the end (YtSeenHide) leave every home list and the Abos tab. */
+    val hideSeen: Boolean = false,
 )
 
 /** Everything stored: the rules per intent (missing ones are the preset) and [personal]. */

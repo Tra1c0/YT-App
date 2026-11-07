@@ -362,7 +362,7 @@ internal fun LibraryContinue(
     onOpen: (YtContinueItem) -> Unit,
 ) {
     val fill = rememberFill(progress)
-    val title = item.video.title.orEmpty()
+    val title = item.video.ytTitle
     val channel = item.video.uploaderName.orEmpty()
     when (palette.signature) {
         YtSignature.CLAY -> {

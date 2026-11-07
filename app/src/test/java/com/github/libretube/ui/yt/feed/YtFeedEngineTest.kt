@@ -179,6 +179,18 @@ class YtFeedEngineTest {
     }
 
     @Test
+    fun `hide seen drops the finished videos for every mode, started ones stay`() {
+        val items = listOf(video("w", rank = 0), video("p", rank = 1), video("y", rank = 2))
+        val seen = signals.copy(watched = mapOf("w" to 0.97f, "p" to 0.4f), finished = setOf("w"))
+        val hiding = personal.copy(hideSeen = true)
+        for (mode in YtWatchedMode.entries) {
+            assertEquals(listOf("p", "y"), ids(YtFeedEngine.rank(items, plain.copy(watched = mode), hiding, seen)))
+        }
+        // off (the default): as the rules say
+        assertEquals(setOf("w", "p", "y"), ids(YtFeedEngine.rank(items, plain.copy(watched = YtWatchedMode.SHOW), personal, seen)).toSet())
+    }
+
+    @Test
     fun `watched videos go last, hide or stay`() {
         val items = listOf(video("w", rank = 0), video("x", rank = 1), video("y", rank = 2))
         val watched = signals.copy(watched = mapOf("w" to 0.97f))

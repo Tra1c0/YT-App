@@ -69,6 +69,20 @@
             app:title="@string/yt_seen_marks" />
 
         <SwitchPreferenceCompat
+            android:icon="@drawable/ic_text"
+            android:summary="@string/yt_title_case_summary"
+            app:defaultValue="true"
+            app:key="yt_title_case"
+            app:title="@string/yt_title_case" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_text"
+            android:summary="@string/yt_title_marks_summary"
+            app:defaultValue="true"
+            app:key="yt_title_marks"
+            app:title="@string/yt_title_marks" />
+
+        <SwitchPreferenceCompat
             android:icon="@drawable/ic_queue"
             android:summary="@string/yt_home_drag_summary"
             app:defaultValue="true"

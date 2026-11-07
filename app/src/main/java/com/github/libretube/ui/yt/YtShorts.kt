@@ -377,7 +377,7 @@ private fun ShortsHeader(palette: YtPalette, count: Int?, backdrop: Backdrop?) {
 @Composable
 private fun ShortTitle(palette: YtPalette, short: StreamItem, color: Color = palette.text, dim: Color = palette.textSecondary, font: androidx.compose.ui.text.font.FontFamily = palette.font, weight: FontWeight = FontWeight.SemiBold) {
     Text(
-        text = short.title.orEmpty(),
+        text = short.ytTitle,
         color = color,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,
@@ -495,7 +495,7 @@ private fun EditorialShort(palette: YtPalette, imageLoader: ImageLoader, short: 
             )
         }
         Text(
-            text = short.title.orEmpty(),
+            text = short.ytTitle,
             color = palette.text,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -548,7 +548,7 @@ private fun GlassShort(palette: YtPalette, imageLoader: ImageLoader, short: Stre
                 .padding(horizontal = 9.dp, vertical = 7.dp),
         ) {
             Text(
-                text = short.title.orEmpty(),
+                text = short.ytTitle,
                 color = palette.text,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -657,7 +657,7 @@ private fun ShapesShort(palette: YtPalette, imageLoader: ImageLoader, short: Str
             )
         }
         Text(
-            text = short.title.orEmpty(),
+            text = short.ytTitle,
             color = palette.text,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,

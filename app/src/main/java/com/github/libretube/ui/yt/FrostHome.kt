@@ -319,7 +319,7 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
                 .padding(start = 14.dp, end = 70.dp, bottom = 14.dp),
         ) {
             Text(
-                text = video.title.orEmpty(),
+                text = video.ytTitle,
                 color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -385,7 +385,7 @@ private fun FrostRow(palette: YtPalette, imageLoader: ImageLoader, video: Stream
                 .padding(start = 12.dp, end = 6.dp),
         ) {
             Text(
-                text = video.title.orEmpty(),
+                text = video.ytTitle,
                 color = palette.text,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
