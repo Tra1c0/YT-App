@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_battery_category">Akku</string>
+    <string name="yt_battery_quality">Qualität bei wenig Akku senken</string>
+    <string name="yt_battery_quality_summary">Unter der Schwelle (ohne Ladegerät) läuft das Video in niedrigerer Auflösung und mit höchstens 30 fps. Die volle Qualität kommt 5 % darüber oder am Ladegerät zurück. Eine im Player gewählte Qualität gilt bis zum nächsten Video.</string>
+    <string name="yt_battery_threshold">Akku-Schwelle</string>
+    <string name="yt_battery_cap">Auflösung bei wenig Akku</string>
+    <string name="yt_battery_power_save">Auch im Energiesparmodus</string>
+    <string name="yt_battery_power_save_summary">Senkt die Qualität, solange der Energiesparmodus des Systems an ist, egal wie voll der Akku ist.</string>
+    <string name="yt_battery_cue">Akku-Hinweis im Player</string>
+    <string name="yt_battery_cue_summary">Bei 20, 15, 10 und 5 % schiebt sich das Video kurz nach innen und zeigt die Farbe des Akkustands am Rand, mit einer eigenen Vibration je Stand (nur mit „Eigene Haptik“).</string>
+    <string name="yt_battery_percent_15">15 %</string>
+    <string name="yt_battery_percent_20">20 %</string>
+    <string name="yt_battery_percent_30">30 %</string>
+    <string name="yt_battery_res_360">360p</string>
+    <string name="yt_battery_res_480">480p</string>
+    <string name="yt_battery_res_720">720p</string>
+</resources>
