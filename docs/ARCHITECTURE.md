@@ -195,10 +195,28 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   pref `yt_seen_marks`), rules `Y/feed/YtSeenMark.kt`. Swipe tuning: `Y/feed/YtSwipeTuning.kt`,
   `YtSwipeCalibration.kt`, `YtSwipeCalibrationScreen.kt`, `YtSwipeSettings.kt` (keys `yt_swipe_*`).
 
+## Round 16 notes
+
+- Crash report: upstream `J/util/ExceptionHandler.kt` calls `J/util/YtCrashLog.record` first (files in
+  `filesDir/yt_crash/`, newest 3, `new` marker); pure text/scrub/truncate in `J/util/YtCrashText.kt`.
+  Dialogs (crash on next start, Settings → Diagnose) in `Y/YtDiagnosisUi.kt`, text in
+  `J/util/YtDiagnosis.kt`. Showing the YT crash dialog clears upstream `error_log` (no double dialog).
+- Titles: pure `J/util/YtTitleCalm.kt`, display only via `Y/YtTitles.kt` (`StreamItem.ytTitle`, LRU),
+  prefs `yt_title_case`, `yt_title_marks`. Mini players still show the raw title.
+- Hide watched: `Y/feed/YtSeenHide.kt`, flag `hideSeen` in `yt_feed_rules`, checked in
+  `YtFeedEngine.passes` and `rememberYtVisible` (YtHomeKit). Search marks `Y/search/YtSeenRow.kt`.
+- Mini restore: `Y/mini/YtMiniRestore.kt` (+ pure `YtMiniRestoreRules.kt`) keeps the closed session
+  10 min in memory; `ytRememberClosed()` at the 4 close points in PlayerFragment, `forget()` in
+  `NavigationHelper.navigateVideo`. Long-press: `Y/YtNavHold.kt` (`ytNavHoldArea` on the bar,
+  `ytNavHoldTarget(id)` on the Abos tab, initial pass); classic bar via `setOnLongClickListener`.
+  Start docked through `YtPageStart.start(docked = true)` (`takeStartDocked`), 1.5 s settle after close
+  so the dying service does not clear the restored queue; host dock haptic muted once.
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).
 - Shorts: swipe to the next short did not react in the emulator.
 - Like/dislike InnerTube calls untested against YouTube; Movo and Side have no like button.
 - Live streams: if errors remain, a missing User-Agent on segment requests is the main suspect.
+- Mini restore: in Pop/Glas/Frost the active tab's blob also takes the hold and re-selects Abos.
 - Gesture checks still show failures in Glas/YouTube that were not fully explained (no crash).

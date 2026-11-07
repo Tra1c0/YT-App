@@ -41,6 +41,9 @@ Stand: Build 95.
 | Zeitangaben | „37 Min.“, „~3,5 Std.“, „4 Tage“, „3 Wochen“, „~2,5 Jahre“ statt Datum, auch in den klassischen Zeilen. | T |
 | Kompakte Zahlen | 0–999 genau, dann „~1,5k“, „~27k“, „~1,2 Mio.“, „~1,1 Mrd.“ für Aufrufe und Abonnenten. | T |
 | Gesehenes markieren | Angefangene Videos bekommen auf den Karten einen dünnen Fortschrittsbalken in der Akzentfarbe, gesehene werden leicht abgedunkelt und bekommen ein kleines „Gesehen“-Abzeichen im Stil des Designs. Abschaltbar unter Gesten & Interaktion → Startseite. | T |
+| Gesehenes ausblenden | Schalter im Feed-Regler (Gesehene Videos): Videos, die zu 90 % oder bis in die letzten 30 Sek. gesehen sind, verschwinden von allen Startseiten, aus Abos, Live und Shorts; angefangene bleiben. Standard: aus. Nicht im Standard-Design (dort LibreTubes eigenes „Gesehenes ausblenden“). | T |
+| Titel in normaler Schreibung | Titel ganz in Großbuchstaben erscheinen in normaler Schreibung, einzelne geschriene Wörter werden leiser; Abkürzungen wie NASA, GTA, 4K bleiben. Grenze: in einem deutschen Großbuchstaben-Titel werden Nomen klein. Nur Anzeige; Gesten & Interaktion → Startseite. | T |
+| Clickbait-Satzzeichen glätten | „!!!“ → „!“, „???“ → „?“, „?!?!“ → „?!“, Emoji-Ketten → ein Emoji. Teilen, Playlists und Filter behalten den Originaltitel. Gesten & Interaktion → Startseite. | T |
 | Wisch-Toleranz einstellen | Gesten & Interaktion → Startseite: „Wisch-Empfindlichkeit“ (streng … locker, Mitte = bisher), „Fein einstellen“ (Winkel, Abweichung, Weg), „Wischgesten kalibrieren“ (scrollen und wischen, die App schlägt Werte vor) und „Zurücksetzen“. | T |
 | Abos ohne Live | Livestreams stehen im Live-Reiter, nicht oben in den Abos. | – |
 | Abos-Reiter schnell | Zeigt sofort die gespeicherten Videos; sind sie älter als 3 Std., lädt er im Hintergrund nach (8 Kanäle gleichzeitig, nie doppelt). Der Lade-Kreis hört auch auf, wenn nichts Neues kam. | T |
@@ -52,6 +55,7 @@ Stand: Build 95.
 | Funktion | Was sie macht | Status |
 | --- | --- | --- |
 | Eigene Suche je Design | Öffnet sich über dem Bildschirm im Stil des Designs (z. B. Glasfeld aus dem Knopf heraus), mit Verlauf, Vorschlägen und Filtern. Standard behält das alte Feld. | E T |
+| Gesehenes in der Suche | Suchergebnisse zeigen dieselbe Markierung wie die Karten (Balken in der Akzentfarbe, gesehene abgedunkelt mit Abzeichen). | T |
 | Suchfeld wird Such-Knopf | Bei Glas, Frost und Formen verwandelt sich das Suchfeld der Seite beim Scrollen fließend in den Knopf oben. | T |
 
 ## Player
@@ -79,6 +83,7 @@ Stand: Build 95.
 | Video folgt dem Finger | Video nach unten ziehen → schrumpft unter dem Finger in den Miniplayer; hochziehen öffnet es; Miniplayer runterziehen schließt. | E T |
 | Miniplayer im Querformat | Dockt nach dem Drehen (in beide Richtungen) sauber an der Leiste an; Leiste und Miniplayer weichen seitlichen Systemleisten und der Kamera aus. | – |
 | Vorschau beim Gedrückthalten | Miniplayer gedrückt halten → leicht vergrößert, mit dem nächsten Video; Loslassen darauf spielt es. | E |
+| Miniplayer zurückholen | Bis 10 Min. nach dem Wegwischen „Abos“ in der Leiste gedrückt halten: kurze Vibration, das Video kommt an derselben Stelle mit Warteschlange als angedockter Miniplayer zurück (noch ohne Animation). Alle Designs mit Abos-Reiter, auch Standard; After fehlt noch. | T |
 | Schwebender Player mit Klangwelle | Beim Verlassen der App spielt das Video in einem eigenen Fenster weiter, darunter eine Klangwelle, die auf Stimmen und Frequenzen reagiert. Braucht „Über anderen Apps einblenden“. | E T |
 
 ## Shorts
@@ -110,11 +115,35 @@ Bekannt: Wischen zum nächsten Short hat im Emulator nicht reagiert; auf dem Han
 | --- | --- | --- |
 | YouTube-Anmeldung | Echte Google-Seite mit Autofill; Daten übernehmen (Abos, Playlists, Später ansehen, Mag ich, Verlauf) oder Takeout-Import. | – |
 | Update in der App | „Download“ lädt mit Fortschrittsleiste, prüft Prüfsumme und Schlüssel und installiert mit Androids Bestätigungsdialog. Bricht Play Protect ab, versucht YT es bis zu zweimal selbst neu („Neuer Versuch (2 von 3)…“), danach öffnet es die geprüfte APK mit dem Android-Installer. „Fehlgeschlagen“ nur, wenn nichts mehr geht. Danach „YT wurde aktualisiert – tippen zum Öffnen“. Nur neuere Builds gelten als Update. | T |
+| Absturz-Report | Nach einem Absturz beim nächsten Start einmal „YT ist beim letzten Mal abgestürzt“ mit „Bericht kopieren“ / „Teilen“; die letzten 3 Berichte bleiben nur auf dem Gerät, Tokens werden geschwärzt. | T |
+| Diagnose | Einstellungen → „Diagnose“: Build, Android/Gerät, Design, Sync-Server, Netz, letztes Update-Ergebnis, Konto ja/nein, Warteschlange, letzter Absturz – als Text zum Kopieren, ohne Konto- oder Tokendaten. | T |
 | Sicherheit | 22 Befunde geschlossen, Anmeldung verschlüsselt gespeichert und nicht im Backup, nur HTTPS. Details in [SICHERHEIT.md](SICHERHEIT.md). | T |
 
 ## Ideen (noch nicht gebaut)
 
-Viel Wirkung bei wenig neuem Code. Sortiert nach Wirkung pro Aufwand.
+Roadmap-Sammlung. **★** = vom Nutzer ausgewählt. Aufwand geschätzt: S klein, M mittel.
 
-1. **Kapitel aus Kommentaren**: fehlen Kapitel, Zeitmarken aus einem Kommentar übernehmen (Parser gibt es schon).
-2. **DeArrow in den Design-Startseiten**: prüfen und anschließen, falls es dort noch fehlt.
+**Wiedergabe:** ★ Warteschlange nach Neustart wiederherstellen (M; begonnen, Zweig `r16/queue`, pausiert) ·
+Rücksprung nach langer Pause (S) · „Fast fertig“ zählt als gesehen (S) · Einschlaf-Timer „Ende des Videos“ +
+Ausblenden (S) · Untertitel-Sprache je Kanal (S) · Qualität je Kanal (S) · Pause bei Kopfhörer-Trennung (S) ·
+★ Intro je Kanal überspringen, abschaltbar mit Toleranzreglern (S–M) · ★ Outro je Kanal früher beenden, ebenso (S–M) ·
+Ende der Warteschlange: anhalten statt Autoplay (S) · ★ Gesten-Randabstand gegen die Zurück-Geste (S)
+
+**Feed:** ★ Sammelseite für Ausgeblendetes und pausierte Kanäle (S) · max. N Videos je Kanal hintereinander (S) ·
+Reuploads/Duplikate erkennen (S) · DeArrow auf den Design-Startseiten prüfen (S–M) · „Später ansehen“ per Wisch (S) ·
+„Neu seit letztem Öffnen“-Trennlinie (S) · ★ tote Abos finden (kein Upload > 1 Jahr) (S)
+
+**Player-Seite:** Kapitel aus Kommentaren (S) · Zeitstempel antippbar (S, Upstream prüfen) · ★ Beschreibung:
+Links gruppieren (M) · ★ Sponsoren-Links markieren/einklappen (S) · Lesezeichen mit Notiz (M) · SponsorBlock-Hinweis
+mit Rückgängig (S)
+
+**Suche:** Verlauf wischen/pausieren (S) · Schnellfilter Shorts/Live (S)
+
+**Downloads:** nur WLAN / nur beim Laden (S) · gesehene Downloads automatisch löschen (S) · Platzanzeige (S) ·
+Offline-Paket aus der Warteschlange (M)
+
+**Komfort:** ★ Miniplayer zurückholen: Animation und After-Design (M) · Zurück-Taste in Ebenen (S) ·
+Nur-Audio-Steuerung ±10 s in der Benachrichtigung (S) · verständliche Fehlermeldungen (S) · Offline-Banner statt
+Spinner (S) · Scrollposition nach dem Player behalten (S–M) · App-Shortcuts (S) · geteilte Links „In Warteschlange“ (S)
+
+**Wohlbefinden:** Pausen-Erinnerung (S) · Nachtmodus-Zeitfenster (S–M) · Wochenrückblick lokal (M) · Shorts global aus (S)

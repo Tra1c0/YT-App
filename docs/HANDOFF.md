@@ -8,12 +8,17 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 95 (`main`, commit 170f7d433). Repo `Tra1c0/YT-App` is PUBLIC (needed: when
+- Latest release: build 96 (round 16: crash report + Diagnose page, calm titles, hide watched,
+  watched marks in search, mini player restore by holding "Abos"). Before: build 95. Repo `Tra1c0/YT-App` is PUBLIC (needed: when
   private, GitHub Actions does not start jobs because of billing). Patch repo
   `Tra1c0/YT-Revanced-Revanced-` is a separate, older project (branch `ccr-06da63aa-8a5ovt` only).
-- Waiting for the user's phone: whether the update flow of build 95 works (next update 95 → 96);
+- Waiting for the user's phone: whether the update 95 → 96 works, and round-16 feedback;
   the app now stores the last install status in prefs `yt_self_updater/last_result`.
-- Open, not started: chapters from comments; DeArrow on the design homes (check first).
+- Roadmap: the "Ideen" list in FEATURES.md (★ = chosen by the user). Next round planned: intro/outro
+  per channel (with tolerance sliders), gesture edge margin, hidden/paused collection page, dead
+  subscriptions, description link groups + sponsor links, mini restore animation + After design.
+- Queue restore after restart: paused by the user; unreviewed WIP commit only on local branch
+  `r16/queue` (not pushed, lost with this container). Restart it from `main` when asked.
 - `MODIFICATIONS.md` (GPL change list) is current up to build 95 (rows split into LibreTube /
   YT files); add a row for every change to an upstream file.
 - Unverified on a phone: most features of rounds 12-15 (see FEATURES.md status column).
@@ -74,8 +79,14 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   to restart it from the background (`YtForegroundHold`).
 - Google Sans needs `includeFontPadding=false` in the classic screens (lines twice as tall).
 - Agents guess APIs when they cannot compile: always compile locally now.
+- A fresh container has no Android SDK: install cmdline-tools to `/opt/android-sdk`
+  (`platforms;android-36`, `build-tools;36.0.0`) and write `local.properties` per worktree.
+  Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 96: crash report + Diagnose, calm titles (caps, !!!, emoji), hide watched (Feed-Regler), watched
+  marks in search, mini player restore by holding "Abos" (no animation yet).
 
 - 95: update flow (ask, retry ×2, system installer), speed/pitch recovery + per-channel speed,
   RYD bar and dislike count, loudness levelling, music audio-only/from start, watched marks,
