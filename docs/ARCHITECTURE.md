@@ -142,6 +142,33 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   Check every APK before handing it over: SHA-256 against the release digest, signer
   `C3:8D:B9:09:4F:B4:67:51:FE:C3:45:FB:DB:66:49:2F:28:5A:D1:B5:CA:02:7D:DC:51:08:8B:49:55:B8:5A:86`.
 
+## Round 14 notes
+
+- Card swipe: `Y/YtCardSwipe.kt` claims the finger in its own loop; rules in
+  `Y/feed/YtSwipePhysics.kt` (`claim` needs |dx| ≥ 2·|dy|, `drifted` > 24 dp or steeper than 30°,
+  `steepRelease`). Pitfall: `awaitHorizontalTouchSlopOrCancellation` ignores the vertical part, so
+  a child of a vertical list wins slanted scrolls.
+- Player touch: `Y/player/YtPlayerTouch.kt` tracks finger + long press for
+  `PlayerGestureController`; `abort()` ends a gesture when `useController` turns off mid-gesture
+  (the minimize drag disables the controller before the parent's CANCEL arrives).
+- Sheet ink: `Y/YtInk.kt` (`YtInk.on(palette, back)`, `LocalYtInk`, `ytSurfaceInk`). Palette text
+  roles are made for `background`; words on any other surface take their colour from `YtInk`.
+  Test `T/ui/yt/YtSheetInkTest.kt`.
+- Counts: `Y/YtCount.kt` (pure, tested), used by `formatShort()` and `TextUtils.formatViewsString`.
+  Pitfall: Google Sans has a very tall bounding box; the Glas and Formen themes set
+  `android:includeFontPadding=false`, otherwise classic text lines are twice as high.
+- Landscape / rotation: a page re-created for the same player starts through `Y/mini/YtPageStart`
+  once attached (docked again if `PlayerViewModel.ytDocked`). Pitfall: `MotionLayout.setProgress`
+  before attach is cached and applied as a jump in `onAttachedToWindow`; `transitionToStart()`
+  before attach is a no-op. Side insets: `Y/YtSideInsets`.
+- Subscriptions: `J/repo/YtFeedFlight.kt` (one network refresh at a time, callers join);
+  `LocalFeedRepository` refreshes when older than 3 h with 8 channels at a time;
+  `SubscriptionsViewModel.feedLoading` drives the spinner. Order of "Alle": `Y/feed/YtSubsOrder.kt`.
+  Pitfall: a Compose spinner keyed on an equal data-class list never stops.
+- Update: `YtUpdateRules.installVerdict` treats FAILURE/BLOCKED/TIMEOUT as unsure ("Wird
+  installiert…"); after the replace only a notification is posted (an OEM security app killed the
+  background relaunch). Play Protect warnings come from sideloading, not from removable code.
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).

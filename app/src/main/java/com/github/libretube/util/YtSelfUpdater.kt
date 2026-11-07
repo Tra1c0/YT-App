@@ -334,21 +334,9 @@ object YtSelfUpdater {
         val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
             ?: return
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        if (mayStartFromBackground(context) && runCatching { context.startActivity(launch) }.isSuccess) {
-            return
-        }
+        // only a notification: a start from the background right after the replace was killed by
+        // a phone maker's security app on the user's phone, and Android allows it rarely anyway
         notify(context, context.getString(R.string.yt_update_done_title), launch)
-    }
-
-    /**
-     * Before Android 10 any receiver may start an activity. From 10 on only exempt apps may; the
-     * one exemption YT can hold is "display over other apps", and Android 15 narrowed that to
-     * apps with an overlay window on screen, which a freshly updated process never has.
-     */
-    private fun mayStartFromBackground(context: Context): Boolean = when {
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.Q -> true
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM -> Settings.canDrawOverlays(context)
-        else -> false
     }
 
     private fun isForeground(): Boolean {
