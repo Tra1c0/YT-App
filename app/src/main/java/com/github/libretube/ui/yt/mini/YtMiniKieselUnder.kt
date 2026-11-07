@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.github.libretube.R
 import com.github.libretube.helpers.ImageHelper
+import com.github.libretube.ui.yt.KieselPanel
 import com.github.libretube.ui.yt.LocalYtMotion
 import com.github.libretube.ui.yt.YtDock
 import com.github.libretube.ui.yt.YtFonts
@@ -86,6 +87,9 @@ import kotlin.math.roundToInt
 internal class KieselStyle(palette: YtPalette) {
     val ink = Color(0xFF0E0E0E)
     val cream = Color(0xFFEDE8E3)
+
+    /** The black stone, a lighter warm grey at night (as Kiesel's panels). */
+    val stone = KieselPanel
     val lavender = palette.accent
     val peach = palette.pink
     val track = cream.copy(alpha = 0.14f)
@@ -266,9 +270,9 @@ internal fun KieselUnder(scene: YtMiniScene, design: YtMiniDesign) {
             val dome = YtMiniKieselLayout.DOME * d * (1f - t)
             val gap = 3f * d * (1f - merge)
             stone.kieselStone(left, top, right, joint - gap, radius, spec.radius * d * (1f - merge), dome)
-            drawPath(stone, style.ink)
+            drawPath(stone, style.stone)
             foot.kieselFoot(left, right, joint, h, spec.fillet * d * merge)
-            drawPath(foot, style.ink)
+            drawPath(foot, style.stone)
             // a little light on the stone's crown
             drawPath(stone, Brush.verticalGradient(listOf(style.sheen, Color.Transparent), startY = top, endY = top + 10f * d))
 

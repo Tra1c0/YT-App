@@ -93,9 +93,9 @@ import kotlinx.coroutines.launch
  * when touched, the black panel rises.
  */
 
-private val KieselCard = Color(0xFFF7F4F1)
-private val KieselGrey = Color(0xFF7A7672)
-private val KieselBeige = Color(0xFFE2DCD5)
+private val KieselCard: Color get() = ytDayNight(Color(0xFFF7F4F1), Color(0xFF2B2826))
+private val KieselGrey: Color get() = ytDayNight(Color(0xFF7A7672), Color(0xFFABA59F))
+private val KieselBeige: Color get() = ytDayNight(Color(0xFFE2DCD5), Color(0xFF4A4541))
 private const val DAY = 24L * 60 * 60 * 1000
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -232,11 +232,11 @@ private fun KieselSection(title: String, onAll: (() -> Unit)?, modifier: Modifie
         if (tune) {
             // the Feed-Regler: a lavender capsule before "Alle ansehen", black while open
             val active = YtFeedUi.sheet
-            val fill by animateColorAsState(if (active) KieselInk else KieselLavender, ytStateSpec(), label = "kieselTune")
+            val fill by animateColorAsState(if (active) KieselPanel else KieselLavender, ytStateSpec(), label = "kieselTune")
             YtTuneWord(
                 text = stringResource(R.string.yt_feed_open_short),
                 style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Bold, fontSize = 12.5.sp),
-                color = KieselInk,
+                color = KieselBlack,
                 active = KieselCream,
                 glyph = true,
                 modifier = Modifier
@@ -381,7 +381,7 @@ private fun KieselReminderFace(video: StreamItem, left: Long, color: Color, modi
             Text(
                 text = if (left > 0) stringResource(R.string.yt_kiesel_reminder)
                 else stringResource(R.string.yt_kiesel_new_from, video.uploaderName.orEmpty()),
-                color = KieselInk,
+                color = KieselBlack,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp),
@@ -392,14 +392,14 @@ private fun KieselReminderFace(video: StreamItem, left: Long, color: Color, modi
             right?.let {
                 Text(
                     text = it,
-                    color = KieselInk,
+                    color = KieselBlack,
                     style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
                 )
             }
         }
         Text(
             text = video.title.orEmpty(),
-            color = KieselInk.copy(alpha = 0.75f),
+            color = KieselBlack.copy(alpha = 0.75f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 12.5.sp),
@@ -478,7 +478,7 @@ private fun KieselBars(week: IntArray, total: Int, days: List<String>) {
                     var top = size.height - h - raised - bh - 4.dp.toPx()
                     if (top < 0f) top = size.height - h - raised + 6.dp.toPx()
                     scale(l, l, pivot = Offset(cx, top + bh)) {
-                        drawRoundRect(KieselInk, Offset(cx - w / 2, top), Size(w, bh), CornerRadius(bh / 2))
+                        drawRoundRect(KieselPanel, Offset(cx - w / 2, top), Size(w, bh), CornerRadius(bh / 2))
                         drawText(text, topLeft = Offset(cx - text.size.width / 2f, top + 3.dp.toPx()))
                     }
                 }
@@ -556,7 +556,7 @@ private fun KieselCardItem(video: StreamItem, imageLoader: ImageLoader, color: C
         Row(verticalAlignment = Alignment.CenterVertically) {
             KieselAvatar(video.uploaderAvatar, imageLoader, 34.dp, Color.White)
             Spacer(Modifier.weight(1f))
-            KieselBookmark { actions.onSave(video) }
+            KieselBookmark(KieselBlack) { actions.onSave(video) }
         }
         Box(
             Modifier
@@ -576,14 +576,14 @@ private fun KieselCardItem(video: StreamItem, imageLoader: ImageLoader, color: C
                         .align(Alignment.BottomEnd)
                         .padding(6.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(KieselInk)
+                        .background(KieselBlack)
                         .padding(horizontal = 6.dp, vertical = 1.dp),
                 )
             }
         }
         Text(
             text = video.title.orEmpty(),
-            color = KieselInk,
+            color = KieselBlack,
             maxLines = 2,
             minLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -592,7 +592,7 @@ private fun KieselCardItem(video: StreamItem, imageLoader: ImageLoader, color: C
         )
         Text(
             text = listOfNotNull(video.uploaderName, ytViews(video)).joinToString("  ·  "),
-            color = KieselInk.copy(alpha = 0.65f),
+            color = KieselBlack.copy(alpha = 0.65f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 11.5.sp),
@@ -657,12 +657,12 @@ private fun KieselRow(
 
 /** The bookmark: pops and fills when tapped, then opens "add to playlist". */
 @Composable
-private fun KieselBookmark(onSave: () -> Unit) {
+private fun KieselBookmark(tint: Color = KieselInk, onSave: () -> Unit) {
     var saved by remember { mutableStateOf(false) }
     Icon(
         painterResource(if (saved) R.drawable.ic_bookmark else R.drawable.ic_bookmark_outlined),
         contentDescription = stringResource(R.string.save),
-        tint = KieselInk,
+        tint = tint,
         modifier = Modifier
             .size(34.dp)
             .clip(CircleShape)
@@ -711,7 +711,7 @@ private fun KieselChannelPanel(
             .fillMaxWidth()
             .graphicsLayer { translationY = rise.value * 90.dp.toPx() }
             .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
-            .background(KieselInk)
+            .background(KieselPanel)
             .padding(start = 16.dp, end = 16.dp, top = 22.dp, bottom = 22.dp + ytNavPadding()),
     ) {
         Text(
@@ -729,10 +729,10 @@ private fun KieselChannelPanel(
                     .fillMaxWidth()
                     // a long press pauses the channel for a week (or ends its pause)
                     .ytPressable(RoundedCornerShape(18.dp), squish = true, onLongClick = { ytTogglePause(video) }) { actions.onOpenChannel(video) }
-                    .background(KieselCream)
+                    .background(KieselPanelCard)
                     .padding(horizontal = 12.dp, vertical = 11.dp),
             ) {
-                KieselAvatar(video.uploaderAvatar, imageLoader, 40.dp, KieselInk)
+                KieselAvatar(video.uploaderAvatar, imageLoader, 40.dp, KieselPanel)
                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(
                         text = video.uploaderName.orEmpty(),
@@ -753,7 +753,7 @@ private fun KieselChannelPanel(
                     style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Bold, fontSize = 12.sp),
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(KieselInk)
+                        .background(KieselPanel)
                         .padding(horizontal = 14.dp, vertical = 6.dp),
                 )
             }

@@ -61,7 +61,8 @@ internal fun PopOver(scene: YtMiniScene) {
     val palette = scene.palette
     val motion = LocalYtMotion.current
     val pink = palette?.pink ?: Color(0xFFE0457F)
-    val plum = palette?.accent ?: PopColors.plum
+    // plum on the butter-yellow blob in both modes (at night the accent is a light lilac)
+    val plum = PopColors.plum
 
     // the glyph of a toggle on a yellow blob: pops past its size, settles, fades
     val flash = remember { Animatable(0f) }

@@ -15,6 +15,7 @@ import com.github.libretube.ui.yt.YtMotionPrefs
 import com.github.libretube.ui.yt.YtMotionStyle
 import com.github.libretube.ui.yt.YtSignature
 import com.github.libretube.ui.yt.palette
+import com.github.libretube.ui.yt.ytNight
 
 /**
  * YT: how the player's View HUDs (the return chip, the time magnifier's lens) look in the current
@@ -88,13 +89,13 @@ class YtPlayerHudStyle private constructor(
             return when (signature) {
                 // Editorial: paper white, a thin black rule, square corners
                 YtSignature.EDITORIAL -> YtPlayerHudStyle(
-                    accent, 0xF7FFFFFF.toInt(), text, secondary, 0xFF0A0A0A.toInt(), 1f, 0f,
+                    accent, if (ytNight) 0xF70B0B0B.toInt() else 0xF7FFFFFF.toInt(), text, secondary, text, 1f, 0f,
                     textFont, mono, stiffness, damping,
                 )
 
                 // Glas: frosted white with a bright edge
                 YtSignature.GLASS -> YtPlayerHudStyle(
-                    accent, 0xD1FFFFFF.toInt(), text, secondary, 0xE6FFFFFF.toInt(), 1f, 0.5f,
+                    accent, if (ytNight) 0xD11F3A38.toInt() else 0xD1FFFFFF.toInt(), text, secondary, if (ytNight) 0x66CFEDE7 else 0xE6FFFFFF.toInt(), 1f, 0.5f,
                     textFont, mono, stiffness, damping,
                 )
 
@@ -104,7 +105,7 @@ class YtPlayerHudStyle private constructor(
                     textFont, mono, stiffness, damping,
                 )
 
-                // the light designs keep their light surfaces, solid enough to read on any picture
+                // the light designs keep their surfaces (dark ones at night), solid enough to read on any picture
                 YtSignature.CLAY, YtSignature.POP, YtSignature.KIESEL -> YtPlayerHudStyle(
                     accent, ColorUtils.setAlphaComponent(palette.surface.toArgb(), 0xF2), text, secondary,
                     0, 0f, 0.5f, textFont, mono, stiffness, damping,

@@ -25,10 +25,15 @@ class AppearanceSettings : BasePreferenceFragment() {
         // YT: a design fixes theme mode, accent and pure theme, so those rows only show where
         // they do something (the standard design); the screen is rebuilt after a change anyway
         val design = YtDesign.current()
-        listOf(PreferenceKeys.THEME_MODE, PreferenceKeys.PURE_THEME, PreferenceKeys.ACCENT_COLOR)
-            .forEach { key ->
-                findPreference<Preference>(key)?.isVisible = YtAppearanceOptions.applies(key, design.key)
-            }
+        listOf(
+            PreferenceKeys.THEME_MODE,
+            PreferenceKeys.PURE_THEME,
+            PreferenceKeys.ACCENT_COLOR,
+            YtAppearanceOptions.DESIGN_DARK,
+        ).forEach { key ->
+            findPreference<Preference>(key)?.isVisible =
+                YtAppearanceOptions.applies(key, design.key, design.light)
+        }
 
         // YT: the design row names the current design and says what it fixes, since the
         // theme rows are gone for it
@@ -38,7 +43,7 @@ class AppearanceSettings : BasePreferenceFragment() {
                 val selected = YtDesign.entries.firstOrNull { it.key == p.value } ?: YtDesign.STANDARD
                 when {
                     selected == YtDesign.STANDARD -> entry
-                    selected.light -> getString(R.string.yt_design_fixed_light, entry)
+                    selected.light -> getString(R.string.yt_design_fixed_colors, entry)
                     else -> getString(R.string.yt_design_fixed_dark, entry)
                 }
             }
@@ -49,6 +54,7 @@ class AppearanceSettings : BasePreferenceFragment() {
         // enough, no restart of the app (see YtThemeRefresh)
         findPreference<SwitchPreferenceCompat>(YtMotionPrefs.KEY)?.applyLookOnChange()
         findPreference<ListPreference>(PreferenceKeys.THEME_MODE)?.applyLookOnChange()
+        findPreference<ListPreference>(YtAppearanceOptions.DESIGN_DARK)?.applyLookOnChange()
         findPreference<SwitchPreferenceCompat>(PreferenceKeys.PURE_THEME)?.applyLookOnChange()
 
         val accentColor = findPreference<ListPreference>(PreferenceKeys.ACCENT_COLOR)

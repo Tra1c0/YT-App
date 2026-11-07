@@ -76,11 +76,11 @@ import com.github.libretube.api.obj.StreamItem
 private val PopYellow = Color(0xFFFDE682)
 private val PopPink = Color(0xFFF7B3CE)
 private val PopPinkStrong = Color(0xFFE0558F)
-private val PopLilac = Color(0xFFDFD6F7)
-private val PopPill = Color(0xFFD5CDFA)
+private val PopLilac: Color get() = ytDayNight(Color(0xFFDFD6F7), Color(0xFF382548))
+private val PopPill: Color get() = ytDayNight(Color(0xFFD5CDFA), Color(0xFF4A2E66))
 private val PopMetaOnYellow = Color(0xFFA38E64)
-private val PopMeta = Color(0xFF8A7AA6)
-private val PopShadow = Color(0x403B2054)
+private val PopMeta: Color get() = ytDayNight(Color(0xFF8A7AA6), Color(0xFFB9A8D0))
+private val PopShadow: Color get() = ytDayNight(Color(0x403B2054), Color(0x66000000))
 
 /**
  * Design "Pop", home: blob tabs, a yellow feature card with one large rounded corner, white
@@ -186,7 +186,7 @@ private fun rememberPopSwing(list: LazyListState): State<Float> {
 @Composable
 private fun PopTab(palette: YtPalette, label: String, icon: Int?, active: Boolean, width: Int, onClick: () -> Unit) {
     val background by animateColorAsState(if (active) palette.accent else PopLilac, ytStateSpec(), label = "popTab")
-    val content by animateColorAsState(if (active) Color.White else palette.text, ytStateSpec(), label = "popTabContent")
+    val content by animateColorAsState(if (active) palette.onAccent else palette.text, ytStateSpec(), label = "popTabContent")
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -278,7 +278,7 @@ private fun PopFeature(
         Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(start = 4.dp, top = 12.dp)) {
             Text(
                 text = video.title.orEmpty(),
-                color = palette.text,
+                color = palette.ink,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.Black, fontSize = 23.sp, lineHeight = 26.sp, letterSpacing = (-0.3).sp),
@@ -287,7 +287,7 @@ private fun PopFeature(
             Icon(
                 painterResource(R.drawable.ic_yt_dots_vertical),
                 contentDescription = null,
-                tint = palette.text,
+                tint = palette.ink,
                 modifier = Modifier
                     .padding(top = 2.dp)
                     .size(22.dp),
@@ -322,7 +322,7 @@ private fun PopFeature(
             ) {
                 Text(
                     text = video.uploaderName.orEmpty(),
-                    color = palette.text,
+                    color = palette.ink,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp),
@@ -374,7 +374,7 @@ private fun PopFeature(
                         }
                     },
             ) {
-                Icon(painterResource(R.drawable.ic_yt_star), contentDescription = null, tint = palette.text, modifier = Modifier.size(22.dp))
+                Icon(painterResource(R.drawable.ic_yt_star), contentDescription = null, tint = palette.ink, modifier = Modifier.size(22.dp))
             }
         }
     }
@@ -506,7 +506,7 @@ private fun PopShorts(
                     .clip(BlobShape(0.6f, 0.52f, 0.58f, 0.62f))
                     .background(PopPink),
             ) {
-                YtShortsGlyph(palette.text, filled = true, modifier = Modifier.size(26.dp))
+                YtShortsGlyph(palette.ink, filled = true, modifier = Modifier.size(26.dp))
             }
             Text(
                 text = stringResource(R.string.yt_nav_shorts),

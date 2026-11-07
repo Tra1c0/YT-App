@@ -523,7 +523,7 @@ internal fun PopUnder(design: YtMiniPop, scene: YtMiniScene) {
         ) {
             Text(
                 text = title,
-                style = TextStyle(color = PopColors.plum, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, lineHeight = 18.sp),
+                style = TextStyle(color = PopColors.onBand, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, lineHeight = 18.sp),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -545,11 +545,11 @@ internal fun PopUnder(design: YtMiniPop, scene: YtMiniScene) {
                 }
                 .padding(horizontal = 12.dp),
         ) {
-            YtMiniParts.Glyph(playing, PopColors.white, Modifier.size(11.dp))
+            YtMiniParts.Glyph(playing, palette.onAccent, Modifier.size(11.dp))
             Spacer(Modifier.width(7.dp))
             Text(
                 text = stringResource(if (playing) R.string.yt_mini_peek_playing else R.string.yt_mini_peek_paused),
-                style = TextStyle(color = PopColors.white, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp),
+                style = TextStyle(color = palette.onAccent, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

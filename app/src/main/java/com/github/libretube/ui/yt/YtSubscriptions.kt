@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
@@ -172,17 +173,17 @@ internal fun ytShareVideo(fragment: Fragment, video: StreamItem) {
 
 private const val DAY = 24L * 60 * 60 * 1000
 
-private val ClayShadow = Color(0x80B07A66)
-private val ClayInk = Color(0xFF7A5560)
-private val ClayLabel = Color(0xFF8C6563)
-private val ClayLight = Color(0xFFFFF3E9)
+private val ClayShadow: Color get() = ytDayNight(Color(0x80B07A66), Color(0x80000000))
+private val ClayInk: Color get() = ytDayNight(Color(0xFF7A5560), Color(0xFFE8C6C2))
+private val ClayLabel: Color get() = ytDayNight(Color(0xFF8C6563), Color(0xFFC9AEA2))
+private val ClayLight: Color get() = ytDayNight(Color(0xFFFFF3E9), Color(0xFF4A3830))
 private val PopInk = Color(0xFF3B2054)
 private val PopFrames = listOf(Color(0xFFFDE682), Color(0xFFF7B3CE), Color(0xFFDFD6F7), Color(0xFFBFE8D2))
 private val ShapesTags = listOf(Color(0xFFF6D365), Color(0xFFBFE26B), Color(0xFFD9D4EE), Color(0xFFF28B82))
 private val ShapesInk = Color(0xFF12122A)
-private val KieselBeige = Color(0xFFE2DCD5)
-private val KieselCard = Color(0xFFF7F4F1)
-private val KieselGrey = Color(0xFF7A7672)
+private val KieselBeige: Color get() = ytDayNight(Color(0xFFE2DCD5), Color(0xFF4A4541))
+private val KieselCard: Color get() = ytDayNight(Color(0xFFF7F4F1), Color(0xFF2B2826))
+private val KieselGrey: Color get() = ytDayNight(Color(0xFF7A7672), Color(0xFFABA59F))
 
 @Composable
 private fun YtSubscriptionsScreen(
@@ -305,7 +306,7 @@ private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels:
                 YtSignature.CLAY -> ClayLight
                 YtSignature.EDITORIAL -> palette.text
                 YtSignature.FROST -> Color(0x73FFFFFF)
-                YtSignature.GLASS -> Color.White
+                YtSignature.GLASS -> ytDayNight(Color.White, Color(0xFF6FB5AA))
                 YtSignature.AFTER -> palette.accent
                 else -> palette.raised
             }
@@ -394,13 +395,14 @@ private fun SubsCard(
         YtSignature.KIESEL -> KieselLavender
         YtSignature.CLAY -> ClayLight
         YtSignature.EDITORIAL -> palette.text
-        YtSignature.FROST, YtSignature.GLASS -> Color(0x80FFFFFF)
+        YtSignature.FROST, YtSignature.GLASS -> ytDayNight(Color(0x80FFFFFF), Color(0x33A8E0D6))
         else -> palette.lime
     }
     val mark = when (palette.signature) {
         YtSignature.EDITORIAL -> palette.background
         YtSignature.FROST, YtSignature.GLASS -> palette.text
-        else -> Color(0xFF111114)
+        // at night the clay and pebble fields are dark: the mark takes the light type
+        else -> if (ytNight && field.luminance() < 0.3f) palette.text else Color(0xFF111114)
     }
     Box(modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
         Box(
@@ -564,7 +566,7 @@ private fun SubsCardFace(
                     .ytPressable(shape, squish = true, onLongClick = onQuick, onClick = onOpen)
                     .shadow(8.dp, shape, ambientColor = ClayShadow, spotColor = ClayShadow)
                     .background(Brush.verticalGradient(listOf(ClayLight, palette.surface)))
-                    .border(1.dp, Color(0x99FFFFFF), shape)
+                    .border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), shape)
                     .padding(8.dp),
             ) {
                 Box(
@@ -631,7 +633,7 @@ private fun SubsCardFace(
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
                     .ytPressScale(press)
-                    .shadow(6.dp, RoundedCornerShape(16.dp), clip = false, ambientColor = Color(0x405C8C85), spotColor = Color(0x405C8C85))
+                    .shadow(6.dp, RoundedCornerShape(16.dp), clip = false, ambientColor = ytDayNight(Color(0x405C8C85), Color(0x66000000)), spotColor = ytDayNight(Color(0x405C8C85), Color(0x66000000)))
                     .clip(RoundedCornerShape(16.dp))
                     .background(palette.lime)
                     .combinedClickable(interactionSource = press, indication = LocalIndication.current, onLongClick = onQuick, onClick = onOpen),
@@ -642,7 +644,7 @@ private fun SubsCardFace(
                         .align(Alignment.BottomCenter)
                         .padding(8.dp)
                         .fillMaxWidth()
-                        .liquidGlass(still, RoundedCornerShape(12.dp), Color(0x80FFFFFF), null, blur = 8.dp, refraction = 8.dp, swell = { swell })
+                        .liquidGlass(still, RoundedCornerShape(12.dp), ytDayNight(Color(0x80FFFFFF), Color(0xE6142826)), null, blur = 8.dp, refraction = 8.dp, swell = { swell })
                         .padding(horizontal = 12.dp, vertical = 9.dp),
                 ) {
                     Text(title, color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, lineHeight = 17.sp))
@@ -763,7 +765,7 @@ private fun SubsCardFace(
                 Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
                     Text(title, color = KieselInk, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, lineHeight = 18.sp))
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
-                        DurationBadge(video, KieselLavender, KieselInk, YtFonts.jakarta, Modifier)
+                        DurationBadge(video, KieselLavender, KieselBlack, YtFonts.jakarta, Modifier)
                         if (fresh) {
                             Box(
                                 Modifier

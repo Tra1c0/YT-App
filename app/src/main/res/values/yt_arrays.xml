@@ -28,4 +28,15 @@
         <item>frost</item>
         <item>kiesel</item>
     </string-array>
+    <!-- YT: light or dark for the light designs; values as in themesValue -->
+    <string-array name="yt_design_dark">
+        <item>@string/yt_design_dark_light</item>
+        <item>@string/yt_design_dark_dark</item>
+        <item>@string/systemDefault</item>
+    </string-array>
+    <string-array name="yt_design_dark_values" translatable="false">
+        <item>L</item>
+        <item>D</item>
+        <item>A</item>
+    </string-array>
 </resources>

@@ -153,9 +153,9 @@ private fun YtRefreshIndicator(palette: YtPalette, state: PullToRefreshState, re
                     // a drop of clay hanging from the top: stretches with the pull, wobbles while loading
                     val wobble = if (refreshing) sin(rad * 2) * 0.08f else 0f
                     scale(1f - 0.22f * p + wobble, 1f + 0.75f * p - wobble, pivot = Offset(center.x, center.y - 14.dp.toPx())) {
-                        drawCircle(Color(0x33B07A66), 12.dp.toPx(), Offset(center.x, center.y + 2.dp.toPx()))
-                        drawCircle(Color(0xFFFBEDE2), 11.dp.toPx(), center)
-                        drawCircle(Color(0x80FFFFFF), 11.dp.toPx(), center, style = Stroke(1.dp.toPx()))
+                        drawCircle(ytDayNight(Color(0x33B07A66), Color(0x33000000)), 12.dp.toPx(), Offset(center.x, center.y + 2.dp.toPx()))
+                        drawCircle(ytDayNight(Color(0xFFFBEDE2), Color(0xFF46352E)), 11.dp.toPx(), center)
+                        drawCircle(ytDayNight(Color(0x80FFFFFF), Color(0x1FFFF0E4)), 11.dp.toPx(), center, style = Stroke(1.dp.toPx()))
                     }
                 }
                 YtSignature.EDITORIAL -> {
@@ -173,9 +173,9 @@ private fun YtRefreshIndicator(palette: YtPalette, state: PullToRefreshState, re
                     val breath = if (refreshing) 1f + 0.08f * sin(rad) else 1f
                     val r = (7 + 9 * p).dp.toPx() * breath
                     drawCircle(Color(0x33000000), r, Offset(center.x, center.y + 2.dp.toPx()))
-                    drawCircle(Color(0x99FFFFFF), r, center)
-                    drawCircle(Color(0xE6FFFFFF), r, center, style = Stroke(1.dp.toPx()))
-                    drawCircle(Color(0xB3FFFFFF), r * 0.28f, Offset(center.x - r * 0.35f, center.y - r * 0.38f))
+                    drawCircle(ytDayNight(Color(0x99FFFFFF), Color(0x4D6FB5AA)), r, center)
+                    drawCircle(ytDayNight(Color(0xE6FFFFFF), Color(0x80CFEDE7)), r, center, style = Stroke(1.dp.toPx()))
+                    drawCircle(ytDayNight(Color(0xB3FFFFFF), Color(0x66CFEDE7)), r * 0.28f, Offset(center.x - r * 0.35f, center.y - r * 0.38f))
                 }
                 YtSignature.POP -> {
                     val r = (9 + 10 * p).dp.toPx()

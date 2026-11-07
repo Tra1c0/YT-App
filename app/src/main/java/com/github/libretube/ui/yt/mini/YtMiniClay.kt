@@ -14,6 +14,7 @@ import com.github.libretube.ui.yt.YtDock
 import com.github.libretube.ui.yt.YtFonts
 import com.github.libretube.ui.yt.YtHapticTexture
 import com.github.libretube.ui.yt.YtPalette
+import com.github.libretube.ui.yt.ytDayNight
 import kotlin.math.abs
 
 /**
@@ -50,11 +51,11 @@ object YtMiniClay : YtMiniLookDesign(YtDesign.CLAY) {
 
     override fun look(palette: YtPalette): YtMiniLook = YtMiniLook(
         spec = spec,
-        fill = ClayStyle.CREAM, fillTop = ClayStyle.CREAM_TOP, border = Color(0x99FFFFFF), borderWidth = 1.5f, shadow = Color(0x66B07A66),
+        fill = ClayStyle.CREAM, fillTop = ClayStyle.CREAM_TOP, border = ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), borderWidth = 1.5f, shadow = ytDayNight(Color(0x66B07A66), Color(0x66000000)),
         title = TextStyle(color = ClayStyle.INK, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
         subtitle = TextStyle(color = ClayStyle.MUTED, fontFamily = YtFonts.nunito, fontWeight = FontWeight.SemiBold, fontSize = 11.5.sp),
-        icon = Color(0xFF7A5560), playIcon = Color.White, mark = YtMiniMark.BLOB, markColor = ClayStyle.MAUVE, markSize = YtMiniClayLayout.BLOB,
-        bar = YtMiniBar.UNDERLINE, barColor = ClayStyle.MAUVE, track = Color(0x1F7A5560), barWidth = 4f,
+        icon = ytDayNight(Color(0xFF7A5560), Color(0xFFE8C6C2)), playIcon = Color.White, mark = YtMiniMark.BLOB, markColor = ClayStyle.MAUVE, markSize = YtMiniClayLayout.BLOB,
+        bar = YtMiniBar.UNDERLINE, barColor = ClayStyle.MAUVE, track = ytDayNight(Color(0x1F7A5560), Color(0x26EEDFD3)), barWidth = 4f,
     )
 
     override fun peekGeometry(boxWidth: Float, density: Float, hasNext: Boolean): YtMiniPeekGeometry =

@@ -12,12 +12,12 @@ class YtShortsLookTest {
     /** The pills sit over the video: their text reads on the darkest and the brightest picture. */
     @Test
     fun `chip text reads over any picture in every design`() {
-        for (design in YtDesign.entries) {
-            val look = YtShortsLook.of(design)
+        for (design in YtDesign.entries) for (dark in listOf(false, true)) {
+            val look = YtShortsLook.of(design, dark)
             for (picture in listOf(black, white)) {
                 val chip = YtContrast.over(look.chip, picture)
                 val ratio = YtContrast.ratio(look.chipInk, chip)
-                assertTrue("$design over ${Integer.toHexString(picture)}: $ratio", ratio >= YtContrast.BODY)
+                assertTrue("$design dark=$dark over ${Integer.toHexString(picture)}: $ratio", ratio >= YtContrast.BODY)
             }
         }
     }

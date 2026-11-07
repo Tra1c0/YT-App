@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onSizeChanged
@@ -110,11 +111,25 @@ import kotlin.random.Random
  * videos in a sheet, a tap on a channel opens the channel.
  */
 
-internal val KieselInk = Color(0xFF0E0E0E)
+/*
+ * At night (YtDesignDark) the black panels turn into a lighter warm surface and the cream
+ * screen into dark warm grey: [KieselInk] is the type on the screen and on cards, [KieselPanel]
+ * and [KieselPanelCard] fill the panels and the cards on them. Lavender and peach stay, with
+ * black type on them; cream stays the type on the panels.
+ */
+internal val KieselInk: Color get() = ytDayNight(Color(0xFF0E0E0E), Color(0xFFE6E0D9))
 internal val KieselCream = Color(0xFFEDE8E3)
 internal val KieselLavender = Color(0xFFB4A7F5)
 internal val KieselPeach = Color(0xFFF6C6A2)
+internal val KieselPanel: Color get() = ytDayNight(Color(0xFF0E0E0E), Color(0xFF3A3632))
+internal val KieselPanelCard: Color get() = ytDayNight(Color(0xFFEDE8E3), Color(0xFF2B2826))
+
+/** Black in both modes: the discover screen stays on black, type and chips on the pastels. */
+internal val KieselBlack = Color(0xFF0E0E0E)
 private val KieselOval = Color(0xFFE0DBD5)
+
+/** Type on [fill]: black on the light pastels, else the ink of the mode. */
+internal fun kieselInkOn(fill: Color): Color = if (fill.luminance() > 0.3f) KieselBlack else KieselInk
 
 /** A channel pebble. */
 private class KieselChannel(val url: String, val name: String)
@@ -190,7 +205,7 @@ private fun KieselDiscoverScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .background(KieselInk),
+            .background(KieselBlack),
     ) {
         Column(Modifier.fillMaxSize()) {
             KieselTypedHeadline(
@@ -301,7 +316,7 @@ private fun KieselDiamond() {
         Icon(
             painterResource(R.drawable.ic_arrow_downward),
             contentDescription = null,
-            tint = KieselInk,
+            tint = KieselBlack,
             modifier = Modifier
                 .size(18.dp)
                 .graphicsLayer { rotationZ = -45f },
@@ -324,7 +339,7 @@ private fun KieselPebbleField(labels: List<Pair<String, Any>>, onTap: (Any?) -> 
         fontWeight = FontWeight.ExtraBold,
         fontSize = 14.sp,
         letterSpacing = 0.6.sp,
-        color = KieselInk,
+        color = KieselBlack,
     )
     val world = remember { YtPebbleWorld() }
     var frame by remember { mutableIntStateOf(0) }
@@ -541,7 +556,7 @@ private fun KieselCategorySheet(
             .fillMaxWidth()
             .fillMaxHeight(0.74f)
             .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
-            .background(Color(0xFFE9E5E0))
+            .background(ytDayNight(Color(0xFFE9E5E0), Color(0xFF1F1D1B)))
             .clickable(interactionSource = null, indication = null) { },
     ) {
         Box(
@@ -550,7 +565,7 @@ private fun KieselCategorySheet(
                 .padding(top = 10.dp)
                 .size(40.dp, 4.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(Color(0xFFC9C4BE)),
+                .background(ytDayNight(Color(0xFFC9C4BE), Color(0xFF4A4541))),
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -567,7 +582,7 @@ private fun KieselCategorySheet(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(KieselInk)
+                    .background(KieselPanel)
                     .clickable(onClick = onClose),
             ) {
                 Icon(painterResource(R.drawable.ic_arrow_downward), contentDescription = stringResource(R.string.yt_kiesel_close), tint = KieselCream, modifier = Modifier.size(18.dp))
@@ -588,7 +603,7 @@ private fun KieselCategorySheet(
                             .padding(vertical = 5.dp)
                             .fillMaxWidth()
                             .ytPressable(RoundedCornerShape(18.dp), squish = true) { onOpenVideo(video) }
-                            .background(Color(0xFFF7F4F1))
+                            .background(ytDayNight(Color(0xFFF7F4F1), Color(0xFF2B2826)))
                             .padding(8.dp),
                     ) {
                         AsyncImage(
@@ -611,7 +626,7 @@ private fun KieselCategorySheet(
                             )
                             Text(
                                 text = listOfNotNull(video.uploaderName, ytViews(video)).joinToString(" · "),
-                                color = Color(0xFF7A7672),
+                                color = ytDayNight(Color(0xFF7A7672), Color(0xFFABA59F)),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 11.5.sp),

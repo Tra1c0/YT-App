@@ -102,20 +102,20 @@ fun YtScreenSurface(palette: YtPalette, modifier: Modifier = Modifier, content: 
     }
 }
 
-private val ClayShadow = Color(0x80B07A66)
-private val ClayInk = Color(0xFF7A5560)
-private val ClayLabel = Color(0xFF8C6563)
-private val ClayLight = Color(0xFFFFF3E9)
-private val ClayDeep = Color(0xFFF2D9C6)
-private val ClayMauve = Color(0xFF9D6A6C)
+private val ClayShadow: Color get() = ytDayNight(Color(0x80B07A66), Color(0x80000000))
+private val ClayInk: Color get() = ytDayNight(Color(0xFF7A5560), Color(0xFFE8C6C2))
+private val ClayLabel: Color get() = ytDayNight(Color(0xFF8C6563), Color(0xFFC9AEA2))
+private val ClayLight: Color get() = ytDayNight(Color(0xFFFFF3E9), Color(0xFF4A3830))
+private val ClayDeep: Color get() = ytDayNight(Color(0xFFF2D9C6), Color(0xFF3A2C26))
+private val ClayMauve: Color get() = ytDayNight(Color(0xFF9D6A6C), Color(0xFFD9A5A6))
 private val PopInk = Color(0xFF3B2054)
 private val PopFrames = listOf(Color(0xFFFDE682), Color(0xFFF7B3CE), Color(0xFFDFD6F7), Color(0xFFBFE8D2))
 private val ShapesTags = listOf(Color(0xFFF6D365), Color(0xFFBFE26B), Color(0xFFD9D4EE), Color(0xFFF28B82))
 private val ShapesInk = Color(0xFF12122A)
-private val GlassShadow = Color(0x2E5C8C85)
-private val KieselBeige = Color(0xFFE2DCD5)
-private val KieselCard = Color(0xFFF7F4F1)
-private val KieselGrey = Color(0xFF7A7672)
+private val GlassShadow: Color get() = ytDayNight(Color(0x2E5C8C85), Color(0x66000000))
+private val KieselBeige: Color get() = ytDayNight(Color(0xFFE2DCD5), Color(0xFF4A4541))
+private val KieselCard: Color get() = ytDayNight(Color(0xFFF7F4F1), Color(0xFF2B2826))
+private val KieselGrey: Color get() = ytDayNight(Color(0xFF7A7672), Color(0xFFABA59F))
 
 /** The text and the secondary text of the design on its screen background. */
 private fun inkOf(palette: YtPalette): Color = when (palette.signature) {
@@ -227,7 +227,7 @@ internal fun LibraryHeadline(palette: YtPalette, headline: String, subline: Stri
                 modifier = Modifier
                     .padding(top = 8.dp)
                     .then(
-                        if (backdrop != null) Modifier.liquidGlass(backdrop, RoundedCornerShape(50), Color(0x80FFFFFF), GlassShadow)
+                        if (backdrop != null) Modifier.liquidGlass(backdrop, RoundedCornerShape(50), ytDayNight(Color(0x80FFFFFF), Color(0x33A8E0D6)), GlassShadow)
                         else Modifier.ytGlass(RoundedCornerShape(50)),
                     )
                     .padding(horizontal = 14.dp, vertical = 7.dp),
@@ -375,7 +375,7 @@ internal fun LibraryContinue(
                     .shadow(10.dp, RoundedCornerShape(28.dp), ambientColor = ClayShadow, spotColor = ClayShadow)
                     .clip(RoundedCornerShape(28.dp))
                     .background(Brush.verticalGradient(listOf(ClayLight, palette.surface)))
-                    .border(1.dp, Color(0x99FFFFFF), RoundedCornerShape(28.dp))
+                    .border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), RoundedCornerShape(28.dp))
                     .clickable(interactionSource = press, indication = LocalIndication.current) { onOpen(item) }
                     .padding(8.dp),
             ) {
@@ -454,7 +454,7 @@ internal fun LibraryContinue(
                     .fillMaxWidth()
                     .aspectRatio(2.1f)
                     .ytPressScale(press)
-                    .shadow(8.dp, RoundedCornerShape(18.dp), clip = false, ambientColor = Color(0x405C8C85), spotColor = Color(0x405C8C85))
+                    .shadow(8.dp, RoundedCornerShape(18.dp), clip = false, ambientColor = ytDayNight(Color(0x405C8C85), Color(0x66000000)), spotColor = ytDayNight(Color(0x405C8C85), Color(0x66000000)))
                     .clip(RoundedCornerShape(18.dp))
                     .background(palette.lime)
                     .clickable(interactionSource = press, indication = LocalIndication.current) { onOpen(item) },
@@ -468,7 +468,7 @@ internal fun LibraryContinue(
                         .align(Alignment.BottomCenter)
                         .padding(8.dp)
                         .fillMaxWidth()
-                        .liquidGlass(still, RoundedCornerShape(12.dp), Color(0x80FFFFFF), null, blur = 8.dp, refraction = 8.dp, swell = { swell })
+                        .liquidGlass(still, RoundedCornerShape(12.dp), ytDayNight(Color(0x80FFFFFF), Color(0xE6142826)), null, blur = 8.dp, refraction = 8.dp, swell = { swell })
                         .padding(horizontal = 12.dp, vertical = 9.dp),
                 ) {
                     Text(title, color = palette.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp))
@@ -638,13 +638,13 @@ internal fun LibraryContinue(
                             modifier = Modifier
                                 .padding(start = 10.dp)
                                 .clip(RoundedCornerShape(50))
-                                .background(KieselInk)
+                                .background(KieselBlack)
                                 .padding(horizontal = 10.dp, vertical = 4.dp),
                         )
                     }
                 }
-                Text(title, color = KieselInk, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 4.dp, top = 10.dp, end = 4.dp))
-                Text(channel, color = KieselInk.copy(alpha = 0.7f), style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 12.5.sp), modifier = Modifier.padding(start = 4.dp, top = 1.dp, bottom = 2.dp))
+                Text(title, color = KieselBlack, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 4.dp, top = 10.dp, end = 4.dp))
+                Text(channel, color = KieselBlack.copy(alpha = 0.7f), style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 12.5.sp), modifier = Modifier.padding(start = 4.dp, top = 1.dp, bottom = 2.dp))
             }
         }
         YtSignature.AFTER -> {
@@ -816,8 +816,8 @@ internal fun LibraryCollection(
                     .ytSquish(press)
                     .shadow(8.dp, shape, ambientColor = ClayShadow, spotColor = ClayShadow)
                     .clip(shape)
-                    .background(Brush.verticalGradient(if (index % 2 == 0) listOf(ClayLight, ClayDeep) else listOf(Color(0xFFB07A7C), ClayMauve)))
-                    .border(1.dp, Color(0x99FFFFFF), shape)
+                    .background(Brush.verticalGradient(if (index % 2 == 0) listOf(ClayLight, ClayDeep) else listOf(ytDayNight(Color(0xFFB07A7C), Color(0xFFE0B0B1)), ClayMauve)))
+                    .border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), shape)
                     .clickable(interactionSource = press, indication = LocalIndication.current, onClick = onClick)
                     .padding(12.dp),
             ) {
@@ -836,7 +836,7 @@ internal fun LibraryCollection(
             Column(
                 modifier
                     .then(
-                        if (backdrop != null) Modifier.liquidGlass(backdrop, shape, Color(0x80FFFFFF), GlassShadow, swell = { swell })
+                        if (backdrop != null) Modifier.liquidGlass(backdrop, shape, ytDayNight(Color(0x80FFFFFF), Color(0x33A8E0D6)), GlassShadow, swell = { swell })
                         else Modifier.ytGlass(shape),
                     )
                     .clickable(interactionSource = press, indication = LocalIndication.current, onClick = onClick)
@@ -912,7 +912,7 @@ internal fun LibraryCollection(
                     .background(colors[index % colors.size])
                     .padding(12.dp),
             ) {
-                Text(name, color = KieselInk, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 21.sp, lineHeight = 24.sp))
+                Text(name, color = kieselInkOn(colors[index % colors.size]), maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 21.sp, lineHeight = 24.sp))
                 Text(
                     countOf(collection),
                     color = KieselCream,
@@ -920,7 +920,7 @@ internal fun LibraryCollection(
                     modifier = Modifier
                         .padding(top = 6.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(KieselInk)
+                        .background(KieselPanel)
                         .padding(horizontal = 9.dp, vertical = 3.dp),
                 )
                 Spacer(Modifier.weight(1f))
@@ -1050,7 +1050,7 @@ internal fun LibraryAdd(palette: YtPalette, onClick: () -> Unit) {
             val fill = when (palette.signature) {
                 YtSignature.POP -> PopFrames[0]
                 YtSignature.SHAPES -> palette.lime
-                YtSignature.KIESEL -> KieselInk
+                YtSignature.KIESEL -> KieselPanel
                 YtSignature.CLAY -> ClayLight
                 else -> palette.raised
             }
@@ -1073,8 +1073,8 @@ internal fun LibraryAdd(palette: YtPalette, onClick: () -> Unit) {
                     }
                     .then(
                         when (palette.signature) {
-                            YtSignature.GLASS, YtSignature.FROST -> if (palette.signature == YtSignature.FROST) Modifier.frostGlass(backdrop, CircleShape) else if (backdrop != null) Modifier.liquidGlass(backdrop, CircleShape, Color(0x99FFFFFF), GlassShadow) else Modifier.ytGlass(CircleShape)
-                            YtSignature.CLAY -> Modifier.shadow(6.dp, CircleShape, ambientColor = ClayShadow, spotColor = ClayShadow).background(Brush.verticalGradient(listOf(ClayLight, ClayDeep))).border(1.dp, Color(0x99FFFFFF), CircleShape)
+                            YtSignature.GLASS, YtSignature.FROST -> if (palette.signature == YtSignature.FROST) Modifier.frostGlass(backdrop, CircleShape) else if (backdrop != null) Modifier.liquidGlass(backdrop, CircleShape, ytDayNight(Color(0x99FFFFFF), Color(0x336FB5AA)), GlassShadow) else Modifier.ytGlass(CircleShape)
+                            YtSignature.CLAY -> Modifier.shadow(6.dp, CircleShape, ambientColor = ClayShadow, spotColor = ClayShadow).background(Brush.verticalGradient(listOf(ClayLight, ClayDeep))).border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), CircleShape)
                             else -> Modifier.background(fill)
                         },
                     ),

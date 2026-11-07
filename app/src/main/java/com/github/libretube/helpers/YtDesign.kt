@@ -14,7 +14,7 @@ enum class YtDesign(
     @StyleRes val overlay: Int?,
     @StyleRes val brandTextAppearance: Int,
     val labeledNavigation: Boolean,
-    /** Light designs run the app in the light theme, all others in the dark theme. */
+    /** Light designs run in the light theme, or dark by choice (YtDesignDark); all others dark. */
     val light: Boolean = false,
 ) {
     STANDARD("standard", null, R.style.TextAppearance_YT_Brand, false),

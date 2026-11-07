@@ -131,21 +131,21 @@ class YtSearchRulesTest {
 
     @Test
     fun `every text of every design reads on a black and on a white screen`() {
-        for (kind in YtSearchKind.values()) {
-            val inks = YtSearchPalette.inks(kind)
+        for (kind in YtSearchKind.values()) for (dark in listOf(false, true)) {
+            val inks = YtSearchPalette.inks(kind, dark)
             for (screen in listOf(black, white)) {
                 val base = YtContrast.over(inks.scrim, screen)
                 val field = YtContrast.over(inks.field, base)
-                reads("$kind field", inks.fieldText, field)
-                reads("$kind hint", inks.fieldHint, field)
+                reads("$kind dark=$dark field", inks.fieldText, field)
+                reads("$kind dark=$dark hint", inks.fieldHint, field)
                 val panel = YtContrast.over(inks.panel, base)
-                reads("$kind row", inks.rowText, panel)
-                reads("$kind secondary", inks.rowSecondary, panel)
+                reads("$kind dark=$dark row", inks.rowText, panel)
+                reads("$kind dark=$dark secondary", inks.rowSecondary, panel)
                 val chip = YtContrast.over(inks.chip, panel)
-                reads("$kind chip", inks.chipText, chip)
+                reads("$kind dark=$dark chip", inks.chipText, chip)
                 for (i in inks.tiles.indices) {
-                    val fill = YtSearchPalette.tile(kind, i)
-                    reads("$kind tile $i", YtSearchPalette.onFill(fill), YtContrast.over(fill, panel))
+                    val fill = YtSearchPalette.tile(kind, i, dark)
+                    reads("$kind dark=$dark tile $i", YtSearchPalette.onFill(fill), YtContrast.over(fill, panel))
                 }
             }
         }

@@ -235,10 +235,10 @@ private fun choiceLook(palette: YtPalette): ChoiceLook {
             shape = BlobShape(0.3f, 0.22f, 0.26f, 0.32f),
             fills = listOf(palette.lime, palette.pink, palette.lavender, palette.accent),
             // plum on the pink: white on it stayed under 4:1
-            inks = listOf(palette.ink, palette.ink, palette.ink, Color.White),
+            inks = listOf(palette.ink, palette.ink, palette.ink, palette.onAccent),
             font = YtFonts.nunito, titleFont = YtFonts.nunito, titleSize = 34.sp, titleColor = palette.text,
             scrim = palette.background, grid = true, inset = 22.dp,
-            minuteFill = palette.accent, minuteInk = Color.White,
+            minuteFill = palette.accent, minuteInk = palette.onAccent,
         )
         YtSignature.SHAPES -> ChoiceLook(
             shape = RoundedCornerShape(30.dp),
@@ -257,17 +257,17 @@ private fun choiceLook(palette: YtPalette): ChoiceLook {
         )
         YtSignature.KIESEL -> ChoiceLook(
             shape = RoundedCornerShape(50),
-            fills = listOf(KieselInk, KieselLavender, palette.lime, KieselInk),
-            inks = listOf(KieselCream, KieselInk, KieselInk, KieselCream),
+            fills = listOf(KieselPanel, KieselLavender, palette.lime, KieselPanel),
+            inks = listOf(KieselCream, KieselBlack, KieselBlack, KieselCream),
             font = YtFonts.jakarta, titleFont = YtFonts.jakarta, titleSize = 32.sp, titleColor = KieselInk,
             scrim = palette.background, grid = false, inset = 22.dp,
-            minuteFill = KieselLavender, minuteInk = KieselInk,
+            minuteFill = KieselLavender, minuteInk = KieselBlack,
         )
     }
 }
 
 /** What the strong glass tile looks like over the mint: nearly white. */
-private val GlassTileTone = Color(0xFFF6FBFA)
+private val GlassTileTone: Color get() = ytDayNight(Color(0xFFF6FBFA), Color(0xFF1F3A38))
 
 /** Frost's sage, a few shades deeper, so its white words read on it. */
 private val FrostChooserGround = Color(0xFF4E6359)
@@ -442,7 +442,7 @@ private fun ChoiceTile(look: ChoiceLook, intent: YtIntent, index: Int, current: 
             Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(vertical = 16.dp)) {
                 Text(
                     text = "%02d".format(index + 1),
-                    color = if (current) YtPalettes.Editorial.accent else ink,
+                    color = if (current) ytDayNight(YtPalettes.Editorial.accent, Color(0xFF5B8AFF)) else ink,
                     style = TextStyle(fontFamily = YtFonts.plexMono, fontSize = 12.sp, letterSpacing = 1.sp),
                     modifier = Modifier.padding(top = 5.dp).widthIn(min = 34.dp),
                 )

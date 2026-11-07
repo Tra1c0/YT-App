@@ -667,7 +667,9 @@
         <item name="fontFamily">@font/font_nunito_700</item>
         <item name="android:fontFamily">@font/font_nunito_700</item>
     </style>
-    <style name="YtDesign.Clay" parent="">
+    <!-- YT: values-night/yt_designs.xml darkens the colours on top of the same base -->
+    <style name="YtDesign.Clay" parent="YtDesign.Clay.Day" />
+    <style name="YtDesign.Clay.Day" parent="">
         <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
         <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Clay.XS</item>
         <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Clay.S</item>
@@ -808,7 +810,9 @@
         <item name="fontFamily">@font/font_inter_600</item>
         <item name="android:fontFamily">@font/font_inter_600</item>
     </style>
-    <style name="YtDesign.Editorial" parent="">
+    <!-- YT: values-night/yt_designs.xml darkens the colours on top of the same base -->
+    <style name="YtDesign.Editorial" parent="YtDesign.Editorial.Day" />
+    <style name="YtDesign.Editorial.Day" parent="">
         <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
         <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Editorial.XS</item>
         <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Editorial.S</item>
@@ -949,7 +953,9 @@
         <item name="fontFamily">@font/font_google_sans_500</item>
         <item name="android:fontFamily">@font/font_google_sans_500</item>
     </style>
-    <style name="YtDesign.Glass" parent="">
+    <!-- YT: values-night/yt_designs.xml darkens the colours on top of the same base -->
+    <style name="YtDesign.Glass" parent="YtDesign.Glass.Day" />
+    <style name="YtDesign.Glass.Day" parent="">
         <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
         <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Glass.XS</item>
         <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Glass.S</item>
@@ -1090,7 +1096,9 @@
         <item name="fontFamily">@font/font_nunito_700</item>
         <item name="android:fontFamily">@font/font_nunito_700</item>
     </style>
-    <style name="YtDesign.Pop" parent="">
+    <!-- YT: values-night/yt_designs.xml darkens the colours on top of the same base -->
+    <style name="YtDesign.Pop" parent="YtDesign.Pop.Day" />
+    <style name="YtDesign.Pop.Day" parent="">
         <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
         <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Pop.XS</item>
         <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Pop.S</item>
@@ -1514,7 +1522,9 @@
         <item name="fontFamily">@font/font_jakarta_600</item>
         <item name="android:fontFamily">@font/font_jakarta_600</item>
     </style>
-    <style name="YtDesign.Kiesel" parent="">
+    <!-- YT: values-night/yt_designs.xml darkens the colours on top of the same base -->
+    <style name="YtDesign.Kiesel" parent="YtDesign.Kiesel.Day" />
+    <style name="YtDesign.Kiesel.Day" parent="">
         <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
         <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Kiesel.XS</item>
         <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Kiesel.S</item>

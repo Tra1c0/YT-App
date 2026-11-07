@@ -48,7 +48,24 @@ data class YtShortsLook(
         private fun tick(name: String, scale: Float, primitive: Int = YtPrimitive.TICK) =
             YtHapticTexture.of("shorts_second_$name", YtFeedback.CLOCK_TICK, YtHapticStep(primitive, scale))
 
-        fun of(design: YtDesign): YtShortsLook = when (design) {
+        /**
+         * The look of [design]; [dark]: the dark mode of a light design (YtDesignDark), where the
+         * light pills turn into the design's dark surfaces with light type.
+         */
+        fun of(design: YtDesign, dark: Boolean = false): YtShortsLook {
+            val day = ofDay(design)
+            if (!dark) return day
+            return when (design) {
+                YtDesign.CLAY -> day.copy(chip = 0xFF4A3830.toInt(), chipInk = 0xFFF7E8DA.toInt())
+                YtDesign.EDITORIAL -> day.copy(chip = 0xFF0B0B0B.toInt(), chipInk = 0xFFF2F2EE.toInt())
+                YtDesign.GLASS -> day.copy(chip = 0xE61F3A38.toInt(), chipInk = 0xFFE3F4F1.toInt())
+                YtDesign.KIESEL -> day.copy(chip = 0xF23A3632.toInt(), chipInk = 0xFFEDE8E3.toInt())
+                // Pop keeps its yellow pills with plum type
+                else -> day
+            }
+        }
+
+        private fun ofDay(design: YtDesign): YtShortsLook = when (design) {
             YtDesign.STANDARD -> YtShortsLook(
                 accent = 0xFFFF4E45.toInt(), track = WHITE_TRACK,
                 chip = 0xD9101014.toInt(), chipInk = 0xFFFFFFFF.toInt(),

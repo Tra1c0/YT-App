@@ -80,17 +80,17 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.runtime.rememberCoroutineScope
 import com.github.libretube.ui.yt.feed.YtDragRules
 
-private val GlassShadow = Color(0x405C8C85)
+private val GlassShadow: Color get() = ytDayNight(Color(0x405C8C85), Color(0x66000000))
 
 /** Frosted glass: translucent white with a bright edge and a soft shadow. */
 fun Modifier.ytGlass(shape: Shape, strong: Boolean = false, shadow: Boolean = true): Modifier = this
     .then(if (shadow) Modifier.shadow(if (strong) 8.dp else 5.dp, shape, clip = false, ambientColor = GlassShadow, spotColor = GlassShadow) else Modifier)
     .clip(shape)
     .background(
-        if (strong) Brush.verticalGradient(listOf(Color(0xF7FFFFFF), Color(0xE6FFFFFF)))
-        else Brush.verticalGradient(listOf(Color(0x9EFFFFFF), Color(0x5CFFFFFF)))
+        if (strong) Brush.verticalGradient(listOf(ytDayNight(Color(0xF7FFFFFF), Color(0xF21F3A38)), ytDayNight(Color(0xE6FFFFFF), Color(0xE61A3231))))
+        else Brush.verticalGradient(listOf(ytDayNight(Color(0x9EFFFFFF), Color(0x4D6FB5AA)), ytDayNight(Color(0x5CFFFFFF), Color(0x296FB5AA))))
     )
-    .border(1.dp, Color(0xD9FFFFFF), shape)
+    .border(1.dp, ytDayNight(Color(0xD9FFFFFF), Color(0x4DCFEDE7)), shape)
 
 /**
  * Design "Glas", home: search field, segmented tabs Für dich / Abos / Live, large videos with
@@ -121,10 +121,10 @@ fun GlassHomeScreen(
             Modifier
                 .fillMaxSize()
                 .layerBackdrop(screen)
-                .background(Brush.verticalGradient(listOf(Color(0xFFCFE9E2), Color(0xFFDDF2EE), Color(0xFFD3ECE6)))),
+                .background(Brush.verticalGradient(listOf(ytDayNight(Color(0xFFCFE9E2), Color(0xFF0E1F1F)), ytDayNight(Color(0xFFDDF2EE), Color(0xFF12292A)), ytDayNight(Color(0xFFD3ECE6), Color(0xFF0F2222))))),
         ) {
             LiquidLight(
-                listOf(Color(0x99FFFFFF), Color(0x5C8FD8CB), Color(0x66FFFFFF)),
+                listOf(ytDayNight(Color(0x99FFFFFF), Color(0x336FB5AA)), ytDayNight(Color(0x5C8FD8CB), Color(0x3D2E7D74)), ytDayNight(Color(0x66FFFFFF), Color(0x26CFEDE7))),
                 Modifier.fillMaxSize(),
             )
             YtRefreshBox(
@@ -167,7 +167,7 @@ fun GlassHomeScreen(
                     .padding(start = 18.dp, end = 18.dp, top = 4.dp)
                     .fillMaxWidth()
                     .height(38.dp)
-                    .liquidGlass(screen, RoundedCornerShape(19.dp), Color(0x80FFFFFF), GlassShadow, swell = { searchSwell })
+                    .liquidGlass(screen, RoundedCornerShape(19.dp), ytDayNight(Color(0x80FFFFFF), Color(0x33A8E0D6)), GlassShadow, swell = { searchSwell })
                     // held: a glass lens lifts off the pill and drags onto a card to search its channel
                     .ytSearchDragSource(palette)
                     .clickable(interactionSource = searchPress, indication = null, onClick = actions.onSearch)
@@ -188,10 +188,10 @@ fun GlassHomeScreen(
                 Spacer(Modifier.weight(1f))
                 // the Feed-Regler: a glass circle at the right end of the pill, teal while open
                 YtTuneCircle(
-                    fill = Color(0x99FFFFFF),
+                    fill = ytDayNight(Color(0x99FFFFFF), Color(0x336FB5AA)),
                     ink = palette.text,
-                    activeFill = Color(0xFF0A8F7F),
-                    activeInk = Color.White,
+                    activeFill = ytDayNight(Color(0xFF0A8F7F), Color(0xFF7FE0D2)),
+                    activeInk = ytDayNight(Color.White, Color(0xFF0F2B2E)),
                     modifier = Modifier.offset(x = 10.dp),
                     size = 30.dp,
                     glyph = 16.dp,
@@ -203,11 +203,11 @@ fun GlassHomeScreen(
                 look = LiquidSegmentsLook(
                     height = 31.dp,
                     gap = 5.dp,
-                    tile = Color(0x73FFFFFF),
-                    pill = Color(0xF7FFFFFF),
+                    tile = ytDayNight(Color(0x73FFFFFF), Color(0x2E6FB5AA)),
+                    pill = ytDayNight(Color(0xF7FFFFFF), Color(0xF21F3A38)),
                     shadow = GlassShadow,
                     text = palette.text,
-                    lensText = Color(0xFF0A8F7F),
+                    lensText = ytDayNight(Color(0xFF0A8F7F), Color(0xFF7FE0D2)),
                     font = YtFonts.googleSans,
                     size = 13.5.sp,
                     activeSize = 14.sp,
@@ -328,7 +328,7 @@ private fun GlassVideo(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .size(56.dp)
-                    .liquidGlass(thumb, CircleShape, Color(0x4DFFFFFF), GlassShadow, blur = 6.dp, refraction = 14.dp, swell = { swell }),
+                    .liquidGlass(thumb, CircleShape, ytDayNight(Color(0x4DFFFFFF), Color(0x336FB5AA)), GlassShadow, blur = 6.dp, refraction = 14.dp, swell = { swell }),
             ) {
                 Icon(
                     painterResource(R.drawable.ic_yt_play_round),

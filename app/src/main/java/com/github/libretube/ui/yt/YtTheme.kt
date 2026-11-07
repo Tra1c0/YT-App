@@ -7,6 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.Font
@@ -15,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import com.github.libretube.R
 import com.github.libretube.helpers.YtDesign
+import com.github.libretube.helpers.YtDesignDark
 
 /** YT: fonts bundled in res/font, for the Compose design screens. */
 object YtFonts {
@@ -338,21 +340,118 @@ val YtPalettes.Kiesel: YtPalette
         surfaceStyle = YtSurfaceStyle.FLAT,
     )
 
+/*
+ * YT: the dark mode of the light designs (YtDesignDark). Same roles, same type, motion and
+ * surfaces; only the colours move to a dark variant of the design's own palette. Every text
+ * role reads with at least 4.5:1 on background, surface and raised (YtNightPaletteTest).
+ */
+
+/** "Clay" at night: warm dark dough browns, cream type, the mauve lifted so it reads. */
+val YtPalettes.ClayDark: YtPalette
+    get() = YtPalettes.Clay.copy(
+        background = Color(0xFF2A201C),
+        surface = Color(0xFF3A2C26),
+        raised = Color(0xFF46352E),
+        text = Color(0xFFF7E8DA),
+        textSecondary = Color(0xFFCBB1A5),
+        accent = Color(0xFFD9A5A6),
+        onAccent = Color(0xFF2D1A1D),
+        lime = Color(0xFF3C4A5C),
+        lavender = Color(0xFF3F2F29),
+        ink = Color(0xFFF7E8DA),
+        pink = Color(0xFFC98E8F),
+        light = false,
+    )
+
+/** "Editorial" at night: near-black paper, off-white ink, the same signal blue. */
+val YtPalettes.EditorialDark: YtPalette
+    get() = YtPalettes.Editorial.copy(
+        background = Color(0xFF0B0B0B),
+        surface = Color(0xFF161616),
+        raised = Color(0xFF242424),
+        text = Color(0xFFF2F2EE),
+        textSecondary = Color(0xFFA8A8A8),
+        lime = Color(0xFF242424),
+        lavender = Color(0xFF161616),
+        ink = Color(0xFFF2F2EE),
+        light = false,
+    )
+
+/** "Glas" at night: dark teal-tinted glass over a deep sea green, light mint as the accent. */
+val YtPalettes.GlassDark: YtPalette
+    get() = YtPalettes.Glass.copy(
+        background = Color(0xFF0E1F1F),
+        surface = Color(0x40345A57),
+        raised = Color(0xFF1C3333),
+        text = Color(0xFFE3F4F1),
+        textSecondary = Color(0xFF9CBDB9),
+        accent = Color(0xFFCFEDE7),
+        onAccent = Color(0xFF0F2B2E),
+        lime = Color(0xFF1F3D3A),
+        lavender = Color(0xFF173030),
+        ink = Color(0xFFE3F4F1),
+        light = false,
+    )
+
+/** "Pop" at night: deep plum, light lilac in place of the plum accent, pink and yellow kept. */
+val YtPalettes.PopDark: YtPalette
+    get() = YtPalettes.Pop.copy(
+        background = Color(0xFF1E1028),
+        surface = Color(0xFF2B1A38),
+        raised = Color(0xFF382548),
+        text = Color(0xFFF5ECFF),
+        textSecondary = Color(0xFFBFAED3),
+        accent = Color(0xFFD5CDFA),
+        onAccent = Color(0xFF1D032E),
+        light = false,
+    )
+
+/** "Kiesel" at night: dark warm grey for the cream, light panels for the black ones. */
+val YtPalettes.KieselDark: YtPalette
+    get() = YtPalettes.Kiesel.copy(
+        background = Color(0xFF1F1D1B),
+        surface = Color(0xFF2B2826),
+        raised = Color(0xFF36322F),
+        text = Color(0xFFEDE8E3),
+        textSecondary = Color(0xFFABA59F),
+        light = false,
+    )
+
+/**
+ * [day] in the normal look of a light design, [night] in its dark mode. For the colours the
+ * light designs draw outside their palette; dark-only designs always get [day].
+ */
+fun ytDayNight(day: Color, night: Color): Color = if (YtDesignDark.active) night else day
+
+/**
+ * The accent where it is type. At night a light design may keep an accent that is made for fills
+ * (Editorial's signal blue with white on it); as type it is lifted until it reads (YtContrast).
+ */
+val YtPalette.accentText: Color
+    get() = if (!YtDesignDark.active) accent else Color(YtContrast.readable(accent.toArgb(), background.toArgb()))
+
+/** Whether a light design is drawing its dark mode right now. */
+val ytNight: Boolean
+    get() = YtDesignDark.active
+
 /** The Compose palette of a design, or null for the classic look. */
 val YtDesign.palette: YtPalette?
-    get() = when (this) {
-        YtDesign.YOUTUBE -> YtPalettes.YouTube
-        YtDesign.MOVO -> YtPalettes.Movo
-        YtDesign.AFTER -> YtPalettes.After
-        YtDesign.SIDE -> YtPalettes.Side.copy(font = YtFonts.figtree)
-        YtDesign.CLAY -> YtPalettes.Clay
-        YtDesign.EDITORIAL -> YtPalettes.Editorial
-        YtDesign.GLASS -> YtPalettes.Glass
-        YtDesign.POP -> YtPalettes.Pop
-        YtDesign.SHAPES -> YtPalettes.Shapes
-        YtDesign.FROST -> YtPalettes.Frost
-        YtDesign.KIESEL -> YtPalettes.Kiesel
-        else -> null
+    get() {
+        val night = YtDesignDark.active
+        return when (this) {
+            YtDesign.YOUTUBE -> YtPalettes.YouTube
+            YtDesign.MOVO -> YtPalettes.Movo
+            YtDesign.AFTER -> YtPalettes.After
+            YtDesign.SIDE -> YtPalettes.Side.copy(font = YtFonts.figtree)
+            YtDesign.CLAY -> if (night) YtPalettes.ClayDark else YtPalettes.Clay
+            YtDesign.EDITORIAL -> if (night) YtPalettes.EditorialDark else YtPalettes.Editorial
+            YtDesign.GLASS -> if (night) YtPalettes.GlassDark else YtPalettes.Glass
+            YtDesign.POP -> if (night) YtPalettes.PopDark else YtPalettes.Pop
+            YtDesign.SHAPES -> YtPalettes.Shapes
+            YtDesign.FROST -> YtPalettes.Frost
+            YtDesign.KIESEL -> if (night) YtPalettes.KieselDark else YtPalettes.Kiesel
+            else -> null
+        }
     }
 
 /**

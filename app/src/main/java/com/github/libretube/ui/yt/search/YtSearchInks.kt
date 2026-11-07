@@ -33,7 +33,48 @@ data class YtSearchInks(
 object YtSearchPalette {
     private const val NONE = 0x00000000
 
-    fun inks(kind: YtSearchKind): YtSearchInks = when (kind) {
+    /** The inks of [kind]; [dark]: the dark mode of a light design (YtDesignDark). */
+    fun inks(kind: YtSearchKind, dark: Boolean = false): YtSearchInks =
+        (if (dark) darkInks(kind) else null) ?: dayInks(kind)
+
+    /** The light designs at night: their own dark palettes; null for the dark-only designs. */
+    private fun darkInks(kind: YtSearchKind): YtSearchInks? = when (kind) {
+        YtSearchKind.CLAY -> YtSearchInks(
+            scrim = 0xF52A201C.toInt(), panel = NONE,
+            field = 0xFF46352E.toInt(), fieldText = 0xFFF7E8DA.toInt(), fieldHint = 0xFFC9AEA2.toInt(),
+            rowText = 0xFFF7E8DA.toInt(), rowSecondary = 0xFFCBB1A5.toInt(),
+            chip = 0xFF46352E.toInt(), chipText = 0xFFF7E8DA.toInt(), mark = 0xFFD9A5A6.toInt(),
+        )
+        YtSearchKind.EDITORIAL -> YtSearchInks(
+            scrim = 0xFF0B0B0B.toInt(), panel = NONE,
+            field = NONE, fieldText = 0xFFF2F2EE.toInt(), fieldHint = 0xFFA8A8A8.toInt(),
+            rowText = 0xFFF2F2EE.toInt(), rowSecondary = 0xFFA8A8A8.toInt(),
+            chip = 0xFF242424.toInt(), chipText = 0xFFF2F2EE.toInt(), mark = 0xFF3F76F8.toInt(),
+        )
+        YtSearchKind.GLASS -> YtSearchInks(
+            scrim = 0xE60E1F1F.toInt(), panel = NONE,
+            field = 0x8C2E5452.toInt(), fieldText = 0xFFE3F4F1.toInt(), fieldHint = 0xFF9CBDB9.toInt(),
+            rowText = 0xFFE3F4F1.toInt(), rowSecondary = 0xFF9CBDB9.toInt(),
+            chip = 0x992E5452.toInt(), chipText = 0xFFE3F4F1.toInt(), mark = 0xFFCFEDE7.toInt(),
+        )
+        YtSearchKind.POP -> YtSearchInks(
+            scrim = 0xF51E1028.toInt(), panel = NONE,
+            field = 0xFFFDE682.toInt(), fieldText = 0xFF1D032E.toInt(), fieldHint = 0xFF4D3F63.toInt(),
+            rowText = 0xFFF5ECFF.toInt(), rowSecondary = 0xFFBFAED3.toInt(),
+            chip = 0xFFF4B6CF.toInt(), chipText = 0xFF1D032E.toInt(), mark = 0xFFE0457F.toInt(),
+            tiles = listOf(0xFFF4B6CF.toInt(), 0xFFFDE682.toInt(), 0xFFDCD6F5.toInt(), 0xFF4A2E66.toInt()),
+        )
+        YtSearchKind.KIESEL -> YtSearchInks(
+            scrim = 0xF51F1D1B.toInt(), panel = NONE,
+            field = 0xFF3A3632.toInt(), fieldText = 0xFFEDE8E3.toInt(), fieldHint = 0xFFABA59F.toInt(),
+            rowText = 0xFFEDE8E3.toInt(), rowSecondary = 0xFFABA59F.toInt(),
+            chip = 0xFF36322F.toInt(), chipText = 0xFFEDE8E3.toInt(), mark = 0xFFB4A7F5.toInt(),
+            tiles = listOf(0xFFB4A7F5.toInt(), 0xFFF6C6A2.toInt(), 0xFF4A4541.toInt(), 0xFF3A3632.toInt()),
+        )
+        else -> null
+    }
+
+    private fun dayInks(kind: YtSearchKind): YtSearchInks = when (kind) {
         YtSearchKind.YOUTUBE -> YtSearchInks(
             scrim = 0xF5101014.toInt(), panel = NONE,
             field = 0xFF282830.toInt(), fieldText = 0xFFF6F4F2.toInt(), fieldHint = 0xFFB8B8C5.toInt(),
@@ -119,8 +160,8 @@ object YtSearchPalette {
     }
 
     /** The fill of the [index]-th tile or pebble. */
-    fun tile(kind: YtSearchKind, index: Int): Int {
-        val tiles = inks(kind).tiles
-        return if (tiles.isEmpty()) inks(kind).chip else tiles[Math.floorMod(index, tiles.size)]
+    fun tile(kind: YtSearchKind, index: Int, dark: Boolean = false): Int {
+        val inks = inks(kind, dark)
+        return if (inks.tiles.isEmpty()) inks.chip else inks.tiles[Math.floorMod(index, inks.tiles.size)]
     }
 }

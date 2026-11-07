@@ -50,8 +50,13 @@ object ThemeHelper {
         )
         if (pureThemeEnabled) activity.theme.applyStyle(R.style.Pure, true)
 
-        // YT: a selected design overrides accent and pure theme with its own palette and type
-        YtDesign.current().overlay?.let { activity.theme.applyStyle(it, true) }
+        // YT: a selected design overrides accent and pure theme with its own palette and type;
+        // a light design in night mode takes its dark overlay from values-night
+        val design = YtDesign.current()
+        val night = activity.resources.configuration.uiMode and
+            Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+        YtDesignDark.update(design.light, night)
+        design.overlay?.let { activity.theme.applyStyle(it, true) }
     }
 
     /**

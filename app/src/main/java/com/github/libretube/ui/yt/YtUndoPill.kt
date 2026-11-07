@@ -467,19 +467,21 @@ internal fun pillLook(palette: YtPalette): PillLook {
             text = palette.text, action = palette.accent, font = YtFonts.nunito, tone = palette.surface,
         )
         YtSignature.EDITORIAL -> PillLook(
-            surface = flat(RectangleShape, Color.Black, Color(0x40000000)),
-            text = Color.White, action = Color.White, font = YtFonts.plexMono,
+            // set in reverse: black on the white paper, off-white on the black one
+            surface = flat(RectangleShape, ytDayNight(Color.Black, palette.text), Color(0x40000000)),
+            text = ytDayNight(Color.White, palette.background), action = ytDayNight(Color.White, palette.background), font = YtFonts.plexMono,
             size = 11.sp, uppercase = true, letterSpacing = 1.sp,
-            actionShape = RectangleShape, actionDecoration = TextDecoration.Underline, tone = Color.Black,
+            actionShape = RectangleShape, actionDecoration = TextDecoration.Underline, tone = ytDayNight(Color.Black, palette.text),
         )
         YtSignature.GLASS -> PillLook(
             surface = { m -> m.ytGlass(RoundedCornerShape(50), strong = true) },
-            text = palette.text, action = Color(0xFF0A8F7F), font = YtFonts.googleSans,
-            cardSurface = { m -> m.ytGlass(RoundedCornerShape(26.dp), strong = true) }, tone = Color(0xFFF6FBFA),
+            text = palette.text, action = ytDayNight(Color(0xFF0A8F7F), Color(0xFF7FE0D2)), font = YtFonts.googleSans,
+            cardSurface = { m -> m.ytGlass(RoundedCornerShape(26.dp), strong = true) }, tone = ytDayNight(Color(0xFFF6FBFA), Color(0xFF1F3A38)),
         )
         YtSignature.POP -> PillLook(
             surface = flat(BlobShape(0.56f, 0.5f, 0.5f, 0.6f), palette.accent, Color(0x553B2054)),
-            text = Color.White, action = palette.lime, font = YtFonts.nunito, size = 14.sp,
+            // at night the accent is a light lilac: plum words and a deep berry action on it
+            text = palette.onAccent, action = ytDayNight(palette.lime, Color(0xFF8A1F55)), font = YtFonts.nunito, size = 14.sp,
             cardSurface = flat(RoundedCornerShape(30.dp), palette.accent, Color(0x553B2054)), tone = palette.accent,
         )
         YtSignature.SHAPES -> PillLook(
@@ -493,10 +495,10 @@ internal fun pillLook(palette: YtPalette): PillLook {
             cardSurface = flat(RoundedCornerShape(24.dp), palette.ink, Color(0x661F2A26)), tone = palette.ink,
         )
         YtSignature.KIESEL -> PillLook(
-            surface = flat(RoundedCornerShape(50), KieselInk, Color(0x400E0E0E)),
-            text = KieselCream, action = KieselInk, font = YtFonts.jakarta, size = 12.5.sp,
+            surface = flat(RoundedCornerShape(50), KieselPanel, Color(0x400E0E0E)),
+            text = KieselCream, action = KieselBlack, font = YtFonts.jakarta, size = 12.5.sp,
             actionFill = KieselLavender,
-            cardSurface = flat(RoundedCornerShape(26.dp), KieselInk, Color(0x400E0E0E)), tone = KieselInk,
+            cardSurface = flat(RoundedCornerShape(26.dp), KieselPanel, Color(0x400E0E0E)), tone = KieselPanel,
         )
     }
 }

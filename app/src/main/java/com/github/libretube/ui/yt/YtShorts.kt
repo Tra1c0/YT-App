@@ -154,10 +154,10 @@ private val ShapesNight = listOf(Color(0xFF12122A), Color(0xFF1C1A45), Color(0xF
 private val ShapesTags = listOf(Color(0xFFF6D365), Color(0xFFBFE26B), Color(0xFFD9D4EE), Color(0xFFF28B82))
 private val PopFrames = listOf(Color(0xFFFDE682), Color(0xFFF7B3CE), Color(0xFFDFD6F7), Color(0xFFBFE8D2))
 private val PopInk = Color(0xFF3B2054)
-private val ClayShadow = Color(0x80B07A66)
-private val ClayInk = Color(0xFF7A5560)
-private val ClayLabel = Color(0xFF8C6563)
-private val ClayLight = Color(0xFFFFF3E9)
+private val ClayShadow: Color get() = ytDayNight(Color(0x80B07A66), Color(0x80000000))
+private val ClayInk: Color get() = ytDayNight(Color(0xFF7A5560), Color(0xFFE8C6C2))
+private val ClayLabel: Color get() = ytDayNight(Color(0xFF8C6563), Color(0xFFC9AEA2))
+private val ClayLight: Color get() = ytDayNight(Color(0xFFFFF3E9), Color(0xFF4A3830))
 
 @Composable
 private fun YtShortsScreen(
@@ -248,8 +248,8 @@ private fun ShortsHeader(palette: YtPalette, count: Int?, backdrop: Backdrop?) {
                     .size(46.dp)
                     .shadow(8.dp, CircleShape, ambientColor = ClayShadow, spotColor = ClayShadow)
                     .clip(CircleShape)
-                    .background(Brush.verticalGradient(listOf(ClayLight, Color(0xFFF2D9C6))))
-                    .border(1.dp, Color(0x99FFFFFF), CircleShape),
+                    .background(Brush.verticalGradient(listOf(ClayLight, ytDayNight(Color(0xFFF2D9C6), Color(0xFF3A2C26)))))
+                    .border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), CircleShape),
             ) {
                 YtShortsGlyph(ClayInk, filled = true, modifier = Modifier.size(24.dp))
             }
@@ -296,7 +296,7 @@ private fun ShortsHeader(palette: YtPalette, count: Int?, backdrop: Backdrop?) {
                 .padding(top = 10.dp, bottom = 6.dp)
                 .height(48.dp)
                 .then(
-                    if (backdrop != null) Modifier.liquidGlass(backdrop, RoundedCornerShape(50), Color(0x8CFFFFFF), Color(0x2E5C8C85))
+                    if (backdrop != null) Modifier.liquidGlass(backdrop, RoundedCornerShape(50), ytDayNight(Color(0x8CFFFFFF), Color(0x33A8E0D6)), ytDayNight(Color(0x2E5C8C85), Color(0x66000000)))
                     else Modifier.ytGlass(RoundedCornerShape(50)),
                 )
                 .padding(start = 14.dp, end = 20.dp),
@@ -441,7 +441,7 @@ private fun ClayShort(palette: YtPalette, imageLoader: ImageLoader, short: Strea
                 .shadow(8.dp, shape, ambientColor = ClayShadow, spotColor = ClayShadow)
                 .clip(shape)
                 .background(Brush.verticalGradient(listOf(ClayLight, palette.surface)))
-                .border(1.dp, Color(0x99FFFFFF), shape)
+                .border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), shape)
                 .padding(7.dp),
         ) {
             YtLargeThumbnail(short, imageLoader, Modifier.fillMaxSize().clip(RoundedCornerShape(18.dp)))
@@ -533,7 +533,7 @@ private fun GlassShort(palette: YtPalette, imageLoader: ImageLoader, short: Stre
             .fillMaxWidth()
             .aspectRatio(9f / 16f)
             .ytPressScale(press)
-            .shadow(6.dp, shape, clip = false, ambientColor = Color(0x405C8C85), spotColor = Color(0x405C8C85))
+            .shadow(6.dp, shape, clip = false, ambientColor = ytDayNight(Color(0x405C8C85), Color(0x66000000)), spotColor = ytDayNight(Color(0x405C8C85), Color(0x66000000)))
             .clip(shape)
             .background(palette.lime)
             .combinedClickable(interactionSource = press, indication = LocalIndication.current, onLongClick = { longPress(short) }) { onOpen(short) },
@@ -544,7 +544,7 @@ private fun GlassShort(palette: YtPalette, imageLoader: ImageLoader, short: Stre
                 .align(Alignment.BottomCenter)
                 .padding(6.dp)
                 .fillMaxWidth()
-                .liquidGlass(still, RoundedCornerShape(12.dp), Color(0x73FFFFFF), null, blur = 8.dp, refraction = 8.dp, swell = { swell })
+                .liquidGlass(still, RoundedCornerShape(12.dp), ytDayNight(Color(0x73FFFFFF), Color(0xE6142826)), null, blur = 8.dp, refraction = 8.dp, swell = { swell })
                 .padding(horizontal = 9.dp, vertical = 7.dp),
         ) {
             Text(

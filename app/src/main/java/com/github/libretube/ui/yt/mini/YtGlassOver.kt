@@ -77,6 +77,7 @@ import com.github.libretube.ui.yt.LocalYtMotion
 import com.github.libretube.ui.yt.YtDock
 import com.github.libretube.ui.yt.YtFonts
 import com.github.libretube.ui.yt.rememberSwell
+import com.github.libretube.ui.yt.ytDayNight
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -93,7 +94,7 @@ import kotlin.math.roundToInt
 
 /** The colours of Glas on the picture. */
 object YtGlassOverStyle {
-    val petrol = Color(0xFF0A8F7F)
+    val petrol: Color get() = ytDayNight(Color(0xFF0A8F7F), Color(0xFF7FE0D2))
 
     /** White glass of the buttons, the dark glass of the pill and the next video's row. */
     val light = Color(0x40FFFFFF)
@@ -102,12 +103,12 @@ object YtGlassOverStyle {
     val rowActive = Color(0x99000000)
 
     /** The edge band over the bleed, and alone where nothing could be copied. */
-    val edge = Color(0x6BFFFFFF)
-    val edgeFallback = Color(0xA6FFFFFF)
+    val edge: Color get() = ytDayNight(Color(0x6BFFFFFF), Color(0x6B183230))
+    val edgeFallback: Color get() = ytDayNight(Color(0xA6FFFFFF), Color(0xA61F3A38))
 
     /** The tab row's glass over the strip's foot. */
-    val plate = Color(0x80FFFFFF)
-    val plateFallback = Color(0xB3FFFFFF)
+    val plate: Color get() = ytDayNight(Color(0x80FFFFFF), Color(0x80183230))
+    val plateFallback: Color get() = ytDayNight(Color(0xB3FFFFFF), Color(0xB31F3A38))
 }
 
 /** Where the parts sit for the picture's current size (set while laying out, read while drawing). */

@@ -458,7 +458,7 @@ private val ShapesDetent = YtHapticTexture.of("swipe_detent_shapes", YtFeedback.
 
 private val KieselLavenderField = Color(0xFFB4A7F5)
 private val KieselPeachField = Color(0xFFF6C6A2)
-private val GlassRim = Color(0x405C8C85)
+private val GlassRim: Color get() = ytDayNight(Color(0x405C8C85), Color(0x4DCFEDE7))
 
 private fun swipeLook(palette: YtPalette): YtSwipeLook {
     val s = palette.signature
@@ -511,7 +511,7 @@ private fun swipeLook(palette: YtPalette): YtSwipeLook {
         YtSignature.CLAY -> {
             val (hide, queue) = pair(step(YtPrimitive.THUD, 0.8f))
             YtSwipeLook(
-                s, queueField = Color(0xFFE9C0AA), hideField = Color(0xFFE9C0AA), queueInk = palette.accent, hideInk = palette.accent,
+                s, queueField = ytDayNight(Color(0xFFE9C0AA), Color(0xFF3A2C26)), hideField = ytDayNight(Color(0xFFE9C0AA), Color(0xFF3A2C26)), queueInk = palette.accent, hideInk = palette.accent,
                 text = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp),
                 popDamping = 0.4f, tilt = 2f,
                 arm = armTexture(name, step(YtPrimitive.LOW_TICK, 0.6f)), hide = hide, queue = queue,
@@ -520,7 +520,7 @@ private fun swipeLook(palette: YtPalette): YtSwipeLook {
         YtSignature.EDITORIAL -> {
             val (hide, queue) = pair(step(YtPrimitive.CLICK, 1f))
             YtSwipeLook(
-                s, queueField = Color.Black, hideField = Color.Black, queueInk = Color.White, hideInk = Color.White,
+                s, queueField = ytDayNight(Color.Black, palette.text), hideField = ytDayNight(Color.Black, palette.text), queueInk = ytDayNight(Color.White, palette.background), hideInk = ytDayNight(Color.White, palette.background),
                 text = TextStyle(fontFamily = YtFonts.plexMono, fontWeight = FontWeight.Medium, fontSize = 12.sp, letterSpacing = 2.sp),
                 uppercase = true, popDamping = 1f,
                 arm = armTexture(name, step(YtPrimitive.TICK, 0.6f)), hide = hide, queue = queue,
@@ -529,7 +529,7 @@ private fun swipeLook(palette: YtPalette): YtSwipeLook {
         YtSignature.GLASS -> {
             val (hide, queue) = pair(step(YtPrimitive.TICK, 0.4f), step(YtPrimitive.LOW_TICK, 0.6f, 50))
             YtSwipeLook(
-                s, queueField = Color.White, hideField = Color.White, queueInk = palette.text, hideInk = palette.text,
+                s, queueField = ytDayNight(Color.White, Color(0xFF2E5452)), hideField = ytDayNight(Color.White, Color(0xFF2E5452)), queueInk = palette.text, hideInk = palette.text,
                 text = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Medium, fontSize = 13.sp),
                 icon = 22f, popDamping = 0.55f,
                 arm = armTexture(name, step(YtPrimitive.QUICK_RISE, 0.4f)), hide = hide, queue = queue,
@@ -538,7 +538,7 @@ private fun swipeLook(palette: YtPalette): YtSwipeLook {
         YtSignature.POP -> {
             val (hide, queue) = pair(step(YtPrimitive.CLICK, 0.7f), step(YtPrimitive.SPIN, 0.4f, 40))
             YtSwipeLook(
-                s, queueField = palette.lime, hideField = palette.lavender, queueInk = palette.text, hideInk = palette.text,
+                s, queueField = palette.lime, hideField = palette.lavender, queueInk = palette.ink, hideInk = palette.ink,
                 text = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.Black, fontSize = 14.sp),
                 icon = 24f, popDamping = 0.35f, tilt = 3f,
                 arm = armTexture(name, step(YtPrimitive.QUICK_RISE, 0.6f)), hide = hide, queue = queue,
@@ -574,7 +574,7 @@ private fun swipeLook(palette: YtPalette): YtSwipeLook {
                 step(YtPrimitive.TICK, 0.35f, 100), step(YtPrimitive.TICK, 0.15f, 80),
             )
             YtSwipeLook(
-                s, queueField = KieselLavenderField, hideField = KieselPeachField, queueInk = KieselInk, hideInk = KieselInk,
+                s, queueField = KieselLavenderField, hideField = KieselPeachField, queueInk = KieselBlack, hideInk = KieselBlack,
                 text = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp),
                 icon = 20f, popDamping = 0.4f, tilt = 3f,
                 arm = armTexture(name, step(YtPrimitive.TICK, 0.6f)), hide = hide, queue = queue,
@@ -672,9 +672,9 @@ private fun DrawScope.drawUnderlay(
                 drawField(
                     a,
                     Brush.verticalGradient(
-                        0f to Color(0xFFD9A991),
+                        0f to ytDayNight(Color(0xFFD9A991), Color(0xFF221A16)),
                         0.18f to field,
-                        1f to Color(0xFFF4D6C4),
+                        1f to ytDayNight(Color(0xFFF4D6C4), Color(0xFF4A3830)),
                         startY = 0f,
                         endY = area.height,
                     ),
@@ -692,7 +692,7 @@ private fun DrawScope.drawUnderlay(
                 val r = (16.dp.toPx() + 10.dp.toPx() * a) * (1f + 0.14f * pop)
                 drawCircle(GlassRim, r + 3.dp.toPx(), anchor, alpha = 0.6f * a)
                 drawCircle(
-                    Brush.radialGradient(listOf(Color(0xE6FFFFFF), Color(0x80FFFFFF)), center = anchor - Offset(r * 0.3f, r * 0.3f), radius = r * 1.4f),
+                    Brush.radialGradient(listOf(ytDayNight(Color(0xE6FFFFFF), Color(0x4DCFEDE7)), ytDayNight(Color(0x80FFFFFF), Color(0x26CFEDE7))), center = anchor - Offset(r * 0.3f, r * 0.3f), radius = r * 1.4f),
                     r,
                     anchor,
                     alpha = a,

@@ -33,6 +33,7 @@ import com.github.libretube.ui.yt.YtPalettes
 import com.github.libretube.ui.yt.YtTestHooks
 import com.github.libretube.ui.yt.YtTheme
 import com.github.libretube.ui.yt.palette
+import com.github.libretube.ui.yt.ytNight
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -219,7 +220,7 @@ private class YtShortsHost(
 
         val design = YtDesign.current()
         val palette = design.palette ?: YtPalettes.YouTube
-        val style = YtShortsStyle(YtShortsLook.of(design))
+        val style = YtShortsStyle(YtShortsLook.of(design, ytNight))
         view.tag = YtShortsView.VIEW_TAG
         view.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
         view.setContent {

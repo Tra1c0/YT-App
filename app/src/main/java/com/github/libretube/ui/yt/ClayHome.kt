@@ -80,11 +80,11 @@ import kotlin.math.PI
 import kotlin.math.absoluteValue
 import kotlin.math.sin
 
-private val ClayMauve = Color(0xFF9D6A6C)
-private val ClayCream = Color(0xFFF7E8DA)
-private val ClayDot = Color(0xFFDDB9A6)
-private val ClayLabel = Color(0xFF8C6563)
-private val ClayCardShadow = Color(0x80B07A66)
+private val ClayMauve: Color get() = ytDayNight(Color(0xFF9D6A6C), Color(0xFFD9A5A6))
+private val ClayCream: Color get() = ytDayNight(Color(0xFFF7E8DA), Color(0xFF3A2C26))
+private val ClayDot: Color get() = ytDayNight(Color(0xFFDDB9A6), Color(0xFF5A463D))
+private val ClayLabel: Color get() = ytDayNight(Color(0xFF8C6563), Color(0xFFC9AEA2))
+private val ClayCardShadow: Color get() = ytDayNight(Color(0x80B07A66), Color(0x80000000))
 
 /**
  * Design "Clay", home: "Heute für dich" with a carousel of large soft cards (the neighbours
@@ -120,7 +120,7 @@ fun ClayHomeScreen(
     Column(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFF6DACA), Color(0xFFEFCDB9))))
+            .background(Brush.verticalGradient(listOf(ytDayNight(Color(0xFFF6DACA), Color(0xFF2C221E)), ytDayNight(Color(0xFFEFCDB9), Color(0xFF241B17)))))
             .verticalScroll(rememberScrollState())
             .padding(bottom = ytNavPadding()),
     ) {
@@ -140,7 +140,7 @@ fun ClayHomeScreen(
             }
             Text(
                 text = stringResource(R.string.yt_clay_today),
-                color = Color(0xFF7A5560),
+                color = ytDayNight(Color(0xFF7A5560), Color(0xFFE8C6C2)),
                 style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp),
                 modifier = Modifier.padding(start = 10.dp),
             )
@@ -148,7 +148,7 @@ fun ClayHomeScreen(
             // the Feed-Regler: a puffy dot of clay next to "Heute für dich"
             YtTuneCircle(
                 fill = Color.Transparent,
-                ink = Color(0xFF7A5560),
+                ink = ytDayNight(Color(0xFF7A5560), Color(0xFFE8C6C2)),
                 activeFill = palette.accent,
                 activeInk = palette.onAccent,
                 size = 38.dp,
@@ -394,14 +394,14 @@ private fun ClayPlayButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
             .ytSquish(interaction)
             .shadow(10.dp, CircleShape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(CircleShape)
-            .background(Brush.verticalGradient(listOf(Color(0xFFFFF5EC), Color(0xFFF1D9C6))))
-            .border(1.dp, Color(0x99FFFFFF), CircleShape)
+            .background(Brush.verticalGradient(listOf(ytDayNight(Color(0xFFFFF5EC), Color(0xFF4A3830)), ytDayNight(Color(0xFFF1D9C6), Color(0xFF3A2C26)))))
+            .border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), CircleShape)
             .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick),
     ) {
         Icon(
             painterResource(R.drawable.ic_yt_play_round),
             contentDescription = null,
-            tint = Color(0xFF93636A),
+            tint = ytDayNight(Color(0xFF93636A), Color(0xFFD9A5A6)),
             modifier = Modifier
                 .padding(start = 4.dp)
                 .size(30.dp),
@@ -425,14 +425,14 @@ private fun ClayRoundButton(
             .ytSquish(interaction)
             .shadow(8.dp, CircleShape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(CircleShape)
-            .background(Brush.verticalGradient(listOf(Color(0xFFFFF3E9), Color(0xFFF2D9C6))))
-            .border(1.dp, Color(0x99FFFFFF), CircleShape)
+            .background(Brush.verticalGradient(listOf(ytDayNight(Color(0xFFFFF3E9), Color(0xFF4A3830)), ytDayNight(Color(0xFFF2D9C6), Color(0xFF3A2C26)))))
+            .border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), CircleShape)
             .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick),
     ) {
         Icon(
             painterResource(icon),
             contentDescription = stringResource(description),
-            tint = Color(0xFF7A5560),
+            tint = ytDayNight(Color(0xFF7A5560), Color(0xFFE8C6C2)),
             modifier = Modifier.size(20.dp),
         )
     }
@@ -459,8 +459,8 @@ private fun ClayNextCard(
             .ytSquish(interaction)
             .shadow(10.dp, shape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(shape)
-            .background(Brush.verticalGradient(listOf(Color(0xFFFAEEE3), ClayCream)))
-            .border(1.dp, Color(0x80FFFFFF), shape)
+            .background(Brush.verticalGradient(listOf(ytDayNight(Color(0xFFFAEEE3), Color(0xFF46352E)), ClayCream)))
+            .border(1.dp, ytDayNight(Color(0x80FFFFFF), Color(0x1FFFF0E4)), shape)
             .clickable(interactionSource = interaction, indication = LocalIndication.current) { actions.onOpenVideo(video) }
             .padding(start = 15.dp, top = 11.dp, bottom = 11.dp, end = 8.dp),
     ) {

@@ -59,6 +59,7 @@ import com.github.libretube.ui.yt.YtDock
 import com.github.libretube.ui.yt.YtDrag
 import com.github.libretube.ui.yt.YtFonts
 import com.github.libretube.ui.yt.YtMotionPrefs
+import com.github.libretube.ui.yt.ytDayNight
 import kotlinx.coroutines.delay
 import kotlin.math.max
 import kotlin.math.min
@@ -76,28 +77,28 @@ import kotlin.math.roundToInt
 
 /** The colours and type of the Clay player (the Clay home: cream dough, mauve, the bar's blue). */
 internal object ClayStyle {
-    val CREAM = Color(0xFFF3E1D2)
-    val CREAM_TOP = Color(0xFFFBEDE2)
-    val CREAM_FOOT = Color(0xFFEAD2C0)
-    val BLUE = Color(0xFFB7CBE4)
-    val BLUE_TOP = Color(0xFFD3E0F0)
-    val BLUE_FOOT = Color(0xFFA6BCD9)
+    val CREAM: Color get() = ytDayNight(Color(0xFFF3E1D2), Color(0xFF4A3830))
+    val CREAM_TOP: Color get() = ytDayNight(Color(0xFFFBEDE2), Color(0xFF574239))
+    val CREAM_FOOT: Color get() = ytDayNight(Color(0xFFEAD2C0), Color(0xFF3A2C26))
+    val BLUE: Color get() = ytDayNight(Color(0xFFB7CBE4), Color(0xFF3C4A5C))
+    val BLUE_TOP: Color get() = ytDayNight(Color(0xFFD3E0F0), Color(0xFF4A5A6E))
+    val BLUE_FOOT: Color get() = ytDayNight(Color(0xFFA6BCD9), Color(0xFF313D4D))
     val MAUVE = Color(0xFFA8696F)
     val MAUVE_TOP = Color(0xFFC4888C)
-    val MAUVE_DEEP = Color(0xFF8E5560)
-    val INK = Color(0xFF5C5260)
-    val MUTED = Color(0xFF8C7880)
-    val SHADOW = Color(0xFFB07A66)
-    val TRACK = Color(0x1F7A5560)
-    val DENT = Color(0x2E7A5560)
+    val MAUVE_DEEP: Color get() = ytDayNight(Color(0xFF8E5560), Color(0xFFD9A5A6))
+    val INK: Color get() = ytDayNight(Color(0xFF5C5260), Color(0xFFEEDFD3))
+    val MUTED: Color get() = ytDayNight(Color(0xFF8C7880), Color(0xFFC9B3AA))
+    val SHADOW: Color get() = ytDayNight(Color(0xFFB07A66), Color(0xFF000000))
+    val TRACK: Color get() = ytDayNight(Color(0x1F7A5560), Color(0x26EEDFD3))
+    val DENT: Color get() = ytDayNight(Color(0x2E7A5560), Color(0x40000000))
     val SHEEN = Color.White
 
-    val title = TextStyle(color = INK, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
-    val channel = TextStyle(color = MUTED, fontFamily = YtFonts.nunito, fontWeight = FontWeight.SemiBold, fontSize = 11.5.sp)
-    val peekTitle = TextStyle(color = INK, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 13.5.sp, lineHeight = 16.5.sp)
-    val nextLabel = TextStyle(color = MAUVE_DEEP, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 9.5.sp, letterSpacing = 0.06.em)
-    val nextTitle = TextStyle(color = INK, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 11.5.sp)
-    val onMauve = TextStyle(color = Color.White, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+    val title: TextStyle get() = TextStyle(color = INK, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+    val channel: TextStyle get() = TextStyle(color = MUTED, fontFamily = YtFonts.nunito, fontWeight = FontWeight.SemiBold, fontSize = 11.5.sp)
+    val peekTitle: TextStyle get() = TextStyle(color = INK, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 13.5.sp, lineHeight = 16.5.sp)
+    val nextLabel: TextStyle get() = TextStyle(color = MAUVE_DEEP, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 9.5.sp, letterSpacing = 0.06.em)
+    val nextTitle: TextStyle get() = TextStyle(color = INK, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 11.5.sp)
+    val onMauve: TextStyle get() = TextStyle(color = Color.White, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
 }
 
 /** The geometry for the box's current width, computed again only when the width changes. */

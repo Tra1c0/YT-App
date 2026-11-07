@@ -103,20 +103,20 @@ internal class WatchAction(@DrawableRes val icon: Int, val label: String, val on
 /** The gradient behind the shared screens of the glass designs; ends in the background color. */
 internal fun ytGlassScreenColors(palette: YtPalette): List<Color> =
     if (palette.signature == YtSignature.FROST) listOf(Color(0xFF6F8A80), Color(0xFF627B71), palette.background)
-    else listOf(Color(0xFFCFE9E2), Color(0xFFDDF2EE), palette.background)
+    else listOf(ytDayNight(Color(0xFFCFE9E2), Color(0xFF0E1F1F)), ytDayNight(Color(0xFFDDF2EE), Color(0xFF12292A)), palette.background)
 
 /** The drifting light behind the shared screens of the glass designs. */
 internal fun ytGlassLightColors(palette: YtPalette): List<Color> =
     if (palette.signature == YtSignature.FROST) listOf(Color(0x40FFFFFF), Color(0x38F08A3C), Color(0x33D9EBE1))
-    else listOf(Color(0x99FFFFFF), Color(0x5C8FD8CB), Color(0x66FFFFFF))
+    else listOf(ytDayNight(Color(0x99FFFFFF), Color(0x336FB5AA)), ytDayNight(Color(0x5C8FD8CB), Color(0x3D2E7D74)), ytDayNight(Color(0x66FFFFFF), Color(0x26CFEDE7)))
 
-private val ClayShadow = Color(0x80B07A66)
-private val ClayInk = Color(0xFF7A5560)
-private val ClayLabel = Color(0xFF8C6563)
-private val ClayMauve = Color(0xFF9D6A6C)
-private val ClayLight = Color(0xFFFFF3E9)
-private val ClayDeep = Color(0xFFF2D9C6)
-private val ClaySlab = Color(0xFFEBD7C8)
+private val ClayShadow: Color get() = ytDayNight(Color(0x80B07A66), Color(0x80000000))
+private val ClayInk: Color get() = ytDayNight(Color(0xFF7A5560), Color(0xFFE8C6C2))
+private val ClayLabel: Color get() = ytDayNight(Color(0xFF8C6563), Color(0xFFC9AEA2))
+private val ClayMauve: Color get() = ytDayNight(Color(0xFF9D6A6C), Color(0xFFD9A5A6))
+private val ClayLight: Color get() = ytDayNight(Color(0xFFFFF3E9), Color(0xFF4A3830))
+private val ClayDeep: Color get() = ytDayNight(Color(0xFFF2D9C6), Color(0xFF3A2C26))
+private val ClaySlab: Color get() = ytDayNight(Color(0xFFEBD7C8), Color(0xFF3F302A))
 private val PopInk = Color(0xFF3B2054)
 private val PopPinkStrong = Color(0xFFE0558F)
 private val PopLilac = Color(0xFFDFD6F7)
@@ -126,10 +126,10 @@ private val ShapesYellow = Color(0xFFF6D365)
 private val ShapesSalmon = Color(0xFFF28B82)
 private val ShapesInk = Color(0xFF12122A)
 private val FrostDark = Color(0xFF1F2A26)
-private val GlassShadow = Color(0x2E5C8C85)
-private val KieselBeige = Color(0xFFE2DCD5)
-private val KieselCard = Color(0xFFF7F4F1)
-private val KieselGrey = Color(0xFF7A7672)
+private val GlassShadow: Color get() = ytDayNight(Color(0x2E5C8C85), Color(0x66000000))
+private val KieselBeige: Color get() = ytDayNight(Color(0xFFE2DCD5), Color(0xFF4A4541))
+private val KieselCard: Color get() = ytDayNight(Color(0xFFF7F4F1), Color(0xFF2B2826))
+private val KieselGrey: Color get() = ytDayNight(Color(0xFF7A7672), Color(0xFFABA59F))
 
 /**
  * Places its content under tab [position] of [count] equal tabs, [fraction] of a tab wide and
@@ -170,7 +170,7 @@ internal fun WatchCreator(
                 .padding(start = 13.dp, end = 13.dp, top = 14.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(22.dp))
-                .background(KieselInk)
+                .background(KieselPanel)
                 .padding(12.dp)
         } else {
             Modifier.padding(start = 13.dp, end = 12.dp, top = 14.dp)
@@ -191,7 +191,7 @@ internal fun WatchCreator(
                 modifier = Modifier
                     .size(if (kiesel) 44.dp else 42.dp)
                     .clip(CircleShape)
-                    .background(if (kiesel) KieselCream else palette.surface),
+                    .background(if (kiesel) KieselPanelCard else palette.surface),
             )
             Spacer(Modifier.width(if (kiesel) 12.dp else 15.dp))
             Column {
@@ -322,7 +322,7 @@ private fun ClaySubscribe(palette: YtPalette, subscribed: Boolean, label: String
             .shadow(8.dp, RoundedCornerShape(50), ambientColor = ClayShadow, spotColor = ClayShadow)
             .clip(RoundedCornerShape(50))
             .drawBehind { drawRect(fill) }
-            .border(1.dp, Color(0x99FFFFFF), RoundedCornerShape(50))
+            .border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), RoundedCornerShape(50))
             .clickable(interactionSource = press, indication = LocalIndication.current, onClick = toggle)
             .height(38.dp)
             .padding(horizontal = 20.dp),
@@ -361,7 +361,7 @@ private fun GlassSubscribe(palette: YtPalette, subscribed: Boolean, label: Strin
     val backdrop = LocalWatchBackdrop.current
     val press = remember { MutableInteractionSource() }
     val swell by rememberSwell(press)
-    val tint by animateColorAsState(if (subscribed) palette.accent.copy(alpha = 0.45f) else Color(0xB3FFFFFF), ytStateSpec(), label = "glassTint")
+    val tint by animateColorAsState(if (subscribed) palette.accent.copy(alpha = if (ytNight) 0.22f else 0.45f) else ytDayNight(Color(0xB3FFFFFF), Color(0x4D6FB5AA)), ytStateSpec(), label = "glassTint")
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -450,7 +450,7 @@ private fun FrostSubscribe(subscribed: Boolean, label: String, toggle: () -> Uni
 /** Kiesel: a cream capsule on the black panel, lavender once subscribed. */
 @Composable
 private fun KieselSubscribe(subscribed: Boolean, label: String, toggle: () -> Unit) {
-    val fill by animateColorAsState(if (subscribed) KieselLavender else KieselCream, ytStateSpec(), label = "kieselFill")
+    val fill by animateColorAsState(if (subscribed) KieselLavender else KieselPanelCard, ytStateSpec(), label = "kieselFill")
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -459,8 +459,8 @@ private fun KieselSubscribe(subscribed: Boolean, label: String, toggle: () -> Un
             .drawBehind { drawRect(fill) }
             .padding(horizontal = 16.dp, vertical = 9.dp),
     ) {
-        SubscribedCheck(subscribed, KieselInk, size = 14)
-        Text(label, color = KieselInk, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 12.5.sp))
+        SubscribedCheck(subscribed, kieselInkOn(fill), size = 14)
+        Text(label, color = kieselInkOn(fill), style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 12.5.sp))
     }
 }
 
@@ -589,7 +589,7 @@ private fun ClayActions(palette: YtPalette, actions: List<WatchAction>, modifier
                         .shadow(8.dp, CircleShape, ambientColor = ClayShadow, spotColor = ClayShadow)
                         .clip(CircleShape)
                         .background(Brush.verticalGradient(listOf(ClayLight, ClayDeep)))
-                        .border(1.dp, Color(0x99FFFFFF), CircleShape)
+                        .border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), CircleShape)
                         .clickable(interactionSource = press, indication = LocalIndication.current) {
                             haptics.tick()
                             action.onClick()
@@ -656,7 +656,7 @@ private fun GlassActions(palette: YtPalette, actions: List<WatchAction>, modifie
             .fillMaxWidth()
             .height(56.dp)
             .then(
-                if (backdrop != null) Modifier.liquidGlass(backdrop, RoundedCornerShape(50), Color(0x80FFFFFF), GlassShadow, swell = { swell })
+                if (backdrop != null) Modifier.liquidGlass(backdrop, RoundedCornerShape(50), ytDayNight(Color(0x80FFFFFF), Color(0x33A8E0D6)), GlassShadow, swell = { swell })
                 else Modifier.ytGlass(RoundedCornerShape(50)),
             )
             .padding(horizontal = 6.dp),
@@ -849,11 +849,11 @@ private fun KieselActions(actions: List<WatchAction>, modifier: Modifier) {
                     .background(colors[i % colors.size])
                     .padding(horizontal = 14.dp, vertical = 10.dp),
             ) {
-                Icon(painterResource(action.icon), contentDescription = null, tint = KieselInk, modifier = Modifier.size(18.dp))
+                Icon(painterResource(action.icon), contentDescription = null, tint = kieselInkOn(colors[i % colors.size]), modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = action.label,
-                    color = KieselInk,
+                    color = kieselInkOn(colors[i % colors.size]),
                     style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Bold, fontSize = 12.5.sp),
                 )
             }
@@ -1005,7 +1005,7 @@ private fun ClayTabs(palette: YtPalette, labels: List<String>, selected: Int, pi
                 .shadow(3.dp, RoundedCornerShape(19.dp), ambientColor = ClayShadow, spotColor = ClayShadow)
                 .clip(RoundedCornerShape(19.dp))
                 .background(Brush.verticalGradient(listOf(ClayLight, ClayDeep)))
-                .border(1.dp, Color(0x99FFFFFF), RoundedCornerShape(19.dp)),
+                .border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), RoundedCornerShape(19.dp)),
         )
         TabLabels(labels, selected, pick, Modifier.fillMaxSize(), indication = false) { label, active ->
             val ink by animateColorAsState(if (active) ClayInk else ClayLabel, ytStateSpec(), label = "clayTabInk")
@@ -1080,8 +1080,8 @@ private fun GlassTabs(palette: YtPalette, labels: List<String>, selected: Int, o
                 look = LiquidSegmentsLook(
                     height = 42.dp,
                     gap = 4.dp,
-                    tile = Color(0x40FFFFFF),
-                    pill = Color(0xE6FFFFFF),
+                    tile = ytDayNight(Color(0x40FFFFFF), Color(0x2E6FB5AA)),
+                    pill = ytDayNight(Color(0xE6FFFFFF), Color(0xE61F3D3A)),
                     shadow = GlassShadow,
                     text = palette.text,
                     lensText = palette.text,
@@ -1108,7 +1108,7 @@ private fun GlassTabs(palette: YtPalette, labels: List<String>, selected: Int, o
             modifier = Modifier
                 .size(42.dp)
                 .then(
-                    if (backdrop != null) Modifier.liquidGlass(backdrop, CircleShape, Color(0x99FFFFFF), GlassShadow, swell = { swell })
+                    if (backdrop != null) Modifier.liquidGlass(backdrop, CircleShape, ytDayNight(Color(0x99FFFFFF), Color(0x336FB5AA)), GlassShadow, swell = { swell })
                     else Modifier.ytGlass(CircleShape),
                 )
                 .clickable(interactionSource = press, indication = LocalIndication.current) {
@@ -1132,8 +1132,8 @@ private fun PopTabs(palette: YtPalette, labels: List<String>, selected: Int, pic
     ) {
         labels.forEachIndexed { i, label ->
             val active = i == selected
-            val fill by animateColorAsState(if (active) palette.accent else PopLilac, ytStateSpec(), label = "popTabFill")
-            val ink by animateColorAsState(if (active) Color.White else palette.text, ytStateSpec(), label = "popTabInk")
+            val fill by animateColorAsState(if (active) palette.accent else ytDayNight(PopLilac, palette.raised), ytStateSpec(), label = "popTabFill")
+            val ink by animateColorAsState(if (active) palette.onAccent else palette.text, ytStateSpec(), label = "popTabInk")
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -1216,7 +1216,7 @@ private fun KieselTabs(labels: List<String>, selected: Int, pick: (Int) -> Unit,
             Modifier
                 .glideTo({ pos }, labels.size, 0.97f, h)
                 .clip(RoundedCornerShape(18.dp))
-                .background(KieselInk),
+                .background(KieselPanel),
         )
         TabLabels(labels, selected, pick, Modifier.fillMaxSize(), indication = false) { label, active ->
             val ink by animateColorAsState(if (active) KieselCream else KieselInk, ytStateSpec(), label = "kieselTabInk")
@@ -1401,7 +1401,7 @@ private fun ClayChapters(palette: YtPalette, imageLoader: ImageLoader, chapters:
                     .shadow(6.dp, shape, ambientColor = ClayShadow, spotColor = ClayShadow)
                     .clip(shape)
                     .background(Brush.verticalGradient(listOf(ClayLight, palette.surface)))
-                    .border(if (active) 2.dp else 1.dp, if (active) ClayMauve else Color(0x99FFFFFF), shape)
+                    .border(if (active) 2.dp else 1.dp, if (active) ClayMauve else ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), shape)
                     .clickable(interactionSource = press, indication = LocalIndication.current) { seek(chapter) }
                     .padding(6.dp),
             ) {
@@ -1514,7 +1514,7 @@ private fun GlassChapters(palette: YtPalette, imageLoader: ImageLoader, chapters
                         scaleY = grow
                     }
                     .then(
-                        if (backdrop != null) Modifier.liquidGlass(backdrop, shape, Color(0x80FFFFFF), GlassShadow, swell = { swell })
+                        if (backdrop != null) Modifier.liquidGlass(backdrop, shape, ytDayNight(Color(0x80FFFFFF), Color(0x33A8E0D6)), GlassShadow, swell = { swell })
                         else Modifier.ytGlass(shape),
                     )
                     .then(if (active) Modifier.border(2.dp, Color.White, shape) else Modifier)
@@ -1801,7 +1801,7 @@ private fun KieselChapters(imageLoader: ImageLoader, chapters: List<ChapterSegme
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                         Text(
                             time(chapter.start),
-                            color = KieselInk,
+                            color = KieselBlack,
                             style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Bold, fontSize = 10.5.sp),
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))

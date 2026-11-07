@@ -8,6 +8,7 @@ import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.view.WindowCompat
 import com.github.libretube.R
 import com.github.libretube.constants.PreferenceKeys
 import com.github.libretube.helpers.LocaleHelper
@@ -76,6 +77,24 @@ open class BaseActivity : AppCompatActivity() {
         // YT: switching day/night, AppCompat applies the base theme again on top of everything;
         // put the design back on top (this was why light designs showed the base colors)
         ThemeHelper.applyOverlays(this)
+        ytBuiltDark = com.github.libretube.helpers.YtDesignDark.active
+        ytSyncBarIcons()
+    }
+
+    /** YT: whether this activity was built with the dark palette of a light design. */
+    private var ytBuiltDark: Boolean? = null
+
+    /**
+     * YT: light designs pick dark or light system bar icons from their current mode; the
+     * edge-to-edge setup above may run before the night mode is in the configuration.
+     */
+    private fun ytSyncBarIcons() {
+        if (!com.github.libretube.helpers.YtDesign.current().light) return
+        val light = !com.github.libretube.helpers.YtDesignDark.active
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = light
+            isAppearanceLightNavigationBars = light
+        }
     }
 
     override fun onResume() {
@@ -110,6 +129,13 @@ open class BaseActivity : AppCompatActivity() {
     override fun onNightModeChanged(mode: Int) {
         super.onNightModeChanged(mode)
         ThemeHelper.applyOverlays(this)
+        // YT: a light design on "system" whose mode flipped: the Compose screens took their
+        // palette when they were built, so rebuild this activity with the other palette
+        val built = ytBuiltDark ?: return
+        if (built != com.github.libretube.helpers.YtDesignDark.active) {
+            ytBuiltDark = com.github.libretube.helpers.YtDesignDark.active
+            if (ytCanRecreateNow()) recreate() else ytSyncBarIcons()
+        }
     }
 
     override fun attachBaseContext(newBase: Context?) {
@@ -124,11 +150,14 @@ open class BaseActivity : AppCompatActivity() {
                 setLocale(locale)
             }
 
-            // YT: dark by default; the designs are dark only
-            // YT: each design fixes the theme mode, light or dark
+            // YT: dark designs fix the dark mode; light designs follow their own choice of
+            // light, dark or system (YtDesignDark)
             val ytDesign = com.github.libretube.helpers.YtDesign.current()
             val uiPref = if (ytDesign != com.github.libretube.helpers.YtDesign.STANDARD) {
-                if (ytDesign.light) "L" else "D"
+                com.github.libretube.helpers.YtDesignDark.themeMode(
+                    ytDesign.light,
+                    com.github.libretube.helpers.YtDesignDark.choice()
+                )
             } else {
                 PreferenceHelper.getString(PreferenceKeys.THEME_MODE, "D")
             }

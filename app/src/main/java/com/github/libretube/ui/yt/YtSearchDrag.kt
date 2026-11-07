@@ -358,8 +358,8 @@ private fun lensLook(palette: YtPalette): YtLensLook {
     return when (palette.signature) {
         YtSignature.GLASS -> YtLensLook(
             CircleShape,
-            Brush.radialGradient(listOf(Color(0x33FFFFFF), Color(0x8CFFFFFF))),
-            Color(0xE6FFFFFF), 1.5.dp, palette.text, false,
+            Brush.radialGradient(listOf(ytDayNight(Color(0x33FFFFFF), Color(0x1FCFEDE7)), ytDayNight(Color(0x8CFFFFFF), Color(0x4D2E5452)))),
+            ytDayNight(Color(0xE6FFFFFF), Color(0x66CFEDE7)), 1.5.dp, palette.text, false,
         )
         YtSignature.FROST -> YtLensLook(
             CircleShape,
@@ -367,12 +367,12 @@ private fun lensLook(palette: YtPalette): YtLensLook {
             Color(0x99FFFFFF), 1.dp, palette.text, false,
         )
         YtSignature.SHAPES -> YtLensLook(CookieShape(9), solid(palette.lime), null, 0.dp, palette.ink, true)
-        YtSignature.EDITORIAL -> YtLensLook(RectangleShape, solid(Color.Black), null, 0.dp, Color.White, false)
-        YtSignature.POP -> YtLensLook(BlobShape(0.6f, 0.5f, 0.56f, 0.64f), solid(Color(0xFFDCD6F5)), null, 0.dp, palette.text, true)
+        YtSignature.EDITORIAL -> YtLensLook(RectangleShape, solid(ytDayNight(Color.Black, palette.text)), null, 0.dp, ytDayNight(Color.White, palette.background), false)
+        YtSignature.POP -> YtLensLook(BlobShape(0.6f, 0.5f, 0.56f, 0.64f), solid(ytDayNight(Color(0xFFDCD6F5), Color(0xFF382548))), null, 0.dp, palette.text, true)
         YtSignature.CLAY -> YtLensLook(
             CircleShape,
-            Brush.verticalGradient(listOf(Color(0xFFFFF3E9), Color(0xFFF4D8C4))),
-            Color(0x99FFFFFF), 1.dp, palette.text, true,
+            Brush.verticalGradient(listOf(ytDayNight(Color(0xFFFFF3E9), Color(0xFF4A3830)), ytDayNight(Color(0xFFF4D8C4), Color(0xFF3A2C26)))),
+            ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), 1.dp, palette.text, true,
         )
         YtSignature.MOVO -> YtLensLook(CircleShape, solid(Color(0xFF1E1E22)), palette.lime, 2.dp, palette.text, true)
         YtSignature.KIESEL -> YtLensLook(CircleShape, solid(palette.lavender), null, 0.dp, palette.ink, true)

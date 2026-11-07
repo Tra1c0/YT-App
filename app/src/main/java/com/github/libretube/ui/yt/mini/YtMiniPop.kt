@@ -11,6 +11,7 @@ import com.github.libretube.helpers.YtDesign
 import com.github.libretube.ui.yt.YtFonts
 import com.github.libretube.ui.yt.YtHapticTexture
 import com.github.libretube.ui.yt.YtPalette
+import com.github.libretube.ui.yt.ytDayNight
 
 /**
  * YT: the mini player of Pop, "Sticker": a lavender pill pressed onto the nav band, the picture
@@ -48,10 +49,10 @@ object YtMiniPop : YtMiniLookDesign(YtDesign.POP) {
         spec = spec,
         frame = YtMiniFrame.STICKER, frameColor = palette.pink,
         fill = PopColors.band,
-        title = TextStyle(color = PopColors.plum, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
-        subtitle = TextStyle(color = PopColors.plum.copy(alpha = 0.65f), fontFamily = YtFonts.nunito, fontWeight = FontWeight.Bold, fontSize = 11.5.sp),
-        icon = PopColors.plum, playIcon = Color.White, mark = YtMiniMark.BLOB, markColor = palette.accent, markSize = YtPopLayout.BLOB,
-        bar = YtMiniBar.UNDERLINE, barColor = palette.pink, track = PopColors.plum.copy(alpha = 0.15f), barWidth = 4f,
+        title = TextStyle(color = PopColors.onBand, fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
+        subtitle = TextStyle(color = PopColors.onBand.copy(alpha = 0.65f), fontFamily = YtFonts.nunito, fontWeight = FontWeight.Bold, fontSize = 11.5.sp),
+        icon = PopColors.onBand, playIcon = palette.onAccent, mark = YtMiniMark.BLOB, markColor = palette.accent, markSize = YtPopLayout.BLOB,
+        bar = YtMiniBar.UNDERLINE, barColor = palette.pink, track = PopColors.onBand.copy(alpha = 0.15f), barWidth = 4f,
     )
 
     override fun peekGeometry(boxWidth: Float, density: Float, hasNext: Boolean): YtMiniPeekGeometry =
@@ -91,9 +92,12 @@ object YtMiniPop : YtMiniLookDesign(YtDesign.POP) {
 
 /** YT: the colours of the Pop player beside the palette's (as Pop's home and nav draw them). */
 internal object PopColors {
-    /** The lavender of the nav band, the pill's body. */
-    val band = Color(0xFFD9D1F6)
+    /** The lavender of the nav band, the pill's body (deep plum at night). */
+    val band: Color get() = ytDayNight(Color(0xFFD9D1F6), Color(0xFF382548))
     val plum = Color(0xFF3B2054)
+
+    /** The words and icons on the band: plum, light lilac at night. */
+    val onBand: Color get() = ytDayNight(plum, Color(0xFFF5ECFF))
 
     /** The butter yellow of the feature card, the next video's sticker. */
     val yellow = Color(0xFFFDE682)

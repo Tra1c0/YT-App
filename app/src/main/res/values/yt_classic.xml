@@ -3,6 +3,8 @@
      each design. The design overlays in yt_designs.xml point at these styles; the base theme in
      themes.xml carries the defaults for the standard design. See docs/DESIGNS.md. -->
 <resources>
+    <!-- the nearly opaque Glas sheet (values-night: dark teal glass) -->
+    <color name="yt_glass_sheet">#F7F2FAF8</color>
 
     <!-- YouTube -->
     <style name="ShapeAppearance.YT.YouTube.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
@@ -508,7 +510,7 @@
     <style name="Widget.YT.Glass.Sheet" parent="Widget.Material3.BottomSheet">
         <item name="shapeAppearance">@style/ShapeAppearance.YT.Glass.SheetTop</item>
         <!-- nearly opaque: at 90 % the watch page's labels showed through the comment rows -->
-        <item name="backgroundTint">#F7F2FAF8</item>
+        <item name="backgroundTint">@color/yt_glass_sheet</item>
     </style>
     <style name="ThemeOverlay.YT.Glass.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/Widget.YT.Glass.Sheet</item>

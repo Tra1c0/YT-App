@@ -106,6 +106,8 @@ import com.github.libretube.ui.yt.YtEaseOut
 import com.github.libretube.ui.yt.YtFonts
 import com.github.libretube.ui.yt.YtPalette
 import com.github.libretube.ui.yt.rememberYtHaptics
+import com.github.libretube.ui.yt.ytDayNight
+import com.github.libretube.ui.yt.ytNight
 import com.github.libretube.ui.yt.ytTestRoot
 import com.github.libretube.ui.yt.search.YtSearchRules.lerp
 import com.github.libretube.ui.yt.search.YtSearchRules.phase
@@ -205,7 +207,7 @@ private class SearchActions(
 internal fun YtSearchLayer(session: YtSearchSession) {
     val palette = session.palette
     val kind = remember(palette) { YtSearchKind.valueOf(palette.signature.name) }
-    val inks = remember(kind) { YtSearchPalette.inks(kind) }
+    val inks = remember(kind) { YtSearchPalette.inks(kind, ytNight) }
     val look = remember(kind, palette) { lookOf(kind, palette) }
     val motion = LocalYtMotion.current
     val haptics = rememberYtHaptics()
@@ -675,6 +677,10 @@ private fun Modifier.fieldMotion(kind: YtSearchKind, progress: () -> Float, orig
         }
     }
 
+/** The lit top and the shaded foot of Clay's dough (darker dough at night). */
+private val ClayDoughTop: Color get() = ytDayNight(Color(0xFFFFF6EE), Color(0xFF574239))
+private val ClayDoughFoot: Color get() = ytDayNight(Color(0xFFF2D7C4), Color(0xFF3A2C26))
+
 /** The field's own surface, drawn under its text. */
 private fun Modifier.fieldSurface(kind: YtSearchKind, inks: YtSearchInks, progress: () -> Float, tail: Dp): Modifier = drawBehind {
     val t = progress()
@@ -700,14 +706,16 @@ private fun Modifier.fieldSurface(kind: YtSearchKind, inks: YtSearchInks, progre
         }
         YtSearchKind.CLAY -> {
             val r = CornerRadius(28.dp.toPx())
-            drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFFFF6EE), fill, Color(0xFFF2D7C4))), cornerRadius = r)
+            drawRoundRect(Brush.verticalGradient(listOf(ClayDoughTop, fill, ClayDoughFoot)), cornerRadius = r)
             // the light from above on the dough's rim
-            drawRoundRect(Color.White.copy(alpha = 0.7f), cornerRadius = r, style = Stroke(1.5.dp.toPx()))
+            drawRoundRect(Color.White.copy(alpha = if (ytNight) 0.12f else 0.7f), cornerRadius = r, style = Stroke(1.5.dp.toPx()))
         }
         YtSearchKind.GLASS -> {
             val r = CornerRadius(size.height / 2f)
-            drawRoundRect(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.78f), fill)), cornerRadius = r)
-            drawRoundRect(Color.White.copy(alpha = 0.95f), cornerRadius = r, style = Stroke(1.5.dp.toPx()))
+            // at night the glass is dark teal: its light and rim are fainter mint
+            val light = ytDayNight(Color.White.copy(alpha = 0.78f), Color(0xFFCFEDE7).copy(alpha = 0.18f))
+            drawRoundRect(Brush.verticalGradient(listOf(light, fill)), cornerRadius = r)
+            drawRoundRect(ytDayNight(Color.White.copy(alpha = 0.95f), Color(0xFFCFEDE7).copy(alpha = 0.35f)), cornerRadius = r, style = Stroke(1.5.dp.toPx()))
             // the bright line along the top, as light caught in the glass
             val inset = size.height / 2f
             drawLine(
@@ -715,7 +723,7 @@ private fun Modifier.fieldSurface(kind: YtSearchKind, inks: YtSearchInks, progre
                 Offset(inset, 2.5.dp.toPx()),
                 Offset(size.width - inset, 2.5.dp.toPx()),
                 strokeWidth = 1.dp.toPx(),
-                alpha = 0.9f,
+                alpha = if (ytNight) 0.4f else 0.9f,
             )
         }
         YtSearchKind.POP -> drawBubble(fill, tail.toPx())
@@ -1017,17 +1025,17 @@ private fun Chip(kind: YtSearchKind, look: SearchLook, inks: YtSearchInks, item:
         else -> RoundedCornerShape(50)
     }
     val fillInt = when (kind) {
-        YtSearchKind.KIESEL, YtSearchKind.POP, YtSearchKind.SHAPES -> YtSearchPalette.tile(kind, index)
+        YtSearchKind.KIESEL, YtSearchKind.POP, YtSearchKind.SHAPES -> YtSearchPalette.tile(kind, index, ytNight)
         else -> inks.chip
     }
     val textColor = Color(if (fillInt == inks.chip) inks.chipText else YtSearchPalette.onFill(fillInt))
     val surface: Modifier = when (kind) {
         YtSearchKind.GLASS -> Modifier
             .background(Color(fillInt), shape)
-            .border(1.dp, Color.White.copy(alpha = 0.9f), shape)
+            .border(1.dp, Color.White.copy(alpha = if (ytNight) 0.3f else 0.9f), shape)
         YtSearchKind.CLAY -> Modifier
             .shadow(4.dp, shape, clip = false, ambientColor = Color(0xFF9D6A6C), spotColor = Color(0xFF9D6A6C))
-            .background(Brush.verticalGradient(listOf(Color(0xFFFFF6EE), Color(fillInt), Color(0xFFF2D7C4))), shape)
+            .background(Brush.verticalGradient(listOf(ClayDoughTop, Color(fillInt), ClayDoughFoot)), shape)
         YtSearchKind.POP -> Modifier.shadow(3.dp, shape, clip = false).background(Color(fillInt), shape)
         else -> Modifier.background(Color(fillInt), shape)
     }
@@ -1058,7 +1066,7 @@ private fun Chip(kind: YtSearchKind, look: SearchLook, inks: YtSearchInks, item:
 /** Movo: a coloured tile per line, two to a row. */
 @Composable
 private fun Tile(kind: YtSearchKind, look: SearchLook, inks: YtSearchInks, item: YtSearchItem, index: Int, progress: () -> Float, actions: SearchActions, modifier: Modifier) {
-    val fillInt = YtSearchPalette.tile(kind, index)
+    val fillInt = YtSearchPalette.tile(kind, index, ytNight)
     val textColor = Color(YtSearchPalette.onFill(fillInt))
     val shape = RoundedCornerShape(16.dp)
     Column(

@@ -23,6 +23,16 @@
             app:title="@string/app_theme"
             app:useSimpleSummaryProvider="true" />
 
+        <!-- YT: light or dark for the light designs (YtDesignDark) -->
+        <ListPreference
+            android:icon="@drawable/ic_theme"
+            app:defaultValue="L"
+            app:entries="@array/yt_design_dark"
+            app:entryValues="@array/yt_design_dark_values"
+            app:key="yt_design_dark"
+            app:title="@string/yt_design_dark"
+            app:useSimpleSummaryProvider="true" />
+
         <SwitchPreferenceCompat
             android:icon="@drawable/ic_invert_colors"
             android:summary="@string/pure_theme_summary"

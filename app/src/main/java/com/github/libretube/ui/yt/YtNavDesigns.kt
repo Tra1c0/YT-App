@@ -145,9 +145,10 @@ private class ClayTile(val x: Dp, val y: Dp, val w: Dp, val h: Dp, val shape: Sh
 
 @Composable
 fun ClayNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
-    val cream = Color(0xFFF3E1D2)
-    val blue = Color(0xFFB7CBE4)
-    val mauve = Color(0xFFA8696F)
+    val cream = ytDayNight(Color(0xFFF3E1D2), Color(0xFF4A3830))
+    val blue = ytDayNight(Color(0xFFB7CBE4), Color(0xFF3C4A5C))
+    val mauve = ytDayNight(Color(0xFFA8696F), Color(0xFFD9A5A6))
+    val onMauve = ytDayNight(Color.White, Color(0xFF2D1A1D))
     // measured in the reference: grid 357 x 215 dp from x 18, the lower blobs lie on the upper ones
     val tiles = remember {
         listOf(
@@ -167,7 +168,7 @@ fun ClayNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSel
             val tile = tiles[index]
             val active = state.selected == item.id
             val color by animateColorAsState(if (active) mauve else tile.base, ytStateSpec(), label = "clayTile")
-            val content by animateColorAsState(if (active) Color.White else Color(0xFF5C5260), ytStateSpec(), label = "clayContent")
+            val content by animateColorAsState(if (active) onMauve else ytDayNight(Color(0xFF5C5260), Color(0xFFEEDFD3)), ytStateSpec(), label = "clayContent")
             val interaction = remember { MutableInteractionSource() }
             Box(
                 contentAlignment = Alignment.Center,
@@ -192,10 +193,10 @@ fun ClayNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSel
                     // a poked blob of clay: squashes under the finger, wobbles when it becomes active
                     .ytJelly(active, amount = 0.08f)
                     .ytSquish(interaction)
-                    .shadow(10.dp, tile.shape, clip = false, ambientColor = Color(0x66B07A66), spotColor = Color(0x80B07A66))
+                    .shadow(10.dp, tile.shape, clip = false, ambientColor = ytDayNight(Color(0x66B07A66), Color(0x66000000)), spotColor = ytDayNight(Color(0x80B07A66), Color(0x80000000)))
                     .clip(tile.shape)
                     .background(Brush.verticalGradient(listOf(lighten(color, 0.16f), color, darken(color, 0.06f))))
-                    .border(1.5.dp, Color.White.copy(alpha = 0.35f), tile.shape)
+                    .border(1.5.dp, Color.White.copy(alpha = if (ytNight) 0.1f else 0.35f), tile.shape)
                     .clickable(interactionSource = interaction, indication = null) { onSelect(item.id) },
             ) {
                 Column(
@@ -307,10 +308,10 @@ fun GlassNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
                 .ytDockedBar(
                     radius = 30.dp,
                     stacks = true,
-                    fill = Brush.verticalGradient(listOf(Color(0x8CFFFFFF), Color(0x52FFFFFF))),
-                    border = Color(0xCCFFFFFF),
+                    fill = Brush.verticalGradient(listOf(ytDayNight(Color(0x8CFFFFFF), Color(0xD91F3A38)), ytDayNight(Color(0x52FFFFFF), Color(0xB3183230)))),
+                    border = ytDayNight(Color(0xCCFFFFFF), Color(0x40CFEDE7)),
                     shadow = 8.dp,
-                    shadowColor = Color(0x405C8C85),
+                    shadowColor = ytDayNight(Color(0x405C8C85), Color(0x66000000)),
                 )
                 .padding(horizontal = 6.dp),
         ) {
@@ -323,10 +324,10 @@ fun GlassNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSe
                     modifier = Modifier
                         .width(width)
                         .height(49.dp)
-                        .then(if (active) Modifier.shadow(6.dp, pill, clip = false, ambientColor = Color(0x335C8C85), spotColor = Color(0x335C8C85)) else Modifier)
+                        .then(if (active) Modifier.shadow(6.dp, pill, clip = false, ambientColor = ytDayNight(Color(0x335C8C85), Color(0x66000000)), spotColor = ytDayNight(Color(0x335C8C85), Color(0x66000000))) else Modifier)
                         .clip(pill)
-                        .background(if (active) Color(0xF2FFFFFF) else Color(0x40FFFFFF))
-                        .border(1.dp, Color(0xB3FFFFFF), pill)
+                        .background(if (active) ytDayNight(Color(0xF2FFFFFF), Color(0xF22E5452)) else ytDayNight(Color(0x40FFFFFF), Color(0x1FCFEDE7)))
+                        .border(1.dp, ytDayNight(Color(0xB3FFFFFF), Color(0x33CFEDE7)), pill)
                         .noRippleClick { onSelect(item.id) },
                 ) {
                     if (active) {
@@ -422,7 +423,7 @@ fun PopNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSele
 
         // the band: one bubble per tab on a rounded bar, so it bulges around each tab and has
         // round ends, as in the reference; the bubble under the blob swells as it passes
-        val band = Color(0xFFD9D1F6)
+        val band = ytDayNight(Color(0xFFD9D1F6), Color(0xFF382548))
         Box(
             Modifier
                 .align(Alignment.BottomCenter)
@@ -478,7 +479,7 @@ fun PopNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSele
                         },
                 ) {
                     PopTab(palette, item, state, active = false, palette.text, Modifier.graphicsLayer { alpha = 1f - activeness(i) })
-                    PopTab(palette, item, state, active = true, Color.White, Modifier.graphicsLayer { alpha = activeness(i) })
+                    PopTab(palette, item, state, active = true, palette.onAccent, Modifier.graphicsLayer { alpha = activeness(i) })
                 }
             }
         }
@@ -659,7 +660,8 @@ fun KieselNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
             .height(64.dp)
             .shadow(14.dp, RoundedCornerShape(26.dp), clip = false, ambientColor = Color(0x59000000), spotColor = Color(0x59000000))
             .clip(RoundedCornerShape(26.dp))
-            .background(Color(0xFF0E0E0E)),
+            // at night the black bar turns into the lighter warm surface of the panels
+            .background(KieselPanel),
     ) {
         val itemWidth = maxWidth / items.size
         Box(
@@ -698,7 +700,7 @@ fun KieselNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
                                 scaleY = 0.5f + 0.5f * r
                             }
                             .clip(CircleShape)
-                            .background(Color(0xFF3A3A3A)),
+                            .background(ytDayNight(Color(0xFF3A3A3A), Color(0xFF55504B))),
                     )
                     Box(Modifier.padding(bottom = 6.dp)) {
                         NavIcon(item, active, if (active) cream else cream.copy(alpha = 0.55f), 25.dp)

@@ -13,6 +13,7 @@ import androidx.constraintlayout.motion.widget.MotionScene
 import androidx.constraintlayout.widget.ConstraintSet
 import com.github.libretube.R
 import com.github.libretube.helpers.YtDesign
+import com.github.libretube.ui.yt.KieselPanel
 import com.github.libretube.ui.yt.YtDock
 import com.github.libretube.ui.yt.YtFonts
 import com.github.libretube.ui.yt.YtHapticTexture
@@ -50,7 +51,7 @@ object YtMiniKiesel : YtMiniLookDesign(YtDesign.KIESEL) {
 
     override fun look(palette: YtPalette): YtMiniLook = YtMiniLook(
         spec = spec,
-        fill = Color(0xFF0E0E0E), shadow = Color(0x59000000),
+        fill = KieselPanel, shadow = Color(0x59000000),
         title = TextStyle(color = Color(0xFFEDE8E3), fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Bold, fontSize = 13.5.sp),
         subtitle = TextStyle(color = Color(0x8CEDE8E3), fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Medium, fontSize = 11.sp),
         icon = Color(0xFFEDE8E3), playIcon = Color(0xFF0E0E0E), mark = YtMiniMark.DISC, markColor = palette.accent,

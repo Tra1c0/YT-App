@@ -6,8 +6,10 @@ import androidx.annotation.ColorInt
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 import com.github.libretube.helpers.YtDesign
+import com.github.libretube.ui.yt.KieselPanel
 import com.github.libretube.ui.yt.YtSignature
 import com.github.libretube.ui.yt.palette
+import com.github.libretube.ui.yt.ytNight
 
 /** YT: the outline of a hold-and-drag tile, one per design. */
 enum class YtHoldTileShape {
@@ -104,7 +106,8 @@ class YtHoldTileStyle private constructor(
                 shadowDx: Float = 0f,
                 shadowDy: Float = 0f,
                 videoCorner: Float = 12f,
-                dark: Int = palette?.ink?.toArgb() ?: 0xFF101012.toInt(),
+                // at night a light design's ink is light: the dark choice stays dark
+                dark: Int = palette?.ink?.toArgb()?.takeIf { !ytNight } ?: 0xFF101012.toInt(),
                 light: Int = 0xFFFFFFFF.toInt(),
             ) = YtHoldTileStyle(
                 shape, opaque(backdrop), IntArray(4) { opaque(fills[it % fills.size]) }, stroke, strokeDp, cornerDp,
@@ -146,21 +149,21 @@ class YtHoldTileStyle private constructor(
                 )
 
                 YtSignature.CLAY -> style(
-                    YtHoldTileShape.DOUGH, bg, intArrayOf(palette.raised.toArgb()), stroke = 0x99FFFFFF.toInt(),
-                    strokeDp = 1.5f, cornerDp = 24f, shadow = ColorUtils.setAlphaComponent(ink, 0x38),
+                    YtHoldTileShape.DOUGH, bg, intArrayOf(palette.raised.toArgb()), stroke = if (ytNight) 0x26FFF0E4 else 0x99FFFFFF.toInt(),
+                    strokeDp = 1.5f, cornerDp = 24f, shadow = ColorUtils.setAlphaComponent(if (ytNight) 0xFF000000.toInt() else ink, 0x38),
                     shadowDy = 5f, videoCorner = 22f,
                 )
 
                 // paper boxes; armed the box is printed black
                 YtSignature.EDITORIAL -> style(
-                    YtHoldTileShape.PRINT, bg, intArrayOf(0xFFFFFFFF.toInt()), armed = ink, stroke = ink,
+                    YtHoldTileShape.PRINT, bg, intArrayOf(if (ytNight) raised else 0xFFFFFFFF.toInt()), armed = ink, stroke = ink,
                     strokeDp = 1.5f, cornerDp = 0f, shadow = ink, shadowDx = 3f, shadowDy = 3f, videoCorner = 0f,
                 )
 
                 YtSignature.GLASS -> style(
-                    YtHoldTileShape.GLASS, bg, intArrayOf(ColorUtils.blendARGB(bg, 0xFFFFFFFF.toInt(), 0.72f)),
-                    armed = paletteAccent, stroke = 0xFFFFFFFF.toInt(), strokeDp = 1.2f, cornerDp = -1f,
-                    shadow = ColorUtils.setAlphaComponent(ink, 0x1F), shadowDy = 4f, videoCorner = 20f,
+                    YtHoldTileShape.GLASS, bg, intArrayOf(ColorUtils.blendARGB(bg, 0xFFFFFFFF.toInt(), if (ytNight) 0.12f else 0.72f)),
+                    armed = paletteAccent, stroke = if (ytNight) 0x66CFEDE7 else 0xFFFFFFFF.toInt(), strokeDp = 1.2f, cornerDp = -1f,
+                    shadow = ColorUtils.setAlphaComponent(if (ytNight) 0xFF000000.toInt() else ink, 0x1F), shadowDy = 4f, videoCorner = 20f,
                 )
 
                 YtSignature.POP -> style(
@@ -182,8 +185,9 @@ class YtHoldTileStyle private constructor(
                 )
 
                 YtSignature.KIESEL -> style(
-                    YtHoldTileShape.CAPSULE, bg, intArrayOf(ink), armed = paletteAccent, cornerDp = -1f,
-                    videoCorner = 28f, light = surface,
+                    // at night the black capsules turn into the lighter panels, with light type
+                    YtHoldTileShape.CAPSULE, bg, intArrayOf(if (ytNight) KieselPanel.toArgb() else ink), armed = paletteAccent, cornerDp = -1f,
+                    videoCorner = 28f, light = if (ytNight) text else surface,
                 )
 
             }

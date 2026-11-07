@@ -28,6 +28,7 @@ import com.github.libretube.ui.yt.YtFonts
 import com.github.libretube.ui.yt.YtHapticTexture
 import com.github.libretube.ui.yt.YtPalette
 import com.github.libretube.ui.yt.glassTint
+import com.github.libretube.ui.yt.ytDayNight
 import com.github.libretube.ui.yt.ytLightAngle
 import com.github.libretube.ui.yt.LocalYtTilt
 import com.kyant.backdrop.drawBackdrop
@@ -53,7 +54,7 @@ object YtGlassSlab {
     var navDraws by mutableStateOf(false)
 
     /** The glass of the bar of Glas (LiquidNav), which the player's fallback slab repeats. */
-    val tint = Color(0x61FFFFFF)
+    val tint: Color get() = ytDayNight(Color(0x61FFFFFF), Color(0x99183230))
     val handle = Color(0x59000000)
 }
 
@@ -89,7 +90,7 @@ object YtMiniGlass : YtMiniLookDesign(YtDesign.GLASS) {
     override fun look(palette: YtPalette): YtMiniLook = YtMiniLook(
         spec = spec,
         frame = YtMiniFrame.NONE,
-        fill = Color(0xE6FFFFFF), border = Color(0xCCFFFFFF), shadow = Color(0x405C8C85), glassTint = YtGlassSlab.tint,
+        fill = ytDayNight(Color(0xE6FFFFFF), Color(0xE61F3A38)), border = ytDayNight(Color(0xCCFFFFFF), Color(0x40CFEDE7)), shadow = ytDayNight(Color(0x405C8C85), Color(0x66000000)), glassTint = YtGlassSlab.tint,
         title = TextStyle(color = Color.White, fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Medium, fontSize = 11.sp),
         subtitle = TextStyle(color = Color.White.copy(alpha = 0.8f), fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Normal, fontSize = 12.sp),
         icon = palette.text, mark = YtMiniMark.NONE,

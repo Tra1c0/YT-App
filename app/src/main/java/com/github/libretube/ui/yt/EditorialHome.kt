@@ -207,7 +207,7 @@ private fun EditorialMainTabs(
                 text = stringResource(R.string.yt_feed_open_editorial).uppercase(),
                 style = TextStyle(fontFamily = YtFonts.plexMono, fontSize = 11.sp, letterSpacing = 1.sp, textDecoration = TextDecoration.Underline),
                 color = palette.text,
-                active = palette.accent,
+                active = palette.accentText,
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(34.dp)) {

@@ -57,10 +57,10 @@ fun ytCardShape(palette: YtPalette, radius: Int = 16): Shape = when (palette.sur
 /** Fills a pill or card the way the design does. */
 fun Modifier.ytSurface(palette: YtPalette, shape: Shape): Modifier = when (palette.surfaceStyle) {
     YtSurfaceStyle.CLAY -> this
-        .shadow(6.dp, shape, clip = false, ambientColor = Color(0x66B07A66), spotColor = Color(0x80B07A66))
+        .shadow(6.dp, shape, clip = false, ambientColor = ytDayNight(Color(0x66B07A66), Color(0x66000000)), spotColor = ytDayNight(Color(0x80B07A66), Color(0x80000000)))
         .clip(shape)
-        .background(Brush.verticalGradient(listOf(Color(0xFFFBEDE2), palette.surface)))
-        .border(1.dp, Color(0x80FFFFFF), shape)
+        .background(Brush.verticalGradient(listOf(ytDayNight(Color(0xFFFBEDE2), Color(0xFF46352E)), palette.surface)))
+        .border(1.dp, ytDayNight(Color(0x80FFFFFF), Color(0x1FFFF0E4)), shape)
     YtSurfaceStyle.GLASS -> this.ytGlass(shape)
     YtSurfaceStyle.EDITORIAL -> this
         .clip(shape)

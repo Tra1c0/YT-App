@@ -501,9 +501,9 @@ private fun ghostShape(palette: YtPalette): Shape = when (palette.signature) {
 
 /** The rim of the ghost per design, or null. */
 private fun ghostRim(palette: YtPalette): Pair<Dp, Color>? = when (palette.signature) {
-    YtSignature.EDITORIAL -> 1.5.dp to Color.Black
+    YtSignature.EDITORIAL -> 1.5.dp to ytDayNight(Color.Black, palette.text)
     YtSignature.MOVO -> 2.dp to palette.lime
-    YtSignature.GLASS -> 1.5.dp to Color(0xE6FFFFFF)
+    YtSignature.GLASS -> 1.5.dp to ytDayNight(Color(0xE6FFFFFF), Color(0x80CFEDE7))
     YtSignature.FROST -> 1.dp to Color(0x99FFFFFF)
     YtSignature.AFTER -> 1.dp to palette.accent
     YtSignature.POP, YtSignature.CLAY -> 2.dp to Color.White

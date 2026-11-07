@@ -296,20 +296,20 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
     val activeIcon = if (kind == HeaderButton.PROFILE) R.drawable.ic_yt_nav_person_fill else icon
     val look = when (design) {
         YtDesign.CLAY -> if (kind == HeaderButton.SEARCH) {
-            Look(48.dp, CircleShape, Brush.verticalGradient(listOf(Color(0xFFFFF3E9), Color(0xFFF4D8C4))),
-                Color(0x99FFFFFF), 1.dp, 6.dp, 24.dp, palette.text)
+            Look(48.dp, CircleShape, Brush.verticalGradient(listOf(ytDayNight(Color(0xFFFFF3E9), Color(0xFF4A3830)), ytDayNight(Color(0xFFF4D8C4), Color(0xFF3A2C26)))),
+                ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), 1.dp, 6.dp, 24.dp, palette.text)
         } else {
-            Look(48.dp, CircleShape, Brush.verticalGradient(listOf(Color(0xFFCADBF0), Color(0xFFA9BFDD))),
-                Color(0xFFF7EDE4), 3.dp, 6.dp, 26.dp, palette.text, filled = true)
+            Look(48.dp, CircleShape, Brush.verticalGradient(listOf(ytDayNight(Color(0xFFCADBF0), Color(0xFF46566A)), ytDayNight(Color(0xFFA9BFDD), Color(0xFF3C4A5C)))),
+                ytDayNight(Color(0xFFF7EDE4), Color(0xFF46352E)), 3.dp, 6.dp, 26.dp, palette.text, filled = true)
         }
         YtDesign.EDITORIAL -> Look(27.dp, RectangleShape, null, palette.text, 1.3.dp, 0.dp, 16.dp, palette.text)
-        YtDesign.GLASS -> Look(38.dp, CircleShape, Brush.verticalGradient(listOf(Color(0x99FFFFFF), Color(0x4DFFFFFF))),
-            Color(0xCCFFFFFF), 1.dp, 4.dp, 20.dp, palette.text)
+        YtDesign.GLASS -> Look(38.dp, CircleShape, Brush.verticalGradient(listOf(ytDayNight(Color(0x99FFFFFF), Color(0x336FB5AA)), ytDayNight(Color(0x4DFFFFFF), Color(0x296FB5AA)))),
+            ytDayNight(Color(0xCCFFFFFF), Color(0x40CFEDE7)), 1.dp, 4.dp, 20.dp, palette.text)
         YtDesign.POP -> if (kind == HeaderButton.SEARCH) {
-            Look(38.dp, CircleShape, Brush.linearGradient(listOf(Color(0xFFDCD6F5), Color(0xFFDCD6F5))),
+            Look(38.dp, CircleShape, Brush.linearGradient(listOf(ytDayNight(Color(0xFFDCD6F5), Color(0xFF382548)), ytDayNight(Color(0xFFDCD6F5), Color(0xFF382548)))),
                 null, 0.dp, 0.dp, 20.dp, palette.text)
         } else {
-            Look(38.dp, CircleShape, Brush.linearGradient(listOf(Color(0xFFC9B3F4), Color(0xFFC9B3F4))),
+            Look(38.dp, CircleShape, Brush.linearGradient(listOf(ytDayNight(Color(0xFFC9B3F4), Color(0xFF4A2E66)), ytDayNight(Color(0xFFC9B3F4), Color(0xFF4A2E66)))),
                 null, 0.dp, 0.dp, 24.dp, palette.text, filled = true)
         }
         YtDesign.SHAPES -> if (kind == HeaderButton.SEARCH) {

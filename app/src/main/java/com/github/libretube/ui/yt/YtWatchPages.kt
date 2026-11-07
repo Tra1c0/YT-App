@@ -438,7 +438,7 @@ private fun Modifier.glassPane(shape: Shape, frost: Boolean): Modifier {
     return if (frost) {
         this.frostGlass(backdrop, shape)
     } else if (backdrop != null) {
-        this.liquidGlass(backdrop, shape, Color(0x80FFFFFF), Color(0x2E5C8C85))
+        this.liquidGlass(backdrop, shape, ytDayNight(Color(0x80FFFFFF), Color(0x33A8E0D6)), ytDayNight(Color(0x2E5C8C85), Color(0x66000000)))
     } else {
         this.ytGlass(shape)
     }
@@ -594,9 +594,9 @@ private fun AfterPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasi
 // ---------------------------------------------------------------------------------------------
 // Clay: puffy slabs and a grid of clay tiles
 
-private val ClayText = Color(0xFF5C5260)
-private val ClayDim = Color(0xFF8C7880)
-private val ClayTileColors = listOf(Color(0xFFF3E1D2), Color(0xFFB7CBE4), Color(0xFFE9C9C1), Color(0xFFD9E3C9), Color(0xFFF3E1D2), Color(0xFFB7CBE4))
+private val ClayText: Color get() = ytDayNight(Color(0xFF5C5260), Color(0xFFEEDFD3))
+private val ClayDim: Color get() = ytDayNight(Color(0xFF8C7880), Color(0xFFC9B3AA))
+private val ClayTileColors = listOf(ytDayNight(Color(0xFFF3E1D2), Color(0xFF4A3830)), ytDayNight(Color(0xFFB7CBE4), Color(0xFF3C4A5C)), ytDayNight(Color(0xFFE9C9C1), Color(0xFF52383A)), ytDayNight(Color(0xFFD9E3C9), Color(0xFF3D4A36)), ytDayNight(Color(0xFFF3E1D2), Color(0xFF4A3830)), ytDayNight(Color(0xFFB7CBE4), Color(0xFF3C4A5C)))
 
 @Composable
 private fun ClayPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics, controller: YtWatchController, actions: YtWatchActions) {
@@ -621,7 +621,7 @@ private fun ClayPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasic
                         .clip(RoundedCornerShape(20.dp))
                         .clickable(onClick = actions.onOpenChannel),
                 ) {
-                    Avatar(imageLoader, streams, 42, Color(0xFFF7E6D6))
+                    Avatar(imageLoader, streams, 42, ytDayNight(Color(0xFFF7E6D6), Color(0xFF3A2C26)))
                     Column(Modifier.padding(start = 12.dp)) {
                         Text(streams.uploader, color = ClayText, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 14.5.sp))
                         if (streams.uploaderSubscriberCount >= 0) {
@@ -641,11 +641,11 @@ private fun ClayPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasic
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = mod
                     .then(action.gesture)
-                    .shadow(8.dp, shape, clip = false, ambientColor = Color(0x66B07A66), spotColor = Color(0x80B07A66))
+                    .shadow(8.dp, shape, clip = false, ambientColor = ytDayNight(Color(0x66B07A66), Color(0x66000000)), spotColor = ytDayNight(Color(0x80B07A66), Color(0x80000000)))
                     .ytPressable(shape, squish = true) { action.onClick() }
                     .background(color)
-                    .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.35f), Color.Transparent)))
-                    .border(1.5.dp, Color.White.copy(alpha = 0.45f), shape)
+                    .background(Brush.verticalGradient(listOf(ytDayNight(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.08f)), Color.Transparent)))
+                    .border(1.5.dp, ytDayNight(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0.12f)), shape)
                     .padding(vertical = 14.dp),
             ) {
                 Icon(painterResource(action.icon), contentDescription = null, tint = ClayText, modifier = Modifier.size(24.dp))
@@ -661,8 +661,8 @@ private fun ClayPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasic
                     .padding(18.dp),
             ) {
                 Text(stringResource(R.string.yt_watch_description), color = ClayText, style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.Black, fontSize = 15.sp))
-                WatchDescription(streams, actions.onLink, ClayText, Color(0xFF9D6A6C), R.font.font_nunito_600, open, modifier = Modifier.padding(top = 8.dp))
-                MoreToggle(open, Color(0xFF9D6A6C), TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp), caps = false, modifier = Modifier.padding(top = 4.dp)) { open = !open }
+                WatchDescription(streams, actions.onLink, ClayText, ytDayNight(Color(0xFF9D6A6C), Color(0xFFD9A5A6)), R.font.font_nunito_600, open, modifier = Modifier.padding(top = 8.dp))
+                MoreToggle(open, ytDayNight(Color(0xFF9D6A6C), Color(0xFFD9A5A6)), TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp), caps = false, modifier = Modifier.padding(top = 4.dp)) { open = !open }
             }
         }
         if (streams.chapters.isNotEmpty()) WatchChapters(palette, imageLoader, streams, controller.chapterIndex, actions.onSeek)
@@ -681,7 +681,7 @@ private fun EditorialPage(palette: YtPalette, b: WatchBasics, controller: YtWatc
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Text(
             "${stringResource(R.string.yt_editorial_video)} — ${streams.uploader}".uppercase(),
-            color = palette.accent,
+            color = palette.accentText,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = mono,
@@ -726,7 +726,7 @@ private fun EditorialPage(palette: YtPalette, b: WatchBasics, controller: YtWatc
                             .clickable(onClick = action.onClick)
                             .padding(horizontal = 6.dp, vertical = 9.dp),
                     ) {
-                        Text("%02d".format(r * 3 + c + 1), color = palette.accent, style = mono.copy(fontSize = 9.sp))
+                        Text("%02d".format(r * 3 + c + 1), color = palette.accentText, style = mono.copy(fontSize = 9.sp))
                         Text(action.label.uppercase(), color = palette.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = mono.copy(fontSize = 10.sp, letterSpacing = 0.6.sp), modifier = Modifier.padding(top = 3.dp))
                     }
                 }
@@ -739,7 +739,7 @@ private fun EditorialPage(palette: YtPalette, b: WatchBasics, controller: YtWatc
         Box(Modifier.fillMaxWidth().height(1.dp).background(palette.text))
         if (streams.description.isNotBlank()) {
             WatchDescription(
-                streams, actions.onLink, palette.text, palette.accent, R.font.font_inter_400, open,
+                streams, actions.onLink, palette.text, palette.accentText, R.font.font_inter_400, open,
                 modifier = Modifier.padding(top = 14.dp), sizeSp = 15f, collapsedLines = 6, dropCap = true,
             )
             MoreToggle(open, palette.text, mono, caps = true, modifier = Modifier.padding(top = 6.dp)) { open = !open }
@@ -751,7 +751,7 @@ private fun EditorialPage(palette: YtPalette, b: WatchBasics, controller: YtWatc
                 streams, controller.chapterIndex, actions.onSeek,
                 title = TextStyle(fontFamily = YtFonts.inter, fontSize = 14.sp, color = palette.text),
                 time = mono.copy(color = palette.text),
-                active = palette.accent,
+                active = palette.accentText,
                 leader = true,
             )
         }
@@ -890,7 +890,7 @@ private fun PanePage(
                     .padding(16.dp),
             ) {
                 WatchDescription(
-                    streams, actions.onLink, ink, if (frost) palette.accent else Color(0xFF0A8F7F),
+                    streams, actions.onLink, ink, if (frost) palette.accent else ytDayNight(Color(0xFF0A8F7F), Color(0xFF7FE0D2)),
                     if (frost) R.font.font_jakarta_500 else R.font.font_google_sans_400, open,
                 )
                 MoreToggle(open, ink, TextStyle(fontFamily = font, fontWeight = FontWeight.Bold, fontSize = 13.sp), caps = false, modifier = Modifier.padding(top = 4.dp)) { open = !open }
@@ -904,7 +904,10 @@ private fun PanePage(
 // ---------------------------------------------------------------------------------------------
 // Pop: a marker, a sticker, blobs and a speech bubble
 
-private val PopPlum = Color(0xFF3B2054)
+private val PopPlum: Color get() = ytDayNight(Color(0xFF3B2054), Color(0xFFF5ECFF))
+
+/** Plum type on the pastel blobs, the sticker and the marker, in both modes. */
+private val PopPlumInk = Color(0xFF3B2054)
 private val PopMarker = Color(0xFFFDE682)
 private val PopBlobs = listOf(Color(0xFFFDE682), Color(0xFFF7B3CE), Color(0xFFDFD6F7), Color(0xFFBFE8D2), Color(0xFFFFD8B5))
 
@@ -917,7 +920,7 @@ private fun PopPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics
     Column(Modifier.fillMaxWidth()) {
         Text(
             buildAnnotatedString {
-                withStyle(SpanStyle(background = PopMarker)) { append(first) }
+                withStyle(SpanStyle(background = PopMarker, color = PopPlumInk)) { append(first) }
                 append(rest)
             },
             color = PopPlum,
@@ -946,9 +949,9 @@ private fun PopPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics
             ) {
                 Avatar(imageLoader, streams, 40, Color.White, BlobShape(0.55f, 0.45f, 0.5f, 0.6f))
                 Column(Modifier.padding(start = 10.dp)) {
-                    Text(streams.uploader, color = PopPlum, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 14.5.sp))
+                    Text(streams.uploader, color = PopPlumInk, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 14.5.sp))
                     if (streams.uploaderSubscriberCount >= 0) {
-                        Text(stringResource(R.string.subscribers, streams.uploaderSubscriberCount.formatShort()), color = PopPlum.copy(alpha = 0.7f), style = TextStyle(fontFamily = YtFonts.nunito, fontSize = 12.sp))
+                        Text(stringResource(R.string.subscribers, streams.uploaderSubscriberCount.formatShort()), color = PopPlumInk.copy(alpha = 0.7f), style = TextStyle(fontFamily = YtFonts.nunito, fontSize = 12.sp))
                     }
                 }
             }
@@ -967,8 +970,8 @@ private fun PopPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics
                     .background(PopBlobs[i % PopBlobs.size])
                     .padding(vertical = 14.dp),
             ) {
-                Icon(painterResource(action.icon), contentDescription = null, tint = PopPlum, modifier = Modifier.size(24.dp))
-                Text(action.label, color = PopPlum, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 12.5.sp), modifier = Modifier.padding(top = 4.dp, start = 4.dp, end = 4.dp))
+                Icon(painterResource(action.icon), contentDescription = null, tint = PopPlumInk, modifier = Modifier.size(24.dp))
+                Text(action.label, color = PopPlumInk, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 12.5.sp), modifier = Modifier.padding(top = 4.dp, start = 4.dp, end = 4.dp))
             }
         }
         if (streams.description.isNotBlank()) {
@@ -978,11 +981,11 @@ private fun PopPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics
                     .padding(start = 16.dp, end = 16.dp, top = 20.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 26.dp, bottomEnd = 26.dp, bottomStart = 26.dp))
-                    .background(Color.White)
+                    .background(ytDayNight(Color.White, Color(0xFF2B1A38)))
                     .padding(16.dp),
             ) {
-                WatchDescription(streams, actions.onLink, PopPlum, Color(0xFFE0457F), R.font.font_nunito_700, open)
-                MoreToggle(open, Color(0xFFE0457F), TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.Black, fontSize = 13.sp), caps = false, modifier = Modifier.padding(top = 4.dp)) { open = !open }
+                WatchDescription(streams, actions.onLink, PopPlum, ytDayNight(Color(0xFFE0457F), Color(0xFFF27AA6)), R.font.font_nunito_700, open)
+                MoreToggle(open, ytDayNight(Color(0xFFE0457F), Color(0xFFF27AA6)), TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.Black, fontSize = 13.sp), caps = false, modifier = Modifier.padding(top = 4.dp)) { open = !open }
             }
         }
         if (streams.chapters.isNotEmpty()) WatchChapters(palette, imageLoader, streams, controller.chapterIndex, actions.onSeek)
@@ -1065,9 +1068,9 @@ private fun ShapesPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
 // ---------------------------------------------------------------------------------------------
 // Kiesel: a dashboard of pebbles
 
-private val PebbleBeige = Color(0xFFE2DCD5)
-private val PebbleCard = Color(0xFFF7F4F1)
-private val PebbleGrey = Color(0xFF7A7672)
+private val PebbleBeige: Color get() = ytDayNight(Color(0xFFE2DCD5), Color(0xFF4A4541))
+private val PebbleCard: Color get() = ytDayNight(Color(0xFFF7F4F1), Color(0xFF2B2826))
+private val PebbleGrey: Color get() = ytDayNight(Color(0xFF7A7672), Color(0xFFABA59F))
 
 @Composable
 private fun KieselPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics, controller: YtWatchController, actions: YtWatchActions) {
@@ -1094,9 +1097,9 @@ private fun KieselPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
                     .background(colors[i % colors.size])
                     .padding(vertical = 12.dp, horizontal = 10.dp),
             ) {
-                Icon(painterResource(action.icon), contentDescription = null, tint = KieselInk, modifier = Modifier.size(18.dp))
+                Icon(painterResource(action.icon), contentDescription = null, tint = kieselInkOn(colors[i % colors.size]), modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(action.label, color = KieselInk, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Bold, fontSize = 13.sp))
+                Text(action.label, color = kieselInkOn(colors[i % colors.size]), maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Bold, fontSize = 13.sp))
             }
         }
         val labels = buildList {
@@ -1119,7 +1122,7 @@ private fun KieselPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
                     .background(PebbleCard)
                     .padding(18.dp),
             ) {
-                WatchDescription(streams, actions.onLink, KieselInk, Color(0xFF6B5BD2), R.font.font_jakarta_500, open)
+                WatchDescription(streams, actions.onLink, KieselInk, ytDayNight(Color(0xFF6B5BD2), KieselLavender), R.font.font_jakarta_500, open)
                 MoreToggle(open, PebbleGrey, TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Bold, fontSize = 13.sp), caps = false, modifier = Modifier.padding(top = 4.dp)) { open = !open }
             }
         }
@@ -1162,7 +1165,7 @@ private fun Pebble(value: String, label: String, color: Color, modifier: Modifie
             .background(color)
             .padding(horizontal = 12.dp, vertical = 12.dp),
     ) {
-        Text(value, color = KieselInk, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp))
-        Text(label, color = KieselInk.copy(alpha = 0.65f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Medium, fontSize = 11.sp), modifier = Modifier.padding(top = 2.dp))
+        Text(value, color = kieselInkOn(color), maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp))
+        Text(label, color = kieselInkOn(color).copy(alpha = 0.65f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Medium, fontSize = 11.sp), modifier = Modifier.padding(top = 2.dp))
     }
 }

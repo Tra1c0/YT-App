@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the dark mode of the light designs (YtDesignDark). Shapes, type and manners come from
+     the same base style in values/yt_designs.xml; only the colours and the bar icons change. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- the nearly opaque Glas sheet, as dark teal glass -->
+    <color name="yt_glass_sheet">#F7132826</color>
+
+    <!-- Clay: warm dark dough, cream type, the mauve lifted so it reads -->
+    <style name="YtDesign.Clay" parent="YtDesign.Clay.Day">
+        <item name="ytOutlineColor">#26FFF0E4</item>
+        <item name="colorPrimary">#D9A5A6</item>
+        <item name="colorOnPrimary">#2D1A1D</item>
+        <item name="colorPrimaryContainer">#5A3A3C</item>
+        <item name="colorOnPrimaryContainer">#F7DADA</item>
+        <item name="colorSecondary">#9FB6D1</item>
+        <item name="colorOnSecondary">#1E2733</item>
+        <item name="colorSecondaryContainer">#46352E</item>
+        <item name="colorOnSecondaryContainer">#F7E8DA</item>
+        <item name="colorTertiary">#9FB6D1</item>
+        <item name="colorOnTertiary">#1E2733</item>
+        <item name="colorTertiaryContainer">#3C4A5C</item>
+        <item name="colorOnTertiaryContainer">#E3ECF7</item>
+        <item name="android:colorBackground">#2A201C</item>
+        <item name="colorOnBackground">#F7E8DA</item>
+        <item name="colorSurface">#2A201C</item>
+        <item name="colorOnSurface">#F7E8DA</item>
+        <item name="colorSurfaceVariant">#3A2C26</item>
+        <item name="colorOnSurfaceVariant">#CBB1A5</item>
+        <item name="colorOutline">#8A7268</item>
+        <item name="colorOutlineVariant">#4E3C34</item>
+        <item name="colorSurfaceDim">#231A17</item>
+        <item name="colorSurfaceBright">#4A3830</item>
+        <item name="colorSurfaceContainerLowest">#1E1714</item>
+        <item name="colorSurfaceContainerLow">#30251F</item>
+        <item name="colorSurfaceContainer">#3A2C26</item>
+        <item name="colorSurfaceContainerHigh">#43332C</item>
+        <item name="colorSurfaceContainerHighest">#4C3A32</item>
+        <item name="colorSurfaceInverse">#F7E8DA</item>
+        <item name="colorOnSurfaceInverse">#2A201C</item>
+        <item name="colorPrimaryInverse">#8A5A5C</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+    </style>
+
+    <!-- Editorial: near-black paper, off-white ink; the blue lifted where it is type -->
+    <style name="YtDesign.Editorial" parent="YtDesign.Editorial.Day">
+        <item name="ytOutlineColor">?attr/colorOnSurface</item>
+        <item name="colorPrimary">#5B8AFF</item>
+        <item name="colorOnPrimary">#0A0A0A</item>
+        <item name="colorPrimaryContainer">#0F2A66</item>
+        <item name="colorOnPrimaryContainer">#DCE6FF</item>
+        <item name="colorSecondary">#F2F2EE</item>
+        <item name="colorOnSecondary">#0B0B0B</item>
+        <item name="colorSecondaryContainer">#242424</item>
+        <item name="colorOnSecondaryContainer">#F2F2EE</item>
+        <item name="colorTertiary">#5B8AFF</item>
+        <item name="colorOnTertiary">#0A0A0A</item>
+        <item name="colorTertiaryContainer">#0F2A66</item>
+        <item name="colorOnTertiaryContainer">#DCE6FF</item>
+        <item name="android:colorBackground">#0B0B0B</item>
+        <item name="colorOnBackground">#F2F2EE</item>
+        <item name="colorSurface">#0B0B0B</item>
+        <item name="colorOnSurface">#F2F2EE</item>
+        <item name="colorSurfaceVariant">#1A1A1A</item>
+        <item name="colorOnSurfaceVariant">#A8A8A8</item>
+        <item name="colorOutline">#F2F2EE</item>
+        <item name="colorOutlineVariant">#333333</item>
+        <item name="colorSurfaceDim">#070707</item>
+        <item name="colorSurfaceBright">#262626</item>
+        <item name="colorSurfaceContainerLowest">#000000</item>
+        <item name="colorSurfaceContainerLow">#121212</item>
+        <item name="colorSurfaceContainer">#161616</item>
+        <item name="colorSurfaceContainerHigh">#1E1E1E</item>
+        <item name="colorSurfaceContainerHighest">#242424</item>
+        <item name="colorSurfaceInverse">#F2F2EE</item>
+        <item name="colorOnSurfaceInverse">#0B0B0B</item>
+        <item name="colorPrimaryInverse">#0F54F6</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+    </style>
+
+    <!-- Glass: deep sea green with dark teal glass and light mint -->
+    <style name="YtDesign.Glass" parent="YtDesign.Glass.Day">
+        <item name="ytOutlineColor">#33BFEDE5</item>
+        <item name="colorPrimary">#CFEDE7</item>
+        <item name="colorOnPrimary">#0F2B2E</item>
+        <item name="colorPrimaryContainer">#1C3333</item>
+        <item name="colorOnPrimaryContainer">#E3F4F1</item>
+        <item name="colorSecondary">#FF6B6B</item>
+        <item name="colorOnSecondary">#0F2B2E</item>
+        <item name="colorSecondaryContainer">#173030</item>
+        <item name="colorOnSecondaryContainer">#E3F4F1</item>
+        <item name="colorTertiary">#7FCFC3</item>
+        <item name="colorOnTertiary">#0F2B2E</item>
+        <item name="colorTertiaryContainer">#1F3D3A</item>
+        <item name="colorOnTertiaryContainer">#E3F4F1</item>
+        <item name="android:colorBackground">#0E1F1F</item>
+        <item name="colorOnBackground">#E3F4F1</item>
+        <item name="colorSurface">#0E1F1F</item>
+        <item name="colorOnSurface">#E3F4F1</item>
+        <item name="colorSurfaceVariant">#183030</item>
+        <item name="colorOnSurfaceVariant">#9CBDB9</item>
+        <item name="colorOutline">#4E7A75</item>
+        <item name="colorOutlineVariant">#24403E</item>
+        <item name="colorSurfaceDim">#0A1818</item>
+        <item name="colorSurfaceBright">#213B3A</item>
+        <item name="colorSurfaceContainerLowest">#081414</item>
+        <item name="colorSurfaceContainerLow">#132828</item>
+        <item name="colorSurfaceContainer">#172E2E</item>
+        <item name="colorSurfaceContainerHigh">#1C3434</item>
+        <item name="colorSurfaceContainerHighest">#213A3A</item>
+        <item name="colorSurfaceInverse">#E3F4F1</item>
+        <item name="colorOnSurfaceInverse">#0F2B2E</item>
+        <item name="colorPrimaryInverse">#0F2B2E</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+    </style>
+
+    <!-- Pop: deep plum, light lilac, the yellow and pink kept -->
+    <style name="YtDesign.Pop" parent="YtDesign.Pop.Day">
+        <item name="ytOutlineColor">@android:color/transparent</item>
+        <item name="colorPrimary">#D5CDFA</item>
+        <item name="colorOnPrimary">#1D032E</item>
+        <item name="colorPrimaryContainer">#4A2E66</item>
+        <item name="colorOnPrimaryContainer">#F1EAFF</item>
+        <item name="colorSecondary">#FDE682</item>
+        <item name="colorOnSecondary">#1D032E</item>
+        <item name="colorSecondaryContainer">#4B3A5E</item>
+        <item name="colorOnSecondaryContainer">#FDE682</item>
+        <item name="colorTertiary">#E0457F</item>
+        <item name="colorOnTertiary">#1D032E</item>
+        <item name="colorTertiaryContainer">#F4B6CF</item>
+        <item name="colorOnTertiaryContainer">#1D032E</item>
+        <item name="android:colorBackground">#1E1028</item>
+        <item name="colorOnBackground">#F5ECFF</item>
+        <item name="colorSurface">#1E1028</item>
+        <item name="colorOnSurface">#F5ECFF</item>
+        <item name="colorSurfaceVariant">#2B1A38</item>
+        <item name="colorOnSurfaceVariant">#BFAED3</item>
+        <item name="colorOutline">#7A6A8F</item>
+        <item name="colorOutlineVariant">#3E2B50</item>
+        <item name="colorSurfaceDim">#170B20</item>
+        <item name="colorSurfaceBright">#3A2749</item>
+        <item name="colorSurfaceContainerLowest">#12081A</item>
+        <item name="colorSurfaceContainerLow">#251530</item>
+        <item name="colorSurfaceContainer">#2B1A38</item>
+        <item name="colorSurfaceContainerHigh">#332041</item>
+        <item name="colorSurfaceContainerHighest">#3B274A</item>
+        <item name="colorSurfaceInverse">#F5ECFF</item>
+        <item name="colorOnSurfaceInverse">#1E1028</item>
+        <item name="colorPrimaryInverse">#3B2054</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+    </style>
+
+    <!-- Kiesel: dark warm grey for the cream, light panels for the black ones, lavender and peach kept -->
+    <style name="YtDesign.Kiesel" parent="YtDesign.Kiesel.Day">
+        <item name="ytOutlineColor">@android:color/transparent</item>
+        <item name="colorPrimary">#EDE8E3</item>
+        <item name="colorOnPrimary">#1F1D1B</item>
+        <item name="colorPrimaryContainer">#B4A7F5</item>
+        <item name="colorOnPrimaryContainer">#0E0E0E</item>
+        <item name="colorSecondary">#F6C6A2</item>
+        <item name="colorOnSecondary">#0E0E0E</item>
+        <item name="colorSecondaryContainer">#3A3430</item>
+        <item name="colorOnSecondaryContainer">#F6C6A2</item>
+        <item name="colorTertiary">#B4A7F5</item>
+        <item name="colorOnTertiary">#0E0E0E</item>
+        <item name="colorTertiaryContainer">#3E3858</item>
+        <item name="colorOnTertiaryContainer">#DCD5FB</item>
+        <item name="android:colorBackground">#1F1D1B</item>
+        <item name="colorOnBackground">#EDE8E3</item>
+        <item name="colorSurface">#1F1D1B</item>
+        <item name="colorOnSurface">#EDE8E3</item>
+        <item name="colorSurfaceVariant">#2B2826</item>
+        <item name="colorOnSurfaceVariant">#ABA59F</item>
+        <item name="colorOutline">#6F6A65</item>
+        <item name="colorOutlineVariant">#3A3632</item>
+        <item name="colorSurfaceDim">#181715</item>
+        <item name="colorSurfaceBright">#3A3632</item>
+        <item name="colorSurfaceContainerLowest">#141312</item>
+        <item name="colorSurfaceContainerLow">#252321</item>
+        <item name="colorSurfaceContainer">#2B2826</item>
+        <item name="colorSurfaceContainerHigh">#322E2B</item>
+        <item name="colorSurfaceContainerHighest">#3A3632</item>
+        <item name="colorSurfaceInverse">#EDE8E3</item>
+        <item name="colorOnSurfaceInverse">#1F1D1B</item>
+        <item name="colorPrimaryInverse">#0E0E0E</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+    </style>
+
+</resources>
