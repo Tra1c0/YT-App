@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,6 +79,7 @@ import com.github.libretube.api.SubscriptionHelper
 import com.github.libretube.api.obj.Streams
 import com.github.libretube.extensions.formatShort
 import com.github.libretube.extensions.toID
+import com.github.libretube.helpers.PlayerHelper
 import com.github.libretube.helpers.YtDesign
 import com.github.libretube.ui.yt.player.ytShareScrubSource
 import com.github.libretube.util.HtmlParser
@@ -152,7 +154,11 @@ private fun rememberBasics(streams: Streams, videoId: String?, palette: YtPalett
     // held, it opens like and dislike (the tap stays as it was); the rating shows as a tiny mark
     val rate = rememberYtRateState(videoId)
     val markColor = Color(YtContrast.readable(palette.accent.toArgb(), palette.surface.toArgb(), 3.0))
-    like.gesture = Modifier.ytRateHold(rate, markColor)
+    // Return YouTube Dislike: the count for the hover reveal, and the small green-red bar
+    val dislikes = if (PlayerHelper.localRYD) streams.dislikes else -1L
+    SideEffect { rate.dislikes = dislikes }
+    val sentiment = rememberYtSentimentBar(streams.likes, streams.dislikes, palette)
+    like.gesture = Modifier.ytRateHold(rate, markColor, sentiment)
     val shareGesture = Modifier.ytShareScrubSource(actions.shareScrub)
     val list = buildList {
         add(WatchAction(R.drawable.ic_playlist_add, stringResource(R.string.yt_watch_save), actions.onSave))
