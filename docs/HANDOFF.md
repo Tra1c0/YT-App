@@ -21,6 +21,11 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   `r16/queue` (not pushed, lost with this container). Restart it from `main` when asked.
 - `MODIFICATIONS.md` (GPL change list) is current up to build 95 (rows split into LibreTube /
   YT files); add a row for every change to an upstream file.
+- Open bug (build 96, not reproducible yet): after a long session without restart, holding the
+  video (long press 2x fast forward) left the picture running without sound until the next seek;
+  gone after restarting the app, not tied to the loudness switch alone (a switch change applies only
+  at the next video). Idea: add audio pipeline state (speed, processors active, last audio error)
+  to the Diagnose text so the next report carries it.
 - Unverified on a phone: most features of rounds 12-15 (see FEATURES.md status column).
 
 ## How to work (cheap and safe)
