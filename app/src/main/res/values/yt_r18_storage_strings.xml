@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 18: storage page (Settings → Storage). -->
+<resources>
+    <string name="yt_storage_title">Storage</string>
+    <string name="yt_storage_summary">Clear cache, thumbnails and old update files</string>
+    <string name="yt_storage_computing">Calculating…</string>
+    <string name="yt_storage_total">The app uses %1$s in total</string>
+    <string name="yt_storage_total_unknown">Total size of the app unknown</string>
+    <string name="yt_storage_images">Thumbnails (image cache)</string>
+    <string name="yt_storage_web">Web cache (the sign-in stays)</string>
+    <string name="yt_storage_update">Old update files</string>
+    <string name="yt_storage_update_held">%1$s · the update being installed stays</string>
+    <string name="yt_storage_other">Other cache</string>
+    <string name="yt_storage_crash">Crash reports</string>
+    <plurals name="yt_storage_crash_detail">
+        <item quantity="one">%1$d report · %2$s</item>
+        <item quantity="other">%1$d reports · %2$s</item>
+    </plurals>
+    <string name="yt_storage_downloads">Downloads (not deleted here)</string>
+    <string name="yt_storage_clear">Clear</string>
+    <string name="yt_storage_open">Open</string>
+    <string name="yt_storage_clear_all">Clear everything unneeded</string>
+    <string name="yt_storage_clear_all_confirm">Delete thumbnails, web cache, old update files and other cache (%1$s)? Downloads, crash reports, subscriptions, playlists, history, settings and the sign-in stay.</string>
+    <string name="yt_storage_crash_confirm">Delete all crash reports?</string>
+    <string name="yt_storage_delete">Delete</string>
+    <string name="yt_storage_freed">%1$s freed</string>
+</resources>

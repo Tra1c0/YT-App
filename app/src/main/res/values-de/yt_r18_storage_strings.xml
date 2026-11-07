@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 18: storage page (Settings → Storage). -->
+<resources>
+    <string name="yt_storage_title">Speicher</string>
+    <string name="yt_storage_summary">Cache, Vorschaubilder und alte Update-Dateien löschen</string>
+    <string name="yt_storage_computing">Wird berechnet…</string>
+    <string name="yt_storage_total">Die App belegt insgesamt %1$s</string>
+    <string name="yt_storage_total_unknown">Gesamtgröße der App unbekannt</string>
+    <string name="yt_storage_images">Vorschaubilder (Bild-Cache)</string>
+    <string name="yt_storage_web">Web-Cache (Anmeldung bleibt)</string>
+    <string name="yt_storage_update">Alte Update-Dateien</string>
+    <string name="yt_storage_update_held">%1$s · das laufende Update bleibt</string>
+    <string name="yt_storage_other">Sonstiger Cache</string>
+    <string name="yt_storage_crash">Absturzberichte</string>
+    <plurals name="yt_storage_crash_detail">
+        <item quantity="one">%1$d Bericht · %2$s</item>
+        <item quantity="other">%1$d Berichte · %2$s</item>
+    </plurals>
+    <string name="yt_storage_downloads">Downloads (werden hier nicht gelöscht)</string>
+    <string name="yt_storage_clear">Leeren</string>
+    <string name="yt_storage_open">Öffnen</string>
+    <string name="yt_storage_clear_all">Alles Überflüssige leeren</string>
+    <string name="yt_storage_clear_all_confirm">Vorschaubilder, Web-Cache, alte Update-Dateien und sonstigen Cache löschen (%1$s)? Downloads, Absturzberichte, Abos, Playlists, Verlauf, Einstellungen und die Anmeldung bleiben.</string>
+    <string name="yt_storage_crash_confirm">Alle Absturzberichte löschen?</string>
+    <string name="yt_storage_delete">Löschen</string>
+    <string name="yt_storage_freed">%1$s freigegeben</string>
+</resources>

@@ -119,6 +119,12 @@ object YtSelfUpdater {
     fun isBusy(state: State = _state.value) = state is State.Downloading ||
         state is State.Verifying || state is State.Installing || state is State.WaitingForUser
 
+    /**
+     * Whether update.apk is still needed: downloaded, checked, in a session, or handed to
+     * Android's installer (which reads it through the FileProvider). The storage page keeps it.
+     */
+    fun holdsApk(state: State = _state.value) = isBusy(state) || state is State.SystemInstaller
+
     fun canInstall(context: Context): Boolean = context.packageManager.canRequestPackageInstalls()
 
     /** The system page where the user allows YT to install apps. */

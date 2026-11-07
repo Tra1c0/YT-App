@@ -43,6 +43,12 @@ class MainSettings : BasePreferenceFragment() {
             com.github.libretube.ui.yt.YtDiagnosisUi.showDiagnosis(requireContext())
             true
         }
+
+        // YT: the storage page (cache sizes, clear)
+        findPreference<Preference>("yt_storage")?.setOnPreferenceClickListener {
+            com.github.libretube.ui.yt.YtStorageUi.show(requireContext())
+            true
+        }
         
         listOf(
             "general" to R.id.action_global_generalSettings,

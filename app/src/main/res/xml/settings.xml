@@ -79,6 +79,13 @@
             app:key="crashlog"
             app:title="@string/crashlog"/>
 
+        <!-- YT: storage page (cache sizes, clear) -->
+        <Preference
+            android:icon="@drawable/ic_delete"
+            app:key="yt_storage"
+            app:summary="@string/yt_storage_summary"
+            app:title="@string/yt_storage_title" />
+
         <!-- YT: diagnosis page (build, update result, network, crash reports) -->
         <Preference
             android:icon="@drawable/ic_device"
