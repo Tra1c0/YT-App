@@ -48,6 +48,22 @@ object YtMiniRestore {
 
     private fun now() = SystemClock.elapsedRealtime()
 
+    // when the last player service finished going away, and the restore waiting for that
+    private var goneAt = 0L
+    private var waiting: Runnable? = null
+
+    /**
+     * The player service has gone (its queue cleared, its player released): a restore waiting
+     * for that starts now instead of at the end of the settle time. Measured on a phone: the
+     * fixed 1.5 s after the close made a quick restore wait 0.5–0.8 s before anything moved.
+     */
+    fun serviceGone() {
+        goneAt = now()
+        val run = waiting ?: return
+        waiting = null
+        android.os.Handler(android.os.Looper.getMainLooper()).post(run)
+    }
+
     // the steps of the last restores with their time since the long press, for the Diagnose
     // page: a slow restore shows which step waited
     private val traces = ArrayDeque<StringBuilder>()
@@ -114,8 +130,21 @@ object YtMiniRestore {
                 forceVideo = true,
             )
         }
-        val delay = YtMiniRestoreRules.startDelay(session.closedAt, now())
-        if (delay > 0) feedback.postDelayed(start, delay) else start.run()
+        // the old service gone already: no wait; else at its end, the settle time as the limit
+        val delay = if (goneAt >= session.closedAt) 0L else YtMiniRestoreRules.startDelay(session.closedAt, now())
+        if (delay <= 0L) {
+            start.run()
+        } else {
+            val once = object : Runnable {
+                override fun run() {
+                    if (waiting !== this && waiting != null) return
+                    waiting = null
+                    start.run()
+                }
+            }
+            waiting = once
+            feedback.postDelayed({ if (waiting === once) once.run() }, delay)
+        }
         return true
     }
 

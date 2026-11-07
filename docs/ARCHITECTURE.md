@@ -209,7 +209,9 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   `YtFeedEngine.passes` and `rememberYtVisible` (YtHomeKit). Search marks `Y/search/YtSeenRow.kt`.
 - Mini restore: `Y/mini/YtMiniRestore.kt` (+ pure `YtMiniRestoreRules.kt`) keeps the closed session
   10 min in memory; `ytRememberClosed()` at the 4 close points in PlayerFragment, `forget()` in
-  `NavigationHelper.navigateVideo`. Long-press: `Y/YtNavHold.kt` (`ytNavHoldArea` on the bar,
+  `NavigationHelper.navigateVideo`. The restart waits for the old service's end
+  (`AbstractPlayerService.onDestroy` → `YtMiniRestore.serviceGone()`), at most the 1.5 s settle
+  time since the close. Long-press: `Y/YtNavHold.kt` (`ytNavHoldArea` on the bar,
   `ytNavHoldTarget(id)` on the Abos tab, initial pass); classic bar via `setOnLongClickListener`.
   Start docked through `YtPageStart.start(docked = true)` (`takeStartDocked`), 1.5 s settle after close
   so the dying service does not clear the restored queue; host dock haptic muted once.

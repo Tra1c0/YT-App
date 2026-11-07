@@ -646,6 +646,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
             stopSelf()
 
             super.onDestroy()
+            // YT: a mini player brought back meanwhile may start now (see YtMiniRestore)
+            com.github.libretube.ui.yt.mini.YtMiniRestore.serviceGone()
         }
     }
 
