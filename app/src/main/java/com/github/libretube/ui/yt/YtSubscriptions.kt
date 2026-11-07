@@ -46,6 +46,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.github.libretube.ui.yt.feed.YtPauseRules
+import com.github.libretube.ui.yt.feed.YtSubsOrder
+import com.github.libretube.db.DatabaseHelper
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.produceState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlin.random.Random
 import com.github.libretube.helpers.YtChannelPause
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.customActions
@@ -119,8 +126,13 @@ object YtSubscriptions {
                 val loaded by viewModel.videoFeed.observeAsState()
                 val feed = rememberYtVisible(loaded)
                 val channels by viewModel.subscriptions.observeAsState()
-                var refreshing by remember { mutableStateOf(false) }
-                LaunchedEffect(loaded) { refreshing = false }
+                // the spinner follows the load itself: keyed on the list it kept spinning when a
+                // pull brought the same videos (equal lists are no new state) or failed
+                val loading by viewModel.feedLoading.observeAsState(false)
+                var pulled by remember { mutableStateOf(false) }
+                LaunchedEffect(loading) { if (!loading) pulled = false }
+                // a new mix of "All" on every open of the tab and on every pull (YtSubsOrder)
+                var seed by remember { mutableLongStateOf(Random.nextLong()) }
                 YtTheme(palette) {
                     Box(Modifier.fillMaxSize().ytTestRoot()) {
                     YtSubscriptionsScreen(
@@ -128,10 +140,12 @@ object YtSubscriptions {
                         imageLoader = ImageHelper.loader(),
                         feed = feed,
                         channels = channels,
-                        refreshing = refreshing,
+                        refreshing = pulled && loading,
+                        seed = seed,
                         title = stringResource(title),
                         onRefresh = {
-                            refreshing = true
+                            pulled = true
+                            seed = Random.nextLong()
                             viewModel.fetchFeed(context, FeedRefresh.All)
                         },
                         // a tap keeps what the user queued (YtQueue)
@@ -173,6 +187,13 @@ internal fun ytShareVideo(fragment: Fragment, video: StreamItem) {
 
 private const val DAY = 24L * 60 * 60 * 1000
 
+/** How far each video of [feed] was watched, by video id (live streams and shorts left out). */
+private suspend fun ytSubsSeen(feed: List<StreamItem>): Map<String, YtSubsOrder.Seen> =
+    feed.filter { it.url != null && !it.isShort && !it.isLive }.associate { video ->
+        val id = video.url!!.toID()
+        id to YtSubsOrder.seen(DatabaseHelper.getWatchPosition(id), video.duration)
+    }
+
 private val ClayShadow: Color get() = ytDayNight(Color(0x80B07A66), Color(0x80000000))
 private val ClayInk: Color get() = ytDayNight(Color(0xFF7A5560), Color(0xFFE8C6C2))
 private val ClayLabel: Color get() = ytDayNight(Color(0xFF8C6563), Color(0xFFC9AEA2))
@@ -192,6 +213,7 @@ private fun YtSubscriptionsScreen(
     feed: List<StreamItem>?,
     channels: List<Subscription>?,
     refreshing: Boolean,
+    seed: Long,
     title: String,
     onRefresh: () -> Unit,
     onOpenVideo: (StreamItem) -> Unit,
@@ -201,9 +223,16 @@ private fun YtSubscriptionsScreen(
 ) {
     var filter by remember { mutableIntStateOf(0) }
     val labels = listOf(stringResource(R.string.yt_subs_all), stringResource(R.string.yt_subs_today), stringResource(R.string.yt_tab_live))
-    val videos = remember(feed, filter) {
+    // how far each video was watched, read once per list (the order of "All" groups by it);
+    // produceState keeps the previous map while a new list is read, so a refresh or a hidden
+    // video does not reorder the screen in between
+    val seen by produceState<Map<String, YtSubsOrder.Seen>?>(null, feed) {
+        val list = feed ?: return@produceState
+        value = withContext(Dispatchers.IO) { ytSubsSeen(list) }
+    }
+    val videos = remember(feed, filter, seen, seed) {
         val now = System.currentTimeMillis()
-        feed.orEmpty().filter { it.url != null && !it.isShort }.filter {
+        val shown = feed.orEmpty().filter { it.url != null && !it.isShort }.filter {
             when (filter) {
                 // live and upcoming streams would sit on top (their date is now or later); they
                 // have the Live tab of the app and the Live filter here, so the others leave them out
@@ -212,6 +241,15 @@ private fun YtSubscriptionsScreen(
                 else -> !it.isLive && !it.isUpcoming
             }
         }
+        if (filter != 0) return@remember shown.sortedByDescending { it.uploaded }
+        // the first time, wait for the watch states (a few database reads) instead of showing
+        // watched videos on top for a moment
+        val states = seen ?: return@remember emptyList()
+        YtSubsOrder.shuffle(
+            shown, seed,
+            id = { it.url?.toID() },
+            seen = { states[it.url?.toID()] ?: YtSubsOrder.Seen.UNWATCHED },
+        )
     }
     var quick by remember { mutableStateOf<StreamItem?>(null) }
     val enter = rememberYtEnterState()
@@ -236,7 +274,7 @@ private fun YtSubscriptionsScreen(
                     WatchTabs(palette, labels, filter, { filter = it }, Modifier.padding(top = 14.dp, bottom = 6.dp), trailingAction = false)
                 }
                 when {
-                    feed == null -> item {
+                    feed == null || (filter == 0 && seen == null) -> item {
                         Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(color = if (palette.light) palette.text else Color.White)
                         }

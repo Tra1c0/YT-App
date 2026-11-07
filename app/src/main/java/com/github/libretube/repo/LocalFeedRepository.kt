@@ -15,7 +15,12 @@ import com.github.libretube.helpers.NewPipeExtractorInstance
 import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.ui.dialogs.ShareDialog.Companion.YOUTUBE_FRONTEND_URL
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.extractor.channel.tabs.ChannelTabInfo
@@ -25,8 +30,10 @@ import org.schabi.newpipe.extractor.stream.ContentAvailability
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.time.Duration.Companion.milliseconds
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.coroutines.cancellation.CancellationException
 
 class LocalFeedRepository : FeedRepository {
     private val relevantTabs =
@@ -38,7 +45,13 @@ class LocalFeedRepository : FeedRepository {
             if (filter.isEnabled) tab else null
         }.toTypedArray()
 
-    private val durationBetweenAutomaticRefreshes = Duration.ofDays(1)
+    private val durationBetweenAutomaticRefreshes = Duration.ofHours(AUTO_REFRESH_HOURS)
+
+    override fun isRefreshDue(): Boolean {
+        val lastRefreshMillis =
+            PreferenceHelper.getLong(PreferenceKeys.LAST_LOCAL_FEED_REFRESH_TIMESTAMP_MILLIS, 0)
+        return Instant.now().toEpochMilli() - lastRefreshMillis >= durationBetweenAutomaticRefreshes.toMillis()
+    }
 
     override suspend fun submitFeedItemChange(feedItem: SubscriptionsFeedItem) {
         DatabaseHolder.Database.feedDao().update(feedItem)
@@ -68,17 +81,12 @@ class LocalFeedRepository : FeedRepository {
         }
 
         if (refresh is FeedRefresh.Automatically) {
-            val lastRefreshMillis =
-                PreferenceHelper.getLong(PreferenceKeys.LAST_LOCAL_FEED_REFRESH_TIMESTAMP_MILLIS, 0)
-            val durationSinceLastRefresh = nowMillis - lastRefreshMillis
-
-            // only refresh if feed is empty or last refresh was more than a day ago
-            if (durationSinceLastRefresh < durationBetweenAutomaticRefreshes.toMillis()) {
-                val feed = DatabaseHolder.Database.feedDao().getAll()
-                if (feed.isNotEmpty()) {
-                    return feed.map(SubscriptionsFeedItem::toStreamItem)
-                }
-            }
+            // YT: the cached feed comes back at once, however old: a refresh of every channel
+            // takes long and runs in the background when due (isRefreshDue, see
+            // SubscriptionsViewModel). Before, a stale cache was "refreshed" with an empty
+            // channel list and stamped as fresh, so the feed never updated without a pull.
+            // An empty cache (first start, account switch) is fetched by SubscriptionHelper.getFeed.
+            return DatabaseHolder.Database.feedDao().getAll().map(SubscriptionsFeedItem::toStreamItem)
         }
 
         DatabaseHolder.Database.feedDao().cleanUpOlderThan(minimumDateMillis)
@@ -95,42 +103,64 @@ class LocalFeedRepository : FeedRepository {
     ) {
         if (channelIds.isEmpty()) return
 
+        // YT: a sliding window of CHANNEL_CONCURRENCY channels instead of rounds of five that
+        // each waited for their slowest channel (one full channel fetch held up four quick RSS
+        // checks). The pause against throttling stays: after every CHANNEL_BATCH_SIZE fully
+        // fetched channels, new channels wait CHANNEL_BATCH_DELAY before they start.
+        val startedAt = System.currentTimeMillis()
         val totalExtractionCount = AtomicInteger()
-        val channelExtractionCount = AtomicInteger()
+        val fullFetchCount = AtomicInteger()
+        val pauseUntil = AtomicLong(0)
+        val permits = Semaphore(CHANNEL_CONCURRENCY)
+        val changedChannels = ConcurrentLinkedQueue<Subscription>()
         withContext(Dispatchers.Main) {
             onProgressUpdate(FeedProgress(0, channelIds.size))
         }
 
-        for (channelIdChunk in channelIds.chunked(CHANNEL_CHUNK_SIZE)) {
-            val count = channelExtractionCount.get()
-            if (count >= CHANNEL_BATCH_SIZE) {
-                // add a delay after each BATCH_SIZE amount of fully-fetched channels
-                delay(CHANNEL_BATCH_DELAY.random().milliseconds)
-                channelExtractionCount.set(0)
-            }
-
-            val (channels, collectedFeedItems) = channelIdChunk.parallelMap { channelId ->
-                try {
-                    getRelatedStreams(channelId, minimumDateMillis).also {
-                        if (it.second.isNotEmpty())
-                            // increase counter if we had to fully fetch the channel
-                            channelExtractionCount.incrementAndGet()
-                    }
-                } catch (e: Exception) {
-                    Log.e(channelId, e.stackTraceToString())
-                    null
-                } finally {
-                    withContext(Dispatchers.Main) {
-                        onProgressUpdate(FeedProgress(totalExtractionCount.incrementAndGet(), channelIds.size))
+        coroutineScope {
+            channelIds.map { channelId ->
+                launch(Dispatchers.IO) {
+                    permits.withPermit {
+                        val wait = pauseUntil.get() - System.currentTimeMillis()
+                        if (wait > 0) delay(wait)
+                        try {
+                            val (channel, items) = getRelatedStreams(channelId, minimumDateMillis)
+                            if (items.isNotEmpty()) {
+                                // count the channels we had to fully fetch
+                                if (fullFetchCount.incrementAndGet() % CHANNEL_BATCH_SIZE == 0) {
+                                    pauseUntil.set(
+                                        System.currentTimeMillis() + CHANNEL_BATCH_DELAY.random()
+                                    )
+                                }
+                                DatabaseHolder.Database.feedDao()
+                                    .insertAll(items.map(StreamItem::toFeedItem))
+                            }
+                            if (channel != null) changedChannels.add(channel)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Log.e(channelId, e.stackTraceToString())
+                        } finally {
+                            withContext(NonCancellable + Dispatchers.Main) {
+                                onProgressUpdate(
+                                    FeedProgress(totalExtractionCount.incrementAndGet(), channelIds.size)
+                                )
+                            }
+                        }
                     }
                 }
-            }.filterNotNull().unzip()
-
-            // update subscriptions channels in case they've changed (e.g. different avatar or name)
-            SubscriptionHelper.submitSubscriptionChannelInfosChanged(channels.filterNotNull())
-            DatabaseHolder.Database.feedDao()
-                .insertAll(collectedFeedItems.flatten().map(StreamItem::toFeedItem))
+            }
         }
+
+        // update subscriptions channels in case they've changed (e.g. different avatar or name)
+        if (changedChannels.isNotEmpty()) {
+            SubscriptionHelper.submitSubscriptionChannelInfosChanged(changedChannels.toList())
+        }
+        Log.i(
+            "YtFeed",
+            "refreshed ${channelIds.size} channels (${fullFetchCount.get()} fully) in " +
+                "${System.currentTimeMillis() - startedAt} ms"
+        )
     }
 
     private suspend fun getRelatedStreams(
@@ -189,11 +219,15 @@ class LocalFeedRepository : FeedRepository {
 
     companion object {
         /**
-         * Amount of feeds that are fetched concurrently.
-         *
-         * Should ideally be a factor of `BATCH_SIZE` to be correctly applied.
+         * Amount of channels that are imported concurrently (UserDataRepository).
          */
         const val CHANNEL_CHUNK_SIZE = 5
+
+        /** YT: amount of channels that are fetched at the same time (a sliding window). */
+        const val CHANNEL_CONCURRENCY = 8
+
+        /** YT: age of the cached feed after which opening the tab refreshes it in the background. */
+        private const val AUTO_REFRESH_HOURS = 3L
 
         /**
          * Maximum amount of feeds that should be fetched together, before a delay should be applied.
