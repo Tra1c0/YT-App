@@ -479,7 +479,7 @@ private fun AfterCredits(palette: YtPalette, hero: StreamItem, onOpenVideo: (Str
     ) {
         // Poster type: the title in condensed caps as a narrow column on the left. Real titles
         // are longer than the reference's three words, so the size steps down until it fits.
-        val title = hero.title.orEmpty().uppercase()
+        val title = hero.ytTitle.uppercase()
         var size by remember(hero.url) { mutableStateOf(63.sp) }
         Text(
             text = title,
@@ -598,7 +598,7 @@ private fun AfterPoster(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = video.title.orEmpty(),
+                    text = video.ytTitle,
                     color = palette.text,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

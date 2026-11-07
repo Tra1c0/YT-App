@@ -24,7 +24,6 @@ import com.github.libretube.parcelable.PlayerData
 import com.github.libretube.ui.adapters.callbacks.DiffUtilItemCallback
 import com.github.libretube.ui.base.BaseActivity
 import com.github.libretube.ui.extensions.setFormattedDuration
-import com.github.libretube.ui.extensions.setWatchProgressLength
 import com.github.libretube.ui.extensions.setupSubscriptionButton
 import com.github.libretube.ui.sheets.ChannelOptionsBottomSheet
 import com.github.libretube.ui.sheets.PlaylistOptionsBottomSheet
@@ -96,7 +95,8 @@ class SearchResultsAdapter(
             ImageHelper.loadImage(item.thumbnail, thumbnail)
 
             thumbnailDuration.setFormattedDuration(item.duration, item.isShort, item.uploaded)
-            videoTitle.text = item.title
+            // YT: calmer capitals and marks, on the screen only
+            videoTitle.text = com.github.libretube.ui.yt.ytTitle(item.title)
 
             videoInfo.text = TextUtils.formatViewsString(root.context, item.views, item.uploaded)
             videoInfo.isVisible = !videoInfo.text.isNullOrEmpty()
@@ -129,7 +129,8 @@ class SearchResultsAdapter(
             channelContainer.setOnClickListener {
                 NavigationHelper.navigateChannel(root.context, item.uploaderUrl)
             }
-            watchProgress.setWatchProgressLength(videoId, item.duration)
+            // YT: the home cards' watched mark (classic look: the bar as before)
+            com.github.libretube.ui.yt.search.YtSeenRow.bind(thumbnail, watchProgress, videoId, item.duration)
 
             CoroutineScope(Dispatchers.IO).launch {
                 val isDownloaded =
@@ -143,7 +144,7 @@ class SearchResultsAdapter(
             CoroutineScope(Dispatchers.IO).launch {
                 DeArrowUtil.deArrowVideoId(videoId)?.let { (title, thumbnail) ->
                     withContext(Dispatchers.Main) {
-                        if (title != null) binding.videoTitle.text = title
+                        if (title != null) binding.videoTitle.text = com.github.libretube.ui.yt.ytTitle(title)
                         if (thumbnail != null) ImageHelper.loadImage(thumbnail, binding.thumbnail)
                     }
                 }

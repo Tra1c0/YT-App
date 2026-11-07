@@ -317,7 +317,7 @@ private fun ClayCard(
                     .padding(bottom = 4.dp),
             ) { onOpen(video) }
             Text(
-                text = video.title.orEmpty(),
+                text = video.ytTitle,
                 color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -514,7 +514,7 @@ private fun ClayNextCard(
                 )
             }
             Text(
-                text = video.title.orEmpty(),
+                text = video.ytTitle,
                 color = palette.text,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

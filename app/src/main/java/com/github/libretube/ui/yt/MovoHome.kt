@@ -321,7 +321,7 @@ private fun MovoCard(
                 .align(Alignment.BottomStart)
                 .padding(start = 11.dp, end = 48.dp, bottom = 9.dp),
         ) {
-            val title = video.title.orEmpty()
+            val title = video.ytTitle
             Text(
                 text = if (uppercase) title.uppercase() else title,
                 color = onColor,

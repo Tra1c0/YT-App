@@ -512,7 +512,7 @@ private fun SubsCardFace(
     onOpen: () -> Unit,
     onQuick: () -> Unit,
 ) {
-    val title = video.title.orEmpty()
+    val title = video.ytTitle
     when (palette.signature) {
         YtSignature.MOVO -> {
             // a tile of the mosaic: every third one in lime, all tilt towards the finger

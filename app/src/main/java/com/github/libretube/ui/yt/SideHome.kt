@@ -402,7 +402,7 @@ private fun SidePost(
             }
         }
         Text(
-            text = post.title.orEmpty(),
+            text = post.ytTitle,
             color = palette.text,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,

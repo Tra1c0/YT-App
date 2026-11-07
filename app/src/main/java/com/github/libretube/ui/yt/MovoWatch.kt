@@ -108,7 +108,7 @@ fun MovoWatchDetails(
 
     Column(Modifier.fillMaxWidth()) {
         Text(
-            text = streams.title,
+            text = ytTitle(streams.title),
             color = palette.text,
             style = TextStyle(
                 fontFamily = YtFonts.geist,

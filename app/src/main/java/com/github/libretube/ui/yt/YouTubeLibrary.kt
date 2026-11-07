@@ -329,7 +329,7 @@ private fun SmallContinueCard(
             ProgressBar(palette, progress(item), Modifier.align(Alignment.BottomStart))
         }
         Text(
-            text = item.video.title.orEmpty(),
+            text = item.video.ytTitle,
             color = palette.text,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,

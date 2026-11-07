@@ -277,7 +277,7 @@ private fun PopFeature(
         }
         Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(start = 4.dp, top = 12.dp)) {
             Text(
-                text = video.title.orEmpty(),
+                text = video.ytTitle,
                 color = palette.ink,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -432,7 +432,7 @@ private fun PopListCard(
                 .padding(start = 12.dp, top = 8.dp),
         ) {
             Text(
-                text = video.title.orEmpty(),
+                text = video.ytTitle,
                 color = palette.text,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -593,7 +593,7 @@ private fun PopShortCard(palette: YtPalette, imageLoader: ImageLoader, video: St
                     )
                 }
                 Text(
-                    text = video.title.orEmpty(),
+                    text = video.ytTitle,
                     color = Color.White,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

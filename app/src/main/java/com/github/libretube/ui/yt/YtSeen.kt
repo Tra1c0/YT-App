@@ -65,15 +65,23 @@ object YtSeenStore {
 }
 
 /** How the "Gesehen" badge looks in a design. */
-private class SeenBadge(val shape: Shape, val fill: Color, val ink: Color, val uppercase: Boolean, val iconOnly: Boolean)
+internal class SeenBadge(
+    val shape: Shape,
+    val fill: Color,
+    val ink: Color,
+    val uppercase: Boolean,
+    val iconOnly: Boolean,
+    /** The corner for the View rows (search results); negative: fully round. */
+    val cornerDp: Float,
+)
 
-private fun seenBadge(palette: YtPalette): SeenBadge = when (palette.signature) {
-    YtSignature.EDITORIAL -> SeenBadge(RectangleShape, Color.Black.copy(alpha = 0.66f), Color.White, uppercase = true, iconOnly = false)
-    YtSignature.SHAPES -> SeenBadge(CircleShape, palette.accent, palette.onAccent, uppercase = false, iconOnly = true)
-    YtSignature.POP -> SeenBadge(RoundedCornerShape(8.dp), palette.accent, palette.onAccent, uppercase = false, iconOnly = false)
-    YtSignature.GLASS, YtSignature.FROST -> SeenBadge(RoundedCornerShape(50), Color.White.copy(alpha = 0.24f), Color.White, uppercase = false, iconOnly = false)
-    YtSignature.CLAY -> SeenBadge(RoundedCornerShape(50), palette.surface.copy(alpha = 0.9f), palette.text, uppercase = false, iconOnly = false)
-    else -> SeenBadge(RoundedCornerShape(4.dp), Color.Black.copy(alpha = 0.66f), Color.White, uppercase = false, iconOnly = false)
+internal fun seenBadge(palette: YtPalette): SeenBadge = when (palette.signature) {
+    YtSignature.EDITORIAL -> SeenBadge(RectangleShape, Color.Black.copy(alpha = 0.66f), Color.White, uppercase = true, iconOnly = false, cornerDp = 0f)
+    YtSignature.SHAPES -> SeenBadge(CircleShape, palette.accent, palette.onAccent, uppercase = false, iconOnly = true, cornerDp = -1f)
+    YtSignature.POP -> SeenBadge(RoundedCornerShape(8.dp), palette.accent, palette.onAccent, uppercase = false, iconOnly = false, cornerDp = 8f)
+    YtSignature.GLASS, YtSignature.FROST -> SeenBadge(RoundedCornerShape(50), Color.White.copy(alpha = 0.24f), Color.White, uppercase = false, iconOnly = false, cornerDp = -1f)
+    YtSignature.CLAY -> SeenBadge(RoundedCornerShape(50), palette.surface.copy(alpha = 0.9f), palette.text, uppercase = false, iconOnly = false, cornerDp = -1f)
+    else -> SeenBadge(RoundedCornerShape(4.dp), Color.Black.copy(alpha = 0.66f), Color.White, uppercase = false, iconOnly = false, cornerDp = 4f)
 }
 
 /**

@@ -1,5 +1,7 @@
 package com.github.libretube.ui.yt.shorts
 
+import com.github.libretube.ui.yt.ytTitle
+
 import android.view.TextureView
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -604,7 +606,7 @@ private fun Overlay(
                 )
             }
             Text(
-                text = item.title.orEmpty(),
+                text = item.ytTitle,
                 color = Color.White,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,

@@ -46,6 +46,8 @@ data class YtFeedSignals(
     val seen: YtSeenMemory = YtSeenMemory(),
     /** A number per refresh (0: none) that nudges videos of nearly the same score (YtRotation.jitter). */
     val shuffle: Long = 0L,
+    /** The videos seen to the end by YtSeenHide's rule, for [YtFeedPersonal.hideSeen]. */
+    val finished: Set<String> = emptySet(),
 )
 
 /** Why a video is where it is; YtFeedSheet and the quick sheet word it ("Warum sehe ich das?"). */
@@ -188,6 +190,7 @@ object YtFeedEngine {
         if (rules.onlyMusic && !isMusic(item, personal)) return false
         if (rules.onlyLearning && !isLearning(item, rules, personal)) return false
         if (rules.watched == YtWatchedMode.HIDE && (signals.watched[item.id] ?: 0f) >= WATCHED) return false
+        if (personal.hideSeen && item.id in signals.finished) return false
         return true
     }
 

@@ -133,7 +133,7 @@ fun SideWatchDetails(
             .background(palette.background),
     ) {
         Text(
-            text = streams.title,
+            text = ytTitle(streams.title),
             color = palette.text,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,

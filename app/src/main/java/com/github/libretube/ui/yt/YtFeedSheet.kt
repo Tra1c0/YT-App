@@ -269,7 +269,7 @@ internal fun YtWhyCard(palette: YtPalette, video: StreamItem?, onDismiss: () -> 
                     modifier = Modifier.semantics { heading() },
                 )
                 Text(
-                    text = item.title.orEmpty(),
+                    text = item.ytTitle,
                     color = ink.textSecondary,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -509,10 +509,19 @@ private fun SheetBody(palette: YtPalette, preview: () -> YtFeedInput, onClose: (
             }
 
             Section(palette, stringResource(R.string.yt_feed_watched))
+            // YT: one switch for every home and the Abos tab; the choices below are per intent
             Chips {
-                Choice(palette, stringResource(R.string.yt_feed_watched_hide), rules.watched == YtWatchedMode.HIDE) { edit { it.copy(watched = YtWatchedMode.HIDE) } }
-                Choice(palette, stringResource(R.string.yt_feed_watched_last), rules.watched == YtWatchedMode.LAST) { edit { it.copy(watched = YtWatchedMode.LAST) } }
-                Choice(palette, stringResource(R.string.yt_feed_watched_show), rules.watched == YtWatchedMode.SHOW) { edit { it.copy(watched = YtWatchedMode.SHOW) } }
+                Toggle(palette, stringResource(R.string.yt_feed_hide_seen), personal.hideSeen, "yt_feed_hide_seen") { v ->
+                    YtFeed.updatePersonal { it.copy(hideSeen = v) }
+                }
+            }
+            Note(palette, stringResource(R.string.yt_feed_hide_seen_note))
+            if (!personal.hideSeen) {
+                Chips {
+                    Choice(palette, stringResource(R.string.yt_feed_watched_hide), rules.watched == YtWatchedMode.HIDE) { edit { it.copy(watched = YtWatchedMode.HIDE) } }
+                    Choice(palette, stringResource(R.string.yt_feed_watched_last), rules.watched == YtWatchedMode.LAST) { edit { it.copy(watched = YtWatchedMode.LAST) } }
+                    Choice(palette, stringResource(R.string.yt_feed_watched_show), rules.watched == YtWatchedMode.SHOW) { edit { it.copy(watched = YtWatchedMode.SHOW) } }
+                }
             }
 
             Section(palette, stringResource(R.string.yt_feed_channels))
@@ -647,7 +656,7 @@ private fun PreviewStrip(palette: YtPalette, videos: List<StreamItem>) {
         if (shown != null && videos.any { it.url == shown.url }) {
             Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp)) {
                 Text(
-                    text = shown.title.orEmpty(),
+                    text = shown.ytTitle,
                     color = ink.text,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

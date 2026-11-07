@@ -431,7 +431,7 @@ private fun GlassVideo(
                     .clickable { actions.onOpenVideo(video) },
             ) {
                 Text(
-                    text = video.title.orEmpty(),
+                    text = video.ytTitle,
                     color = palette.text,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

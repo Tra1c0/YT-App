@@ -325,7 +325,7 @@ private fun RoomCover(
                 modifier = Modifier.padding(start = 6.dp),
             )
             Text(
-                text = room.title.orEmpty(),
+                text = room.ytTitle,
                 color = palette.text,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
@@ -421,7 +421,7 @@ private fun NextRoomLine(
                 .width(53.dp),
         )
         Text(
-            text = room.title.orEmpty(),
+            text = room.ytTitle,
             color = palette.textSecondary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

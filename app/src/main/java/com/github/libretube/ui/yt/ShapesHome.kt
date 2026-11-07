@@ -348,7 +348,7 @@ private fun ShapesContinue(palette: YtPalette, imageLoader: ImageLoader, video: 
                 style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Bold, fontSize = 12.sp),
             )
             Text(
-                text = video.title.orEmpty(),
+                text = video.ytTitle,
                 color = palette.ink,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -525,7 +525,7 @@ private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: Str
                     .padding(start = 12.dp),
             ) {
                 Text(
-                    text = video.title.orEmpty(),
+                    text = video.ytTitle,
                     color = palette.text,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

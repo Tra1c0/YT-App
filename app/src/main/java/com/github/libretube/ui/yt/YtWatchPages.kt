@@ -465,7 +465,7 @@ private fun YouTubePage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBa
     var open by remember(streams.title) { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth()) {
         Text(
-            text = streams.title,
+            text = ytTitle(streams.title),
             color = palette.text,
             maxLines = if (open) Int.MAX_VALUE else 2,
             overflow = TextOverflow.Ellipsis,
@@ -540,7 +540,7 @@ private fun AfterPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasi
     val section = TextStyle(fontFamily = YtFonts.anton, fontSize = 15.sp, letterSpacing = 1.5.sp, color = palette.accent)
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Text(
-            text = streams.title.uppercase(),
+            text = ytTitle(streams.title).uppercase(),
             color = palette.text,
             style = TextStyle(fontFamily = YtFonts.anton, fontSize = 30.sp, lineHeight = 32.sp, letterSpacing = 0.4.sp),
             modifier = Modifier.padding(top = 16.dp),
@@ -623,7 +623,7 @@ private fun ClayPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasic
                 .ytSurface(palette, slab)
                 .padding(18.dp),
         ) {
-            Text(streams.title, color = ClayText, style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 19.sp, lineHeight = 24.sp))
+            Text(ytTitle(streams.title), color = ClayText, style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 19.sp, lineHeight = 24.sp))
             Text(b.meta, color = ClayDim, style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp), modifier = Modifier.padding(top = 4.dp))
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 16.dp)) {
                 Row(
@@ -700,7 +700,7 @@ private fun EditorialPage(palette: YtPalette, b: WatchBasics, controller: YtWatc
             modifier = Modifier.padding(top = 16.dp),
         )
         Text(
-            streams.title,
+            ytTitle(streams.title),
             color = palette.text,
             style = TextStyle(fontFamily = YtFonts.inter, fontWeight = FontWeight.Black, fontSize = 25.sp, lineHeight = 29.sp, letterSpacing = (-0.4).sp),
             modifier = Modifier.padding(top = 6.dp),
@@ -816,7 +816,7 @@ private fun PanePage(
     val dim = if (frost) Color(0xB3FFFFFF) else palette.text.copy(alpha = 0.62f)
     Column(Modifier.fillMaxWidth()) {
         if (frost) {
-            Text(streams.title, color = ink, style = TextStyle(fontFamily = font, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 25.sp), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp))
+            Text(ytTitle(streams.title), color = ink, style = TextStyle(fontFamily = font, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 25.sp), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp))
             Text(b.meta, color = dim, style = TextStyle(fontFamily = font, fontSize = 12.5.sp), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp))
         } else {
             Column(
@@ -826,7 +826,7 @@ private fun PanePage(
                     .glassPane(RoundedCornerShape(26.dp), frost = false)
                     .padding(16.dp),
             ) {
-                Text(streams.title, color = ink, style = TextStyle(fontFamily = font, fontWeight = FontWeight.Bold, fontSize = 18.sp, lineHeight = 23.sp))
+                Text(ytTitle(streams.title), color = ink, style = TextStyle(fontFamily = font, fontWeight = FontWeight.Bold, fontSize = 18.sp, lineHeight = 23.sp))
                 Text(b.meta, color = dim, style = TextStyle(fontFamily = font, fontSize = 12.5.sp), modifier = Modifier.padding(top = 4.dp))
             }
         }
@@ -927,8 +927,8 @@ private val PopBlobs = listOf(Color(0xFFFDE682), Color(0xFFF7B3CE), Color(0xFFDF
 private fun PopPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics, controller: YtWatchController, actions: YtWatchActions) {
     val streams = b.streams
     var open by remember(streams.title) { mutableStateOf(false) }
-    val first = streams.title.substringBefore(' ')
-    val rest = streams.title.removePrefix(first)
+    val first = ytTitle(streams.title).substringBefore(' ')
+    val rest = ytTitle(streams.title).removePrefix(first)
     Column(Modifier.fillMaxWidth()) {
         Text(
             buildAnnotatedString {
@@ -1021,7 +1021,7 @@ private fun ShapesPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
     )
     val colors = listOf(palette.lime, Color(0xFFF6D365), palette.pink, palette.lavender, Color(0xFFF28B82))
     Column(Modifier.fillMaxWidth()) {
-        Text(streams.title, color = palette.text, style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 25.sp), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp))
+        Text(ytTitle(streams.title), color = palette.text, style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 25.sp), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp))
         Text(b.meta, color = palette.text.copy(alpha = 0.65f), style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 12.5.sp), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp))
         WatchCreator(palette, imageLoader, streams, b.hasChannel, b.subscribed, b.toggle, actions.onOpenChannel)
         val buttons = listOf(b.like) + b.actions
@@ -1089,7 +1089,7 @@ private fun KieselPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
     val streams = b.streams
     var tab by remember(streams.title) { mutableStateOf(0) }
     Column(Modifier.fillMaxWidth()) {
-        Text(streams.title, color = KieselInk, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 21.sp, lineHeight = 26.sp), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp))
+        Text(ytTitle(streams.title), color = KieselInk, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 21.sp, lineHeight = 26.sp), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp))
         // three stat pebbles, as on the start page
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 14.dp)) {
             Pebble(streams.views.formatShort(), stringResource(R.string.yt_watch_views_label), KieselLavender, Modifier.weight(1f))

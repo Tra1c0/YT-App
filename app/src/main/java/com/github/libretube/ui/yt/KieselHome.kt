@@ -399,7 +399,7 @@ private fun KieselReminderFace(video: StreamItem, left: Long, color: Color, modi
             }
         }
         Text(
-            text = video.title.orEmpty(),
+            text = video.ytTitle,
             color = KieselBlack.copy(alpha = 0.75f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -583,7 +583,7 @@ private fun KieselCardItem(video: StreamItem, imageLoader: ImageLoader, color: C
             }
         }
         Text(
-            text = video.title.orEmpty(),
+            text = video.ytTitle,
             color = KieselBlack,
             maxLines = 2,
             minLines = 2,
@@ -638,7 +638,7 @@ private fun KieselRow(
         )
         Column(Modifier.weight(1f).padding(start = 12.dp, end = 6.dp)) {
             Text(
-                text = video.title.orEmpty(),
+                text = video.ytTitle,
                 color = KieselInk,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

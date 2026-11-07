@@ -15,13 +15,17 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import com.github.libretube.R
 import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.extensions.formatShort
 import com.github.libretube.extensions.toID
 import com.github.libretube.helpers.YtChannelPause
 import com.github.libretube.helpers.YtHidden
+import com.github.libretube.ui.yt.feed.YtFeed
 import com.github.libretube.ui.yt.feed.YtPausedChannel
+import com.github.libretube.ui.yt.feed.YtSeenHide
 import com.github.libretube.ui.yt.feed.YtVisibility
 
 /*
@@ -98,12 +102,27 @@ fun ytVisible(videos: List<StreamItem>?, hidden: Map<String, Int>, paused: List<
         channelName = { it.uploaderName },
     )
 
-/** [videos] as the home screens show them; follows hiding and pausing as they happen. */
+/**
+ * [videos] as the home screens show them; follows hiding and pausing as they happen, and with
+ * "Gesehenes ausblenden" (Feed-Regler) leaves out what was seen to the end (YtSeenHide).
+ */
 @Composable
 fun rememberYtVisible(videos: List<StreamItem>?): List<StreamItem>? {
     val hidden by YtHidden.hidden.collectAsState()
     val paused by YtChannelPause.paused.collectAsState()
-    return remember(videos, hidden, paused) { ytVisible(videos, hidden, paused, System.currentTimeMillis()) }
+    val hideSeenFlow = remember { YtFeed.profile.map { it.personal.hideSeen }.distinctUntilChanged() }
+    val hideSeen by hideSeenFlow.collectAsState(initial = YtFeed.profile.value.personal.hideSeen)
+    val visible = remember(videos, hidden, paused) { ytVisible(videos, hidden, paused, System.currentTimeMillis()) }
+    if (!hideSeen || visible == null) return visible
+    // only read while the switch is on: the positions change each time the player pauses
+    val positions by YtSeenStore.positions.collectAsState()
+    return remember(visible, positions) {
+        YtSeenHide.visible(
+            visible,
+            position = { video -> video.url?.toID()?.let { positions[it] } },
+            duration = { video -> video.duration.takeUnless { video.isLive } },
+        )
+    }
 }
 
 /**
