@@ -13,8 +13,9 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   `Tra1c0/YT-Revanced-Revanced-` is a separate, older project (branch `ccr-06da63aa-8a5ovt` only).
 - Waiting for the user's phone: whether the update flow of build 95 works (next update 95 → 96);
   the app now stores the last install status in prefs `yt_self_updater/last_result`.
-- Open, not started: chapters from comments; DeArrow on the design homes (check first);
-  `MODIFICATIONS.md` (GPL change list) is out of date since round 12 and must be brought up to date.
+- Open, not started: chapters from comments; DeArrow on the design homes (check first).
+- `MODIFICATIONS.md` (GPL change list) is current up to build 95 (rows split into LibreTube /
+  YT files); add a row for every change to an upstream file.
 - Unverified on a phone: most features of rounds 12-15 (see FEATURES.md status column).
 
 ## How to work (cheap and safe)
