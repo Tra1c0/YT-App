@@ -38,7 +38,7 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:layout_marginHorizontal="1dp"
                         android:layout_marginTop="10dp"
@@ -52,9 +52,12 @@
                             android:layout_gravity="center"
                             app:shapeAppearance="@style/CircleImageView" />
 
+                        <!-- YT: wrap_content, not match_parent: a weighted match_parent column is left out of
+                             the row's height, so the row took the buttons' height and clipped the subscribers -->
                         <LinearLayout
                             android:layout_width="0dp"
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
                             android:layout_marginStart="10dp"
                             android:layout_marginEnd="5dp"
                             android:layout_weight="1"
