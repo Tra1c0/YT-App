@@ -162,6 +162,21 @@ internal class YtInnerTube(cookies: String, private val onCookies: (String) -> U
         }
         .distinctBy { it.id }
 
+    /**
+     * Rates [videoId] for the signed-in account: "like", "dislike" or "removelike", the three
+     * endpoints YouTube's web client calls from its thumb buttons. Throws when YouTube does not
+     * take it (HTTP error, or an answer without the usual response context).
+     */
+    fun rate(videoId: String, endpoint: String) {
+        require(endpoint in RATE_ENDPOINTS)
+        val answer = post("like/$endpoint") { putJsonObject("target") { put("videoId", videoId) } }
+        if ("responseContext" !in answer) throw IOException("YouTube: unexpected answer")
+    }
+
+    /** The account's current rating of [videoId] as YouTube reports it ("LIKE", "DISLIKE", "INDIFFERENT"), if found. */
+    fun likeStatus(videoId: String): String? =
+        (post("next") { put("videoId", videoId) }.find("likeStatus") as? JsonPrimitive)?.contentOrNull
+
     fun logout() {
         execute(Request.Builder().url("$ORIGIN/logout").session().get().build())
     }
@@ -173,6 +188,7 @@ internal class YtInnerTube(cookies: String, private val onCookies: (String) -> U
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
         private val JSON_TYPE = "application/json".toMediaType()
         val CHANNEL_ID = Regex("^UC[\\w-]{22}$")
+        private val RATE_ENDPOINTS = setOf("like", "dislike", "removelike")
 
         private val client = OkHttpClient.Builder()
             .followRedirects(false)

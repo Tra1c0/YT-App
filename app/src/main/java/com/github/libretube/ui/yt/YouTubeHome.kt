@@ -71,7 +71,6 @@ import com.github.libretube.R
 import com.github.libretube.api.TrendingCategory
 import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.extensions.formatShort
-import com.github.libretube.util.TextUtils
 
 /** Key of the "Alle" filter; the other filters are trending categories. */
 const val YT_FILTER_ALL = "ALL"
@@ -457,7 +456,7 @@ private fun LargeVideo(
                     ),
                 )
                 Text(
-                    text = TextUtils.formatViewsString(
+                    text = ytViewsAndAge(
                         context,
                         video.views ?: -1L,
                         video.uploaded,

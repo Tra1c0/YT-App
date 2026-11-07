@@ -34,7 +34,6 @@ import com.github.libretube.extensions.formatShort
 import com.github.libretube.extensions.toID
 import com.github.libretube.ui.models.CommentsViewModel
 import com.github.libretube.ui.yt.player.YtShareScrubBridge
-import com.github.libretube.util.TextUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -128,7 +127,7 @@ fun YouTubeWatchDetails(
             modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 8.dp),
         )
         Text(
-            text = TextUtils.formatViewsString(context, streams.views, streams.uploaded ?: 0L),
+            text = ytViewsAndAge(context, streams.views, streams.uploaded ?: 0L),
             color = palette.textSecondary,
             style = TextStyle(fontFamily = palette.font, fontSize = 12.5.sp),
             modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 3.dp),

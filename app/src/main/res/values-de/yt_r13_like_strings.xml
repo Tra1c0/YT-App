@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: rating a video by holding its like button, and the relative upload age. Same keys in the same order in values and values-de. -->
+<resources>
+    <!-- the two tiles that open when the like button is held -->
+    <string name="yt_rate_like">Mag ich</string>
+    <string name="yt_rate_dislike">Mag ich nicht</string>
+    <!-- shown once when no YouTube account is signed in -->
+    <string name="yt_rate_local_only">Nur auf diesem Gerät gespeichert. Mit YouTube-Anmeldung gehen Bewertungen auch an YouTube.</string>
+    <string name="yt_rate_failed">YouTube hat die Bewertung nicht angenommen: %1$s</string>
+    <!-- accessibility: what the like button says about its state -->
+    <string name="yt_rate_state_liked">Du magst dieses Video</string>
+    <string name="yt_rate_state_disliked">Du magst dieses Video nicht</string>
+
+    <!-- how long ago a video was uploaded, short; "~" marks a rounded value -->
+    <string name="yt_age_today">heute</string>
+    <plurals name="yt_age_minutes">
+        <item quantity="one">%1$s Min.</item>
+        <item quantity="other">%1$s Min.</item>
+    </plurals>
+    <plurals name="yt_age_hours">
+        <item quantity="one">~%1$s Std.</item>
+        <item quantity="other">~%1$s Std.</item>
+    </plurals>
+    <plurals name="yt_age_days">
+        <item quantity="one">%1$s Tag</item>
+        <item quantity="other">%1$s Tage</item>
+    </plurals>
+    <plurals name="yt_age_weeks">
+        <item quantity="one">%1$s Woche</item>
+        <item quantity="other">%1$s Wochen</item>
+    </plurals>
+    <plurals name="yt_age_months">
+        <item quantity="one">%1$s Monat</item>
+        <item quantity="other">%1$s Monate</item>
+    </plurals>
+    <plurals name="yt_age_years">
+        <item quantity="one">~%1$s Jahr</item>
+        <item quantity="other">~%1$s Jahre</item>
+    </plurals>
+    <!-- the same in a sentence ("320.000 Aufrufe • vor 3 Wochen") -->
+    <plurals name="yt_age_ago_minutes">
+        <item quantity="one">vor %1$s Min.</item>
+        <item quantity="other">vor %1$s Min.</item>
+    </plurals>
+    <plurals name="yt_age_ago_hours">
+        <item quantity="one">vor ~%1$s Std.</item>
+        <item quantity="other">vor ~%1$s Std.</item>
+    </plurals>
+    <plurals name="yt_age_ago_days">
+        <item quantity="one">vor %1$s Tag</item>
+        <item quantity="other">vor %1$s Tagen</item>
+    </plurals>
+    <plurals name="yt_age_ago_weeks">
+        <item quantity="one">vor %1$s Woche</item>
+        <item quantity="other">vor %1$s Wochen</item>
+    </plurals>
+    <plurals name="yt_age_ago_months">
+        <item quantity="one">vor %1$s Monat</item>
+        <item quantity="other">vor %1$s Monaten</item>
+    </plurals>
+    <plurals name="yt_age_ago_years">
+        <item quantity="one">vor ~%1$s Jahr</item>
+        <item quantity="other">vor ~%1$s Jahren</item>
+    </plurals>
+</resources>

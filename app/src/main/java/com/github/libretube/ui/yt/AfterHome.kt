@@ -510,7 +510,7 @@ private fun AfterCredits(palette: YtPalette, hero: StreamItem, onOpenVideo: (Str
                 )
                 Text(
                     text = listOfNotNull(
-                        hero.uploadedDate,
+                        ytVideoAge(hero),
                         hero.views?.takeIf { it > 0 }?.let { stringResource(R.string.yt_after_views, it.formatShort()) },
                     ).joinToString(" · "),
                     color = palette.textSecondary,

@@ -144,5 +144,5 @@ fun ytViews(video: StreamItem): String? = video.views?.takeIf { it > 0 }?.let {
 @Composable
 fun ytMeta(video: StreamItem, separator: String = " • "): String = listOfNotNull(
     ytViews(video),
-    if (video.isLive) stringResource(R.string.yt_live_now) else video.uploadedDate,
+    if (video.isLive) stringResource(R.string.yt_live_now) else ytVideoAge(video),
 ).joinToString(separator)

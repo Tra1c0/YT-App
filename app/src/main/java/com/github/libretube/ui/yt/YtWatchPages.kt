@@ -82,7 +82,6 @@ import com.github.libretube.helpers.YtDesign
 import com.github.libretube.ui.yt.player.ytShareScrubSource
 import com.github.libretube.util.HtmlParser
 import com.github.libretube.util.LinkHandler
-import com.github.libretube.util.TextUtils
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.Dispatchers
@@ -117,10 +116,11 @@ private class WatchBasics(
     val meta: String,
     val like: WatchAction,
     val actions: List<WatchAction>,
+    val rate: YtRateState,
 )
 
 @Composable
-private fun rememberBasics(streams: Streams, actions: YtWatchActions): WatchBasics {
+private fun rememberBasics(streams: Streams, videoId: String?, palette: YtPalette, actions: YtWatchActions): WatchBasics {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val channelId = streams.uploaderUrl?.toID()
@@ -149,6 +149,10 @@ private fun rememberBasics(streams: Streams, actions: YtWatchActions): WatchBasi
         R.drawable.ic_like,
         if (streams.likes > 0) streams.likes.formatShort() else stringResource(R.string.yt_watch_like),
     ) {}
+    // held, it opens like and dislike (the tap stays as it was); the rating shows as a tiny mark
+    val rate = rememberYtRateState(videoId)
+    val markColor = Color(YtContrast.readable(palette.accent.toArgb(), palette.surface.toArgb(), 3.0))
+    like.gesture = Modifier.ytRateHold(rate, markColor)
     val shareGesture = Modifier.ytShareScrubSource(actions.shareScrub)
     val list = buildList {
         add(WatchAction(R.drawable.ic_playlist_add, stringResource(R.string.yt_watch_save), actions.onSave))
@@ -162,9 +166,10 @@ private fun rememberBasics(streams: Streams, actions: YtWatchActions): WatchBasi
         hasChannel = channelId != null,
         subscribed = subscribed == true,
         toggle = toggle,
-        meta = TextUtils.formatViewsString(context, streams.views, streams.uploaded ?: 0L),
+        meta = ytViewsAndAge(context, streams.views, streams.uploaded ?: 0L),
         like = like,
         actions = list,
+        rate = rate,
     )
 }
 
@@ -178,8 +183,9 @@ fun YtWatchPage(
     actions: YtWatchActions,
 ) {
     val streams = controller.streams ?: return
-    val basics = rememberBasics(streams, actions)
+    val basics = rememberBasics(streams, controller.videoId, palette, actions)
     Column(Modifier.fillMaxWidth()) {
+    YtRateTiles(basics.rate)
     when (design) {
         YtDesign.AFTER -> AfterPage(palette, imageLoader, basics, controller, actions)
         YtDesign.CLAY -> ClayPage(palette, imageLoader, basics, controller, actions)
@@ -1081,8 +1087,8 @@ private fun KieselPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
         // three stat pebbles, as on the start page
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 13.dp, end = 13.dp, top = 14.dp)) {
             Pebble(streams.views.formatShort(), stringResource(R.string.yt_watch_views_label), KieselLavender, Modifier.weight(1f))
-            Pebble(if (streams.likes > 0) streams.likes.formatShort() else "–", stringResource(R.string.yt_watch_likes_label), KieselPeach, Modifier.weight(1f))
-            Pebble(streams.uploaded?.let { compactAge(it) } ?: "–", stringResource(R.string.yt_watch_uploaded_label), PebbleBeige, Modifier.weight(1f))
+            Pebble(if (streams.likes > 0) streams.likes.formatShort() else "–", stringResource(R.string.yt_watch_likes_label), KieselPeach, Modifier.weight(1f).then(b.like.gesture))
+            Pebble(streams.uploaded?.let { ytAgeText(LocalContext.current, it) } ?: "–", stringResource(R.string.yt_watch_uploaded_label), PebbleBeige, Modifier.weight(1f))
         }
         WatchCreator(palette, imageLoader, streams, b.hasChannel, b.subscribed, b.toggle, actions.onOpenChannel)
         // the actions as a grid of capsules: two in a row, nothing cut off
@@ -1129,32 +1135,6 @@ private fun KieselPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBas
         if (tab == 1 && streams.chapters.isNotEmpty()) WatchChapters(palette, imageLoader, streams, controller.chapterIndex, actions.onSeek)
         WatchUpNextTitle(palette)
     }
-}
-
-/**
- * How long ago [unixTime] was, in the short form ("3 mo. ago", "vor 3 Mon."), so it fits a
- * pebble a third of the screen wide.
- */
-private fun compactAge(unixTime: Long): String {
-    val date = java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(unixTime), java.time.ZoneId.systemDefault())
-    val now = java.time.LocalDateTime.now()
-    val months = date.until(now, java.time.temporal.ChronoUnit.MONTHS)
-    val weeks = date.until(now, java.time.temporal.ChronoUnit.WEEKS)
-    val (unit, amount) = when {
-        months >= 12 -> android.icu.text.RelativeDateTimeFormatter.RelativeUnit.YEARS to months / 12
-        months > 0 -> android.icu.text.RelativeDateTimeFormatter.RelativeUnit.MONTHS to months
-        weeks > 0 -> android.icu.text.RelativeDateTimeFormatter.RelativeUnit.WEEKS to weeks
-        else -> return DateUtils.getRelativeTimeSpanString(
-            unixTime, System.currentTimeMillis(), 0L, DateUtils.FORMAT_ABBREV_RELATIVE,
-        ).toString()
-    }
-    val locale = android.icu.util.ULocale.getDefault()
-    return android.icu.text.RelativeDateTimeFormatter.getInstance(
-        locale,
-        android.icu.text.NumberFormat.getInstance(locale),
-        android.icu.text.RelativeDateTimeFormatter.Style.SHORT,
-        android.icu.text.DisplayContext.CAPITALIZATION_NONE,
-    ).format(amount.toDouble(), android.icu.text.RelativeDateTimeFormatter.Direction.LAST, unit)
 }
 
 @Composable
