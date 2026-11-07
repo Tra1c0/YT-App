@@ -52,6 +52,95 @@ class YtCardSwipeTest {
         assertEquals(0, YtSwipePhysics.decide(-200f, 2000f, threshold))
     }
 
+    private val slop = 22f // 8 dp at 2.75x
+    private val drift = 66f // 24 dp
+
+    /**
+     * Plays a straight move from (0, 0) to ([toX], [toY]) in [steps] events through the claim
+     * and drift rules, then lets go with ([vx], [vy]) as the card's gesture does. @return the way
+     */
+    private fun play(toX: Float, toY: Float, vx: Float, vy: Float, steps: Int = 40): Int {
+        var claimedAt = -1
+        for (i in 1..steps) {
+            val x = toX * i / steps
+            val y = toY * i / steps
+            if (claimedAt < 0) {
+                when (YtSwipePhysics.claim(x, y, slop)) {
+                    YtSwipePhysics.Claim.SCROLL -> return 0
+                    YtSwipePhysics.Claim.SWIPE -> claimedAt = i
+                    YtSwipePhysics.Claim.WAIT -> Unit
+                }
+            } else if (YtSwipePhysics.drifted(x, y, drift, slop)) {
+                return 0
+            }
+        }
+        if (claimedAt < 0) return 0
+        val shown = YtSwipePhysics.band(toX - kotlin.math.sign(toX) * slop, threshold, width)
+        return YtSwipePhysics.decide(shown, vx, threshold, vy)
+    }
+
+    @Test
+    fun aSlantedScrollDownNeverCommits() {
+        // from steep to quite flat, both ways, slow and thrown, short and long
+        for (angle in listOf(30.0, 35.0, 40.0, 45.0, 55.0, 70.0, 85.0)) {
+            for (length in listOf(100f, 300f, 600f, 1200f)) {
+                for (side in listOf(-1f, 1f)) {
+                    for (up in listOf(-1f, 1f)) {
+                        val rad = Math.toRadians(angle)
+                        val dx = side * length * kotlin.math.cos(rad).toFloat()
+                        val dy = up * length * kotlin.math.sin(rad).toFloat()
+                        for (speed in listOf(0f, 1000f, 3000f)) {
+                            val vx = dx / length * speed
+                            val vy = dy / length * speed
+                            assertEquals("angle=$angle len=$length dx=$dx dy=$dy v=$speed", 0, play(dx, dy, vx, vy))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun aSlantedScrollIsNeverClaimed() {
+        assertEquals(YtSwipePhysics.Claim.SCROLL, YtSwipePhysics.claim(20f, 25f, slop))
+        assertEquals(YtSwipePhysics.Claim.SCROLL, YtSwipePhysics.claim(-40f, 23f, slop))
+        assertEquals(YtSwipePhysics.Claim.WAIT, YtSwipePhysics.claim(25f, 15f, slop))
+        assertEquals(YtSwipePhysics.Claim.WAIT, YtSwipePhysics.claim(10f, 2f, slop))
+        assertEquals(YtSwipePhysics.Claim.SWIPE, YtSwipePhysics.claim(30f, 15f, slop))
+        assertEquals(YtSwipePhysics.Claim.SWIPE, YtSwipePhysics.claim(-23f, 0f, slop))
+    }
+
+    @Test
+    fun aClearSidewaysSwipeStillCommits() {
+        // slow past the threshold, with a little wobble
+        assertEquals(1, play(400f, 20f, 0f, 0f))
+        assertEquals(-1, play(-400f, -30f, -100f, 50f))
+        // a slight slope over a long way
+        assertEquals(1, play(500f, 60f, 300f, 40f))
+        // a flick before the threshold
+        assertEquals(-1, play(-150f, 10f, -2400f, 200f))
+        assertEquals(1, play(150f, -15f, 2400f, -400f))
+    }
+
+    @Test
+    fun aSwipeThatTurnsDownIsDropped() {
+        // claimed sideways, then the finger goes down: dropped once past the drift
+        assertTrue(YtSwipePhysics.drifted(300f, 70f, drift, slop))
+        assertTrue(YtSwipePhysics.drifted(60f, 40f, drift, slop))
+        assertTrue(!YtSwipePhysics.drifted(300f, 40f, drift, slop))
+        assertTrue(!YtSwipePhysics.drifted(30f, 15f, drift, slop))
+    }
+
+    @Test
+    fun aSteepReleaseNeverCommits() {
+        // past the threshold, then flicked down to scroll on
+        assertEquals(0, YtSwipePhysics.decide(320f, 300f, threshold, 2000f))
+        assertEquals(0, YtSwipePhysics.decide(-200f, -2000f, threshold, 1500f))
+        // held still past the threshold: a little vertical noise does not matter
+        assertEquals(1, YtSwipePhysics.decide(320f, 20f, threshold, 300f))
+        assertEquals(-1, YtSwipePhysics.decide(-200f, -2400f, threshold, 900f))
+    }
+
     @Test
     fun theArmedSide() {
         assertEquals(0, YtSwipePhysics.side(279f, threshold))
