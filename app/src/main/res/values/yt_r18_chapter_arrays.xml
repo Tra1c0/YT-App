@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the modes of the double tap's chapter jump, in the order of YtChapterTapMode (the values are
+     what the setting stores). -->
+<resources>
+    <string-array name="yt_r18_chapter_tap_entries">
+        <item>@string/yt_r18_chapter_tap_off</item>
+        <item>@string/yt_r18_chapter_tap_chapters</item>
+        <item>@string/yt_r18_chapter_tap_edge</item>
+    </string-array>
+    <string-array name="yt_r18_chapter_tap_values" translatable="false">
+        <item>off</item>
+        <item>chapters</item>
+        <item>edge</item>
+    </string-array>
+</resources>
