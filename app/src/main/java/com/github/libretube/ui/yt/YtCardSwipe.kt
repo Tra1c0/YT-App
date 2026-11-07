@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,6 +50,8 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
@@ -76,6 +77,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -97,6 +99,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.math.sign
 
 /*
  * YT: the card swipe of the home screens. Pushed to the left a card hides (it flies off and a
@@ -244,6 +247,8 @@ fun Modifier.ytCardSwipe(
     val density = LocalDensity.current
     val threshold = with(density) { 96.dp.toPx() }
     val margin = with(density) { 32.dp.toPx() }
+    // how far a claimed swipe may wander up or down before it counts as a scroll and is dropped
+    val drift = with(density) { 24.dp.toPx() }
     val measurer = rememberTextMeasurer()
     val queueIcon = painterResource(R.drawable.ic_queue)
     val hideIcon = painterResource(R.drawable.ic_yt_hide)
@@ -305,8 +310,9 @@ fun Modifier.ytCardSwipe(
         if (!queued) haptics.reject()
     }
 
-    val gesture = Modifier.pointerInput(state, threshold) {
+    val gesture = Modifier.pointerInput(state, threshold, drift) {
         val width = size.width.toFloat().coerceAtLeast(1f)
+        val slop = viewConfiguration.touchSlop
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
             // the emulator checks: whether a swipe reached the card at all, and where it stopped
@@ -326,25 +332,50 @@ fun Modifier.ytCardSwipe(
                 }
                 scope.launch { state.offset.snapTo(shown) }
             }
-            // a card still springing back is picked up where it is
-            val start = awaitHorizontalTouchSlopOrCancellation(down.id) { change, over ->
-                change.consume()
-                follow(YtSwipePhysics.unband(state.offset.value, threshold, width) + over)
-            } ?: run {
-                YtTestHooks.log("YtSwipe") { "no swipe id=$id (lifted before the slop, or taken by another gesture)" }
+            // the card claims the finger only for a clearly sideways move; a slanted scroll down
+            // stays the list's (Compose's own horizontal slop ignores the vertical part)
+            val origin = down.position
+            var claimed: PointerInputChange? = null
+            while (true) {
+                val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                if (!change.pressed || change.isConsumed) break
+                tracker.addPointerInputChange(change)
+                val moved = change.position - origin
+                val claim = YtSwipePhysics.claim(moved.x, moved.y, slop)
+                if (claim == YtSwipePhysics.Claim.SCROLL) break
+                if (claim == YtSwipePhysics.Claim.SWIPE) {
+                    change.consume()
+                    // a card still springing back is picked up where it is
+                    val over = moved.x - sign(moved.x) * slop
+                    follow(YtSwipePhysics.unband(state.offset.value, threshold, width) + over)
+                    claimed = change
+                    break
+                }
+                // not decided: the list may take it meanwhile (it consumes after this pass)
+                val taken = awaitPointerEvent(PointerEventPass.Final).changes.any { it.id == down.id && it.isConsumed }
+                if (taken) break
+            }
+            val start = claimed ?: run {
+                YtTestHooks.log("YtSwipe") { "no swipe id=$id (lifted before the slop, a scroll, or taken by another gesture)" }
                 return@awaitEachGesture
             }
             YtTestHooks.log("YtSwipe") { "slop id=$id x=${state.offset.value.roundToInt()}" }
-            tracker.addPointerInputChange(start)
             // past the slop the card owns the finger: every move counts by where the finger is
             // (not by a change another gesture may have consumed, which reads as no move), until
             // it lifts or the gesture is taken away
             var last = start.position.x
             var moves = 0
             var lifted = false
+            var drifted = false
             while (true) {
                 val change = awaitPointerEvent().changes.firstOrNull { it.id == start.id } ?: break
                 tracker.addPointerInputChange(change)
+                // turned into a scroll after all (too far down, or too steep): dropped, never committed
+                val moved = change.position - origin
+                if (change.pressed && YtSwipePhysics.drifted(moved.x, moved.y, drift, slop)) {
+                    drifted = true
+                    break
+                }
                 val dx = change.position.x - last
                 last = change.position.x
                 if (dx != 0f) follow(raw + dx)
@@ -357,10 +388,12 @@ fun Modifier.ytCardSwipe(
             }
             // where the finger put the card, not the offset, which its coroutine sets a frame later
             val shown = YtSwipePhysics.band(raw, threshold, width)
-            val velocity = if (lifted) tracker.calculateVelocity().x else 0f
-            val way = if (lifted) YtSwipePhysics.decide(shown, velocity, threshold) else 0
+            val fling = if (lifted) tracker.calculateVelocity() else Velocity.Zero
+            val velocity = fling.x
+            val way = if (lifted) YtSwipePhysics.decide(shown, velocity, threshold, fling.y) else 0
             YtTestHooks.log("YtSwipe") {
-                "release id=$id x=${shown.roundToInt()} moves=$moves v=${velocity.roundToInt()} lifted=$lifted way=$way"
+                "release id=$id x=${shown.roundToInt()} moves=$moves v=${velocity.roundToInt()} vy=${fling.y.roundToInt()} " +
+                    "lifted=$lifted drifted=$drifted way=$way"
             }
             // letting go: the commit (or nothing) is felt, not the threshold left behind
             arm(0, feel = false)

@@ -19,6 +19,49 @@ object YtSwipePhysics {
 
     private const val RUBBER = 0.55f
 
+    /** A swipe is claimed only when the finger went at least this many times as far sideways as down. */
+    const val CLAIM_RATIO = 2f
+
+    /** tan(30°): a claimed swipe whose path (or release) gets steeper than this is a scroll after all. */
+    const val STEEP = 0.577f
+
+    /** A release slower than this vertically never counts as a scroll, however slow it is sideways. */
+    const val VERTICAL_RELEASE_FLOOR = 600f
+
+    /** What the first moves of a touch on a card are: not decided yet, a swipe, or the list's scroll. */
+    enum class Claim { WAIT, SWIPE, SCROLL }
+
+    /**
+     * Whether a touch that moved ([dx], [dy]) from where it went down is a swipe of the card. It
+     * is one only when it went past [slop] sideways and clearly sideways ([CLAIM_RATIO]); once
+     * it went past [slop] down without that, it is the list's: a slanted scroll down never
+     * becomes a swipe.
+     */
+    fun claim(dx: Float, dy: Float, slop: Float): Claim {
+        val across = abs(dx)
+        val down = abs(dy)
+        return when {
+            across > slop && across >= CLAIM_RATIO * down -> Claim.SWIPE
+            down > slop -> Claim.SCROLL
+            // neither clear yet: the next move decides (or the list takes it)
+            else -> Claim.WAIT
+        }
+    }
+
+    /**
+     * Whether a claimed swipe, now ([dx], [dy]) from where it went down, has turned into a
+     * scroll: the finger went more than [drift] up or down, or (past [slop]) its path got
+     * steeper than 30°. The swipe is then dropped without committing.
+     */
+    fun drifted(dx: Float, dy: Float, drift: Float, slop: Float): Boolean {
+        val down = abs(dy)
+        return down > drift || (down > slop && down > abs(dx) * STEEP)
+    }
+
+    /** Whether a release with velocity ([vx], [vy]) goes up or down more than sideways (steeper than 30°). */
+    fun steepRelease(vx: Float, vy: Float): Boolean =
+        abs(vy) > VERTICAL_RELEASE_FLOOR && abs(vy) > abs(vx) * STEEP
+
     /** How far past the threshold the card moves for [overshoot] px of pull: less and less. */
     fun rubberBand(overshoot: Float, dimension: Float): Float =
         (overshoot * dimension * RUBBER) / (dimension + RUBBER * abs(overshoot))
@@ -47,9 +90,11 @@ object YtSwipePhysics {
 
     /**
      * What letting go does: past the threshold it commits that side unless the card is thrown
-     * back hard; before it a clear throw outwards commits. -1 hide, 1 queue, 0 back to rest.
+     * back hard; before it a clear throw outwards commits. A release that moves up or down more
+     * than sideways ([vy], see [steepRelease]) never commits. -1 hide, 1 queue, 0 back to rest.
      */
-    fun decide(shown: Float, velocity: Float, threshold: Float): Int {
+    fun decide(shown: Float, velocity: Float, threshold: Float, vy: Float = 0f): Int {
+        if (steepRelease(velocity, vy)) return 0
         val armed = side(shown, threshold)
         val thrown = abs(velocity) > FLICK_VELOCITY
         if (armed != 0) return if (thrown && sign(velocity) != sign(shown)) 0 else armed
