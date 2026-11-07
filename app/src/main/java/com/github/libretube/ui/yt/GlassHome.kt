@@ -350,7 +350,7 @@ private fun GlassVideo(
                     }
                 },
         ) {
-            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().layerBackdrop(thumb))
+            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().layerBackdrop(thumb).ytSeen(video, palette))
             // a glass drop on the picture: bends it at the rim and swells under the finger
             Box(
                 contentAlignment = Alignment.Center,
@@ -512,7 +512,7 @@ private fun GlassShorts(palette: YtPalette, imageLoader: ImageLoader, shorts: Li
                         .background(palette.lime)
                         .clickable { actions.onOpenVideo(short) },
                 ) {
-                    YtLargeThumbnail(short, imageLoader, Modifier.fillMaxSize().layerBackdrop(thumb))
+                    YtLargeThumbnail(short, imageLoader, Modifier.fillMaxSize().layerBackdrop(thumb).ytSeen(short, palette))
                     Icon(
                         painterResource(R.drawable.ic_yt_dots_vertical),
                         contentDescription = null,

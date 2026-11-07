@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- card swipe tolerance -->
+    <string name="yt_swipe_sensitivity">Wisch-Empfindlichkeit</string>
+    <string name="yt_swipe_level">%1$s (%2$d)</string>
+    <string name="yt_swipe_level_default">Standard</string>
+    <string name="yt_swipe_level_very_strict">Sehr streng</string>
+    <string name="yt_swipe_level_strict">Streng</string>
+    <string name="yt_swipe_level_loose">Locker</string>
+    <string name="yt_swipe_level_very_loose">Sehr locker</string>
+    <string name="yt_swipe_sensitivity_fine_on">%1$s · eigene Feinwerte aktiv</string>
+    <string name="yt_swipe_fine">Fein einstellen</string>
+    <string name="yt_swipe_fine_summary">Winkel, Abweichung und Weg selbst festlegen statt über den Regler</string>
+    <string name="yt_swipe_angle">Winkel</string>
+    <string name="yt_swipe_angle_summary">%1$s: so schräg darf ein Wischer sein, bevor er als Scrollen gilt</string>
+    <string name="yt_swipe_drift">Abweichung</string>
+    <string name="yt_swipe_drift_summary">%1$s: so weit darf ein Wischer nach oben oder unten wandern</string>
+    <string name="yt_swipe_distance">Weg</string>
+    <string name="yt_swipe_distance_summary">%1$s: so weit ziehen, bis der Wischer auslöst</string>
+    <string name="yt_swipe_degrees">%1$d°</string>
+    <string name="yt_swipe_dp">%1$d dp</string>
+    <string name="yt_swipe_calibrate">Wischgesten kalibrieren</string>
+    <string name="yt_swipe_calibrate_summary">Ein paarmal scrollen und wischen; die App misst deine Bewegungen und schlägt Werte vor</string>
+    <string name="yt_swipe_calibrate_scroll">Scrolle die Liste %1$d-mal nach unten, ganz so, wie du es sonst auch tust.</string>
+    <string name="yt_swipe_calibrate_swipe">Wische jetzt %1$d-mal bewusst seitlich über die Testkarte, nach links oder rechts.</string>
+    <string name="yt_swipe_calibrate_result">Vorschlag aus deinen Bewegungen:</string>
+    <string name="yt_swipe_calibrate_score_now">Jetzige Werte: %1$d von %2$d Wischern erkannt, %3$d von %4$d Scrolls unberührt</string>
+    <string name="yt_swipe_calibrate_score_new">Neue Werte: %1$d von %2$d Wischern erkannt, %3$d von %4$d Scrolls unberührt</string>
+    <string name="yt_swipe_calibrate_conflict">Einige deiner Wischer waren so schräg wie deine Scrolls. Scrollen hat Vorrang; wische etwas flacher.</string>
+    <string name="yt_swipe_calibrate_too_few">Es wurden zu wenige Bewegungen erfasst. Bitte noch einmal.</string>
+    <string name="yt_swipe_calibrate_again">Nochmal</string>
+    <string name="yt_swipe_calibrate_apply">Übernehmen</string>
+    <string name="yt_swipe_reset">Zurücksetzen</string>
+    <string name="yt_swipe_reset_summary">Zurück zu den ursprünglichen Wisch-Werten</string>
+    <string name="yt_swipe_reset_message">Empfindlichkeit, Feinwerte und Kalibrierung gehen auf die ursprünglichen Werte zurück.</string>
+    <string name="yt_swipe_reset_confirm">Zurücksetzen</string>
+    <!-- watched marks on the home cards -->
+    <string name="yt_seen_marks">Gesehenes markieren</string>
+    <string name="yt_seen_marks_summary">Angefangene Videos bekommen einen dünnen Fortschrittsbalken, gesehene werden leicht abgedunkelt und bekommen ein kleines Abzeichen</string>
+    <string name="yt_seen_badge">Gesehen</string>
+</resources>

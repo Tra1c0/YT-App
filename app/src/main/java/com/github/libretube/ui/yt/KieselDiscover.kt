@@ -614,7 +614,8 @@ private fun KieselCategorySheet(
                             modifier = Modifier
                                 .size(108.dp, 61.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(KieselLavender),
+                                .background(KieselLavender)
+                                .ytSeen(video, YtDesign.KIESEL.palette ?: YtPalettes.Kiesel),
                         )
                         Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
                             Text(

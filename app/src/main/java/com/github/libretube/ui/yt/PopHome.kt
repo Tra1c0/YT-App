@@ -260,7 +260,7 @@ private fun PopFeature(
                 .clip(FeatureShape(smallFraction = 0.04f, largeFraction = 0.16f))
                 .background(PopLilac),
         ) {
-            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
             (if (video.isLive) stringResource(R.string.yt_live_badge) else ytDuration(video))?.let {
                 Text(
                     text = it,
@@ -411,7 +411,7 @@ private fun PopListCard(
                 .clip(RoundedCornerShape(14.dp))
                 .background(PopLilac),
         ) {
-            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
             (if (video.isLive) stringResource(R.string.yt_live_badge) else ytDuration(video))?.let {
                 Text(
                     text = it,
@@ -560,7 +560,7 @@ private fun PopShortCard(palette: YtPalette, imageLoader: ImageLoader, video: St
             .background(PopLilac)
             .clickable { actions.onOpenVideo(video) },
     ) {
-        YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+        YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
         Icon(
             painterResource(R.drawable.ic_yt_dots_vertical),
             contentDescription = null,

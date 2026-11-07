@@ -37,11 +37,11 @@ object YtSwipePhysics {
      * it went past [slop] down without that, it is the list's: a slanted scroll down never
      * becomes a swipe.
      */
-    fun claim(dx: Float, dy: Float, slop: Float): Claim {
+    fun claim(dx: Float, dy: Float, slop: Float, ratio: Float = CLAIM_RATIO): Claim {
         val across = abs(dx)
         val down = abs(dy)
         return when {
-            across > slop && across >= CLAIM_RATIO * down -> Claim.SWIPE
+            across > slop && across >= ratio * down -> Claim.SWIPE
             down > slop -> Claim.SCROLL
             // neither clear yet: the next move decides (or the list takes it)
             else -> Claim.WAIT
@@ -51,16 +51,17 @@ object YtSwipePhysics {
     /**
      * Whether a claimed swipe, now ([dx], [dy]) from where it went down, has turned into a
      * scroll: the finger went more than [drift] up or down, or (past [slop]) its path got
-     * steeper than 30°. The swipe is then dropped without committing.
+     * steeper than 30° ([steep] = tan of the angle, see YtSwipeTuning). The swipe is then dropped
+     * without committing.
      */
-    fun drifted(dx: Float, dy: Float, drift: Float, slop: Float): Boolean {
+    fun drifted(dx: Float, dy: Float, drift: Float, slop: Float, steep: Float = STEEP): Boolean {
         val down = abs(dy)
-        return down > drift || (down > slop && down > abs(dx) * STEEP)
+        return down > drift || (down > slop && down > abs(dx) * steep)
     }
 
     /** Whether a release with velocity ([vx], [vy]) goes up or down more than sideways (steeper than 30°). */
-    fun steepRelease(vx: Float, vy: Float): Boolean =
-        abs(vy) > VERTICAL_RELEASE_FLOOR && abs(vy) > abs(vx) * STEEP
+    fun steepRelease(vx: Float, vy: Float, steep: Float = STEEP): Boolean =
+        abs(vy) > VERTICAL_RELEASE_FLOOR && abs(vy) > abs(vx) * steep
 
     /** How far past the threshold the card moves for [overshoot] px of pull: less and less. */
     fun rubberBand(overshoot: Float, dimension: Float): Float =
@@ -93,10 +94,17 @@ object YtSwipePhysics {
      * back hard; before it a clear throw outwards commits. A release that moves up or down more
      * than sideways ([vy], see [steepRelease]) never commits. -1 hide, 1 queue, 0 back to rest.
      */
-    fun decide(shown: Float, velocity: Float, threshold: Float, vy: Float = 0f): Int {
-        if (steepRelease(velocity, vy)) return 0
+    fun decide(
+        shown: Float,
+        velocity: Float,
+        threshold: Float,
+        vy: Float = 0f,
+        steep: Float = STEEP,
+        flick: Float = FLICK_VELOCITY,
+    ): Int {
+        if (steepRelease(velocity, vy, steep)) return 0
         val armed = side(shown, threshold)
-        val thrown = abs(velocity) > FLICK_VELOCITY
+        val thrown = abs(velocity) > flick
         if (armed != 0) return if (thrown && sign(velocity) != sign(shown)) 0 else armed
         if (thrown && sign(velocity) == sign(shown) && abs(shown) > threshold * FLICK_SHARE) return sign(shown).toInt()
         return 0

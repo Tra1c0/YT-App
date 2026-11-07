@@ -5,11 +5,16 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.github.libretube.db.obj.WatchPosition
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WatchPositionDao {
     @Query("SELECT * FROM watchPosition")
     suspend fun getAll(): List<WatchPosition>
+
+    // YT: the home cards' watched marks follow the table (YtSeenStore)
+    @Query("SELECT * FROM watchPosition")
+    fun observeAll(): Flow<List<WatchPosition>>
 
     @Query("SELECT * FROM watchPosition WHERE videoId = :videoId LIMIT 1")
     suspend fun findById(videoId: String): WatchPosition?

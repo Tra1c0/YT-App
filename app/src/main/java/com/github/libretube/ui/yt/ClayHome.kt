@@ -299,7 +299,7 @@ private fun ClayCard(
             .background(Color(0xFF7A5A4C))
             .clickable(interactionSource = interaction, indication = LocalIndication.current) { onOpen(video) },
     ) {
-        YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+        YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
         Box(
             Modifier
                 .fillMaxSize()
@@ -475,7 +475,8 @@ private fun ClayNextCard(
                 Modifier
                     .width(152.dp)
                     .height(89.dp)
-                    .clip(RoundedCornerShape(14.dp)),
+                    .clip(RoundedCornerShape(14.dp))
+                    .ytSeen(video, palette),
             )
             ytDuration(video)?.let {
                 Text(

@@ -411,7 +411,7 @@ private fun ShapesContinue(palette: YtPalette, imageLoader: ImageLoader, video: 
                 imageLoader = imageLoader,
                 contentScale = ContentScale.Crop,
                 alpha = 0.35f,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().ytSeen(video, palette),
             )
             Icon(painterResource(R.drawable.ic_yt_play_round), contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp))
         }
@@ -478,7 +478,7 @@ private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: Str
                 .clip(shape)
                 .background(palette.raised),
         ) {
-            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize())
+            YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
             (if (video.isLive) stringResource(R.string.yt_live_badge) else ytDuration(video))?.let {
                 Text(
                     text = it,

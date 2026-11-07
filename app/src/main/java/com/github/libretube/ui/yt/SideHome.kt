@@ -368,7 +368,7 @@ private fun SidePost(
                 ) { actions.onOpenVideo(post) }
                 .background(palette.surface),
         ) {
-            YtLargeThumbnail(post, imageLoader, Modifier.fillMaxSize())
+            YtLargeThumbnail(post, imageLoader, Modifier.fillMaxSize().ytSeen(post, palette))
             SideHeartPop(palette, pops)
             Box(
                 Modifier

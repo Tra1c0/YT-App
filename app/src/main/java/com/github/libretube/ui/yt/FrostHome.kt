@@ -306,7 +306,7 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
             .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
             .padding(8.dp),
     ) {
-        YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)))
+        YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)).ytSeen(video, palette))
         Box(
             Modifier
                 .fillMaxSize()
@@ -376,7 +376,8 @@ private fun FrostRow(palette: YtPalette, imageLoader: ImageLoader, video: Stream
             Modifier
                 .width(128.dp)
                 .aspectRatio(16f / 10f)
-                .clip(RoundedCornerShape(14.dp)),
+                .clip(RoundedCornerShape(14.dp))
+                .ytSeen(video, palette),
         )
         Column(
             Modifier
