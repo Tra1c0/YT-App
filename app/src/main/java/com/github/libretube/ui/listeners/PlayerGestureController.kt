@@ -41,6 +41,10 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
     private var longPressY = 0f
     var lastDoublePressTime: Instant? = null
 
+    // YT: where across the width the last double tap landed (0 = left), for the chapter jump at the edge
+    var ytDoubleTapFraction = 0.5f
+        private set
+
     var areControlsLocked = false
 
     init {
@@ -213,6 +217,7 @@ class PlayerGestureController(activity: BaseActivity, private val listener: Play
 
                     val (width, _) = listener.getViewMeasures()
                     val eventPositionPercentageX = e.x / width
+                    ytDoubleTapFraction = eventPositionPercentageX
 
                     when {
                         eventPositionPercentageX < LEFT_AREA_VIEW_PERCENTAGE -> {

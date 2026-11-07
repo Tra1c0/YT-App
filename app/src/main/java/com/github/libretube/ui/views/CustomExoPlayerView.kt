@@ -81,7 +81,10 @@ import com.github.libretube.ui.sheets.PlayingQueueSheet
 import com.github.libretube.ui.sheets.SleepTimerSheet
 import com.github.libretube.ui.sheets.StatsSheet
 import com.github.libretube.ui.tools.SleepTimer
+import com.github.libretube.ui.yt.player.YtChapterTap
+import com.github.libretube.ui.yt.player.YtChapterTapLabel
 import com.github.libretube.ui.yt.player.YtHoldDirection
+import com.github.libretube.ui.yt.player.YtScrubPrecision
 import com.github.libretube.util.PlayingQueue
 import java.util.Locale
 import kotlin.math.ceil
@@ -828,8 +831,10 @@ class CustomExoPlayerView(
         playerGestureController.areControlsLocked = !isLocked
     }
 
-    private fun rewind() {
-        player?.seekBy(-PlayerHelper.seekIncrement)
+    // YT: [chapterMs] jumps there (a chapter's start, YtChapterTap) instead of the seek step
+    private fun rewind(chapterMs: Long? = null) {
+        if (chapterMs != null) player?.seekTo(chapterMs) else player?.seekBy(-PlayerHelper.seekIncrement)
+        ytChapterTapLabel.show(false, chapterMs)
 
         // show the rewind button
         doubleTapOverlayBinding.apply {
@@ -844,12 +849,15 @@ class CustomExoPlayerView(
             runnableHandler.removeCallbacksAndMessages(HIDE_REWIND_BUTTON_TOKEN)
             runnableHandler.postDelayed(700, HIDE_REWIND_BUTTON_TOKEN) {
                 rewindLayout.rewindBTN.isGone = true
+                ytChapterTapLabel.hide(false)
             }
         }
     }
 
-    private fun forward() {
-        player?.seekBy(PlayerHelper.seekIncrement)
+    // YT: [chapterMs] jumps there (a chapter's start, YtChapterTap) instead of the seek step
+    private fun forward(chapterMs: Long? = null) {
+        if (chapterMs != null) player?.seekTo(chapterMs) else player?.seekBy(PlayerHelper.seekIncrement)
+        ytChapterTapLabel.show(true, chapterMs)
 
         // show the forward button
         doubleTapOverlayBinding.apply {
@@ -864,6 +872,7 @@ class CustomExoPlayerView(
             runnableHandler.removeCallbacksAndMessages(HIDE_FORWARD_BUTTON_TOKEN)
             runnableHandler.postDelayed(700, HIDE_FORWARD_BUTTON_TOKEN) {
                 forwardLayout.forwardBTN.isGone = true
+                ytChapterTapLabel.hide(true)
             }
         }
     }
@@ -1326,12 +1335,12 @@ class CustomExoPlayerView(
 
     override fun onDoubleTapLeftScreen() {
         if (!PlayerHelper.doubleTapToSeek) return
-        rewind()
+        rewind(ytChapterTapTarget(forward = false))
     }
 
     override fun onDoubleTapRightScreen() {
         if (!PlayerHelper.doubleTapToSeek) return
-        forward()
+        forward(ytChapterTapTarget(forward = true))
     }
 
     override fun onSwipeLeftScreen(distanceY: Float, positionY: Float) {
@@ -1444,6 +1453,26 @@ class CustomExoPlayerView(
             player.playbackParameters = PlaybackParameters(it, player.playbackParameters.pitch)
         }
         rememberedPlaybackSpeed = null
+    }
+
+    /** YT: the double tap's chapter jump where it is set and fits, else null (the seek step). */
+    private fun ytChapterTapTarget(forward: Boolean): Long? {
+        val player = player ?: return null
+        return YtChapterTap.decide(
+            YtChapterTap.mode,
+            playerGestureController.ytDoubleTapFraction,
+            player.currentPosition,
+            binding.exoProgress.loopChapterStartsMs,
+            forward,
+            live = player.isCurrentMediaItemLive,
+        )
+    }
+
+    // YT: the chapter name under the double tap's icon while it jumps chapters
+    private val ytChapterTapLabel by lazy {
+        YtChapterTapLabel(doubleTapOverlayBinding, ::ytChapterTitle) { ms ->
+            YtScrubPrecision.formatTime(ms.toDouble(), 0, withHours = (player?.duration ?: 0L) >= 3_600_000L)
+        }
     }
 
     /** YT: the double tap's seek with its overlay, for hold and drag. */

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- double tap jumps chapters (Gesten & Interaktion → Player) -->
+    <string name="yt_r18_chapter_tap_title">Double tap jumps to chapter</string>
+    <string name="yt_r18_chapter_tap_off">Off (seek by seconds)</string>
+    <string name="yt_r18_chapter_tap_chapters">Chapters, if available</string>
+    <string name="yt_r18_chapter_tap_edge">Only at the outer edge</string>
+    <string name="yt_r18_chapter_tap_next">› %1$s</string>
+    <string name="yt_r18_chapter_tap_prev">‹ %1$s</string>
+</resources>

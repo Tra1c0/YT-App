@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- double tap jumps chapters (Gesten & Interaktion → Player) -->
+    <string name="yt_r18_chapter_tap_title">Doppeltipp springt zum Kapitel</string>
+    <string name="yt_r18_chapter_tap_off">Aus (Sekunden springen)</string>
+    <string name="yt_r18_chapter_tap_chapters">Kapitel, wenn vorhanden</string>
+    <string name="yt_r18_chapter_tap_edge">Nur am äußersten Rand</string>
+    <string name="yt_r18_chapter_tap_next">› %1$s</string>
+    <string name="yt_r18_chapter_tap_prev">‹ %1$s</string>
+</resources>

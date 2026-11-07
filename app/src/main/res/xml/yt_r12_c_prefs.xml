@@ -30,6 +30,16 @@
             app:key="yt_return_chip"
             app:title="@string/yt_r12_c_return_chip_title" />
 
+        <!-- YT round 18: double tap left/right jumps chapters (YtChapterTap) -->
+        <ListPreference
+            android:icon="@drawable/ic_next"
+            app:defaultValue="off"
+            app:entries="@array/yt_r18_chapter_tap_entries"
+            app:entryValues="@array/yt_r18_chapter_tap_values"
+            app:key="yt_double_tap_chapter"
+            app:title="@string/yt_r18_chapter_tap_title"
+            app:useSimpleSummaryProvider="true" />
+
         <SwitchPreferenceCompat
             android:icon="@drawable/ic_repeat"
             android:summary="@string/yt_r12_c_loop_hold_summary"
