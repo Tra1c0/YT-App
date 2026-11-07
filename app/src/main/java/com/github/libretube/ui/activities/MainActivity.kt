@@ -306,6 +306,8 @@ class MainActivity : AbstractPlayerHostActivity() {
         com.github.libretube.ui.yt.search.YtSearchEntry.attach(this, searchFor)
         com.github.libretube.ui.yt.YtHeader.overlayAfterHome(binding.appBarLayout, binding.fragment, navController)
 
+        // YT: the own crash report first; it clears the upstream log so only one dialog shows
+        if (savedInstanceState == null) com.github.libretube.ui.yt.YtDiagnosisUi.showCrashIfNew(this)
         // handle error logs
         PreferenceHelper.getErrorLog().ifBlank { null }?.let {
             if (!BuildConfig.DEBUG)

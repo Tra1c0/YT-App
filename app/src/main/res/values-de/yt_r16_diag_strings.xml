@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: local crash report and diagnosis page. Same keys in the same order in values and values-de. -->
+<resources>
+    <string name="yt_crash_title">YT ist beim letzten Mal abgestürzt</string>
+    <string name="yt_crash_message">Ein Bericht wurde nur auf diesem Gerät gespeichert. Kopiere ihn und schick ihn mit, damit der Absturz behoben werden kann.</string>
+    <string name="yt_crash_copy">Bericht kopieren</string>
+    <string name="yt_diag_share">Teilen</string>
+    <string name="yt_diag_close">Schließen</string>
+    <string name="yt_diag_title">Diagnose</string>
+    <string name="yt_diag_summary">Build, Update, Netz und letzter Absturz als Text zum Kopieren</string>
+    <string name="yt_diag_copy">Kopieren</string>
+    <string name="yt_diag_crashes">Absturzberichte</string>
+</resources>
