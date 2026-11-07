@@ -287,7 +287,7 @@ private fun SidePost(
                     )
                     Text(
                         text = listOfNotNull(
-                            post.uploadedDate,
+                            ytVideoAge(post),
                             post.duration?.takeIf { it > 0 }?.let {
                                 stringResource(R.string.yt_side_minutes, ((it + 30) / 60).coerceAtLeast(1))
                             },
