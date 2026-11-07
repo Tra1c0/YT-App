@@ -8,8 +8,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 101 (soft close: dismissed mini player kept paused 60 s, instant
-  restore). 100: restore starts when the old service is gone. 99: rise fallback,
+- Latest release: build 102 (round 18: chapter double tap, battery quality cap + cue, storage
+  page). 101: soft close (dismissed mini player kept paused 60 s, instant restore). 100: restore starts when the old service is gone. 99: rise fallback,
   restore times in Diagnose. 98: rise animation. 97: fix for
   silent sound after the 2x hold. Docs-only pushes build nothing. Build 96 = round 16 ( crash report + Diagnose page, calm titles, hide watched,
   watched marks in search, mini player restore by holding "Abos"). Before: build 95. Repo `Tra1c0/YT-App` is PUBLIC (needed: when
@@ -94,6 +94,9 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 102: chapter jump on double tap, quality cap on low battery + battery cue (20/15/10/5 %),
+  storage page.
 
 - 101: soft close of the mini player (60 s, paused, no notification, instant restore via "Abos").
 

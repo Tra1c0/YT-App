@@ -236,6 +236,22 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   released first, navigation reruns on `serviceGone` (max 1.5 s, then the START path reuses the
   service and ends the soft close). Only online non-live videos in READY/BUFFERING are kept.
 
+## Round 18 notes
+
+- Chapter double tap: pure `Y/player/YtChapterTap.kt` (reuses `YtHoldDirection` chapter maths),
+  label `Y/player/YtChapterTapLabel.kt`, pref `yt_double_tap_chapter`; `CustomExoPlayerView`
+  rewind/forward take an optional chapter target, `PlayerGestureController.ytDoubleTapFraction`.
+- Battery: pure `J/helpers/YtBatteryRules.kt` (cap hysteresis, crossings, vibration tables,
+  colours `YtBatteryCues`), prefs/receivers `J/helpers/YtBattery.kt` (`yt_battery_*`). Quality cap
+  in the service module `J/services/YtBatteryQualityModule.kt` (receiver only while playing; the
+  upstream SET_RESOLUTION handler goes through it, a manual pick wins until the next video). Cue in
+  the page module `Y/player/YtBatteryCueModule.kt` + `YtBatteryCueView.kt` (scales the video
+  frame, never the surface), vibration `Y/YtBatteryVibes.kt`.
+- Storage: pure `J/util/YtStorageRules.kt`, `J/util/YtStorage.kt`, dialog `Y/YtStorageUi.kt`.
+  Image cache via Coil's `diskCache.clear()`, WebView via `clearCache(true)` (cookies/`app_webview`
+  never touched), `YtSelfUpdater.holdsApk()` protects a running update. LibreTube has no media or
+  HTTP disk cache.
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).

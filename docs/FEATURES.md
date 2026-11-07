@@ -74,6 +74,9 @@ Stand: Build 95.
 | Dislike-Zahlen | In allen Designs mit Like-Knopf: eine kleine grün-rote Leiste am Like-Knopf zeigt das Verhältnis (grün-lastig = positiv). Gedrückt halten, auf „Mag ich nicht“ ziehen und kurz warten: ein Tick, dann steht die geschätzte Zahl in der Kachel. Zahlen von Return YouTube Dislike (Schätzung), nur wenn die Einstellung an ist. | T |
 | Kein Hänger nach Tempo/Tonhöhe | Schnelles Drehen an Geschwindigkeit und Tonhöhe führt nicht mehr zu „Unexpected runtime error“ mit stehendem Bild: Änderungen höchstens alle 150 ms, sichere Werte, und bei so einem Fehler startet das Video an derselben Stelle von selbst neu (bis zu 3×). | T |
 | Geschwindigkeit je Kanal | Im Geschwindigkeitsmenü „Für diesen Kanal merken“: gilt dann automatisch für jedes Video des Kanals. Liste mit Entfernen unter Einstellungen → Player → „Geschwindigkeit je Kanal“. | T |
+| Kapitel per Doppeltipp | Gesten & Interaktion → „Doppeltipp springt zum Kapitel“: Aus / Kapitel, wenn vorhanden / Nur am äußersten Rand (15 %). Rechts nächstes Kapitel, links Anfang des Kapitels (in den ersten 3 s das vorige); das Overlay zeigt den Kapitelnamen. Ohne Kapitel, bei Live und im letzten Kapitel ±N s. Braucht den normalen Doppeltipp. | T |
+| Qualität bei wenig Akku | Player-Einstellungen → Akku: unter der Schwelle (15/20/30 %, Standard 20) ohne Ladegerät oder im Energiesparmodus höchstens 480p (360/720 wählbar) und 30 fps; ab Schwelle + 5 % oder am Ladegerät wieder volle Qualität. Eine im Player gewählte Qualität gilt bis zum nächsten Video. | T |
+| Akku-Hinweis | Bei 20, 15, 10, 5 % schiebt sich das Video kurz nach innen, der Rand zeigt die Farbe (Grün→Gelbgrün, →Gelb, →Orange, →Rot, fließend), dazu eine Vibration je Stand (–, – –, - - —, an- und abschwellend). Ohne Animationen nur ein Farbrahmen, ohne Haptik keine Vibration, im Hintergrund/PiP nichts. Abschaltbar. | T |
 
 ## Miniplayer
 
@@ -118,6 +121,7 @@ Bekannt: Wischen zum nächsten Short hat im Emulator nicht reagiert; auf dem Han
 | Update in der App | „Download“ lädt mit Fortschrittsleiste, prüft Prüfsumme und Schlüssel und installiert mit Androids Bestätigungsdialog. Bricht Play Protect ab, versucht YT es bis zu zweimal selbst neu („Neuer Versuch (2 von 3)…“), danach öffnet es die geprüfte APK mit dem Android-Installer. „Fehlgeschlagen“ nur, wenn nichts mehr geht. Danach „YT wurde aktualisiert – tippen zum Öffnen“. Nur neuere Builds gelten als Update. | T |
 | Absturz-Report | Nach einem Absturz beim nächsten Start einmal „YT ist beim letzten Mal abgestürzt“ mit „Bericht kopieren“ / „Teilen“; die letzten 3 Berichte bleiben nur auf dem Gerät, Tokens werden geschwärzt. | T |
 | Diagnose | Einstellungen → „Diagnose“: Build, Android/Gerät, Design, Sync-Server, Netz, letztes Update-Ergebnis, Konto ja/nein, Warteschlange, letzter Absturz, Zeiten der letzten 3 Miniplayer-Rückholungen – als Text zum Kopieren, ohne Konto- oder Tokendaten. | T |
+| Speicher | Einstellungen → „Speicher“: Gesamtgröße, dazu Vorschaubilder, Web-Cache (Anmeldung bleibt), alte Update-Dateien, sonstiger Cache, Absturzberichte – je „Leeren“ oder „Alles Überflüssige leeren“; Downloads nur angezeigt. Abos, Verlauf, Einstellungen und Anmeldung bleiben immer. | T |
 | Sicherheit | 22 Befunde geschlossen, Anmeldung verschlüsselt gespeichert und nicht im Backup, nur HTTPS. Details in [SICHERHEIT.md](SICHERHEIT.md). | T |
 
 ## Ideen (noch nicht gebaut)
