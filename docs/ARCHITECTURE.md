@@ -269,6 +269,14 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   error, soft close, onDestroy (immediate), onTrimMemory. `saveWatchPosition()` now flushes the
   ledger; `PlayerHelper.saveWatchPosition` is unused. With a sync server every write is an HTTP call.
 
+- Landscape / fullscreen exit: MainActivity handles rotation itself (manifest `configChanges`), so a
+  page that turned inside fullscreen keeps its old layout. `unsetFullscreen(rebuildAfter = true)`
+  rebuilds it via `restartActivityIfNeeded`, decided by pure `Y/player/YtPageLayoutRules.kt` (uses
+  the orientation locked NOW, not the setting); `PlayerViewModel.ytLeftFullscreen` keeps it windowed.
+  Cutout strips painted by `Y/YtSideFill.kt`. Minimize drag: `YtMinimizeModule.onConfigurationChanged`
+  (module hook) drops remembered places; `Y/mini/YtMinimizeGeometry.drivable` (docked ≥ 48 dp below
+  open) guards every drag start, else the classic drag takes over.
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).

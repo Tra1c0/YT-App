@@ -8,7 +8,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 105 (watch position ledger). 104: battery review fixes. 103: battery cue preview. 102 = round 18 ( chapter double tap, battery quality cap + cue, storage
+- Latest release: build 106 (landscape page after fullscreen, stuck minimize drag). 105: watch
+  position ledger. 104: battery review fixes. 103: battery cue preview. 102 = round 18 ( chapter double tap, battery quality cap + cue, storage
   page). 101: soft close (dismissed mini player kept paused 60 s, instant restore). 100: restore starts when the old service is gone. 99: rise fallback,
   restore times in Diagnose. 98: rise animation. 97: fix for
   silent sound after the 2x hold. Docs-only pushes build nothing. Build 96 = round 16 ( crash report + Diagnose page, calm titles, hide watched,
@@ -91,12 +92,17 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 - media3 audio processors: `queueEndOfStream` is called again on every pipeline pass while the
   stage before is ended; output for the end must be produced once (reset in onFlush), or the drain
   that every speed change runs never ends (sound gone, picture runs on). Test: YtLoudnessDrainTest.
+- MainActivity handles rotation itself: a page that turned inside fullscreen must be rebuilt when
+  fullscreen ends; cached geometry must be invalidated per configuration, not per size.
 - Agents guess APIs when they cannot compile: always compile locally now.
 - A fresh container has no Android SDK: install cmdline-tools to `/opt/android-sdk`
   (`platforms;android-36`, `build-tools;36.0.0`) and write `local.properties` per worktree.
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 106: leaving fullscreen in landscape rebuilds a usable landscape page; minimize drag after
+  rotating no longer sticks (stale geometry). Cause of the stuck drag inferred from code, not logged.
 
 - 105: watch positions saved every 5 s and on every pause/seek/switch/end/close, old video's
   snapshot on a switch; Shorts excluded on purpose.
