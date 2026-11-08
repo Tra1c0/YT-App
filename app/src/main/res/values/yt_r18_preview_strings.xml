@@ -13,4 +13,8 @@
     <string name="yt_battery_preview_no_vibrator">This device cannot vibrate.</string>
     <string name="yt_battery_preview_pulses">This device cannot vary the vibration strength: the swell at 5 % plays as pulses.</string>
     <string name="yt_battery_preview_close">Close</string>
+    <string name="yt_battery_preview_power_save">Battery saver is on: Android does not vibrate. The picture shows the cue a little stronger instead.</string>
+    <string name="yt_battery_preview_silent">Silent mode: no vibration. The picture shows the cue a little stronger instead.</string>
+    <string name="yt_battery_preview_system_off">Notification vibration is off in the system settings: no vibration. The picture shows the cue a little stronger instead.</string>
+    <string name="yt_battery_preview_label_caption">only in the preview</string>
 </resources>

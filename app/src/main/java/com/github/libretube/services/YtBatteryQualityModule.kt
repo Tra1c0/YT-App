@@ -1,30 +1,27 @@
 package com.github.libretube.services
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
-import android.os.PowerManager
-import android.util.Log
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.github.libretube.LibreTubeApp
 import com.github.libretube.helpers.YtBattery
 import com.github.libretube.helpers.YtBatteryCapRules
-import com.github.libretube.helpers.YtGuard
+import com.github.libretube.helpers.YtBatteryCapWatch
 
 /**
- * YT: lower video quality on a low battery. While a video plays, the battery (and the power
- * saver) is watched; below the threshold (not charging), or with the power saver on, the
+ * YT: lower video quality on a low battery. For the player's whole life ([onPlayer] to
+ * [release]) the battery, the power saver and the yt_battery_* settings are watched
+ * ([YtBatteryCapWatch]); below the threshold (not charging), or with the power saver on, the
  * track selector gets a cap on the video height (the setting, 480p by default) and 30 fps.
- * The cap goes 5 % above the threshold, on the charger, or with the power saver off.
+ * The cap goes 5 % above the threshold, on the charger (unless the power saver keeps it), or
+ * with the power saver off. A change while paused applies at once, not only on the next play.
  *
  * The page's resolution request (PlayerCommand.SET_RESOLUTION) passes [resolution] and
- * [maxFrameRate] on its way to the track selector. A resolution the user picked by hand in
- * the player wins (no cap, any frame rate) until the next video; "Auto" by hand does not count.
- * Main thread only.
+ * [maxFrameRate] on its way to the track selector; [resolution] reads the battery first, so the
+ * first request of a video is capped already. A resolution the user picked by hand in the
+ * player wins (no cap, any frame rate) until the next video, but only for requests of exactly
+ * that height ([YtBatteryCapRules.exempt]); "Auto" by hand does not count. Main thread only.
  */
 @androidx.annotation.OptIn(UnstableApi::class)
 object YtBatteryQualityModule : YtServiceModule {
@@ -33,108 +30,69 @@ object YtBatteryQualityModule : YtServiceModule {
     const val EXTRA_SHORT = "yt_res_short"
 
     private var held: ExoPlayer? = null
-    private var registered = false
-    private var active = false
 
     // the page's last request, as it came (already widened for shorts)
     private var requested = Int.MAX_VALUE
     private var requestedSet = false
-    private var userPicked = false
+    // the height the user picked by hand for this video (null = none)
+    private var picked: Int? = null
     private var short = false
 
     // true once this module wrote the track selector itself (so lifting the cap writes it back)
     private var touched = false
 
-    private val listener = object : Player.Listener {
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            if (isPlaying) register() else unregister()
-        }
-    }
+    private val watch = YtBatteryCapWatch { apply() }
 
-    private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val reading = when (intent.action) {
-                Intent.ACTION_BATTERY_CHANGED -> YtBattery.read(intent)
-                PowerManager.ACTION_POWER_SAVE_MODE_CHANGED -> YtBattery.current(context)
-                else -> return
-            }
-            evaluate(reading, YtBattery.powerSave(context))
-        }
-    }
+    private val active: Boolean get() = watch.active
+    private val exempt: Boolean get() = YtBatteryCapRules.exempt(picked, requested)
 
     override fun onPlayer(exo: ExoPlayer, handler: Handler) {
-        held?.removeListener(listener)
-        unregister()
+        watch.stop()
         held = exo
-        active = false
         requested = Int.MAX_VALUE
         requestedSet = false
-        userPicked = false
+        picked = null
         short = false
         touched = false
-        exo.addListener(listener)
-        if (exo.isPlaying) register()
+        val app = runCatching { LibreTubeApp.instance }.getOrNull() ?: return
+        watch.start(app)
+        apply()
     }
 
     override fun onNavigate(videoId: String) {
         // a manual pick lasts until the next video
-        if (!userPicked) return
-        userPicked = false
+        if (picked == null) return
+        picked = null
         apply()
     }
 
     override fun release(exo: ExoPlayer) {
         if (exo !== held) return
-        exo.removeListener(listener)
-        unregister()
+        watch.stop()
         held = null
-        active = false
     }
 
     /** The height to ask for, given the page's [requested] height and its extras in [args]. */
     fun resolution(requested: Int, args: Bundle): Int {
+        // the current battery state, not the last broadcast's (the caller writes the selector)
+        watch.refresh()
         this.requested = requested
         requestedSet = true
-        // a request not made by hand (a fullscreen change re-sends the stored pick) keeps the pick
-        if (args.getBoolean(EXTRA_BY_USER, false)) {
-            userPicked = YtBatteryCapRules.isManualPick(true, requested)
-        }
+        picked = YtBatteryCapRules.pickAfter(picked, requested, args.getBoolean(EXTRA_BY_USER, false))
         short = args.getBoolean(EXTRA_SHORT, false)
-        return YtBatteryCapRules.height(requested, YtBattery.capHeight, active, userPicked, short)
+        return YtBatteryCapRules.height(requested, YtBattery.capHeight, active, exempt, short)
     }
 
     /** The frame rate to allow along with [resolution]. */
-    fun maxFrameRate(): Int = YtBatteryCapRules.maxFrameRate(active, userPicked)
+    fun maxFrameRate(): Int = YtBatteryCapRules.maxFrameRate(active, exempt)
 
-    private fun register() {
-        if (registered) return
-        val app = runCatching { LibreTubeApp.instance }.getOrNull() ?: return
-        if (!YtBattery.qualityEnabled && !active) return
-        runCatching { YtBattery.register(app, receiver, powerSave = true) }
-            .onSuccess { registered = true }
-    }
-
-    private fun unregister() {
-        if (!registered) return
-        registered = false
-        val app = runCatching { LibreTubeApp.instance }.getOrNull() ?: return
-        YtBattery.unregister(app, receiver)
-    }
-
-    private fun evaluate(reading: YtBattery.Reading, powerSave: Boolean) {
-        val now = YtBatteryCapRules.active(
-            was = active,
-            level = reading.level,
-            charging = reading.charging,
-            powerSave = powerSave,
-            enabled = YtBattery.qualityEnabled,
-            threshold = YtBattery.threshold,
-            usePowerSave = YtBattery.usePowerSave,
-        )
-        if (now == active) return
-        active = now
-        if (YtGuard.isEmulator) Log.i("YtBattery", "cap ${if (now) "on" else "off"} at ${reading.level} %")
-        apply()
+    /**
+     * The cap on the current video as (height, frame rate), or null while none applies (no low
+     * battery, or the user's pick by hand plays). For the quality sheet.
+     */
+    fun capNow(): Pair<Int, Int>? {
+        if (held == null || !active || exempt) return null
+        return YtBattery.capHeight to YtBatteryCapRules.CAPPED_FPS
     }
 
     // writes the current answer into the track selector; untouched as long as there is nothing to change
@@ -142,7 +100,7 @@ object YtBatteryQualityModule : YtServiceModule {
         val exo = held ?: return
         if (!active && !touched) return
         touched = true
-        val height = YtBatteryCapRules.height(requested, YtBattery.capHeight, active, userPicked, short)
+        val height = YtBatteryCapRules.height(requested, YtBattery.capHeight, active, exempt, short)
         val fps = maxFrameRate()
         runCatching {
             val builder = exo.trackSelectionParameters.buildUpon()

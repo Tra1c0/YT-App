@@ -1,6 +1,7 @@
 package com.github.libretube.helpers
 
 import com.github.libretube.helpers.YtBatteryPreviewRules.Note
+import com.github.libretube.helpers.YtBatteryVibeRules.Block as B
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -17,16 +18,18 @@ class YtBatteryPreviewRulesTest {
         for (i in 1 until steps.size) {
             assertEquals(steps[i - 1].atMs + steps[i - 1].lengthMs + pause, steps[i].atMs)
         }
-        // without vibration every level lasts the picture part
-        assertTrue(steps.all { it.lengthMs == YtBatteryCues.TOTAL_MS })
-        assertEquals(4 * YtBatteryCues.TOTAL_MS + 3 * pause, YtBatteryPreviewRules.endMs(steps))
+        // without vibration every level lasts the (strong, longer) picture part
+        val strong = YtBatteryCues.totalMs(strong = true)
+        assertTrue(steps.all { it.lengthMs == strong })
+        assertEquals(4 * strong + 3 * pause, YtBatteryPreviewRules.endMs(steps))
     }
 
     @Test
     fun motionOffIsTheColourFadeOnly() {
         val steps = YtBatteryPreviewRules.sequence(motion = false, vibrates = false, amplitude = true)
-        assertTrue(steps.all { it.lengthMs == YtBatteryCues.COLOR_FADE_MS })
-        assertEquals(YtBatteryCues.COLOR_FADE_MS + pause, steps[1].atMs)
+        val fade = YtBatteryCues.colorFadeMs(strong = true)
+        assertTrue(steps.all { it.lengthMs == fade })
+        assertEquals(fade + pause, steps[1].atMs)
     }
 
     @Test
@@ -50,21 +53,30 @@ class YtBatteryPreviewRulesTest {
 
     @Test
     fun notesFollowSettingsAndDevice() {
-        assertEquals(emptyList<Note>(), YtBatteryPreviewRules.notes(true, true, true, true))
-        assertEquals(listOf(Note.MOTION_OFF), YtBatteryPreviewRules.notes(false, true, true, true))
-        assertEquals(listOf(Note.HAPTICS_OFF), YtBatteryPreviewRules.notes(true, false, false, false))
-        assertEquals(listOf(Note.NO_VIBRATOR), YtBatteryPreviewRules.notes(true, true, false, false))
-        assertEquals(listOf(Note.SWELL_AS_PULSES), YtBatteryPreviewRules.notes(true, true, true, false))
-        assertEquals(
-            listOf(Note.MOTION_OFF, Note.HAPTICS_OFF),
-            YtBatteryPreviewRules.notes(false, false, true, true),
-        )
+
+        fun n(motion: Boolean, blocked: YtBatteryVibeRules.Block?, amplitude: Boolean) =
+            YtBatteryPreviewRules.notes(motion, blocked, amplitude)
+        assertEquals(emptyList<Note>(), n(true, null, true))
+        assertEquals(listOf(Note.MOTION_OFF), n(false, null, true))
+        assertEquals(listOf(Note.HAPTICS_OFF), n(true, B.HAPTICS_OFF, false))
+        assertEquals(listOf(Note.NO_VIBRATOR), n(true, B.NO_VIBRATOR, false))
+        assertEquals(listOf(Note.SWELL_AS_PULSES), n(true, null, false))
+        assertEquals(listOf(Note.POWER_SAVE), n(true, B.POWER_SAVE, false))
+        assertEquals(listOf(Note.SILENT), n(true, B.SILENT, true))
+        assertEquals(listOf(Note.SYSTEM_OFF), n(true, B.SYSTEM_OFF, true))
+        assertEquals(listOf(Note.MOTION_OFF, Note.HAPTICS_OFF), n(false, B.HAPTICS_OFF, true))
     }
 
     @Test
-    fun vibratesOnlyWithHapticsAndAVibrator() {
-        assertTrue(YtBatteryPreviewRules.vibrates(true, true))
-        assertFalse(YtBatteryPreviewRules.vibrates(false, true))
-        assertFalse(YtBatteryPreviewRules.vibrates(true, false))
+    fun vibratesOnlyWhenNothingBlocksIt() {
+        assertTrue(YtBatteryPreviewRules.vibrates(null))
+        for (block in YtBatteryVibeRules.Block.entries) assertFalse(YtBatteryPreviewRules.vibrates(block))
+    }
+
+    @Test
+    fun strongPictureWhenItCannotVibrate() {
+        val ten = YtBatteryCues.of(10)!!
+        assertEquals(YtBatteryCues.totalMs(true), YtBatteryPreviewRules.lengthMs(ten, true, vibrates = false, amplitude = true))
+        assertEquals(YtBatteryCues.TOTAL_MS, YtBatteryPreviewRules.lengthMs(ten, true, vibrates = true, amplitude = true))
     }
 }

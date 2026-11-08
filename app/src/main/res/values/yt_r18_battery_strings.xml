@@ -2,11 +2,11 @@
 <resources>
     <string name="yt_battery_category">Battery</string>
     <string name="yt_battery_quality">Lower quality on low battery</string>
-    <string name="yt_battery_quality_summary">Below the threshold (not charging) the video plays at a lower resolution and at most 30 fps. The full quality is back 5 % above it or on the charger. A quality you pick in the player wins until the next video.</string>
+    <string name="yt_battery_quality_summary">Below the threshold (not charging) the video plays at a lower resolution and at most 30 fps. The full quality is back 5 % above it or on the charger (unless battery saver keeps it, see below). A quality you pick in the player wins until the next video. Also in the Shorts feed; not for downloads (they have only one quality). With 720p, 60 fps videos play at 480p: their 720p exists only at 60 fps.</string>
     <string name="yt_battery_threshold">Battery threshold</string>
     <string name="yt_battery_cap">Resolution on low battery</string>
     <string name="yt_battery_power_save">Also in battery saver</string>
-    <string name="yt_battery_power_save_summary">Lower the quality while the system\'s battery saver is on, whatever the battery level.</string>
+    <string name="yt_battery_power_save_summary">Lower the quality while the system\'s battery saver is on, whatever the battery level, on the charger too.</string>
     <string name="yt_battery_cue">Battery cue in the player</string>
     <string name="yt_battery_cue_summary">At 20, 15, 10 and 5 % the video moves in briefly and shows the level\'s colour around it, with a vibration of its own per level (only with \"Custom haptics\" on).</string>
     <string name="yt_battery_percent_15">15 %</string>
@@ -14,5 +14,6 @@
     <string name="yt_battery_percent_30">30 %</string>
     <string name="yt_battery_res_360">360p</string>
     <string name="yt_battery_res_480">480p</string>
-    <string name="yt_battery_res_720">720p</string>
+    <string name="yt_battery_res_720">720p (60 fps videos: 480p)</string>
+    <string name="yt_battery_cap_now">Battery limit: %1$dp · %2$d fps</string>
 </resources>

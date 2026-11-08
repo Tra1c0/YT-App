@@ -13,6 +13,9 @@ import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import com.github.libretube.helpers.PlayerHelper
+import com.github.libretube.helpers.YtBattery
+import com.github.libretube.helpers.YtBatteryCapRules
+import com.github.libretube.helpers.YtBatteryCapWatch
 import com.github.libretube.repo.UserDataRepositoryHelper
 import com.github.libretube.ui.yt.YtTestHooks
 import kotlinx.coroutines.CoroutineScope
@@ -121,8 +124,27 @@ class YtShortsPlayer(private val context: Context, private val scope: CoroutineS
         }
     }
 
+    // the low-battery cap, as the player service applies it (YtBatteryQualityModule): this
+    // player never goes through the service, so it watches the battery itself while it lives
+    private val batteryCap = YtBatteryCapWatch { applyBatteryCap() }
+
     init {
         player.addListener(listener)
+        batteryCap.start(context)
+        applyBatteryCap()
+    }
+
+    // nothing else limits this player's video size or frame rate, so the cap is all there is
+    private fun applyBatteryCap() {
+        val active = batteryCap.active
+        val side = YtBatteryCapRules.shortsMaxSide(YtBattery.capHeight, active)
+        val fps = YtBatteryCapRules.maxFrameRate(active, exempt = false)
+        val current = player.trackSelectionParameters
+        if (current.maxVideoWidth == side && current.maxVideoHeight == side && current.maxVideoFrameRate == fps) return
+        player.trackSelectionParameters = current.buildUpon()
+            .setMaxVideoSize(side, side)
+            .setMaxVideoFrameRate(fps)
+            .build()
     }
 
     private fun load(videoId: String): Deferred<YtShortMedia?> {
@@ -224,6 +246,7 @@ class YtShortsPlayer(private val context: Context, private val scope: CoroutineS
         cache.values.forEach { it.cancel() }
         cache.clear()
         done.clear()
+        batteryCap.stop()
         player.removeListener(listener)
         player.release()
     }

@@ -9,6 +9,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.github.libretube.helpers.YtBattery
 import com.github.libretube.helpers.YtBatteryCues
 import com.github.libretube.helpers.YtBatteryMarks
+import com.github.libretube.helpers.YtBatteryVibeRules
 import com.github.libretube.ui.yt.YtBatteryVibes
 import com.github.libretube.ui.yt.YtMotionPrefs
 
@@ -81,10 +82,12 @@ object YtBatteryCueModule : YtPlayerModule {
             val mark = marks.observe(reading.level, reading.charging, announce) ?: return
             val cue = YtBatteryCues.of(mark) ?: return
             val player = host.pageBinding()?.player ?: return
+            // a vibration Android would drop (battery saver, silent) is not sent; the picture shows stronger
+            val blocked = YtBatteryVibes.blocked(context)
             YtBatteryCueView.of(player)?.let { (view, frame) ->
-                view.play(frame, cue, motion = YtMotionPrefs.enabled)
+                view.play(frame, cue, motion = YtMotionPrefs.enabled, strong = YtBatteryVibeRules.strongVisual(blocked))
             }
-            YtBatteryVibes.play(context, cue)
+            if (blocked == null) YtBatteryVibes.play(context, cue)
         }
 
         private fun visible(): Boolean {

@@ -4,8 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.os.BatteryManager
 import android.os.PowerManager
+import android.util.Log
 import androidx.core.content.ContextCompat
 
 /**
@@ -67,7 +69,86 @@ object YtBattery {
         runCatching { context.unregisterReceiver(receiver) }
     }
 
+    /** The keys whose change can change the cap. */
+    val CAP_KEYS = setOf(KEY_QUALITY, KEY_THRESHOLD, KEY_CAP, KEY_POWER_SAVE)
+
     /** The current battery state without registering anything. */
     fun current(context: Context): Reading =
         read(runCatching { context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) }.getOrNull())
+}
+
+/**
+ * YT: whether the low-battery quality cap applies, kept current for as long as a player lives
+ * ([start] to [stop]): the battery and the power saver (broadcasts) and the yt_battery_* settings
+ * (preference listener). [refresh] reads the state at once, so a video that starts below the
+ * threshold is capped from its first request, not after the next broadcast. [onChange] runs on
+ * the main thread when [active] changes, and on every change of a cap setting (the height may
+ * have changed while the answer stayed). Used by the player service (YtBatteryQualityModule) and
+ * the Shorts view's own player.
+ */
+class YtBatteryCapWatch(private val onChange: () -> Unit) {
+    var active = false
+        private set
+
+    private var app: Context? = null
+
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val reading = when (intent.action) {
+                Intent.ACTION_BATTERY_CHANGED -> YtBattery.read(intent)
+                PowerManager.ACTION_POWER_SAVE_MODE_CHANGED -> YtBattery.current(context)
+                else -> return
+            }
+            if (evaluate(reading, YtBattery.powerSave(context))) onChange()
+        }
+    }
+
+    // held here: SharedPreferences keeps its listeners only weakly
+    private val prefs = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key in YtBattery.CAP_KEYS && app != null) {
+            refresh()
+            onChange()
+        }
+    }
+
+    /** Starts watching (once; again only after [stop]) and reads the state at once. */
+    fun start(context: Context) {
+        if (app != null) return
+        val app = context.applicationContext
+        this.app = app
+        active = false
+        runCatching { YtBattery.register(app, receiver, powerSave = true) }
+        runCatching { PreferenceHelper.settings.registerOnSharedPreferenceChangeListener(prefs) }
+        refresh()
+    }
+
+    fun stop() {
+        val app = app ?: return
+        this.app = null
+        YtBattery.unregister(app, receiver)
+        runCatching { PreferenceHelper.settings.unregisterOnSharedPreferenceChangeListener(prefs) }
+        active = false
+    }
+
+    /** Reads the battery and the power saver now; true if [active] changed. No [onChange]. */
+    fun refresh(): Boolean {
+        val app = app ?: return false
+        return evaluate(YtBattery.current(app), YtBattery.powerSave(app))
+    }
+
+    private fun evaluate(reading: YtBattery.Reading, powerSave: Boolean): Boolean {
+        val now = YtBatteryCapRules.active(
+            was = active,
+            level = reading.level,
+            charging = reading.charging,
+            powerSave = powerSave,
+            enabled = YtBattery.qualityEnabled,
+            threshold = YtBattery.threshold,
+            usePowerSave = YtBattery.usePowerSave,
+        )
+        if (now == active) return false
+        active = now
+        if (YtGuard.isEmulator) Log.i("YtBattery", "cap ${if (now) "on" else "off"} at ${reading.level} %")
+        return true
+    }
 }

@@ -17,10 +17,12 @@ class YtBatteryRulesTest {
         assertFalse(active(false, 20))
         assertTrue(active(false, 19))
         assertTrue(active(true, 20))
-        assertTrue(active(true, 25))
-        assertFalse(active(true, 26))
+        assertTrue(active(true, 24))
+        assertFalse(active(true, 25)) // back at threshold + 5, as the settings text says
         assertFalse(active(false, 22))
         assertTrue(active(false, 29, threshold = 30))
+        assertTrue(active(true, 34, threshold = 30))
+        assertFalse(active(true, 35, threshold = 30))
         assertFalse(active(true, 21, threshold = 15))
     }
 
@@ -37,20 +39,86 @@ class YtBatteryRulesTest {
 
     @Test
     fun capHeightAndFrameRate() {
-        assertEquals(480, YtBatteryCapRules.height(Int.MAX_VALUE, 480, active = true, userPicked = false, short = false))
-        assertEquals(360, YtBatteryCapRules.height(360, 480, active = true, userPicked = false, short = false))
-        assertEquals(1080, YtBatteryCapRules.height(1080, 480, active = false, userPicked = false, short = false))
-        assertEquals(1080, YtBatteryCapRules.height(1080, 480, active = true, userPicked = true, short = false))
-        assertEquals(854, YtBatteryCapRules.height(1920, 480, active = true, userPicked = false, short = true))
-        assertEquals(30, YtBatteryCapRules.maxFrameRate(active = true, userPicked = false))
-        assertEquals(Int.MAX_VALUE, YtBatteryCapRules.maxFrameRate(active = true, userPicked = true))
-        assertEquals(Int.MAX_VALUE, YtBatteryCapRules.maxFrameRate(active = false, userPicked = false))
+        assertEquals(480, YtBatteryCapRules.height(Int.MAX_VALUE, 480, active = true, exempt = false, short = false))
+        assertEquals(360, YtBatteryCapRules.height(360, 480, active = true, exempt = false, short = false))
+        assertEquals(1080, YtBatteryCapRules.height(1080, 480, active = false, exempt = false, short = false))
+        assertEquals(1080, YtBatteryCapRules.height(1080, 480, active = true, exempt = true, short = false))
+        assertEquals(854, YtBatteryCapRules.height(1920, 480, active = true, exempt = false, short = true))
+        assertEquals(30, YtBatteryCapRules.maxFrameRate(active = true, exempt = false))
+        assertEquals(Int.MAX_VALUE, YtBatteryCapRules.maxFrameRate(active = true, exempt = true))
+        assertEquals(Int.MAX_VALUE, YtBatteryCapRules.maxFrameRate(active = false, exempt = false))
         assertFalse(YtBatteryCapRules.isManualPick(true, Int.MAX_VALUE))
         assertTrue(YtBatteryCapRules.isManualPick(true, 720))
         assertFalse(YtBatteryCapRules.isManualPick(false, 720))
         assertEquals(20, YtBatteryCapRules.parsePercent("x", 20))
         assertEquals(480, YtBatteryCapRules.parseHeight("", 480))
         assertEquals(720, YtBatteryCapRules.parseHeight("720", 480))
+    }
+
+    @Test
+    fun pickByHandIsExemptOnlyForItsOwnHeight() {
+        // pick 360p in portrait (the page stores it for fullscreen), then rotate: the page
+        // re-sends its 720p default without "by hand" - that must be capped, not pass at 60 fps
+        var picked: Int? = YtBatteryCapRules.pickAfter(null, 360, byUser = true)
+        assertEquals(360, picked)
+        assertTrue(YtBatteryCapRules.exempt(picked, 360))
+        picked = YtBatteryCapRules.pickAfter(picked, 720, byUser = false)
+        assertFalse(YtBatteryCapRules.exempt(picked, 720))
+        val exempt720 = YtBatteryCapRules.exempt(picked, 720)
+        assertEquals(480, YtBatteryCapRules.height(720, 480, active = true, exempt = exempt720, short = false))
+        assertEquals(30, YtBatteryCapRules.maxFrameRate(active = true, exempt = exempt720))
+        // rotating back re-sends the pick: exempt again
+        picked = YtBatteryCapRules.pickAfter(picked, 360, byUser = false)
+        assertTrue(YtBatteryCapRules.exempt(picked, 360))
+        assertEquals(Int.MAX_VALUE, YtBatteryCapRules.maxFrameRate(active = true, exempt = true))
+        // a high pick by hand plays uncapped
+        picked = YtBatteryCapRules.pickAfter(picked, 1080, byUser = true)
+        assertEquals(1080, YtBatteryCapRules.height(1080, 480, true, YtBatteryCapRules.exempt(picked, 1080), false))
+        // "Auto" by hand clears the pick
+        picked = YtBatteryCapRules.pickAfter(picked, Int.MAX_VALUE, byUser = true)
+        assertNull(picked)
+        assertFalse(YtBatteryCapRules.exempt(picked, Int.MAX_VALUE))
+        assertFalse(YtBatteryCapRules.exempt(null, 360))
+    }
+
+    @Test
+    fun shortsPlayerCap() {
+        assertEquals(854, YtBatteryCapRules.shortsMaxSide(480, active = true))
+        assertEquals(640, YtBatteryCapRules.shortsMaxSide(360, active = true))
+        assertEquals(1280, YtBatteryCapRules.shortsMaxSide(720, active = true))
+        assertEquals(Int.MAX_VALUE, YtBatteryCapRules.shortsMaxSide(480, active = false))
+        // the same widening as the service's shorts request
+        assertEquals(
+            YtBatteryCapRules.height(Int.MAX_VALUE, 480, active = true, exempt = false, short = true),
+            YtBatteryCapRules.shortsMaxSide(480, active = true),
+        )
+    }
+
+    @Test
+    fun vibrationBlockedAndStrongVisual() {
+        fun b(haptics: Boolean = true, vib: Boolean = true, ps: Boolean = false, silent: Boolean = false, off: Boolean = false) =
+            YtBatteryVibeRules.blocked(haptics, vib, ps, silent, off)
+        assertNull(b())
+        assertEquals(YtBatteryVibeRules.Block.HAPTICS_OFF, b(haptics = false, ps = true))
+        assertEquals(YtBatteryVibeRules.Block.NO_VIBRATOR, b(vib = false, ps = true))
+        assertEquals(YtBatteryVibeRules.Block.POWER_SAVE, b(ps = true, silent = true))
+        assertEquals(YtBatteryVibeRules.Block.SILENT, b(silent = true, off = true))
+        assertEquals(YtBatteryVibeRules.Block.SYSTEM_OFF, b(off = true))
+        assertFalse(YtBatteryVibeRules.strongVisual(null))
+        assertTrue(YtBatteryVibeRules.strongVisual(YtBatteryVibeRules.Block.POWER_SAVE))
+    }
+
+    @Test
+    fun strongCueHoldsLongerAndInsetsDeeper() {
+        assertEquals(YtBatteryCues.TOTAL_MS, YtBatteryCues.totalMs(false))
+        assertEquals(YtBatteryCues.TOTAL_MS + 400L, YtBatteryCues.totalMs(true))
+        assertEquals(YtBatteryCues.COLOR_FADE_MS + 400L, YtBatteryCues.colorFadeMs(true))
+        assertTrue(YtBatteryCues.insetScale(true) < YtBatteryCues.insetScale(false))
+        val endOfNormalHold = YtBatteryCues.IN_MS + YtBatteryCues.HOLD_MS + 100
+        assertTrue(YtBatteryCues.inset(endOfNormalHold) < 1f)
+        assertEquals(1f, YtBatteryCues.inset(endOfNormalHold, strong = true))
+        assertEquals(0f, YtBatteryCues.inset(YtBatteryCues.totalMs(true), strong = true))
+        assertEquals(1f, YtBatteryCues.colorFraction(YtBatteryCues.colorFadeMs(true), strong = true))
     }
 
     @Test

@@ -43,6 +43,7 @@ class YtBatteryCueView(context: Context) : View(context) {
     private var frame: View? = null
     private var cue: YtBatteryCue? = null
     private var motion = true
+    private var strong = false
     private var startedAt = 0L
 
     // what the frame had before the cue, put back afterwards
@@ -68,12 +69,16 @@ class YtBatteryCueView(context: Context) : View(context) {
 
     val running: Boolean get() = cue != null
 
-    /** Plays [cue] on [frame] (the content frame, this view's sibling); [motion] false = flash only. */
-    fun play(frame: View, cue: YtBatteryCue, motion: Boolean) {
+    /**
+     * Plays [cue] on [frame] (the content frame, this view's sibling); [motion] false = flash only.
+     * [strong]: the cue cannot vibrate (YtBatteryVibeRules), so the frame is wider and held longer.
+     */
+    fun play(frame: View, cue: YtBatteryCue, motion: Boolean, strong: Boolean = false) {
         stop(restore = true)
         if (frame.width <= 0 || frame.height <= 0) return
         this.frame = frame
         this.cue = cue
+        this.strong = strong
         startW = frame.width
         startH = frame.height
         // only a frame nobody else transforms is scaled (the hold tiles move it themselves)
@@ -139,12 +144,12 @@ class YtBatteryCueView(context: Context) : View(context) {
             return
         }
         val t = SystemClock.uptimeMillis() - startedAt
-        val end = if (motion) YtBatteryCues.TOTAL_MS else YtBatteryCues.COLOR_FADE_MS
+        val end = if (motion) YtBatteryCues.totalMs(strong) else YtBatteryCues.colorFadeMs(strong)
         if (t >= end) {
             stop(restore = true)
             return
         }
-        val color = YtBatteryCues.blend(cue.startColor, cue.endColor, YtBatteryCues.colorFraction(t))
+        val color = YtBatteryCues.blend(cue.startColor, cue.endColor, YtBatteryCues.colorFraction(t, strong))
         // the frame as laid out (its transform aside), in this view's px
         outer.set(
             (frame.left - left).toFloat(),
@@ -157,8 +162,8 @@ class YtBatteryCueView(context: Context) : View(context) {
         val corner = min(CORNER_DP * density, CORNER_SHARE * min(w, h))
 
         if (motion) {
-            val p = YtBatteryCues.inset(t)
-            val s = 1f - (1f - YtBatteryCues.INSET_SCALE) * p
+            val p = YtBatteryCues.inset(t, strong)
+            val s = 1f - (1f - YtBatteryCues.insetScale(strong)) * p
             frame.scaleX = s
             frame.scaleY = s
             inner.set(outer)
@@ -169,7 +174,8 @@ class YtBatteryCueView(context: Context) : View(context) {
             if (p > 0.01f) canvas.drawRoundRect(inner, corner * p, corner * p, rim)
         } else {
             // no movement: a frame of the colour over the picture's edge, on and off
-            val stroke = (FLASH_SHARE * min(w, h)).coerceIn(4f * density, 12f * density)
+            val factor = if (strong) YtBatteryCues.STRONG_FLASH_FACTOR else 1f
+            val stroke = (FLASH_SHARE * min(w, h)).coerceIn(4f * density, 12f * density) * factor
             inner.set(outer)
             inner.inset(stroke, stroke)
             drawRing(canvas, color, corner, 235)

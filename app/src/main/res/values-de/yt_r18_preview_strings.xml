@@ -13,4 +13,8 @@
     <string name="yt_battery_preview_no_vibrator">Dieses Gerät kann nicht vibrieren.</string>
     <string name="yt_battery_preview_pulses">Dieses Gerät kann die Vibrationsstärke nicht regeln: Das Anschwellen bei 5 % kommt als Pulse.</string>
     <string name="yt_battery_preview_close">Schließen</string>
+    <string name="yt_battery_preview_power_save">Im Energiesparmodus vibriert Android nicht. Das Bild zeigt den Hinweis dafür etwas deutlicher.</string>
+    <string name="yt_battery_preview_silent">Lautlos: keine Vibration. Das Bild zeigt den Hinweis dafür etwas deutlicher.</string>
+    <string name="yt_battery_preview_system_off">Vibration für Benachrichtigungen ist in den Systemeinstellungen aus: keine Vibration. Das Bild zeigt den Hinweis dafür etwas deutlicher.</string>
+    <string name="yt_battery_preview_label_caption">nur in der Vorschau</string>
 </resources>
