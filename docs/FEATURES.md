@@ -105,6 +105,7 @@ Bekannt: Wischen zum nächsten Short hat im Emulator nicht reagiert; auf dem Han
 
 | Funktion | Was sie macht | Status |
 | --- | --- | --- |
+| Positionen sicher gespeichert | In jedem Player (Seite, Miniplayer, PiP, schwebend, Hintergrund, Warteschlange, Downloads) alle 5 s und sofort bei Pause, Spulen, Videowechsel, Ende, Fehler und Schließen; beim Wechsel immer der Stand des alten Videos. Höchstens ~5 s Verlust bei einem Absturz. Fertige Videos (letzte Minute bzw. ≥ 95 %) starten bei 0, Livestreams nie gespeichert. Nicht für den Shorts-Feed. | T |
 | Warteschlange | Als Nächstes / Ans Ende, bleibt beim Antippen anderer Videos erhalten. | E T |
 | Nur Audio und Hintergrund | Spielt nur den Ton, auch die Warteschlange weiter; bei Downloads ohne eigene Tonspur den Ton der Videodatei. | E T |
 | Kein Absturz im Hintergrund | Der Dienst bleibt beim Wechsel zum nächsten Video im Vordergrund; sonst pausiert er mit „Wiedergabe pausiert – zum Fortsetzen tippen“. | T |

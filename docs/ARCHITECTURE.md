@@ -258,6 +258,17 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   never touched), `YtSelfUpdater.holdsApk()` protects a running update. LibreTube has no media or
   HTTP disk cache.
 
+## Round 19 notes
+
+- Watch positions: `J/services/YtPositionLedger.kt` (owned by AbstractPlayerService, listener on the
+  player, 5 s tick on the service handler while playing, coalesced IO writes through the existing
+  `updateWatchHistoryEntry`), pure `J/services/YtPositionRules.kt` (persist decision, < 5 s only
+  after a seek, finished = DatabaseHelper rule or ≥ 95 %, switch/transition snapshot choice).
+  The video id comes from the media item's extras, a snapshot only after that item was READY.
+  Triggers: tick, pause, seek, `navigateVideo` (`beforeSwitch`), media item transition, ended,
+  error, soft close, onDestroy (immediate), onTrimMemory. `saveWatchPosition()` now flushes the
+  ledger; `PlayerHelper.saveWatchPosition` is unused. With a sync server every write is an HTTP call.
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).
