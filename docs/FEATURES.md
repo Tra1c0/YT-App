@@ -77,6 +77,7 @@ Stand: Build 95.
 | Kapitel per Doppeltipp | Gesten & Interaktion → „Doppeltipp springt zum Kapitel“: Aus / Kapitel, wenn vorhanden / Nur am äußersten Rand (15 %). Rechts nächstes Kapitel, links Anfang des Kapitels (in den ersten 3 s das vorige); das Overlay zeigt den Kapitelnamen. Ohne Kapitel, bei Live und im letzten Kapitel ±N s. Braucht den normalen Doppeltipp. | T |
 | Qualität bei wenig Akku | Player-Einstellungen → Akku: unter der Schwelle (15/20/30 %, Standard 20) ohne Ladegerät oder im Energiesparmodus höchstens 480p (360/720 wählbar) und 30 fps; ab Schwelle + 5 % oder am Ladegerät wieder volle Qualität. Eine im Player gewählte Qualität gilt bis zum nächsten Video. | T |
 | Akku-Hinweis | Bei 20, 15, 10, 5 % schiebt sich das Video kurz nach innen, der Rand zeigt die Farbe (Grün→Gelbgrün, →Gelb, →Orange, →Rot, fließend), dazu eine Vibration je Stand (–, – –, - - —, an- und abschwellend). Ohne Animationen nur ein Farbrahmen, ohne Haptik keine Vibration, im Hintergrund/PiP nichts. Abschaltbar. | T |
+| Akku-Hinweis-Vorschau | Player-Einstellungen → Akku → „Vorschau“: echte Animation, Farbverlauf und Vibration für 20/15/10/5 % einzeln oder „Alle nacheinander“, auf dem Vorschaubild des zuletzt gesehenen Videos; folgt den Einstellungen (Animationen aus → nur Farbrahmen, Haptik aus → keine Vibration, mit Hinweis). | T |
 
 ## Miniplayer
 

@@ -246,7 +246,8 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   in the service module `J/services/YtBatteryQualityModule.kt` (receiver only while playing; the
   upstream SET_RESOLUTION handler goes through it, a manual pick wins until the next video). Cue in
   the page module `Y/player/YtBatteryCueModule.kt` + `YtBatteryCueView.kt` (scales the video
-  frame, never the surface), vibration `Y/YtBatteryVibes.kt`.
+  frame, never the surface), vibration `Y/YtBatteryVibes.kt`. Preview dialog `Y/YtBatteryPreview.kt`
+  (reuses YtBatteryCueView + YtBatteryVibes), pure timing/notes `J/helpers/YtBatteryPreviewRules.kt`.
 - Storage: pure `J/util/YtStorageRules.kt`, `J/util/YtStorage.kt`, dialog `Y/YtStorageUi.kt`.
   Image cache via Coil's `diskCache.clear()`, WebView via `clearCache(true)` (cookies/`app_webview`
   never touched), `YtSelfUpdater.holdsApk()` protects a running update. LibreTube has no media or
