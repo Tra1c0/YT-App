@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: what is new in the update dialog. Same keys in the same order in values and values-de. -->
+<resources>
+    <string name="yt_notes_fallback">New version available.</string>
+    <string name="yt_notes_build">Build %1$d</string>
+    <string name="yt_notes_details">Details</string>
+    <string name="yt_notes_details_hide">Hide details</string>
+    <string name="yt_notes_commit">Build %1$d · commit %2$s</string>
+    <string name="yt_notes_signed_by_you">Signed by you ✓</string>
+    <string name="yt_notes_signer_mismatch">⚠ Not signed with your key. YT checks the download and refuses a file signed by someone else.</string>
+    <string name="yt_notes_signer_unknown">⚠ Signer not stated. YT checks the download and refuses a file signed by someone else.</string>
+</resources>

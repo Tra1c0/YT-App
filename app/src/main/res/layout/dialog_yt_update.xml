@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- YT: the update dialog: changelog, then status line and a thin progress bar while downloading -->
+<!-- YT: the update dialog: what is new (scrolls inside a capped height), a small "Details"
+     link with commit and signer, then status line and a thin progress bar while downloading -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -8,18 +9,43 @@
     android:paddingHorizontal="24dp"
     android:paddingTop="8dp">
 
-    <androidx.core.widget.NestedScrollView
+    <com.github.libretube.ui.yt.YtMaxHeightScrollView
         android:id="@+id/changelog_scroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:fadeScrollbars="false"
+        android:scrollbars="vertical">
 
         <TextView
             android:id="@+id/changelog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:lineSpacingExtra="2dp"
             android:textAppearance="?attr/textAppearanceBodyMedium" />
-    </androidx.core.widget.NestedScrollView>
+    </com.github.libretube.ui.yt.YtMaxHeightScrollView>
+
+    <TextView
+        android:id="@+id/details_toggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:background="?attr/selectableItemBackground"
+        android:minHeight="40dp"
+        android:gravity="center_vertical"
+        android:text="@string/yt_notes_details"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorPrimary"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/details"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textIsSelectable="true"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/update_status"

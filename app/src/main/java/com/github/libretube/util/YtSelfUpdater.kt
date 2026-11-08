@@ -148,6 +148,11 @@ object YtSelfUpdater {
             .onFailure { Log.w(TAG, "could not open the installer", it) }
     }
 
+    /** SHA-256 (lowercase hex) of each certificate the installed app is signed with. */
+    fun installedSignerHashes(context: Context): Set<String> =
+        runCatching { signerHashes(installedInfo(context.packageManager, context.packageName)) }
+            .getOrDefault(emptySet())
+
     @Synchronized
     fun start(context: Context, asset: UpdateAsset) {
         if (job?.isActive == true || isBusy()) return

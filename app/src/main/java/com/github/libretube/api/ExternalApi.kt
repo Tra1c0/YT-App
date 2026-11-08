@@ -28,6 +28,10 @@ interface ExternalApi {
     @GET(GITHUB_API_URL)
     suspend fun getLatestRelease(): UpdateInfo
 
+    // YT: one release by its tag ("build-106"), for the notes of the builds in between
+    @GET("https://api.github.com/repos/Tra1c0/YT-App/releases/tags/{tag}")
+    suspend fun getReleaseByTag(@Path("tag") tag: String): UpdateInfo
+
     @GET("$RYD_API_URL/votes")
     suspend fun getVotes(@Query("videoId") videoId: String): VoteInfo
 
