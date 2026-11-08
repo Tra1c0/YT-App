@@ -18,6 +18,8 @@ import com.github.libretube.constants.IntentData.appUpdateChangelog
 import com.github.libretube.constants.IntentData.appUpdateURL
 import com.github.libretube.databinding.DialogYtUpdateBinding
 import com.github.libretube.obj.update.UpdateAsset
+import com.github.libretube.ui.yt.YtNotesText
+import com.github.libretube.util.YtReleaseNotes
 import com.github.libretube.util.YtSelfUpdater
 import com.github.libretube.util.YtSelfUpdater.State
 import com.google.android.material.color.MaterialColors
@@ -26,7 +28,7 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 /**
- * YT: shows the changelog; Download fetches the APK in the app (thin progress bar, percent, MB,
+ * YT: shows what is new since the installed build (scrolls, details behind a link); Download fetches the APK in the app (thin progress bar, percent, MB,
  * cancel), checks it and installs it. Without an APK in the release it opens the release page.
  * "In background" closes the dialog while the download goes on in the app process.
  */
@@ -34,6 +36,12 @@ class UpdateAvailableDialog : DialogFragment() {
     private var changelog: String? = null
     private var releaseUrl: String? = null
     private var asset: UpdateAsset? = null
+
+    // YT: what is new, per build (newest first), and the offered build's technical lines
+    private var notes: List<YtReleaseNotes.BuildNotes> = emptyList()
+    private var details: String? = null
+    private var offeredBuild: Int? = null
+    private var detailsOpen = false
 
     /** The user was sent to the "install unknown apps" page and continues when back. */
     private var awaitingPermission = false
@@ -46,7 +54,13 @@ class UpdateAvailableDialog : DialogFragment() {
             changelog = getString(appUpdateChangelog)
             releaseUrl = getString(appUpdateURL)
             asset = BundleCompat.getParcelable(this, APP_UPDATE_ASSET, UpdateAsset::class.java)
+            val builds = getIntArray(NOTES_BUILDS) ?: IntArray(0)
+            val texts = getStringArrayList(NOTES_TEXTS).orEmpty()
+            notes = builds.zip(texts) { build, text -> YtReleaseNotes.BuildNotes(build, text) }
+            details = getString(NOTES_DETAILS)
+            offeredBuild = getInt(NOTES_OFFERED, -1).takeIf { it >= 0 }
         }
+        detailsOpen = savedInstanceState?.getBoolean(DETAILS_OPEN) ?: false
         awaitingPermission = savedInstanceState?.getBoolean(AWAITING_PERMISSION) ?: false
         if (savedInstanceState == null) YtSelfUpdater.clearFailure()
 
@@ -59,7 +73,8 @@ class UpdateAvailableDialog : DialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         binding = DialogYtUpdateBinding.inflate(layoutInflater)
-        binding.changelog.text = changelog
+        showNotes()
+        showDetails()
         return MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.update_available)
             .setView(binding.root)
@@ -97,6 +112,65 @@ class UpdateAvailableDialog : DialogFragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean(AWAITING_PERMISSION, awaitingPermission)
+        outState.putBoolean(DETAILS_OPEN, detailsOpen)
+    }
+
+    /** YT: the notes of all builds since the installed one, or one plain line without any. */
+    private fun showNotes() {
+        val text = binding.changelog
+        val blocks = YtReleaseNotes.blocks(notes)
+        if (blocks.isEmpty()) {
+            text.setText(R.string.yt_notes_fallback)
+            return
+        }
+        text.text = YtNotesText.build(
+            blocks,
+            buildLabel = { getString(R.string.yt_notes_build, it) },
+            accent = MaterialColors.getColor(text, androidx.appcompat.R.attr.colorPrimary),
+            bullet = text.currentTextColor,
+            bulletGap = (8 * resources.displayMetrics.density).toInt(),
+        )
+    }
+
+    /** YT: commit and signer, behind a small "Details" link below the notes. */
+    private fun showDetails() {
+        val parsed = YtReleaseNotes.details(details)
+        val toggle = binding.detailsToggle
+        val view = binding.details
+        if (parsed.commit == null && details.isNullOrBlank()) {
+            toggle.visibility = View.GONE
+            view.visibility = View.GONE
+            return
+        }
+        val signedByYou = YtReleaseNotes.fingerprintMatches(
+            parsed.fingerprint, YtSelfUpdater.installedSignerHashes(requireContext())
+        )
+        val signer = when {
+            signedByYou -> getString(R.string.yt_notes_signed_by_you)
+            parsed.fingerprint != null -> getString(R.string.yt_notes_signer_mismatch)
+            else -> getString(R.string.yt_notes_signer_unknown)
+        }
+        val commit = parsed.commit?.take(7)?.let { sha ->
+            offeredBuild?.let { getString(R.string.yt_notes_commit, it, sha) } ?: sha
+        }
+        view.text = listOfNotNull(commit, signer).joinToString("\n")
+        view.setTextColor(
+            MaterialColors.getColor(
+                view,
+                if (signedByYou) com.google.android.material.R.attr.colorOnSurfaceVariant
+                else androidx.appcompat.R.attr.colorError
+            )
+        )
+        toggle.visibility = View.VISIBLE
+        fun apply() {
+            view.visibility = if (detailsOpen) View.VISIBLE else View.GONE
+            toggle.setText(if (detailsOpen) R.string.yt_notes_details_hide else R.string.yt_notes_details)
+        }
+        apply()
+        toggle.setOnClickListener {
+            detailsOpen = !detailsOpen
+            apply()
+        }
     }
 
     private fun onPositive() {
@@ -232,5 +306,10 @@ class UpdateAvailableDialog : DialogFragment() {
     companion object {
         const val APP_UPDATE_ASSET = "updateAsset"
         private const val AWAITING_PERMISSION = "awaitingPermission"
+        const val NOTES_BUILDS = "ytNotesBuilds"
+        const val NOTES_TEXTS = "ytNotesTexts"
+        const val NOTES_DETAILS = "ytNotesDetails"
+        const val NOTES_OFFERED = "ytNotesOffered"
+        private const val DETAILS_OPEN = "ytDetailsOpen"
     }
 }

@@ -173,6 +173,11 @@ jobs:
             latest=false
             pre=true
           fi
+          # the body: release-notes/next.md (what the app shows as "what is new"), the marker
+          # <!-- yt-details -->, then build, commit and signer; test builds keep their note
+          bash scripts/release-body.sh release-notes/next.md "$GITHUB_RUN_NUMBER" "$GITHUB_SHA" \
+            "${SIGNED_WITH:-unknown}" "$note" > "$RUNNER_TEMP/release-body.md"
+          cat "$RUNNER_TEMP/release-body.md"
           {
             echo "tag=$tag"
             echo "name=$name"
@@ -193,10 +198,7 @@ jobs:
             out/${{ steps.apk.outputs.name }}
             app/build/outputs/mapping/release/mapping.txt
           fail_on_unmatched_files: false
-          body: |
-            YT build ${{ github.run_number }} from commit ${{ github.sha }}.
-            Signed with: ${{ env.SIGNED_WITH }}.
-            ${{ steps.release.outputs.note }}
+          body_path: ${{ runner.temp }}/release-body.md
 
       # a branch keeps its last three test builds; older ones go with their tags, so the many
       # pushes of the round-12 branches do not pile up releases (crash-check fetches its build
