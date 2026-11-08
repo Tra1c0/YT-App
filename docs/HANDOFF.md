@@ -43,8 +43,9 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 4. Release: merge into `main`, update FEATURES.md (+ ARCHITECTURE.md, this file) in the same push,
    push → CI builds `build-N` (~15 min) → download the asset with `gh api` + curl
    (`Accept: application/octet-stream`), check SHA-256 against the release digest and the signer
-   (`python3 -I scripts/apk-signer.py <apk>`, expected C3:8D:B9:09:…:5A:86), then send the user the download link
-   `https://github.com/Tra1c0/YT-App/releases/download/build-N/YT-32.1-yt.N.apk`.
+   (`python3 -I scripts/apk-signer.py <apk>`, expected C3:8D:B9:09:…:5A:86), then send the user the
+   Actions RUN link (`https://github.com/Tra1c0/YT-App/actions/runs/<id>`, artifact on that page).
+   Not the direct release-asset link: on the phone that download hangs at the last percent.
 5. Emulator checks only when worth it (they cost ~25-45 min and often fail for emulator reasons):
    `gh workflow run crash-check.yml -R Tra1c0/yt-app --ref <branch> -f build=<tag> -f design=...
    -f target=default -f test_video=true [-f screens=true] [-f gestures=true] -f signin_probe=false`.
