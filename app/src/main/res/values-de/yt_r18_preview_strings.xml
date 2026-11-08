@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- YT: preview of the battery cue (Player settings → Battery) -->
+    <string name="yt_battery_preview">Vorschau</string>
+    <string name="yt_battery_preview_summary">Animation und Vibration ansehen</string>
+    <string name="yt_battery_preview_title">Vorschau Akku-Hinweis</string>
+    <string name="yt_battery_preview_level">%1$d %%</string>
+    <string name="yt_battery_preview_all">Alle nacheinander</string>
+    <string name="yt_battery_preview_stop">Anhalten</string>
+    <string name="yt_battery_preview_hint">Tippe auf einen Stand, um seinen Hinweis zu sehen. Jeder Stand beginnt in der Farbe des vorigen, wie beim echten Entladen.</string>
+    <string name="yt_battery_preview_motion_off">Animationen sind aus („Animationen der Designs“): Das Video bewegt sich nicht, nur der Farbrahmen erscheint.</string>
+    <string name="yt_battery_preview_haptics_off">Vibration ist aus (Eigene Haptik).</string>
+    <string name="yt_battery_preview_no_vibrator">Dieses Gerät kann nicht vibrieren.</string>
+    <string name="yt_battery_preview_pulses">Dieses Gerät kann die Vibrationsstärke nicht regeln: Das Anschwellen bei 5 % kommt als Pulse.</string>
+    <string name="yt_battery_preview_close">Schließen</string>
+</resources>

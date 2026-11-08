@@ -61,6 +61,12 @@ class PlayerSettings : BasePreferenceFragment() {
                 false
             }
         }
+
+        // YT: the battery cue on a stand-in picture, with the current animation/haptics settings
+        findPreference<Preference>("yt_battery_preview")?.setOnPreferenceClickListener {
+            com.github.libretube.ui.yt.YtBatteryPreviewDialog.show(childFragmentManager)
+            true
+        }
     }
 
     override fun onResume() {

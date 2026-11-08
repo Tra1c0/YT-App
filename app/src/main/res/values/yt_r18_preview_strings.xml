@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- YT: preview of the battery cue (Player settings → Battery) -->
+    <string name="yt_battery_preview">Preview</string>
+    <string name="yt_battery_preview_summary">See the animation and feel the vibration</string>
+    <string name="yt_battery_preview_title">Battery cue preview</string>
+    <string name="yt_battery_preview_level">%1$d %%</string>
+    <string name="yt_battery_preview_all">All in a row</string>
+    <string name="yt_battery_preview_stop">Stop</string>
+    <string name="yt_battery_preview_hint">Tap a level to see its cue. Each level starts in the colour of the one before, as on a real discharge.</string>
+    <string name="yt_battery_preview_motion_off">Animations are off (\"Design animations\"): the video does not move, only the colour frame shows.</string>
+    <string name="yt_battery_preview_haptics_off">Vibration is off (\"Custom haptics\").</string>
+    <string name="yt_battery_preview_no_vibrator">This device cannot vibrate.</string>
+    <string name="yt_battery_preview_pulses">This device cannot vary the vibration strength: the swell at 5 % plays as pulses.</string>
+    <string name="yt_battery_preview_close">Close</string>
+</resources>
