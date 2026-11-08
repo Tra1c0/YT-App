@@ -24,6 +24,7 @@
     <string name="yt_guide_where_sponsorblock">Settings → SponsorBlock</string>
     <string name="yt_guide_where_dearrow">Settings → SponsorBlock → Use DeArrow</string>
     <string name="yt_guide_where_ryd">Settings → General → Local Return YouTube Dislike extractor</string>
+    <string name="yt_guide_where_audio_only">Settings → General → Audio only mode</string>
     <string name="yt_guide_where_feed">Home → “Adjust the feed” button</string>
     <string name="yt_guide_where_diagnosis">Settings → Diagnosis</string>
     <string name="yt_guide_where_storage">Settings → Storage</string>

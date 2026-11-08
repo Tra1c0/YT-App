@@ -34,6 +34,8 @@ abstract class BasePreferenceFragment : PreferenceFragmentCompat() {
         }
         // YT: the rows of the settings in the manner of the selected design
         com.github.libretube.ui.yt.YtClassic.stylePreferences(this)
+        // YT: opened from the guide at one setting: scroll to it and light it up once
+        com.github.libretube.ui.yt.YtSettingJumpUi.consume(this, savedInstanceState)
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {

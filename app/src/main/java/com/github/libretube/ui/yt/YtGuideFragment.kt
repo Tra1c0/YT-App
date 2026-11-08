@@ -35,7 +35,8 @@ import kotlinx.coroutines.launch
  * YT: Settings → "Anleitung": what YT does differently and how to use it, from [YtGuide]. Plain
  * Material in the theme of the classic screens (the design overlay gives the cards their corners
  * and outline), sections that fold, a search field that filters in memory ([YtGuideRules]).
- * Entries with a target open that settings screen through the settings graph.
+ * Entries with a target open that settings screen through the settings graph, at the setting
+ * when the entry names one.
  */
 class YtGuideFragment : Fragment() {
     /** Sections the user opened or closed by hand; the rest follows [YtGuideRules.expanded]. */
@@ -205,7 +206,7 @@ class YtGuideFragment : Fragment() {
                             else -> R.string.yt_guide_open
                         }
                     )
-                    setOnClickListener { open(target) }
+                    setOnClickListener { open(target, YtGuide.item(entry.key)?.setting) }
                 },
                 LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                     // the button's own inset lines its text up with the text above
@@ -216,7 +217,7 @@ class YtGuideFragment : Fragment() {
         return box
     }
 
-    private fun open(target: YtGuideTarget) {
+    private fun open(target: YtGuideTarget, setting: String?) {
         val context = context ?: return
         val action = when (target) {
             YtGuideTarget.INTERACTION -> R.id.action_global_ytInteractionSettings
@@ -238,7 +239,9 @@ class YtGuideFragment : Fragment() {
                 return
             }
         }
-        runCatching { findNavController().navigate(action) }
+        // the screen scrolls to this setting and highlights it once (YtSettingJumpUi)
+        val args = setting?.let { androidx.core.os.bundleOf(YtSettingJump.ARG_KEY to it) }
+        runCatching { findNavController().navigate(action, args) }
     }
 
     /** The two text colours of the cards, made readable on the card as it shows over the page. */
