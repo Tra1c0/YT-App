@@ -8,7 +8,7 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 107 (release notes in the update dialog). 106: landscape page after
+- Latest release: build 108 (guide in settings). 107: release notes in the update dialog. 106: landscape page after
   fullscreen, stuck minimize drag. 105: watch
   position ledger. 104: battery review fixes. 103: battery cue preview. 102 = round 18 ( chapter double tap, battery quality cap + cue, storage
   page). 101: soft close (dismissed mini player kept paused 60 s, instant restore). 100: restore starts when the old service is gone. 99: rise fallback,
@@ -45,7 +45,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 4. Release: merge into `main`, update FEATURES.md (+ ARCHITECTURE.md, this file) in the same push,
    and REPLACE `release-notes/next.md` with the user-facing German notes of this push
    (`## Neu` / `## Behoben` / `## Geändert`, bullets; no marker — CI adds it). The app collects the
-   builds in between itself; a docs-only push gets a short note or none.
+   builds in between itself; a docs-only push gets a short note or none. A new user-facing
+   feature also gets an item in the guide (`Y/YtGuide.kt` + strings).
    push → CI builds `build-N` (~15 min) → download the asset with `gh api` + curl
    (`Accept: application/octet-stream`), check SHA-256 against the release digest and the signer
    (`python3 -I scripts/apk-signer.py <apk>`, expected C3:8D:B9:09:…:5A:86), then send the user the
@@ -104,6 +105,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 108: guide ("Anleitung") at the top of settings; first-start screen with visuals is later.
 
 - 107: update dialog shows release notes of all builds since the installed one (scrollable).
 

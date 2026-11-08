@@ -1,6 +1,2 @@
 ## Neu
-- Das Update-Fenster zeigt jetzt kurz, was neu ist und was behoben wurde – für alle Builds seit deiner installierten Version. Bei vielen Punkten kann man im Fenster scrollen; Commit und Signatur stehen unter „Details“.
-
-## Behoben
-- Nach dem Vollbild im Querformat wird die Seite neu aufgebaut und ist wieder voll bedienbar.
-- Das Herunterziehen zum Minimieren bleibt nach dem Drehen des Handys nicht mehr hängen.
+- **Anleitung** ganz oben in den Einstellungen: was YT anders macht als YouTube und wie du es benutzt – acht aufklappbare Abschnitte mit Suche und Knöpfen direkt zur passenden Einstellung.
