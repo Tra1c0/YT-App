@@ -77,8 +77,16 @@ class FullscreenGestureAnimationController(
     fun onSwipeEnd() {
         if (swipeDirection == SwipeDirection.NONE) return
 
-        // Reset scale
-        if (shouldHandleSwipe) videoFrameView.animate()
+        // YT: a swipe that took the player into or out of fullscreen ends while the view moves
+        // between windows (abort from onDetachedFromWindow); an animation started then waits for
+        // the next attach, so the frame is put back at once instead of keeping its scale
+        if (shouldHandleSwipe && !videoFrameView.isAttachedToWindow) {
+            videoFrameView.animate().cancel()
+            videoFrameView.scaleX = 1f
+            videoFrameView.scaleY = 1f
+            videoFrameView.pivotY = videoFrameView.height / 2f
+            videoFrameView.pivotX = videoFrameView.width / 2f
+        } else if (shouldHandleSwipe) videoFrameView.animate()
             .scaleX(1f)
             .scaleY(1f)
             .setInterpolator(AccelerateDecelerateInterpolator())

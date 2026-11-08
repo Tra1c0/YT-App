@@ -66,7 +66,10 @@ internal class YtMinimizeDrag(
     )
 
     /** Where the picture and its box were the last time the page rested open or docked. */
-    private class Seen(val player: YtBox, val box: YtBox, val pageWidth: Int, val pageHeight: Int)
+    private class Seen(val player: YtBox, val box: YtBox, val pageWidth: Int, val pageHeight: Int, val generation: Int)
+
+    /** Counts the page's configuration changes: a place seen before the last one is not used. */
+    private var generation = 0
 
     private var seenOpen: Seen? = null
     private var seenDocked: Seen? = null
@@ -235,6 +238,35 @@ internal class YtMinimizeDrag(
         yieldTo(s)
     }
 
+    /**
+     * The page changed its configuration (a rotation without a rebuild, a fullscreen left): its
+     * size and its layout change under a gesture, and the places it rested at are another
+     * page's. A running drag or release ends where it began (instantly), offsets go, and the
+     * places are measured again.
+     */
+    fun onConfigurationChanged() {
+        generation++
+        seenOpen = null
+        seenDocked = null
+        pending = null
+        classic = false
+        val s = session
+        if (s != null && !closing) {
+            if (s.ownsProgress && s.touched) finishTransition(s, s.origin, instant = true)
+            stop(reset = true)
+        } else if (s == null && !closing && motion.progress == 0f) {
+            // (docked, the mini player's landing and rise own the offsets)
+            clearLeftovers()
+        }
+    }
+
+    private fun clearLeftovers() {
+        if (motion.translationY != 0f || sideways.any { it.translationX != 0f }) {
+            log { "minimize leftovers tx=${r1(binding.player.translationX)} ty=${r1(motion.translationY)}" }
+            setOffsets(0f, 0f)
+        }
+    }
+
     /** The transition is someone else's now; the page's offsets still spring back to 0. */
     private fun yieldTo(s: Session) {
         if (s.yielded) return
@@ -253,6 +285,9 @@ internal class YtMinimizeDrag(
         if (!attached || closing) return false
         // sideways on the docked player is not a drag to open or close
         if (fromMini && abs(dx) > abs(dy)) return false
+        // an open page at rest has no offsets of a drag: whatever is left (a gesture that never
+        // heard its end) goes, so this drag starts from the page as the transition lays it out
+        if (!fromMini && session == null && release == null) clearLeftovers()
         val enabled = PreferenceHelper.getBoolean(YtMinimizeModule.PREF_KEY, true)
         val geometry = if (enabled) geometry(fromMini) else null
         if (geometry == null) {
@@ -591,11 +626,14 @@ internal class YtMinimizeDrag(
         if (motion.startState != R.id.start || motion.endState != R.id.end) return
         val p = motion.progress
         if (p != 0f && p != 1f) return
-        val seen = Seen(boxOf(binding.player), boxOf(binding.mainContainer), motion.width, motion.height)
+        val seen = Seen(boxOf(binding.player), boxOf(binding.mainContainer), motion.width, motion.height, generation)
         if (p == 0f) seenOpen = seen else seenDocked = seen
     }
 
-    private fun Seen.fits() = pageWidth == motion.width && pageHeight == motion.height
+    private fun Seen.fits() =
+        YtMinimizeGeometry.seenUsable(pageWidth, pageHeight, motion.width, motion.height, generation == this@YtMinimizeDrag.generation)
+
+    private val minTravel get() = YtMinimizeGeometry.MIN_TRAVEL_DP * density
 
     /**
      * The first drag of a page has only a model of where the picture docks. MotionLayout moves it
@@ -618,6 +656,8 @@ internal class YtMinimizeDrag(
         )
         val model = s.finger.end
         val f = s.finger
+        // a layout that does not take the box down (not the minimize's own) teaches nothing
+        if (!YtMinimizeGeometry.drivable(start, end, f.curve, minTravel)) return
         s.finger = YtUnderFinger(start, end, f.u, f.v, f.pageLeft, f.pageTop, f.curve)
         s.learned = true
         log { "minimize learn p=${r3(p)} end=${boxText(end)} model=${boxText(model)}" }
@@ -626,6 +666,8 @@ internal class YtMinimizeDrag(
     private fun geometry(fromMini: Boolean): Geometry? {
         if (motion.width == 0 || motion.peeking || binding.player.parent !== motion) return null
         if (motion.startState != R.id.start || motion.endState != R.id.end) return null
+        // the minimize transition must be able to run (the classic path has the same checks)
+        if (!motion.isInteractionEnabled || motion.getTransition(R.id.yt_transition)?.isEnabled == false) return null
         val activity = host.fragment().activity ?: return null
         if (activity.isInPictureInPictureMode) return null
         val container = motion.parent as? View ?: return null
@@ -635,14 +677,6 @@ internal class YtMinimizeDrag(
         val tracked: View = if (fromMini) binding.mainContainer else binding.player
         val open = seenOpen?.takeIf { it.fits() } ?: return null
         val start = if (fromMini) open.box else open.player
-        var endFrom = "measured"
-        val end: YtBox = seenDocked?.takeIf { it.fits() }?.let { if (fromMini) it.box else it.player }
-            ?: if (fromMini) {
-                return null
-            } else {
-                endFrom = "model"
-                modelEnd(activity, container) ?: return null
-            }
 
         // the page's place in the window without the activity's shift of the container
         motion.getLocationInWindow(at)
@@ -658,6 +692,21 @@ internal class YtMinimizeDrag(
             // the last keyframe MainActivity writes: up by the bar, down again by the dock offset
             bar != null && bar.height > 0 -> YtContainerCurve(end = (YtMiniPlayer.containerDockPx - bar.height).toFloat())
             else -> YtContainerCurve(0f, fixed = shift)
+        }
+        var endFrom = "measured"
+        var end: YtBox? = seenDocked?.takeIf { it.fits() }?.let { if (fromMini) it.box else it.player }
+        if (end != null && !YtMinimizeGeometry.drivable(start, end, curve, minTravel)) {
+            // a docked place that does not lie below the open one would hold the transition at 0
+            val stale = end
+            log { "minimize stale end=${boxText(stale)} start=${boxText(start)}" }
+            seenDocked = null
+            end = null
+        }
+        if (end == null) {
+            if (fromMini) return null
+            endFrom = "model"
+            end = modelEnd(activity, container) ?: return null
+            if (!YtMinimizeGeometry.drivable(start, end, curve, minTravel)) return null
         }
         return Geometry(fromMini, tracked, start, end, endFrom, pageLeft, pageTop, curve, p)
     }

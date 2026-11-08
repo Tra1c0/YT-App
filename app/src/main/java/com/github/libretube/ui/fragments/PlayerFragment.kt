@@ -379,11 +379,6 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         }
     }
 
-    private val lockedOrientations = listOf(
-        ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT,
-        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-    )
-
     private var screenshotBitmap: Bitmap? = null
     private val openScreenshotFile =
         registerForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri ->
@@ -473,11 +468,21 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         if (restoreDocked) baseActivity.requestOrientationChange() else changeOrientationMode()
 
         playerLayoutOrientation = resources.configuration.orientation
+        resources.configuration.let { ytLastSize = Triple(it.orientation, it.screenWidthDp, it.screenHeightDp) }
 
         initializeTransitionLayout(restoreDocked, ytRestored)
         initializeOnClickActions()
 
-        if (!restoreDocked && PlayerHelper.autoFullscreenEnabled && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        // YT: not for the page rebuilt because fullscreen was just left in landscape
+        val ytLeftFullscreen = viewModel.ytLeftFullscreen
+        viewModel.ytLeftFullscreen = false
+        if (com.github.libretube.ui.yt.player.YtPageLayoutRules.fullscreenAtStart(
+                autoFullscreen = PlayerHelper.autoFullscreenEnabled,
+                landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE,
+                docked = restoreDocked,
+                leftFullscreen = ytLeftFullscreen,
+            )
+        ) {
             setFullscreen()
         }
 
@@ -549,7 +554,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
                     binding.playerMotionLayout.transitionToStart()
                     return
                 }
-                if (commonPlayerViewModel.isFullscreen.value == true) unsetFullscreen()
+                if (commonPlayerViewModel.isFullscreen.value == true) unsetFullscreen(rebuildAfter = true)
                 else {
                     binding.playerMotionLayout.setTransitionDuration(com.github.libretube.ui.yt.YtMiniPlayer.minimizeDuration())
                     binding.playerMotionLayout.transitionToEnd()
@@ -958,8 +963,13 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         binding.player.updateMarginsByFullscreenMode()
     }
 
+    /**
+     * YT: [rebuildAfter] for the user leaving fullscreen with the page staying open (button, swipe
+     * down, back): the screen may have turned inside fullscreen, where the page is not rebuilt,
+     * so it is rebuilt now for the orientation it shows (see YtPageLayoutRules).
+     */
     @SuppressLint("SourceLockedOrientationActivity")
-    fun unsetFullscreen() {
+    fun unsetFullscreen(rebuildAfter: Boolean = false) {
         if (activity == null || _binding == null) return
 
         commonPlayerViewModel.isFullscreen.value = false
@@ -975,6 +985,23 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         // set status bar icon color back to theme color after fullscreen dialog closed!
         windowInsetsControllerCompat.isAppearanceLightStatusBars =
             !ThemeHelper.isDarkMode(requireContext())
+
+        if (rebuildAfter) {
+            // YT: the player view is back on the open page, which may have turned meanwhile: the
+            // minimize drag measures the page anew; once the gesture that left fullscreen has
+            // ended and the dialog is gone, the page is rebuilt if it is in the wrong layout
+            com.github.libretube.ui.yt.player.YtPlayerModules.onConfigurationChanged(this)
+            binding.root.post { rebuildAfterFullscreen() }
+        }
+    }
+
+    /** YT: see [unsetFullscreen]; only for the open page (a minimize may have started since). */
+    private fun rebuildAfterFullscreen() {
+        val page = _binding ?: return
+        if (!isResumed || commonPlayerViewModel.isFullscreen.value == true) return
+        if (commonPlayerViewModel.isMiniPlayerVisible.value == true || page.playerMotionLayout.progress != 0f) return
+        val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        if (restartActivityIfNeeded() && landscape) viewModel.ytLeftFullscreen = true
     }
 
     /**
@@ -989,7 +1016,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
             setFullscreen()
         } else {
             // exit fullscreen mode
-            unsetFullscreen()
+            unsetFullscreen(rebuildAfter = true)
         }
     }
 
@@ -1642,13 +1669,20 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
      * Check if the activity needs to be recreated due to an orientation change
      * If true, the activity will be automatically restarted
      */
-    private fun restartActivityIfNeeded() {
-        if (baseActivity.screenOrientationPref in lockedOrientations || viewModel.isOrientationChangeInProgress) return
-        // YT: not while the video floats in YT's own window (it would lose its controller)
-        if (com.github.libretube.ui.yt.YtFloatingPlayer.isShowing) return
-
+    private fun restartActivityIfNeeded(): Boolean {
+        // YT: decided by YtPageLayoutRules: by the orientation the activity is locked to now
+        // (upstream: by the orientation setting, which auto fullscreen overrides with the
+        // sensor), and not while the video floats in YT's own window (it would lose its controller)
         val orientation = resources.configuration.orientation
-        if (commonPlayerViewModel.isFullscreen.value != true && orientation != playerLayoutOrientation) {
+        val rebuild = com.github.libretube.ui.yt.player.YtPageLayoutRules.rebuild(
+            fullscreen = commonPlayerViewModel.isFullscreen.value == true,
+            orientation = orientation,
+            layoutOrientation = playerLayoutOrientation,
+            requested = baseActivity.requestedOrientation,
+            rebuilding = viewModel.isOrientationChangeInProgress,
+            floating = com.github.libretube.ui.yt.YtFloatingPlayer.isShowing,
+        )
+        if (rebuild) {
             // remember the current position before recreating the activity
             playerLayoutOrientation = orientation
 
@@ -1661,7 +1695,11 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
 
             activity?.recreate()
         }
+        return rebuild
     }
+
+    // YT: orientation and screen size of the last configuration this page heard of
+    private var ytLastSize: Triple<Int, Int, Int>? = null
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
@@ -1673,6 +1711,14 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
             com.github.libretube.ui.yt.YtFloatingPlayer.isFloating
         ) {
             return
+        }
+
+        // YT: the page changed its size without a rebuild (not for a change of theme, say):
+        // running gestures end, the minimize drag measures the page anew
+        val ytSize = Triple(newConfig.orientation, newConfig.screenWidthDp, newConfig.screenHeightDp)
+        if (ytSize != ytLastSize) {
+            ytLastSize = ytSize
+            com.github.libretube.ui.yt.player.YtPlayerModules.onConfigurationChanged(this)
         }
 
         // YT: a docked player stays docked when the phone turns (it is no video to fill the screen)

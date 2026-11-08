@@ -58,6 +58,11 @@ object YtMinimizeModule : YtPlayerModule {
         return false
     }
 
+    // turned without a rebuild, or fullscreen left: the drag starts again from the page as it is
+    override fun onConfigurationChanged(host: YtPlayerHost) {
+        if (host === dragHost) drag?.onConfigurationChanged()
+    }
+
     override fun onDestroyView(host: YtPlayerHost) {
         if (host !== dragHost) return
         drag?.detach()
