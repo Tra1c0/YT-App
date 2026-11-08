@@ -37,6 +37,13 @@ interface YtPlayerModule {
     /** The page's view goes, while it still exists. */
     fun onDestroyView(host: YtPlayerHost) {}
 
+    /**
+     * The page's configuration changed without a rebuild (a rotation the activity handles
+     * itself, fullscreen left): gestures that run end, and what was measured on the page before
+     * is measured again.
+     */
+    fun onConfigurationChanged(host: YtPlayerHost) {}
+
     /** The bridge for dragging the share action onto the timeline, if this module makes one. */
     fun shareScrub(host: YtPlayerHost): YtShareScrubBridge? = null
 }
@@ -79,6 +86,8 @@ object YtPlayerModules {
     fun wantsBack(host: YtPlayerHost): Boolean = modules.any { it.wantsBack(host) }
 
     fun onDestroyView(host: YtPlayerHost) = modules.forEach { it.onDestroyView(host) }
+
+    fun onConfigurationChanged(host: YtPlayerHost) = modules.forEach { it.onConfigurationChanged(host) }
 
     /** The share-to-timeline bridge of the first module that makes one, else null. */
     fun shareScrub(host: YtPlayerHost): YtShareScrubBridge? =

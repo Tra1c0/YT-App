@@ -135,6 +135,13 @@ class MainActivity : AbstractPlayerHostActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // YT: the strips the container's side padding leaves beside an open player page
+        binding.container.background = ytSideFill
+        supportFragmentManager.registerFragmentLifecycleCallbacks(object : androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+            override fun onFragmentViewDestroyed(fm: androidx.fragment.app.FragmentManager, f: androidx.fragment.app.Fragment) {
+                if (f.id == R.id.container) ytSideFill.open = 0f
+            }
+        }, false)
 
         // manually apply additional padding for edge-to-edge compatibility
         // see https://developer.android.com/develop/ui/views/layout/edge-to-edge
@@ -166,6 +173,7 @@ class MainActivity : AbstractPlayerHostActivity() {
                         )
                     }
                     binding.container.setPadding(sideLeft, 0, sideRight, 0)
+                    ytSideFill.sides(sideLeft, sideRight)
                     binding.root.viewTreeObserver.removeOnGlobalLayoutListener(this)
                 }
             })
@@ -900,7 +908,16 @@ class MainActivity : AbstractPlayerHostActivity() {
         binding.root.post { applyContainerKeys() }
     }
 
+    // YT: see YtSideFill; the page's colour behind the open player page
+    private val ytSideFill by lazy {
+        com.github.libretube.ui.yt.YtSideFill(
+            com.google.android.material.color.MaterialColors.getColor(this, android.R.attr.colorBackground, android.graphics.Color.BLACK),
+        )
+    }
+
     override fun setPlayerContainerProgress(progress: Float) {
+        // YT: the side strips beside the open page (also without tabs)
+        if (this::binding.isInitialized) ytSideFill.open = 1f - progress.coerceIn(0f, 1f)
         if (!NavBarHelper.hasTabs()) return
 
         binding.mainMotionLayout.progress = progress
