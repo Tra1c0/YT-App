@@ -93,6 +93,10 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     // YT: a closed mini player kept paused for a minute (see YtServiceSoftClose)
     val ytSoftClose = YtServiceSoftClose(this) { mediaLibrarySession }
 
+    // YT: where each video was left, saved every 5 s while playing and at once on pause, seek,
+    // switch, end, error and close (see YtPositionLedger)
+    val ytPositions = YtPositionLedger(handler, { exoPlayer }, { watchPositionsEnabled })
+
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             super.onIsPlayingChanged(isPlaying)
@@ -377,6 +381,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
      */
     @CallSuper
     open fun navigateVideo(videoId: String) {
+        // YT: save the video being left while the player still holds it
+        ytPositions.beforeSwitch(videoId)
         // YT: another video in this service ends a soft close
         ytSoftClose.open(play = false)
         // YT: the modules drop what belonged to the video before (a loop, an end point)
@@ -555,6 +561,7 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
         // prevent android from putting LibreTube to sleep when locked
         player.setWakeMode(if (isOfflinePlayer) C.WAKE_MODE_LOCAL else C.WAKE_MODE_NETWORK)
         player.addListener(playerListener)
+        player.addListener(ytPositions.listener)
         this.exoPlayer = player
         // YT: the modules get the player as soon as it exists
         YtServiceModules.onPlayer(player, handler)
@@ -591,9 +598,9 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     }
 
     private fun saveWatchPosition() {
-        if (isTransitioning || !watchPositionsEnabled || !::videoId.isInitialized) return
-
-        exoPlayer?.let { PlayerHelper.saveWatchPosition(it, videoId) }
+        // YT: the ledger knows which video the player holds (also while transitioning) and
+        // checks the watch position settings itself
+        ytPositions.flush()
     }
 
     override fun onMediaButtonEvent(
@@ -632,6 +639,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     }
 
     override fun onDestroy() {
+        // YT: save before anything is torn down (also reached from onTaskRemoved and Stop)
+        ytPositions.flush()
         // wait for a short time before killing the mediaSession
         // as the playerController must be released before we finish the session
         // otherwise there would be a
@@ -685,6 +694,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     // YT: memory runs low: a softly closed player goes now (the restart path stays)
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
+        // YT: also sent when the app's UI goes to the background (TRIM_MEMORY_UI_HIDDEN)
+        ytPositions.flush()
         if (ytSoftClose.closed && com.github.libretube.ui.yt.mini.YtSoftCloseRules.releasesOnTrim(level)) onDestroy()
     }
 
