@@ -8,7 +8,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 106 (landscape page after fullscreen, stuck minimize drag). 105: watch
+- Latest release: build 107 (release notes in the update dialog). 106: landscape page after
+  fullscreen, stuck minimize drag. 105: watch
   position ledger. 104: battery review fixes. 103: battery cue preview. 102 = round 18 ( chapter double tap, battery quality cap + cue, storage
   page). 101: soft close (dismissed mini player kept paused 60 s, instant restore). 100: restore starts when the old service is gone. 99: rise fallback,
   restore times in Diagnose. 98: rise animation. 97: fix for
@@ -42,6 +43,9 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
    -Pkotlin.daemon.jvmargs=-Xmx4g` plus the YT unit tests (command in ARCHITECTURE.md).
    Several agents compiling at once can run out of memory or hit Maven 429: wait and retry.
 4. Release: merge into `main`, update FEATURES.md (+ ARCHITECTURE.md, this file) in the same push,
+   and REPLACE `release-notes/next.md` with the user-facing German notes of this push
+   (`## Neu` / `## Behoben` / `## Geändert`, bullets; no marker — CI adds it). The app collects the
+   builds in between itself; a docs-only push gets a short note or none.
    push → CI builds `build-N` (~15 min) → download the asset with `gh api` + curl
    (`Accept: application/octet-stream`), check SHA-256 against the release digest and the signer
    (`python3 -I scripts/apk-signer.py <apk>`, expected C3:8D:B9:09:…:5A:86), then send the user the
@@ -100,6 +104,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 107: update dialog shows release notes of all builds since the installed one (scrollable).
 
 - 106: leaving fullscreen in landscape rebuilds a usable landscape page; minimize drag after
   rotating no longer sticks (stale geometry). Cause of the stuck drag inferred from code, not logged.

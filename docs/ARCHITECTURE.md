@@ -277,6 +277,12 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   (module hook) drops remembered places; `Y/mini/YtMinimizeGeometry.drivable` (docked ≥ 48 dp below
   open) guards every drag start, else the classic drag takes over.
 
+- Release notes: `release-notes/next.md` (German, `## Neu / Behoben / Geändert` + bullets) →
+  `scripts/release-body.sh` in CI → release body (notes, `<!-- yt-details -->`, technical lines) →
+  `UpdateChecker` fetches the bodies of builds (installed, offered], max 10, via
+  `ExternalApi.getReleaseByTag`; pure parsing `J/util/YtReleaseNotes.kt`, rendering
+  `Y/YtNotesText.kt`, scroll cap `Y/YtMaxHeightScrollView.kt`.
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).
