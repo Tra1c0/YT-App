@@ -286,7 +286,10 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
 - Guide: content as data in `Y/YtGuide.kt` (sections → items, string ids, path text, target; stable
   keys, meant for the later first-start screen), pure filter/grouping `Y/YtGuideRules.kt`, screen
   `Y/YtGuideFragment.kt` in `nav_settings` (`ytGuide`), strings `yt_r19_guide_strings.xml`. A new
-  user-facing feature gets a guide item in the same push.
+  user-facing feature gets a guide item in the same push. Items may carry a preference key
+  (`setting`): passed as fragment arg `yt_jump_key`, consumed once in
+  `BasePreferenceFragment.onViewCreated` → `Y/YtSettingJumpUi.kt` (scroll to centre, overlay pulse;
+  pure `Y/YtSettingJump.kt`; a test checks every key exists in `res/xml`).
 
 ## Open points
 

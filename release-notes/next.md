@@ -1,2 +1,2 @@
 ## Neu
-- **Anleitung** ganz oben in den Einstellungen: was YT anders macht als YouTube und wie du es benutzt – acht aufklappbare Abschnitte mit Suche und Knöpfen direkt zur passenden Einstellung.
+- Die Knöpfe in der **Anleitung** führen jetzt direkt zur richtigen Einstellung: die Seite scrollt hin und die Zeile leuchtet kurz auf.
