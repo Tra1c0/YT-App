@@ -5,7 +5,8 @@ Start every session by reading, in this order (keep reading cheap: only what you
 1. `docs/HANDOFF.md`: current state, how to work, dead ends, repeated mistakes, build log.
 2. The section of `docs/ARCHITECTURE.md` for the area you touch (it is a code map with paths;
    do not explore the code from scratch when the map answers it).
-3. `docs/FEATURES.md` when you need to know what exists (the user reads this one).
+3. `docs/FEATURES.md` when you need to know what exists (the user reads this one);
+   `docs/ROADMAP.md` for what is not built yet (build only from "Beschlossen"; move items when built).
 `docs/DESIGNS.md` has the 12 designs in detail.
 
 ## Keep them current

@@ -7,7 +7,7 @@ im Einzelnen in [DESIGNS.md](DESIGNS.md).
 Status: **E** = im Emulator geprüft · **T** = durch Tests abgedeckt · **–** = noch nicht geprüft.
 Getestet auf einem echten Handy wurde bisher nur, was du selbst benutzt hast.
 
-Stand: Build 95.
+Stand: Build 105.
 
 ## Designs und Aussehen
 
@@ -128,29 +128,4 @@ Bekannt: Wischen zum nächsten Short hat im Emulator nicht reagiert; auf dem Han
 
 ## Ideen (noch nicht gebaut)
 
-Roadmap-Sammlung. **★** = vom Nutzer ausgewählt. Aufwand geschätzt: S klein, M mittel.
-
-**Wiedergabe:** ★ Warteschlange nach Neustart wiederherstellen (M; begonnen, Zweig `r16/queue`, pausiert) ·
-Rücksprung nach langer Pause (S) · „Fast fertig“ zählt als gesehen (S) · Einschlaf-Timer „Ende des Videos“ +
-Ausblenden (S) · Untertitel-Sprache je Kanal (S) · Qualität je Kanal (S) · Pause bei Kopfhörer-Trennung (S) ·
-★ Intro je Kanal überspringen, abschaltbar mit Toleranzreglern (S–M) · ★ Outro je Kanal früher beenden, ebenso (S–M) ·
-Ende der Warteschlange: anhalten statt Autoplay (S) · ★ Gesten-Randabstand gegen die Zurück-Geste (S)
-
-**Feed:** ★ Sammelseite für Ausgeblendetes und pausierte Kanäle (S) · max. N Videos je Kanal hintereinander (S) ·
-Reuploads/Duplikate erkennen (S) · DeArrow auf den Design-Startseiten prüfen (S–M) · „Später ansehen“ per Wisch (S) ·
-„Neu seit letztem Öffnen“-Trennlinie (S) · ★ tote Abos finden (kein Upload > 1 Jahr) (S)
-
-**Player-Seite:** Kapitel aus Kommentaren (S) · Zeitstempel antippbar (S, Upstream prüfen) · ★ Beschreibung:
-Links gruppieren (M) · ★ Sponsoren-Links markieren/einklappen (S) · Lesezeichen mit Notiz (M) · SponsorBlock-Hinweis
-mit Rückgängig (S)
-
-**Suche:** Verlauf wischen/pausieren (S) · Schnellfilter Shorts/Live (S)
-
-**Downloads:** nur WLAN / nur beim Laden (S) · gesehene Downloads automatisch löschen (S) · Platzanzeige (S) ·
-Offline-Paket aus der Warteschlange (M)
-
-**Komfort:** ★ Miniplayer zurückholen: After-Design und Reiterwechsel bei Pop/Glas/Frost (S) · Zurück-Taste in Ebenen (S) ·
-Nur-Audio-Steuerung ±10 s in der Benachrichtigung (S) · verständliche Fehlermeldungen (S) · Offline-Banner statt
-Spinner (S) · Scrollposition nach dem Player behalten (S–M) · App-Shortcuts (S) · geteilte Links „In Warteschlange“ (S)
-
-**Wohlbefinden:** Pausen-Erinnerung (S) · Nachtmodus-Zeitfenster (S–M) · Wochenrückblick lokal (M) · Shorts global aus (S)
+Alle offenen Ideen stehen in [ROADMAP.md](ROADMAP.md): beschlossen, eventuell/später, noch nicht sortiert.
