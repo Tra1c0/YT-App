@@ -3,6 +3,13 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- YT: the guide comes first: it explains the rest and is not a setting itself -->
+    <Preference
+        android:icon="@drawable/ic_help"
+        app:key="yt_guide"
+        app:summary="@string/yt_guide_summary"
+        app:title="@string/yt_guide_title" />
+
     <PreferenceCategory app:title="@string/yt_settings_everyday">
 
         <Preference
