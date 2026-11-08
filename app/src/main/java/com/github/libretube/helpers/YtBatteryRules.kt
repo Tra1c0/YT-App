@@ -22,7 +22,8 @@ object YtBatteryCapRules {
 
     /**
      * Whether the cap applies now. [level] is the battery in percent (negative = unknown),
-     * [was] the answer before; between the threshold and threshold + [HYSTERESIS] it stays.
+     * [was] the answer before; from the threshold up to below threshold + [HYSTERESIS] it stays.
+     * The power saver (with [usePowerSave]) caps whatever the level, on the charger too.
      */
     fun active(
         was: Boolean,
@@ -37,27 +38,52 @@ object YtBatteryCapRules {
         if (usePowerSave && powerSave) return true
         if (charging || level < 0) return false
         if (level < threshold) return true
-        if (level > threshold + HYSTERESIS) return false
+        if (level >= threshold + HYSTERESIS) return false
         return was
     }
 
     /**
      * The video height to ask the track selector for. [requested] is what the page asked
      * (Int.MAX_VALUE = auto; for shorts already widened by 16/9, as the page does), [cap] the
-     * setting's height. A quality the user picked by hand wins until the next video.
+     * setting's height. [exempt]: the request is the user's pick by hand and passes uncapped.
      */
-    fun height(requested: Int, cap: Int, active: Boolean, userPicked: Boolean, short: Boolean): Int {
-        if (!active || userPicked) return requested
-        val capHeight = if (short) ceil(cap * 16.0 / 9.0).toInt() else cap
-        return minOf(requested, capHeight)
+    fun height(requested: Int, cap: Int, active: Boolean, exempt: Boolean, short: Boolean): Int {
+        if (!active || exempt) return requested
+        return minOf(requested, capHeight(cap, short))
     }
 
+    /** The cap's height; for shorts (portrait, the height is the long side) widened by 16/9. */
+    fun capHeight(cap: Int, short: Boolean): Int = if (short) ceil(cap * 16.0 / 9.0).toInt() else cap
+
     /** The highest frame rate to allow (Int.MAX_VALUE = any). */
-    fun maxFrameRate(active: Boolean, userPicked: Boolean): Int =
-        if (active && !userPicked) CAPPED_FPS else Int.MAX_VALUE
+    fun maxFrameRate(active: Boolean, exempt: Boolean): Int =
+        if (active && !exempt) CAPPED_FPS else Int.MAX_VALUE
 
     /** A manual pick counts only for a real resolution; "Auto" by hand is no fixed choice. */
     fun isManualPick(byUser: Boolean, resolution: Int): Boolean = byUser && resolution != Int.MAX_VALUE
+
+    /**
+     * The height the user picked by hand (null = none) after a request of [requested]. A pick
+     * by hand replaces it ("Auto" by hand clears it); a request not made by hand (a rotation
+     * re-sends a stored resolution) leaves it, but only a request of exactly that height is
+     * exempt from the cap ([exempt]): the page may store the pick for the other orientation and
+     * send its default here, which must not pass uncapped.
+     */
+    fun pickAfter(picked: Int?, requested: Int, byUser: Boolean): Int? = when {
+        !byUser -> picked
+        isManualPick(true, requested) -> requested
+        else -> null
+    }
+
+    /** Whether [requested] is the pick by hand ([picked]) and so passes uncapped. */
+    fun exempt(picked: Int?, requested: Int): Boolean = picked != null && picked == requested
+
+    /**
+     * The Shorts view's own player ([com.github.libretube.ui.yt.shorts.YtShortsPlayer]) has no
+     * resolution request: the cap is the only limit, applied to both sides (a short may be
+     * portrait or landscape), so it is the long side of a 16:9 picture of [cap]'s height.
+     */
+    fun shortsMaxSide(cap: Int, active: Boolean): Int = if (active) capHeight(cap, short = true) else Int.MAX_VALUE
 
     fun parsePercent(value: String?, fallback: Int): Int = value?.toIntOrNull()?.takeIf { it in 1..99 } ?: fallback
 
@@ -201,17 +227,31 @@ object YtBatteryCues {
     /** The video's scale at the deepest point of the inset. */
     const val INSET_SCALE = 0.94f
 
-    /** How far the video is inset at [t] ms (0 = full size, 1 = [INSET_SCALE]), eased in and out. */
-    fun inset(t: Long): Float = when {
-        t <= 0 -> 0f
-        t < IN_MS -> ease(t / IN_MS.toFloat())
-        t < IN_MS + HOLD_MS -> 1f
-        t < TOTAL_MS -> 1f - ease((t - IN_MS - HOLD_MS) / OUT_MS.toFloat())
-        else -> 0f
+    // A cue that cannot vibrate (YtBatteryVibeRules) shows stronger: a wider frame, held longer.
+    const val STRONG_EXTRA_HOLD_MS = 400L
+    const val STRONG_INSET_SCALE = 0.92f
+    const val STRONG_FLASH_FACTOR = 1.5f
+
+    fun holdMs(strong: Boolean): Long = if (strong) HOLD_MS + STRONG_EXTRA_HOLD_MS else HOLD_MS
+    fun totalMs(strong: Boolean): Long = IN_MS + holdMs(strong) + OUT_MS
+    fun colorFadeMs(strong: Boolean): Long = IN_MS + holdMs(strong)
+    fun insetScale(strong: Boolean): Float = if (strong) STRONG_INSET_SCALE else INSET_SCALE
+
+    /** How far the video is inset at [t] ms (0 = full size, 1 = [insetScale]), eased in and out. */
+    fun inset(t: Long, strong: Boolean = false): Float {
+        val hold = holdMs(strong)
+        return when {
+            t <= 0 -> 0f
+            t < IN_MS -> ease(t / IN_MS.toFloat())
+            t < IN_MS + hold -> 1f
+            t < IN_MS + hold + OUT_MS -> 1f - ease((t - IN_MS - hold) / OUT_MS.toFloat())
+            else -> 0f
+        }
     }
 
     /** The colour's progress from start to end at [t] ms. */
-    fun colorFraction(t: Long): Float = (t / COLOR_FADE_MS.toFloat()).coerceIn(0f, 1f)
+    fun colorFraction(t: Long, strong: Boolean = false): Float =
+        (t / colorFadeMs(strong).toFloat()).coerceIn(0f, 1f)
 
     // smoothstep: soft at both ends
     private fun ease(x: Float): Float {
@@ -266,4 +306,52 @@ object YtBatteryCues {
         fun ch(f: Float) = ((f + m) * 255f).roundToInt().coerceIn(0, 255)
         return (0xFF shl 24) or (ch(r) shl 16) or (ch(g) shl 8) or ch(b)
     }
+}
+
+/**
+ * YT: whether a battery cue's vibration can be felt. Android drops it silently in some states
+ * (the cue vibrates as a notification on Android 13+, without a usage before): in battery saver
+ * (IGNORED_FOR_POWER), with the ringer on silent or the notification vibration off in the
+ * system settings (Android 13+ only, where the notification usage applies). The app does not
+ * work around that with another usage; instead it says so and the picture shows stronger.
+ */
+object YtBatteryVibeRules {
+    enum class Block {
+        /** "Custom haptics" is off. */
+        HAPTICS_OFF,
+
+        /** The device has no vibrator. */
+        NO_VIBRATOR,
+
+        /** Battery saver is on: Android ignores the vibration. */
+        POWER_SAVE,
+
+        /** The ringer is on silent: Android ignores notification vibrations. */
+        SILENT,
+
+        /** Notification vibration is off in the system settings. */
+        SYSTEM_OFF,
+    }
+
+    /**
+     * Why the cue would not be felt now, or null if it vibrates. [ringerSilent] and [systemOff]
+     * are only passed where they apply (Android 13+, see the object's comment).
+     */
+    fun blocked(
+        haptics: Boolean,
+        hasVibrator: Boolean,
+        powerSave: Boolean,
+        ringerSilent: Boolean,
+        systemOff: Boolean,
+    ): Block? = when {
+        !haptics -> Block.HAPTICS_OFF
+        !hasVibrator -> Block.NO_VIBRATOR
+        powerSave -> Block.POWER_SAVE
+        ringerSilent -> Block.SILENT
+        systemOff -> Block.SYSTEM_OFF
+        else -> null
+    }
+
+    /** Without a vibration the picture carries the cue alone: stronger ([YtBatteryCues.holdMs]). */
+    fun strongVisual(block: Block?): Boolean = block != null
 }

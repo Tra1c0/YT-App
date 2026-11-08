@@ -1103,12 +1103,14 @@ class CustomExoPlayerView(
 
         // Dialog for quality selection
         BaseBottomSheet()
-            .setSimpleItems(
+            // YT: while the low-battery cap holds, the selected entry says what really plays
+            .setItems(com.github.libretube.ui.yt.player.YtBatteryCapLabel.items(
+                context,
                 resolutions.map(VideoResolution::name),
                 preselectedItem = resolutions.firstOrNull {
                     it.resolution == selectedResolution
                 }?.name ?: context.getString(R.string.auto_quality)
-            ) { which ->
+            )) { which ->
                 val newResolution = resolutions[which].resolution
                 setPlayerResolution(newResolution, true)
 

@@ -1,12 +1,20 @@
 package com.github.libretube.ui.yt
 
 import android.app.Dialog
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.media.AudioManager
 import android.os.Bundle
+import android.os.PowerManager
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.RelativeSizeSpan
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -16,6 +24,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import com.github.libretube.R
@@ -58,6 +67,12 @@ class YtBatteryPreviewDialog : DialogFragment() {
         if (key == YtMotionPrefs.KEY || key == YtHapticsPrefs.KEY) showNotes()
     }
 
+    // battery saver and the ringer change from the quick settings while the dialog stays open
+    private var systemWatchOn = false
+    private val systemWatch = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) = showNotes()
+    }
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val builder = MaterialAlertDialogBuilder(requireContext())
         val themed = builder.context
@@ -88,6 +103,7 @@ class YtBatteryPreviewDialog : DialogFragment() {
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 34f)
             typeface = Typeface.DEFAULT_BOLD
             includeFontPadding = false
+            gravity = Gravity.CENTER
             setPadding(dp(themed, 18), dp(themed, 8), dp(themed, 18), dp(themed, 8))
             visibility = View.INVISIBLE
         }
@@ -152,6 +168,13 @@ class YtBatteryPreviewDialog : DialogFragment() {
     override fun onStart() {
         super.onStart()
         PreferenceHelper.settings.registerOnSharedPreferenceChangeListener(prefsWatch)
+        runCatching {
+            val filter = IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED).apply {
+                addAction(AudioManager.RINGER_MODE_CHANGED_ACTION)
+            }
+            ContextCompat.registerReceiver(requireContext(), systemWatch, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+            systemWatchOn = true
+        }
         showNotes()
     }
 
@@ -159,6 +182,10 @@ class YtBatteryPreviewDialog : DialogFragment() {
         // leaving the app or rotating ends the cue: no small picture, no vibration left over
         stop()
         PreferenceHelper.settings.unregisterOnSharedPreferenceChangeListener(prefsWatch)
+        if (systemWatchOn) {
+            systemWatchOn = false
+            runCatching { requireContext().unregisterReceiver(systemWatch) }
+        }
         super.onStop()
     }
 
@@ -179,16 +206,16 @@ class YtBatteryPreviewDialog : DialogFragment() {
 
     private fun motion(): Boolean = YtMotionPrefs.enabled
 
+    // the same decision as the player's cue: Android drops a vibration in battery saver or on silent
     private fun vibrates(context: Context): Boolean =
-        YtBatteryPreviewRules.vibrates(YtHapticsPrefs.enabled, YtBatteryVibes.hasVibrator(context))
+        YtBatteryPreviewRules.vibrates(YtBatteryVibes.blocked(context))
 
     private fun showNotes() {
         val view = notes ?: return
         val context = view.context
         val list = YtBatteryPreviewRules.notes(
             motion = motion(),
-            haptics = YtHapticsPrefs.enabled,
-            hasVibrator = YtBatteryVibes.hasVibrator(context),
+            blocked = YtBatteryVibes.blocked(context),
             amplitude = YtBatteryVibes.hasAmplitudeControl(context),
         )
         view.text = list.joinToString("\n") {
@@ -197,6 +224,9 @@ class YtBatteryPreviewDialog : DialogFragment() {
                     Note.MOTION_OFF -> R.string.yt_battery_preview_motion_off
                     Note.HAPTICS_OFF -> R.string.yt_battery_preview_haptics_off
                     Note.NO_VIBRATOR -> R.string.yt_battery_preview_no_vibrator
+                    Note.POWER_SAVE -> R.string.yt_battery_preview_power_save
+                    Note.SILENT -> R.string.yt_battery_preview_silent
+                    Note.SYSTEM_OFF -> R.string.yt_battery_preview_system_off
                     Note.SWELL_AS_PULSES -> R.string.yt_battery_preview_pulses
                 },
             )
@@ -269,14 +299,21 @@ class YtBatteryPreviewDialog : DialogFragment() {
         val cue = YtBatteryCues.of(mark) ?: return
         val frame = frame ?: return
         val view = cueView ?: return
-        view.play(frame, cue, motion = motion)
-        if (vibrates(view.context)) {
+        val vibrates = vibrates(view.context)
+        view.play(frame, cue, motion = motion, strong = !vibrates)
+        if (vibrates) {
             YtBatteryVibes.play(view.context, cue)
             vibrated = true
         }
         val label = label ?: return
         label.animate().cancel()
-        label.text = getString(R.string.yt_battery_preview_level, mark)
+        // the big level exists only here (the player shows no number): a small caption says so
+        val level = getString(R.string.yt_battery_preview_level, mark)
+        val caption = getString(R.string.yt_battery_preview_label_caption)
+        label.text = SpannableString("$level\n$caption").apply {
+            val from = level.length + 1
+            setSpan(RelativeSizeSpan(0.36f), from, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
         label.setTextColor(YtContrast.readable(WHITE, cue.endColor))
         label.background = GradientDrawable().apply {
             cornerRadius = dp(label.context, 18).toFloat()

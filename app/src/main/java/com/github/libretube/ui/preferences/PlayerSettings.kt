@@ -71,6 +71,9 @@ class PlayerSettings : BasePreferenceFragment() {
 
     override fun onResume() {
         super.onResume()
+        // YT: the battery cue says when Android would drop its vibration (battery saver, silent)
+        findPreference<Preference>("yt_battery_cue")?.summary =
+            com.github.libretube.ui.yt.YtBatteryVibes.cueSummary(requireContext())
         val switch = waveSwitch ?: return
         val allowed = YtPipVisualizer.allowed(requireContext())
         val wanted = pendingWave || switch.isChecked
