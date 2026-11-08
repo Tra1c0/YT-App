@@ -236,6 +236,14 @@
             app:key="yt_battery_cue"
             app:title="@string/yt_battery_cue" />
 
+        <!-- YT: plays the cue on a stand-in picture (YtBatteryPreviewDialog) -->
+        <Preference
+            android:dependency="yt_battery_cue"
+            android:icon="@drawable/ic_play"
+            android:summary="@string/yt_battery_preview_summary"
+            app:key="yt_battery_preview"
+            app:title="@string/yt_battery_preview" />
+
     </PreferenceCategory>
 
 </PreferenceScreen>

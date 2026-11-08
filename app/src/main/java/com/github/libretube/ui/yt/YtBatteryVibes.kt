@@ -36,6 +36,19 @@ object YtBatteryVibes {
         }
     }
 
+    /** Whether the device can vibrate at all. */
+    fun hasVibrator(context: Context): Boolean =
+        runCatching { vibrator(context)?.hasVibrator() == true }.getOrDefault(false)
+
+    /** Whether the vibrator can vary its strength (else the plain on/off patterns play). */
+    fun hasAmplitudeControl(context: Context): Boolean =
+        runCatching { vibrator(context)?.hasAmplitudeControl() == true }.getOrDefault(false)
+
+    /** Stops a cue's vibration that is still running (the preview closes or plays another). */
+    fun cancel(context: Context) {
+        runCatching { vibrator(context)?.cancel() }
+    }
+
     private fun vibrator(context: Context): Vibrator? {
         val app = context.applicationContext
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
