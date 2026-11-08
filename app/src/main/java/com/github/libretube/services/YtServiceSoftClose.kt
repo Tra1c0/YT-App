@@ -47,6 +47,7 @@ class YtServiceSoftClose(
         val exo = service.exoPlayer ?: return
         if (closed) return
         closed = true
+        service.ytPositions.flush()
         exo.pause()
         exo.setAudioAttributes(exo.audioAttributes, false)
         YtResumeNotification.cancel(service)
