@@ -57,6 +57,7 @@ class MainSettings : BasePreferenceFragment() {
             "sponsorblock" to R.id.action_global_sponsorBlockSettings,
             "player" to R.id.action_global_playerSettings,
             "yt_interaction" to R.id.action_global_ytInteractionSettings,
+            "yt_guide" to R.id.action_global_ytGuide,
             "audio_video" to R.id.action_global_audioVideoSettings,
             "notifications" to R.id.action_global_notificationSettings,
             "backup_restore" to R.id.action_global_backupRestoreSettings
