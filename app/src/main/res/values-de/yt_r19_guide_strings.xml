@@ -24,6 +24,7 @@
     <string name="yt_guide_where_sponsorblock">Einstellungen → SponsorBlock</string>
     <string name="yt_guide_where_dearrow">Einstellungen → SponsorBlock → DeArrow verwenden</string>
     <string name="yt_guide_where_ryd">Einstellungen → Allgemein → Direkter Abruf von Dislikes</string>
+    <string name="yt_guide_where_audio_only">Einstellungen → Allgemein → Nur-Audio-Modus</string>
     <string name="yt_guide_where_feed">Startseite → Knopf „Feed anpassen“</string>
     <string name="yt_guide_where_diagnosis">Einstellungen → Diagnose</string>
     <string name="yt_guide_where_storage">Einstellungen → Speicher</string>
