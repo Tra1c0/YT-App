@@ -243,8 +243,13 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   rewind/forward take an optional chapter target, `PlayerGestureController.ytDoubleTapFraction`.
 - Battery: pure `J/helpers/YtBatteryRules.kt` (cap hysteresis, crossings, vibration tables,
   colours `YtBatteryCues`), prefs/receivers `J/helpers/YtBattery.kt` (`yt_battery_*`). Quality cap
-  in the service module `J/services/YtBatteryQualityModule.kt` (receiver only while playing; the
-  upstream SET_RESOLUTION handler goes through it, a manual pick wins until the next video). Cue in
+  in the service module `J/services/YtBatteryQualityModule.kt` via `YtBatteryCapWatch` (in
+  `YtBattery.kt`: battery, power saver and `yt_battery_*` prefs, alive for the player's whole life,
+  state read synchronously so the first SET_RESOLUTION is capped); a manual pick exempts only its own
+  height (`YtBatteryCapRules.pickAfter/exempt`). The Shorts player has its own watch
+  (`YtShortsPlayer.applyBatteryCap`). The quality sheet shows the cap (`Y/player/YtBatteryCapLabel.kt`).
+  Android drops USAGE_NOTIFICATION vibration in battery saver and silent mode: `YtBatteryVibeRules`
+  decides, and the cue then shows a stronger visual instead (no ALARM-usage workaround). Cue in
   the page module `Y/player/YtBatteryCueModule.kt` + `YtBatteryCueView.kt` (scales the video
   frame, never the surface), vibration `Y/YtBatteryVibes.kt`. Preview dialog `Y/YtBatteryPreview.kt`
   (reuses YtBatteryCueView + YtBatteryVibes), pure timing/notes `J/helpers/YtBatteryPreviewRules.kt`.

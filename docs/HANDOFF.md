@@ -8,7 +8,7 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 103 (battery cue preview). 102 = round 18 ( chapter double tap, battery quality cap + cue, storage
+- Latest release: build 104 (battery review fixes). 103: battery cue preview. 102 = round 18 ( chapter double tap, battery quality cap + cue, storage
   page). 101: soft close (dismissed mini player kept paused 60 s, instant restore). 100: restore starts when the old service is gone. 99: rise fallback,
   restore times in Diagnose. 98: rise animation. 97: fix for
   silent sound after the 2x hold. Docs-only pushes build nothing. Build 96 = round 16 ( crash report + Diagnose page, calm titles, hide watched,
@@ -96,6 +96,10 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 104: battery fixes from a review: cap from the first frame and on pref change, exemption only
+  for the picked height, Shorts capped, cap shown in the quality sheet, honest texts, no silent
+  vibration promise (power saver/silent → stronger visual).
 
 - 103: battery cue preview in Player settings → Akku.
 
