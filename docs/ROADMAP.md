@@ -15,6 +15,11 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
 - **25** Beschreibung: Links nach Typ gruppieren (Zeitmarken, Kanäle, Videos, externe Links) (M)
 - **26** Sponsoren-Links in der Beschreibung markieren und einklappen (S)
 
+- **Minimieren nahtlos in die Navi-Leiste:** beim Runterziehen nimmt das Fenster Breite, Ecken und
+  Farbe der Leiste an und geht nahtlos in sie über; die Seite darunter blendet weich aus statt als
+  Platte mit harter Kante; keine „unsichtbare Wand“ (Abschneide-Linie nur beim Wegwerfen/Zurückholen).
+  Gemeinsamer Teil + Feinschliff je Design (12), am besten mit 2 Pilot-Designs zuerst (L, 3–4 Runden)
+
 ## Eventuell / später (noch nicht entschieden)
 
 - **10** Warteschlange nach Neustart der App wiederherstellen, mit Position (M) – pausiert
