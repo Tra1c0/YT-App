@@ -313,6 +313,9 @@ class MainActivity : AbstractPlayerHostActivity() {
         // YT: the design search ends in the same three steps as a search passed to the app
         com.github.libretube.ui.yt.search.YtSearchEntry.attach(this, searchFor)
         com.github.libretube.ui.yt.YtHeader.overlayAfterHome(binding.appBarLayout, binding.fragment, navController)
+        // YT: a recreate (new design without a restart) attached the layout before the lines
+        // above changed it; let the transition's states take the views as they are now
+        androidx.constraintlayout.motion.widget.YtMotionAccess.takeViewsAgain(binding.mainMotionLayout, R.xml.activity_main_scene)
 
         // YT: the own crash report first; it clears the upstream log so only one dialog shows
         if (savedInstanceState == null) com.github.libretube.ui.yt.YtDiagnosisUi.showCrashIfNew(this)
