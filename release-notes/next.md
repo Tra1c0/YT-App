@@ -1,2 +1,2 @@
 ## Behoben
-- Der Miniplayer verschwindet beim Wegziehen sauber hinter der Navi-Leiste, statt kurz dahinter hängen zu bleiben und dann davor aufzutauchen (vor allem beim ersten Mal nach dem Start).
+- Nach einem Designwechsel laufen die Seiten wieder bis unter die schwebende Navi-Leiste, ohne harte Kante darüber.

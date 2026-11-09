@@ -295,6 +295,11 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   OR the page's own transition at rest at the end (not peeking). `undock()` lets the bar go in a
   300 ms animator while the page still falls; slow first frames used to drop the cut mid-fall.
 
+- Design switch without restart: `BaseActivity.ytApplyNewLook()` recreates while in front, so the
+  window stays attached and MotionLayout copies its start/end sets from the XML before
+  `YtNav.attach`/`float()` changed the constraints. `YtMotionAccess.takeViewsAgain` (called at the end
+  of the YT layout setup in `MainActivity.onCreate`) reloads the scene when already attached.
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).
