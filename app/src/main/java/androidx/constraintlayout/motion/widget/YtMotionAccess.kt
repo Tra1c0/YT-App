@@ -26,4 +26,21 @@ internal object YtMotionAccess {
         layout.rebuildScene()
         layout.evaluate(true)
     }
+
+    /**
+     * Lets [layout]'s states take the views as they are now, the way they took them when it
+     * came into the window. A MotionLayout's states take every view's constraints, visibility
+     * and elevation that its scene does not set from the views once, when it is attached, and
+     * lay the views out from that copy from then on. On a cold start that is after the
+     * activity's onCreate. A recreate() while the activity is in front (a new design or theme
+     * applied without a restart) keeps the window, so setContentView attaches the layout at
+     * once and the copy is taken before onCreate changes the views (the floating bar's screens
+     * running down behind the bar); the old layout would come back. Reloading the scene while
+     * attached takes the copy again and puts the progress back, like the attach does.
+     * Does nothing when [layout] is not attached: its attach still comes and reads the views.
+     */
+    fun takeViewsAgain(layout: MotionLayout, scene: Int) {
+        if (!layout.isAttachedToWindow) return
+        layout.loadLayoutDescription(scene)
+    }
 }
