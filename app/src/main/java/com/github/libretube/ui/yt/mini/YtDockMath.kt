@@ -44,4 +44,20 @@ internal object YtDockMath {
      * moves them (it puts them back itself) and not while the player is thrown away.
      */
     fun clearsOffsets(dragging: Boolean, closing: Boolean): Boolean = !dragging && !closing
+
+    /**
+     * Whether the page moved down by [shift] px is cut at the bar's top edge (YtMiniHost.clipToBar):
+     * while it is docked and pushed below its place (dragged down, thrown away, rising back).
+     * Docked means the page's own transition rests at its end ([pageProgress], not [peeking]) or
+     * the bar still counts it as docked ([barProgress], YtDock.progress). The page alone must be
+     * enough: a throw releases the bar at once (YtMiniPlayer.undock runs YtDock.progress down to 0
+     * in 300 ms) while the page still falls; on the bar's value alone the cut went with the
+     * animator's first step, and the falling player jumped in front of the bar. When that step
+     * came depended on how late the frames after the release were (the first throw after a start).
+     */
+    fun clipsToBar(shift: Float, barProgress: Float, pageProgress: Float, peeking: Boolean, boxHeight: Int, pageWidth: Int): Boolean =
+        shift > 0.5f && boxHeight > 0 && pageWidth > 0 &&
+            (barProgress >= DOCKED || (!peeking && pageProgress >= DOCKED))
+
+    private const val DOCKED = 0.999f
 }

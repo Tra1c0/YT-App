@@ -390,7 +390,8 @@ class YtMiniHost private constructor(
         if (design.classic && rise == null) return
         val shift = motion.translationY
         val box = binding.mainContainer
-        if (shift > 0.5f && YtDock.progress >= 0.999f && box.height > 0 && motion.width > 0) {
+        // docked by the page's own transition too: a throw releases the bar's progress at once
+        if (YtDockMath.clipsToBar(shift, YtDock.progress, motion.progress, motion.peeking, box.height, motion.width)) {
             val line = (box.bottom - shift).roundToInt().coerceAtLeast(0)
             if (motion.clipBounds?.let { it.bottom == line && it.right == motion.width } != true) {
                 barClip.set(0, 0, motion.width, line)

@@ -48,6 +48,24 @@ class YtDockMathTest {
     }
 
     @Test
+    fun theThrownPlayerStaysCutWhileTheBarLetsGo() {
+        // dragged down while docked: cut
+        assertTrue(YtDockMath.clipsToBar(80f, barProgress = 1f, pageProgress = 1f, peeking = false, boxHeight = 190, pageWidth = 1080))
+        // thrown: the bar's progress runs down at once, the page still rests docked: still cut
+        assertTrue(YtDockMath.clipsToBar(120f, barProgress = 0.9f, pageProgress = 1f, peeking = false, boxHeight = 190, pageWidth = 1080))
+        assertTrue(YtDockMath.clipsToBar(400f, barProgress = 0f, pageProgress = 1f, peeking = false, boxHeight = 190, pageWidth = 1080))
+        // at its place, or during a minimize (the page between its ends), nothing is cut
+        assertFalse(YtDockMath.clipsToBar(0f, barProgress = 1f, pageProgress = 1f, peeking = false, boxHeight = 190, pageWidth = 1080))
+        assertFalse(YtDockMath.clipsToBar(30f, barProgress = 0.5f, pageProgress = 0.5f, peeking = false, boxHeight = 190, pageWidth = 1080))
+        // a peek runs its own transition: only the bar's progress counts then (as before)
+        assertFalse(YtDockMath.clipsToBar(30f, barProgress = 0.5f, pageProgress = 1f, peeking = true, boxHeight = 190, pageWidth = 1080))
+        assertTrue(YtDockMath.clipsToBar(30f, barProgress = 1f, pageProgress = 0.2f, peeking = true, boxHeight = 190, pageWidth = 1080))
+        // not laid out yet
+        assertFalse(YtDockMath.clipsToBar(80f, barProgress = 1f, pageProgress = 1f, peeking = false, boxHeight = 0, pageWidth = 1080))
+        assertFalse(YtDockMath.clipsToBar(80f, barProgress = 1f, pageProgress = 1f, peeking = false, boxHeight = 190, pageWidth = 0))
+    }
+
+    @Test
     fun turnedTheBoxKeepsOutOfTheSideBars() {
         // 2400 px wide, the three-button navigation 132 px at the right, a cutout 96 px at the left
         assertEquals(0, YtDockMath.sideError(96 + 24, 2400 - 132 - 24, 2400, 96, 132))
