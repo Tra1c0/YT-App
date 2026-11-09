@@ -8,7 +8,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 109 (guide buttons jump to the setting). 108: guide in settings. 107: release notes in the update dialog. 106: landscape page after
+- Latest release: build 110 (throw-away stays behind the bar). 109: guide buttons jump to the
+  setting. 108: guide in settings. 107: release notes in the update dialog. 106: landscape page after
   fullscreen, stuck minimize drag. 105: watch
   position ledger. 104: battery review fixes. 103: battery cue preview. 102 = round 18 ( chapter double tap, battery quality cap + cue, storage
   page). 101: soft close (dismissed mini player kept paused 60 s, instant restore). 100: restore starts when the old service is gone. 99: rise fallback,
@@ -105,6 +106,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 110: thrown mini player stays cut behind the bar for the whole fall (first throw after start).
 
 - 109: guide buttons scroll to the exact setting and highlight it once.
 

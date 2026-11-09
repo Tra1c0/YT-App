@@ -291,6 +291,10 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   `BasePreferenceFragment.onViewCreated` → `Y/YtSettingJumpUi.kt` (scroll to centre, overlay pulse;
   pure `Y/YtSettingJump.kt`; a test checks every key exists in `res/xml`).
 
+- Throw clip: `clipToBar` cuts while `YtDockMath.clipsToBar` says so — the bar's `YtDock.progress`
+  OR the page's own transition at rest at the end (not peeking). `undock()` lets the bar go in a
+  300 ms animator while the page still falls; slow first frames used to drop the cut mid-fall.
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).
