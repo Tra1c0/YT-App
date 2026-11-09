@@ -8,8 +8,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 111 (no hard edge above the bar after a design switch). 110: throw-away
-  stays behind the bar. 109: guide buttons jump to the
+- Latest release: build 111 (no hard edge after a design switch + throw-away stays behind the
+  bar; run 110 was cancelled by CI concurrency). 109: guide buttons jump to the
   setting. 108: guide in settings. 107: release notes in the update dialog. 106: landscape page after
   fullscreen, stuck minimize drag. 105: watch
   position ledger. 104: battery review fixes. 103: battery cue preview. 102 = round 18 ( chapter double tap, battery quality cap + cue, storage
@@ -76,6 +76,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   "aborted" even after "Installieren". Build 95 asks normally, retries twice, then hands the APK to
   the system installer.
 - Relaunching the app from `MY_PACKAGE_REPLACED`: an OEM security app killed it; only a notification.
+- CI cancels a running build when a newer push to main arrives: its release never exists. Push a
+  round's fixes together, or carry the cancelled build's notes into the next release-notes/next.md.
 - Finding a new release with `releases?per_page=N`: the list does not come newest first
   (build-99 sorted above build-102). Ask for the tag directly: `releases/tags/build-N`.
 - Running many agents at once: weekly/5-hour usage limits hit mid-run. Prefer ≤6 parallel agents;
