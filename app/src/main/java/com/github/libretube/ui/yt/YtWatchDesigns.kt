@@ -435,11 +435,14 @@ private fun ShapesSubscribe(palette: YtPalette, subscribed: Boolean, label: Stri
 
 /**
  * Frequency: YouTube neu's pill in coral with night ink, glowing softly with the level; it bounces
- * as Formen's does and turns violet when subscribed.
+ * as Formen's does and turns violet when subscribed. On it, under the label, an equalizer in the
+ * style of Deezer's logo dances with the spectrum (FrequencyPillBars), in the ink at an alpha
+ * that keeps the label at 4.5:1 on both colours and every colour between.
  */
 @Composable
 private fun FrequencySubscribe(palette: YtPalette, subscribed: Boolean, label: String, toggle: () -> Unit) {
     val fill by animateColorAsState(if (subscribed) palette.lavender else palette.accent, ytStateSpec(), label = "frequencyFill")
+    val bars = remember(palette) { palette.ink.copy(alpha = frequencyPillBarAlpha(palette)) }
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -448,6 +451,7 @@ private fun FrequencySubscribe(palette: YtPalette, subscribed: Boolean, label: S
             .then(if (subscribed) Modifier else Modifier.frequencyGlow(palette.accent, reach = 1.05f, rest = 0.12f, peak = 0.35f))
             .clip(RoundedCornerShape(50))
             .drawBehind { drawRect(fill) }
+            .frequencyPillBars(bars)
             .clickable(onClick = toggle)
             .height(36.dp)
             .padding(horizontal = 20.dp),
