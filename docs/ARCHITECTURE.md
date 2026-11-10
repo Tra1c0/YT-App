@@ -300,6 +300,15 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   `YtNav.attach`/`float()` changed the constraints. `YtMotionAccess.takeViewsAgain` (called at the end
   of the YT layout setup in `MainActivity.onCreate`) reloads the scene when already attached.
 
+- Parked page: `YtMiniHost.watchParked` (in the preDraw `boundsCheck`) moves a docked page that
+  rests at its end but is still shifted, with no owner (drag/throw/rise), back to 0 after 300 ms
+  (`YtDockMath.parked`, `PARKED_MS`). A throw always ends closed (`YtDockMath.throwOverdue`, 1500 ms,
+  plus a posted 1600 ms fallback); the classic `closeMiniPlayer` closes on animation end or a 600 ms
+  fallback; `SingleViewTouchableMotionLayout` releases a drag whose UP never came at the next DOWN.
+  `MainActivity.writeContainerKeys()` re-writes the dock keyframes after `takeViewsAgain` reloads.
+  The container (20 dp) is above the bar (4 dp): a mini player half BEHIND the bar = page shifted
+  down and cut by `clipToBar`, not a wrong dock offset.
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).

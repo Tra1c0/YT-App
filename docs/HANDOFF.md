@@ -8,14 +8,12 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 112+ (watched bar grows while a home card is held). 111: no hard edge after
+- Latest release: build 114 (mini player never parked half behind the bar). 113: watched bar grows
+  while a home card is held, with time left (first version; review fixes pending on r20/seenbar). 111: no hard edge after
   a design switch + throw-away stays behind the bar (run 110 cancelled by CI concurrency).
 - NEXT SESSION (user's quota resets 2026-11-11), agreed to do then:
-  1. Open bug, screenshot 2026-11-09 16:37 (Formen): mini player half behind the nav bar. Unanswered
-     questions: build installed? stuck during the swipe-away or docked and staying like that? only
-     the first time after start? Ask first; if it stays docked half behind the bar, suspect the
-     dock offset after `YtMotionAccess.takeViewsAgain` (build 111).
-  2. Optional extra for the grown watched bar: remaining time ("noch 12 Min.") — user not asked yet.
+  1. (done in 114: mini player half behind the bar — guarded, cause inferred from code.)
+  2. (done in 113: time left on the grown bar.)
   3. Music mode ("Theme tanzt mit der Musik") was discussed for Wednesday: engine + 2 pilot designs
      (Pop, Glas), estimate 5–6 rounds total; NOT yet confirmed in ROADMAP — ask before starting. 109: guide buttons jump to the
   setting. 108: guide in settings. 107: release notes in the update dialog. 106: landscape page after
@@ -119,6 +117,9 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 114: guards against a mini player left shifted/cut behind the bar (parked-page watch, throw limit).
+- 113: watched bar grows on hold + time-left pill (112 cancelled; its notes carried over).
 
 - 112+: watched bar on home cards grows while the card is held (`YtCardDrag.held`), shrinks on release.
 
