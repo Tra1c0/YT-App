@@ -255,6 +255,9 @@ private fun headerStyle(design: YtDesign, palette: YtPalette): HeaderStyle = whe
         "YouTube", YtFonts.robotoCondensed, FontWeight.Bold, 21.sp, palette.text)
     YtDesign.POP -> HeaderStyle(20.dp, 13.dp, 11.dp, R.drawable.ic_yt_logo_youtube, 38.dp, 26.dp,
         "YouTube", YtFonts.robotoCondensed, FontWeight.Bold, 22.5.sp, palette.text)
+    // Frequency: its own mark (FrequencyLogo, drawn), the wordmark in Geist as YouTube neu's type
+    YtDesign.FREQUENCY -> HeaderStyle(16.dp, 14.dp, 12.dp, null, 0.dp, 0.dp,
+        "frequency", YtFonts.geist, FontWeight.ExtraBold, 22.sp, palette.text)
     else -> HeaderStyle(15.dp, 14.dp, 14.dp, R.drawable.ic_yt_logo_youtube, 34.dp, 24.dp,
         "YouTube", YtFonts.robotoCondensed, FontWeight.Bold, 19.sp, palette.text)
 }
@@ -271,6 +274,8 @@ private fun YtHeaderBar(
         return
     }
     val style = headerStyle(design, palette)
+    // Frequency: the header holds the sound pulse while it is shown
+    if (design == YtDesign.FREQUENCY) FrequencyPulseHost()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -285,6 +290,10 @@ private fun YtHeaderBar(
                 modifier = Modifier.size(style.logoWidth, style.logoHeight),
             )
             Spacer(Modifier.width(if (design == YtDesign.MOVO || design == YtDesign.SIDE) 10.dp else 5.dp))
+        }
+        if (design == YtDesign.FREQUENCY) {
+            FrequencyLogo(palette, Modifier.size(32.dp))
+            Spacer(Modifier.width(8.dp))
         }
         Text(
             text = buildAnnotatedString {
@@ -336,6 +345,14 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
         } else {
             Look(40.dp, RoundedCornerShape(13.dp), Brush.linearGradient(listOf(palette.pink, palette.pink)),
                 null, 0.dp, 0.dp, 22.dp, palette.ink, filled = true)
+        }
+        // Frequency: Formen's shapes in its own colours, an aqua cookie and a violet squircle
+        YtDesign.FREQUENCY -> if (kind == HeaderButton.SEARCH) {
+            Look(38.dp, CookieShape(9), Brush.linearGradient(listOf(palette.lime, palette.lime)),
+                null, 0.dp, 0.dp, 20.dp, palette.ink)
+        } else {
+            Look(38.dp, RoundedCornerShape(13.dp), Brush.linearGradient(listOf(palette.lavender, palette.lavender)),
+                null, 0.dp, 0.dp, 21.dp, palette.ink, filled = true)
         }
         YtDesign.FROST -> Look(40.dp, CircleShape, Brush.verticalGradient(listOf(Color(0x47FFFFFF), Color(0x1FFFFFFF))),
             Color(0x73FFFFFF), 1.dp, 0.dp, 20.dp, palette.text)
@@ -392,6 +409,14 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
             Box(
                 Modifier
                     .matchParentSize()
+                    // Frequency: the search cookie turns with the music, both buttons breathe
+                    .then(
+                        if (design == YtDesign.FREQUENCY) {
+                            Modifier.frequencyBreath(0.04f).frequencyTurn(if (kind == HeaderButton.SEARCH) 1f else 0f)
+                        } else {
+                            Modifier
+                        },
+                    )
                     .graphicsLayer { rotationZ = spin?.value ?: 0f }
                     .then(if (look.shadow > 0.dp) Modifier.shadow(look.shadow, look.shape, clip = false) else Modifier)
                     .clip(look.shape)
