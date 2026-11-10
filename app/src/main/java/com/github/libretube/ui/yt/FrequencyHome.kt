@@ -110,11 +110,9 @@ fun FrequencyHomeScreen(
     val enter = rememberYtEnterState()
     val list = rememberLazyListState()
     val pinned by remember { derivedStateOf { list.firstVisibleItemIndex >= 1 } }
-    Box(
-        Modifier
-            .fillMaxSize()
-            .frequencyAura(palette),
-    ) {
+    Box(Modifier.fillMaxSize()) {
+        // the backdrop in its own layer: a frame redraws it, not the list over it
+        FrequencyBackdrop(palette, Modifier.matchParentSize())
         YtRefreshBox(
             palette = palette,
             isRefreshing = loading && source != null,
@@ -203,18 +201,16 @@ private fun Headline(palette: YtPalette) {
             style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.ExtraBold, fontSize = 40.sp, lineHeight = 40.sp, letterSpacing = (-0.8).sp),
             modifier = Modifier.weight(1f),
         )
-        val shapes = remember {
-            listOf<Shape>(CookieShape(8), CircleShape, RoundedCornerShape(topStartPercent = 50, topEndPercent = 20, bottomEndPercent = 50, bottomStartPercent = 20))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            shapes.forEachIndexed { i, shape ->
+        // three of Formen's shapes (cookie, circle, squircle) that bounce one after another and
+        // morph into each other with the sound
+        val bases = remember { intArrayOf(FrequencyMorph.COOKIE, FrequencyMorph.CIRCLE, FrequencyMorph.SQUIRCLE) }
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            bases.forEachIndexed { i, base ->
                 Box(
                     Modifier
                         .size(18.dp)
-                        .frequencyBreath()
-                        .frequencyTurn(if (i % 2 == 0) 1f else -1f)
-                        .clip(shape)
-                        .background(frequencyTag(palette, i)),
+                        .frequencyBounce(i, lift = 5.dp, amount = 0.2f)
+                        .frequencyShape(frequencyTag(palette, i), index = i, base = base, lobes = 8, amount = 0f),
                 )
             }
         }
@@ -263,7 +259,7 @@ private fun Filters(
                     Modifier
                         .matchParentSize()
                         .graphicsLayer { rotationZ = 45f * turn }
-                        .frequencyCookie(palette.lime, lobes = 8, rest = 0.08f),
+                        .frequencyCookie(palette.lime, lobes = 8, rest = 0.08f, index = 3),
                 )
                 Icon(painterResource(R.drawable.ic_yt_tune), contentDescription = null, tint = palette.ink, modifier = Modifier.size(18.dp))
             }
@@ -281,7 +277,7 @@ private fun Filters(
                     Box(
                         Modifier
                             .matchParentSize()
-                            .then(if (active) Modifier.frequencyBreath(0.05f) else Modifier)
+                            .then(if (active) Modifier.frequencyBreath(0.08f, index = 4) else Modifier)
                             .clip(RoundedCornerShape(50))
                             .background(fill),
                     )
@@ -361,6 +357,8 @@ private fun Continue(palette: YtPalette, imageLoader: ImageLoader, video: Stream
             .fillMaxWidth()
             .ytPressable(shape) { actions.onOpenVideo(video) }
             .ytSurface(palette, shape)
+            // a faint light sweeps across the widget on hits (faint: its words keep their contrast)
+            .frequencyShimmer(Color.White, shape, index = 0, strength = 0.2f)
             .padding(start = 16.dp, top = 14.dp, bottom = 14.dp, end = 14.dp),
     ) {
         Column(Modifier.weight(1f)) {
@@ -433,7 +431,7 @@ private fun Continue(palette: YtPalette, imageLoader: ImageLoader, video: Stream
             Box(
                 Modifier
                     .matchParentSize()
-                    .frequencyCookie(palette.lavender, lobes = 9, rest = 0.07f),
+                    .frequencyCookie(palette.lavender, lobes = 9, rest = 0.07f, index = 1),
             )
             AsyncImage(
                 model = video.thumbnail,
@@ -498,7 +496,9 @@ private fun LargeVideo(
                     .aspectRatio(16f / 9f)
                     .clip(CardShape)
                     .background(palette.raised)
-                    .ytSeen(video, palette),
+                    .ytSeen(video, palette)
+                    // the first card catches the light sweep (one card, so the page stays calm)
+                    .then(if (index == 0) Modifier.frequencyShimmer(Color.White, CardShape, index = 1, strength = 0.4f) else Modifier),
             )
             (if (video.isLive) stringResource(R.string.yt_live_badge) else ytDuration(video))?.let {
                 Text(
@@ -523,7 +523,7 @@ private fun LargeVideo(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(44.dp)
-                    .frequencyCookie(tag, lobes = if (index % 2 == 0) 9 else 7, rest = 0.07f)
+                    .frequencyCookie(tag, lobes = if (index % 2 == 0) 9 else 7, rest = 0.07f, index = index)
                     .clip(CircleShape)
                     .clickable { actions.onOpenChannel(video) },
             ) {
@@ -595,7 +595,7 @@ private fun LiveCard(palette: YtPalette, imageLoader: ImageLoader, video: Stream
                 Box(
                     Modifier
                         .size(6.dp)
-                        .frequencyBreath(0.06f)
+                        .frequencyBreath(0.2f)
                         .clip(CircleShape)
                         .background(Color.White),
                 )

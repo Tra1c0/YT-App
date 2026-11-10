@@ -85,11 +85,13 @@ fun YtScreenSurface(palette: YtPalette, modifier: Modifier = Modifier, content: 
         modifier.then(
             when (palette.signature) {
                 YtSignature.SHAPES -> Modifier.background(Brush.verticalGradient(listOf(Color(0xFF12122A), Color(0xFF1C1A45), Color(0xFF3F3489), Color(0xFF6656C4))))
-                YtSignature.FREQUENCY -> Modifier.frequencyAura(palette)
+                YtSignature.FREQUENCY -> Modifier.background(palette.background)
                 else -> Modifier.background(palette.background)
             },
         ),
     ) {
+        // Frequency: the aura, blobs and wave in their own layer behind the content
+        if (palette.isFrequency) FrequencyBackdrop(palette, Modifier.matchParentSize())
         if (backdrop != null) {
             val colors = ytGlassScreenColors(palette)
             Box(
@@ -286,14 +288,13 @@ internal fun LibraryHeadline(palette: YtPalette, headline: String, subline: Stri
         YtSignature.FREQUENCY -> Column(padding) {
             // YouTube neu's big headline; three of Formen's shapes above it breathe with the sound
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 10.dp)) {
-                listOf<Shape>(CookieShape(8), CircleShape, RoundedCornerShape(topStartPercent = 50, topEndPercent = 20, bottomEndPercent = 50, bottomStartPercent = 20)).forEachIndexed { i, shape ->
+                // they bounce one after another and morph into each other with the sound
+                intArrayOf(FrequencyMorph.COOKIE, FrequencyMorph.CIRCLE, FrequencyMorph.SQUIRCLE).forEachIndexed { i, base ->
                     Box(
                         Modifier
                             .size(20.dp)
-                            .frequencyBreath()
-                            .frequencyTurn(if (i % 2 == 0) 1f else -1f)
-                            .clip(shape)
-                            .background(frequencyTag(palette, i)),
+                            .frequencyBounce(i, lift = 5.dp, amount = 0.2f)
+                            .frequencyShape(frequencyTag(palette, i), index = i, base = base, lobes = 8, amount = 0f),
                     )
                 }
             }
@@ -617,7 +618,7 @@ internal fun LibraryContinue(
                             .align(Alignment.BottomEnd)
                             .padding(end = 14.dp, bottom = 22.dp)
                             .size(44.dp)
-                            .frequencyCookie(palette.accent, lobes = 9, rest = 0.08f),
+                            .frequencyCookie(palette.accent, lobes = 9, rest = 0.08f, index = 2),
                     ) {
                         Icon(painterResource(R.drawable.ic_play), contentDescription = null, tint = palette.onAccent, modifier = Modifier.size(18.dp))
                     }

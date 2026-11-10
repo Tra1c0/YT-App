@@ -46,8 +46,14 @@ object YtSoundEngine {
 
     private val main = Handler(Looper.getMainLooper())
     private val shaper = YtSoundShaper()
+    private val bandShaper = YtBandShaper(YtSound.BANDS)
     private val features = FloatArray(YtAudioTap.FEATURES)
     private val held = FloatArray(YtAudioTap.FEATURES)
+    private val bandsIn = FloatArray(YtAudioTap.BANDS)
+    private val bandsHeld = FloatArray(YtAudioTap.BANDS)
+
+    /** What the engine did lately, for the diagnosis page (main thread). */
+    val stats = YtSoundStats()
 
     private var player: ExoPlayer? = null
     private var observing = false
@@ -137,6 +143,13 @@ object YtSoundEngine {
     }
 
     private fun reactiveChangedOnMain() {
+        if (YtSound.reactive && observing && started == 0) {
+            // a UI asks only while it is shown (FrequencyPulseHost holds while started): if the
+            // count says otherwise it missed a start (registered between two activities), and
+            // a wrong "background" here would keep the analysis off until the next start
+            started = 1
+            foreground = true
+        }
         if (!observing) {
             observing = true
             runCatching {
@@ -144,7 +157,9 @@ object YtSoundEngine {
                 // start from whether the app is visible now (the UI that called is one of them)
                 val state = ActivityManager.RunningAppProcessInfo()
                 ActivityManager.getMyMemoryState(state)
-                started = if (state.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE) 1 else 0
+                // the caller is a shown UI: count it as started even if the importance has not
+                // caught up yet (just after a cold start); the next stop corrects the count
+                started = if (YtSound.reactive || state.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE) 1 else 0
                 foreground = started > 0
                 LibreTubeApp.instance.registerActivityLifecycleCallbacks(lifecycle)
             }.onFailure { Log.w(TAG, "no activity callbacks", it) }
@@ -193,8 +208,15 @@ object YtSoundEngine {
         running = false
         YtAudioTap.soundListening = false
         shaper.reset()
+        bandShaper.reset()
+        clearMotion()
         lastAt = Double.NaN
         publish(YtSoundFrame.SILENT)
+    }
+
+    private fun clearMotion() {
+        YtSound.motion.fill(0f)
+        YtSound.bands.fill(0f)
     }
 
     private fun frame(nanos: Long) {
@@ -221,14 +243,17 @@ object YtSoundEngine {
             if (found) {
                 onset = features[YtSoundFeatures.ONSET].coerceAtLeast(peakSince)
                 System.arraycopy(features, 0, held, 0, held.size)
+                System.arraycopy(bandsIn, 0, bandsHeld, 0, bandsHeld.size)
                 lastFound = SystemClock.elapsedRealtimeNanos()
             } else if (SystemClock.elapsedRealtimeNanos() - lastFound > HOLD_NS) {
                 // a long gap (no sound the tap can read): towards silence
                 held.fill(0f)
+                bandsHeld.fill(0f)
             }
             // a short gap (the stream just restarted) keeps the last values, without onsets
         } else {
             held.fill(0f)
+            bandsHeld.fill(0f)
             lastAt = Double.NaN
         }
         shaper.step(
@@ -240,12 +265,25 @@ object YtSoundEngine {
             held[YtSoundFeatures.HIGH],
             onset,
         )
+        bandShaper.step(dt, want, bandsHeld, shaper.fade)
+        // the motion values first: whoever reacts to the new frame reads them in the same pass
+        System.arraycopy(shaper.motion, 0, YtSound.motion, 0, YtSound.motion.size)
+        System.arraycopy(bandShaper.out, 0, YtSound.bands, 0, YtSound.bands.size)
         publish(shaper.frame(published))
-        if (want || !shaper.settled) {
+        stats.frame(
+            nanos,
+            shaper.out[YtSoundShaper.LEVEL],
+            shaper.out[YtSoundShaper.BASS],
+            shaper.out[YtSoundShaper.HIGH],
+            shaper.out[YtSoundShaper.PUNCH],
+        )
+        if (want || !shaper.settled || !bandShaper.settled) {
             Choreographer.getInstance().postFrameCallback(callback)
         } else {
             running = false
             shaper.reset()
+            bandShaper.reset()
+            clearMotion()
             publish(YtSoundFrame.SILENT)
         }
     }
@@ -272,11 +310,33 @@ object YtSoundEngine {
             at = YtAudioTap.latestFrame(lead)
             if (!YtAudioTap.soundAt(at, features)) return false
         }
+        if (!YtAudioTap.bandsAtFrame(at, bandsIn)) bandsIn.fill(0f)
         val from = lastAt
         lastAt = at
         // onsets of the frames passed since the last screen frame (none after a jump back)
         if (!from.isNaN() && at > from) peakSince = YtAudioTap.onsetPeak(from, at)
         return true
+    }
+
+    /**
+     * One line for the diagnosis page: whether the UI listens, every condition of [wanted],
+     * whether the frame loop runs, its rate and the loudest values of the last 10 s it ran.
+     */
+    fun diagnosis(nowNs: Long = System.nanoTime()): String {
+        fun yn(b: Boolean) = if (b) "yes" else "no"
+        fun f(v: Float) = String.format(java.util.Locale.ROOT, "%.2f", v)
+        val exo = player
+        val playing = exo?.let { runCatching { it.isPlaying }.getOrNull() }
+        val ago = if (stats.lastNs == 0L) {
+            "never ran"
+        } else {
+            String.format(java.util.Locale.ROOT, "last frame %.1f s ago", (nowNs - stats.lastNs) / 1e9)
+        }
+        return "reactive ${yn(YtSound.reactive)}, player ${yn(exo != null)}, playing ${playing?.let(::yn) ?: "-"}, " +
+            "front ${yn(foreground)}, motion ${yn(motion)}, analysis ${yn(YtAudioTap.soundListening)}, " +
+            "engine running ${yn(running)}, ${stats.fps()} frames/s; last 10 s max level ${f(stats.max(0))} " +
+            "bass ${f(stats.max(1))} high ${f(stats.max(2))} punch ${f(stats.max(3))} ($ago)" +
+            if (powerSave) ", power saver (half rate)" else ""
     }
 
     private fun publish(next: YtSoundFrame) {

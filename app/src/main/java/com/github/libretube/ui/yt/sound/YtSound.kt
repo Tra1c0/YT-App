@@ -45,6 +45,29 @@ object YtSound {
     /** The latest frame, updated once per display frame while [reactive] is on and sound plays. */
     val frame: State<YtSoundFrame> get() = state
 
+    /**
+     * Motion values of the same moment: level, bass, mid, high, punch ([MOTION_LEVEL]..) before
+     * the flash guard (smoothed, faded, 0..1). They may follow the sound faster than [frame]:
+     * map them onto size, position, rotation or shape only, never onto the brightness of a
+     * large area. Written in place by the engine (main thread) right before [frame] changes;
+     * read them in the same frame callback or draw pass that reads [frame]. Do not write.
+     */
+    val motion = FloatArray(5)
+
+    /**
+     * The spectrum of the same moment, [BANDS] bands bass to treble (0..1), quick envelopes:
+     * for a visualizer's bar heights or wave shape (a motion channel, as [motion]). Written in
+     * place by the engine (main thread). Do not write.
+     */
+    val bands = FloatArray(BANDS)
+
+    const val MOTION_LEVEL = 0
+    const val MOTION_BASS = 1
+    const val MOTION_MID = 2
+    const val MOTION_HIGH = 3
+    const val MOTION_PUNCH = 4
+    const val BANDS = 16
+
     /** Whether some visible UI wants sound frames; the engine analyses only while true. */
     @Volatile
     var reactive: Boolean = false

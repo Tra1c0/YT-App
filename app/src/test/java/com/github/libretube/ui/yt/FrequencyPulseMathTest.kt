@@ -42,7 +42,7 @@ class FrequencyPulseMathTest {
             }
             assertTrue(M.glowTarget(x) in 0f..1f)
             assertTrue(M.pulseLift(x) in 0f..M.PULSE_LIFT_MAX)
-            assertTrue(M.shimmerAlpha(x) in 0f..0.35f)
+            assertTrue(M.shimmerAlpha(x) in 0f..M.SHIMMER_MAX)
             assertTrue(M.glowAlpha(x) in M.GLOW_REST..M.GLOW_PEAK)
             assertTrue(M.auraAlpha(x) in M.AURA_REST..M.AURA_PEAK)
             assertTrue(abs(M.auraDy(x)) <= M.AURA_DRIFT + 1e-6f)

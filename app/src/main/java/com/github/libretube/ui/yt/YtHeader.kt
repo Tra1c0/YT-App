@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -309,7 +310,18 @@ private fun YtHeaderBar(
                 letterSpacing = (style.wordmarkSize.value * -0.015f).sp,
             ),
         )
-        Spacer(Modifier.weight(1f))
+        if (design == YtDesign.FREQUENCY) {
+            // Frequency: a spectrum visualizer in the free space between the mark and the buttons
+            FrequencySpectrum(
+                palette,
+                Modifier
+                    .weight(1f)
+                    .height(24.dp)
+                    .padding(horizontal = 14.dp),
+            )
+        } else {
+            Spacer(Modifier.weight(1f))
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(style.gap), verticalAlignment = Alignment.CenterVertically) {
             HeaderButtonView(design, palette, HeaderButton.SEARCH, onSearch)
             HeaderButtonView(design, palette, HeaderButton.PROFILE, onProfile)
@@ -409,10 +421,13 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
             Box(
                 Modifier
                     .matchParentSize()
-                    // Frequency: the search cookie turns with the music, both buttons breathe
+                    // Frequency: the search cookie turns with the music, both buttons grow with the
+                    // beat and bounce on hits (after the logo's bars)
                     .then(
                         if (design == YtDesign.FREQUENCY) {
-                            Modifier.frequencyBreath(0.04f).frequencyTurn(if (kind == HeaderButton.SEARCH) 1f else 0f)
+                            Modifier
+                                .frequencyBounce(if (kind == HeaderButton.SEARCH) 4 else 5, lift = 3.dp, amount = 0.1f)
+                                .frequencyTurn(if (kind == HeaderButton.SEARCH) 1f else 0f)
                         } else {
                             Modifier
                         },

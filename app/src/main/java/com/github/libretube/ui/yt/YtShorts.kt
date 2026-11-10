@@ -184,11 +184,13 @@ private fun YtShortsScreen(
                 when (signature) {
                     YtSignature.SHAPES -> Modifier.background(Brush.verticalGradient(ShapesNight))
                     // Frequency: the aura that drifts with the sound
-                    YtSignature.FREQUENCY -> Modifier.frequencyAura(palette)
+                    YtSignature.FREQUENCY -> Modifier.background(palette.background)
                     else -> Modifier.background(palette.background)
                 },
             ),
     ) {
+        // Frequency: the aura, blobs and wave in their own layer behind the grid
+        if (signature == YtSignature.FREQUENCY) FrequencyBackdrop(palette, Modifier.matchParentSize())
         if (backdrop != null) {
             Box(
                 Modifier
@@ -357,7 +359,7 @@ private fun ShortsHeader(palette: YtPalette, count: Int?, backdrop: Backdrop?) {
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(44.dp)
-                    .frequencyCookie(palette.accent, lobes = 8, rest = 0.08f),
+                    .frequencyCookie(palette.accent, lobes = 8, rest = 0.08f, index = 2),
             ) {
                 YtShortsGlyph(palette.ink, filled = true, modifier = Modifier.size(22.dp))
             }

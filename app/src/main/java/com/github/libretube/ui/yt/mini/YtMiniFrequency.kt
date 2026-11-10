@@ -34,15 +34,23 @@ import com.github.libretube.ui.yt.YtDock
 import com.github.libretube.ui.yt.YtFonts
 import com.github.libretube.ui.yt.YtHapticTexture
 import com.github.libretube.ui.yt.YtPalette
-import com.github.libretube.ui.yt.cookiePath
+import com.github.libretube.ui.yt.FrequencyMotionMath
+import com.github.libretube.ui.yt.frequencyPhase
+import com.github.libretube.ui.yt.frequencyShapePath
+import com.github.libretube.ui.yt.frequencyWavePath
+import androidx.compose.ui.graphics.StrokeCap
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * YT: the mini player of Frequency, "Pulsnaht": YouTube neu's stacked card ("Rote Naht": card and
  * bar are one surface, the seam between them, the needle sews it in when the player lands, the
  * same preview with "Als Nächstes"), drawn in Frequency's night with its coral, and alive with
- * the sound: a glow above the played seam lights with the level, its head swells on hits, a coral rim inside the picture breathes (drawn over the picture, so it follows its live
- * bounds while dragged; the video itself cannot be changed), and a Formen cookie ring around the
- * play button deepens with the bass and turns while it plays. In silence all of it rests.
+ * the sound: the spectrum runs as a wave along the seam, a glow above the played part lights
+ * with the level, its head swells on hits, a coral rim inside the picture breathes (drawn over
+ * the picture, so it follows its live bounds while dragged; the video itself cannot be changed),
+ * and a morphing aqua ring with spectrum rays sits around the play button. In silence all of it
+ * rests.
  */
 object YtMiniFrequency : YtMiniLookDesign(YtDesign.FREQUENCY) {
     override val spec: YtMiniSpec = YtMiniSpecs.FREQUENCY
@@ -105,9 +113,10 @@ object YtMiniFrequency : YtMiniLookDesign(YtDesign.FREQUENCY) {
     }
 
     /**
-     * Over the seam: a coral glow above the played part that rises in light with the level, and
-     * a soft light at its head that swells on hits. The brushes are made once per size and only
-     * moved and scaled while drawing, so a frame allocates nothing.
+     * Over the seam: the spectrum as a wave running along the whole seam (bass left, highs
+     * right, up to 8 dp), a coral glow above the played part that rises in light with the level
+     * (guarded), and a soft light at its head that swells on hits. The brushes and the path are
+     * made once per size and only moved while drawing, so a frame allocates nothing.
      */
     @Composable
     private fun SeamPulse(scene: YtMiniScene) {
@@ -126,11 +135,22 @@ object YtMiniFrequency : YtMiniLookDesign(YtDesign.FREQUENCY) {
                     val glow = Brush.verticalGradient(listOf(Color.Transparent, coral), startY = y - glowHeight, endY = y)
                     val headRadius = 12f * density
                     val head = Brush.radialGradient(listOf(coral, coral.copy(alpha = 0f)), Offset.Zero, headRadius)
+                    val wave = Path()
+                    val waveTop = y - WAVE_DP * density
+                    val waveFill = Brush.verticalGradient(listOf(palette.lavender.copy(alpha = 0f), coral.copy(alpha = 0.35f)), startY = waveTop, endY = y)
+                    val waveLine = Stroke(1.3f * density)
                     onDrawBehind {
                         val shown = YtMiniYoutubeMath.seamShown(YtDock.progress) * (1f - YtDock.peek.coerceIn(0f, 1f))
                         if (shown <= 0.01f) return@onDrawBehind
+                        FrequencyPulse.tick.intValue
                         val left = 1f * density
                         val length = size.width - 2f * left
+                        // the wave sits on the seam over the whole width, whatever was played
+                        val amp = WAVE_DP * density * FrequencyPulse.tier.amplitude
+                        frequencyWavePath(wave, left, size.width - left, y, amp, FrequencyPulse.tier.bars, mirror = false, closeY = y)
+                        drawPath(wave, waveFill, alpha = shown)
+                        frequencyWavePath(wave, left, size.width - left, y, amp, FrequencyPulse.tier.bars, mirror = false)
+                        drawPath(wave, palette.lime.copy(alpha = 0.7f * shown), style = waveLine)
                         val played = length * scene.info.fraction.coerceIn(0f, 1f)
                         if (played <= 0f) return@onDrawBehind
                         val light = FrequencyPulse.glow.floatValue
@@ -152,7 +172,10 @@ object YtMiniFrequency : YtMiniLookDesign(YtDesign.FREQUENCY) {
         )
     }
 
-    /** The cookie ring around the play button: aqua, deepening with the bass, turning while it plays. */
+    /**
+     * Around the play button: an aqua ring that grows with the beat, bounces, turns and morphs
+     * (cookie, blob, squircle, circle), and the spectrum as short rays around it.
+     */
     @Composable
     private fun PlayRing(scene: YtMiniScene) {
         val palette = scene.palette ?: return
@@ -171,17 +194,39 @@ object YtMiniFrequency : YtMiniLookDesign(YtDesign.FREQUENCY) {
             val restTop = size.height - (spec.height + spec.overlap) * density
             val cx = if (mirror) size.width - play.centerX else play.centerX
             val center = Offset(cx, restTop + play.centerY)
-            val radius = 17f * density
+            FrequencyPulse.tick.intValue
             val e = FrequencyPulse.energy.floatValue
-            cookiePath(
-                path, center, radius, 8, FrequencyPulseMath.cookieDepth(0.06f, e),
-                Math.toRadians(FrequencyPulse.turn.floatValue.toDouble()).toFloat(),
-            )
+            val amp = FrequencyPulse.tier.amplitude
+            val radius = 17f * density * FrequencyMotionMath.scale(e, FrequencyPulse.bounce(2), 0.14f, amp)
+            val turn = Math.toRadians(FrequencyPulse.turn.floatValue.toDouble()).toFloat()
+            frequencyShapePath(path, center, radius, 8, FrequencyPulseMath.cookieDepth(0.06f, e), frequencyPhase(2), turn)
             drawPath(path, ring.copy(alpha = (0.55f + 0.35f * FrequencyPulse.glow.floatValue) * shown), style = stroke)
+            // the spectrum as rays: bass at the top, around clockwise
+            val count = FrequencyPulse.tier.bars
+            val inner = radius + 3f * density
+            val reach = 7f * density * amp
+            val rayColor = palette.lime.copy(alpha = 0.75f * shown)
+            for (i in 0 until count) {
+                val v = FrequencyMotionMath.bar(FrequencyPulse.bands, i, count)
+                val angle = turn + FrequencyPulseMath.TAU * i / count
+                val dx = sin(angle)
+                val dy = -cos(angle)
+                val outer = inner + 1.5f * density + reach * v
+                drawLine(
+                    rayColor,
+                    Offset(center.x + dx * inner, center.y + dy * inner),
+                    Offset(center.x + dx * outer, center.y + dy * outer),
+                    strokeWidth = 1.6f * density,
+                    cap = StrokeCap.Round,
+                )
+            }
         }
     }
 
     override fun haptic(moment: YtMoment): YtHapticTexture = YtMiniFrequencyTextures.of(moment)
+
+    /** How high the seam's spectrum wave reaches. */
+    private const val WAVE_DP = 8f
 
     // the needle sews the seam in (YoutubeUnder): the card stays on the bar
     override fun land(views: YtMiniViews): Animator? = null

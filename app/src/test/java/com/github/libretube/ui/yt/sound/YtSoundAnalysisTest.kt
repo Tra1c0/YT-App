@@ -379,4 +379,64 @@ class YtSoundAnalysisTest {
         repeat(60) { shaper.step(dt, true, 0.5f, 0f, 0f, 0f, 0f) }
         assertEquals(true, shaper.playing)
     }
+
+    @Test
+    fun motionValuesFollowFasterThanTheGuardedOnes() {
+        // a square wave of 6 Hz on the bass: the guard holds it to ≤ 3 swings a second, the
+        // motion values (before the guard) show every hit
+        val shaper = YtSoundShaper()
+        val dt = 1 / 120f
+        val guarded = ArrayList<Float>()
+        val motion = ArrayList<Float>()
+        repeat(120 * 6) {
+            val on = sin(2 * PI * 6 * it * dt) > 0
+            shaper.step(dt, true, 0.7f, if (on) 1f else 0.2f, 0.5f, 0.5f, 0f)
+            if (it > 120) {
+                guarded += shaper.out[YtSoundShaper.BASS]
+                motion += shaper.motion[YtSoundShaper.BASS]
+            }
+        }
+        val fast = turningPoints(motion, dt).size
+        val slow = turningPoints(guarded, dt).size
+        assertTrue("motion turns $fast, guarded $slow", fast > slow)
+        assertNoFastFlashes(guarded, dt, "guarded bass")
+        // both rest after a stop
+        repeat(120) { shaper.step(dt, false, 0f, 0f, 0f, 0f, 0f) }
+        assertTrue(shaper.settled)
+        assertTrue(shaper.motion.all { it == 0f })
+    }
+
+    @Test
+    fun bandShaperRisesQuicklyAndRestsInSilence() {
+        val bands = YtBandShaper(16)
+        val loud = FloatArray(16) { 0.9f }
+        val dt = 1 / 60f
+        repeat(12) { bands.step(dt, true, loud, 1f) }
+        assertTrue("risen to ${bands.out[3]} in 200 ms", bands.out[3] > 0.8f)
+        repeat(60) { bands.step(dt, false, loud, 0f) }
+        assertTrue(bands.settled)
+        // values outside 0..1 and a short input array stay safe
+        bands.step(dt, true, floatArrayOf(5f, -2f, Float.NaN), 1f)
+        assertTrue(bands.out.all { it in 0f..1f })
+    }
+
+    @Test
+    fun statsCountFramesAndKeepTheLoudestOfTenSeconds() {
+        val stats = YtSoundStats()
+        assertEquals(0, stats.fps())
+        assertEquals(0f, stats.max(0), 0f)
+        val second = 1_000_000_000L
+        val start = 100 * second
+        // 60 frames a second for 12 s; a loud bass only in the first second
+        for (s in 0 until 12) {
+            for (f in 0 until 60) {
+                val t = start + s * second + f * second / 60
+                stats.frame(t, 0.5f, if (s == 0) 1f else 0.3f, 0.2f, 0.1f * (s % 3))
+            }
+        }
+        assertEquals(60, stats.fps())
+        assertEquals(0.5f, stats.max(0), 0f)
+        assertEquals("the loud second is older than 10 s", 0.3f, stats.max(1), 0f)
+        assertEquals(0.2f, stats.max(3), 1e-6f)
+    }
 }
