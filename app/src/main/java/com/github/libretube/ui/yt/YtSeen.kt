@@ -107,8 +107,16 @@ fun Modifier.ytSeen(video: StreamItem, palette: YtPalette): Modifier {
         fontSize = 10.sp,
         letterSpacing = if (badge.uppercase) 0.8.sp else 0.sp,
     )
+    // held for the drag onto the mini player: the watched bar grows, and shrinks on release
+    val motion = LocalYtMotion.current
+    val grow = androidx.compose.animation.core.animateFloatAsState(
+        if (YtCardDrag.held.value == id) 1f else 0f,
+        if (motion) androidx.compose.animation.core.tween(220) else androidx.compose.animation.core.snap(),
+        label = "seenBarGrow",
+    )
     return this.drawWithCache {
-        val bar = 3.dp.toPx()
+        val thin = 3.dp.toPx()
+        val thick = 9.dp.toPx()
         val inset = 6.dp.toPx()
         val icon = 9.dp.toPx()
         val pad = 5.dp.toPx()
@@ -136,6 +144,8 @@ fun Modifier.ytSeen(video: StreamItem, palette: YtPalette): Modifier {
                     }
                 }
             } else if (mark.progress != null) {
+                // read here, in the draw phase: the growth redraws without recomposing the card
+                val bar = thin + (thick - thin) * grow.value
                 val top = size.height - bar
                 drawRect(Color.White.copy(alpha = 0.32f), topLeft = Offset(0f, top), size = Size(size.width, bar))
                 drawRoundRect(

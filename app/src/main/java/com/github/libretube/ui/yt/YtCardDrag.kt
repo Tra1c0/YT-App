@@ -120,6 +120,9 @@ internal class YtVideoGhost(
 
 /** The drag of a video card across the screens; the source calls begin, move and end. */
 object YtCardDrag {
+    /** The id of the home card held right now (pressed long), for its watched bar to grow. */
+    val held = androidx.compose.runtime.mutableStateOf<String?>(null)
+
     private const val NONE = 0
     private const val MINI = 1
     private const val BAR = 2
@@ -345,6 +348,8 @@ fun Modifier.ytLiftToQueue(
                 return@awaitEachGesture
             }
             lift(true)
+            // the watched bar stays large until the finger leaves, also while the card is dragged
+            YtCardDrag.held.value = id
             val coords = holder.coords?.takeIf { it.isAttached }
             val grab = coords?.localToWindow(hold.position)
             var moved = false
@@ -370,6 +375,8 @@ fun Modifier.ytLiftToQueue(
                     if (dragging) YtCardDrag.move(scope, finger, haptics, density, screen())
                 }
             } finally {
+                // every end (release, cancel, the card leaving the screen) lets the bar shrink
+                if (YtCardDrag.held.value == id) YtCardDrag.held.value = null
                 when {
                     dragging -> YtCardDrag.end(scope, haptics, screen(), cancelled = !released)
                     released && !moved -> {

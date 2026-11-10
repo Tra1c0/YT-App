@@ -8,8 +8,16 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 111 (no hard edge after a design switch + throw-away stays behind the
-  bar; run 110 was cancelled by CI concurrency). 109: guide buttons jump to the
+- Latest release: build 112+ (watched bar grows while a home card is held). 111: no hard edge after
+  a design switch + throw-away stays behind the bar (run 110 cancelled by CI concurrency).
+- NEXT SESSION (user's quota resets 2026-11-11), agreed to do then:
+  1. Open bug, screenshot 2026-11-09 16:37 (Formen): mini player half behind the nav bar. Unanswered
+     questions: build installed? stuck during the swipe-away or docked and staying like that? only
+     the first time after start? Ask first; if it stays docked half behind the bar, suspect the
+     dock offset after `YtMotionAccess.takeViewsAgain` (build 111).
+  2. Optional extra for the grown watched bar: remaining time ("noch 12 Min.") — user not asked yet.
+  3. Music mode ("Theme tanzt mit der Musik") was discussed for Wednesday: engine + 2 pilot designs
+     (Pop, Glas), estimate 5–6 rounds total; NOT yet confirmed in ROADMAP — ask before starting. 109: guide buttons jump to the
   setting. 108: guide in settings. 107: release notes in the update dialog. 106: landscape page after
   fullscreen, stuck minimize drag. 105: watch
   position ledger. 104: battery review fixes. 103: battery cue preview. 102 = round 18 ( chapter double tap, battery quality cap + cue, storage
@@ -111,6 +119,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 112+: watched bar on home cards grows while the card is held (`YtCardDrag.held`), shrinks on release.
 
 - 111: design switch no longer leaves a hard edge above the floating bar (MotionLayout re-read).
 
