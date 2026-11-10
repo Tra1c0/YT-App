@@ -62,7 +62,11 @@ class YtSpectrum(sampleRate: Int) {
 
     private val re = FloatArray(N)
     private val im = FloatArray(N)
-    private val power = DoubleArray(BANDS)
+    /**
+     * The power of each band in the last frame, linear, 1.0 = a full-scale sine wholly inside
+     * the band (read only; the sound engine's features are made from it).
+     */
+    val bandPower = DoubleArray(BANDS)
 
     /** The level of each band in the last frame, in dB (for tests and logs). */
     val levelDb = DoubleArray(BANDS)
@@ -124,9 +128,9 @@ class YtSpectrum(sampleRate: Int) {
                 if (w == 0f) continue
                 sum += w * (re[k].toDouble() * re[k] + im[k].toDouble() * im[k])
             }
-            power[b] = sum * powerScale
-            levelDb[b] = 10 * log10(power[b] + 1e-12)
-            total += power[b]
+            bandPower[b] = sum * powerScale
+            levelDb[b] = 10 * log10(bandPower[b] + 1e-12)
+            total += bandPower[b]
         }
         val silent = 10 * log10(total + 1e-12) < SILENCE_DB
         var top = CEILING_MIN_DB

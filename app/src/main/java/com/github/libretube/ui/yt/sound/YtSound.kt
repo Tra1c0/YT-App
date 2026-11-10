@@ -30,7 +30,14 @@ data class YtSoundFrame(
  * (graphicsLayer / drawBehind / Modifier.Node), never in composition, so the screen does not
  * recompose every frame.
  *
- * Contract stub: the engine (sound analysis on top of YtAudioTap/YtSpectrum) fills this in.
+ * Filled by [YtSoundEngine] (sound analysis on top of YtAudioTap/YtSpectrum), which runs only
+ * while [reactive] is on, the app is in front, the design animations are on and the player
+ * plays; otherwise [frame] fades to [YtSoundFrame.SILENT] (at once with animations off).
+ *
+ * Safety: every value is smoothed and passes a flash guard (each change of 0.1 or more lasts at
+ * least ~170 ms, so no value can flash more than 3 times a second), and [YtSoundFrame.punch]
+ * reaches full strength at most once per 330 ms. A UI that combines several values into one
+ * brightness should take their max or a weighted mean, not a sum of opposite movements.
  */
 object YtSound {
     private val state = mutableStateOf(YtSoundFrame.SILENT)
@@ -45,7 +52,9 @@ object YtSound {
 
     /** Turns the analysis on or off (the design calls this while it is shown). */
     fun setReactive(on: Boolean) {
+        if (reactive == on) return
         reactive = on
+        YtSoundEngine.reactiveChanged()
     }
 
     /** For the engine: publish a new frame (main thread). */

@@ -1,6 +1,7 @@
 package com.github.libretube.helpers
 
 import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.tan
@@ -193,6 +194,24 @@ class YtLoudnessMeter(val sampleRate: Int, val channels: Int) {
             out[5] = 2.0 * (k * k - 1.0) / a0
             out[6] = (1.0 - k / q + k * k) / a0
             return out
+        }
+
+        /**
+         * The power gain of the K-weighting at [hz] for a sample rate of [fs] (1.0 = 0 dB): the
+         * response of both biquads, |H(e^jw)|², so band powers can be weighted like the meter
+         * weighs samples.
+         */
+        fun kWeightPower(hz: Double, fs: Double): Double {
+            val c = kWeighting(fs)
+            val w = 2 * PI * hz.coerceIn(0.0, fs / 2) / fs
+            val c1 = cos(w)
+            val c2 = cos(2 * w)
+            // |b0 + b1 z^-1 + b2 z^-2|² on the unit circle
+            fun mag(b0: Double, b1: Double, b2: Double): Double =
+                b0 * b0 + b1 * b1 + b2 * b2 + 2 * (b0 * b1 + b1 * b2) * c1 + 2 * b0 * b2 * c2
+            val shelf = mag(c[0], c[1], c[2]) / mag(1.0, c[3], c[4])
+            val highPass = mag(1.0, -2.0, 1.0) / mag(1.0, c[5], c[6])
+            return shelf * highPass
         }
 
         fun lufs(energy: Double): Double =
