@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the design "Frequency" (YouTube neu's layout, the shapes of Formen, moves with the sound) -->
+<resources>
+    <string name="yt_design_frequency">Frequency: dark, moves with the sound</string>
+    <string name="yt_frequency_headline">Tune in.</string>
+    <string name="yt_frequency_continue">Pick up again</string>
+    <string name="yt_frequency_more">More for you</string>
+    <string name="yt_frequency_shorts">Shorts</string>
+</resources>

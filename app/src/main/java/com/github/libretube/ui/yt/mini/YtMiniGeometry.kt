@@ -298,6 +298,12 @@ object YtMiniSpecs {
         thumbWidth = 84, thumbHeight = 48, thumbStart = 8, thumbRadius = 24, peekGrowth = 1.8f,
     )
 
+    // Frequency: YouTube neu's stacked card, the picture rounder (Formen's softer corners)
+    val FREQUENCY = YtMiniSpec(
+        joint = YtMiniJoint.STACK, start = 12, height = 64, radius = 26,
+        thumbWidth = 89, thumbHeight = 50, thumbStart = 7, thumbRadius = 14, peekGrowth = 2.2f,
+    )
+
     /** Frost: the bar is as wide as its [tabs] (one wide active pill, the others round). */
     fun frost(tabs: Int) = YtMiniSpec(
         joint = YtMiniJoint.STACK, start = 0, width = 12 + 118 + 54 * (tabs - 1).coerceAtLeast(0), height = 60, radius = 30,

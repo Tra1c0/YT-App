@@ -513,6 +513,19 @@ private fun designPillLook(palette: YtPalette): PillLook {
             text = palette.ink, action = Color(0xFF6656C4), font = YtFonts.googleSans,
             cardSurface = flat(RoundedCornerShape(28.dp), palette.surface), tone = palette.surface,
         )
+        // Frequency: a raised night pill with a coral rim, the action in coral
+        YtSignature.FREQUENCY -> PillLook(
+            surface = { m ->
+                val shape = RoundedCornerShape(50)
+                flat(shape, palette.raised)(m).border(1.dp, palette.accent.copy(alpha = 0.4f), shape)
+            },
+            text = palette.text, action = palette.accent, font = YtFonts.geist,
+            cardSurface = { m ->
+                val shape = RoundedCornerShape(28.dp)
+                flat(shape, palette.raised)(m).border(1.dp, palette.accent.copy(alpha = 0.4f), shape)
+            },
+            tone = palette.raised,
+        )
         YtSignature.FROST -> PillLook(
             surface = flat(RoundedCornerShape(50), palette.ink, Color(0x661F2A26)),
             text = palette.text, action = palette.accent, font = YtFonts.jakarta,

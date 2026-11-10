@@ -102,6 +102,8 @@ import kotlinx.coroutines.withContext
  * - Pop: the first word on a yellow marker, the channel as a tilted sticker, blobs in two rows,
  *   the description in a speech bubble.
  * - Formen: night page with a row of material shapes as buttons.
+ * - Frequency: YouTube neu's page (meta with "more", creator, comments card) with Formen's shapes
+ *   as the actions, breathing with the sound; Formen's wave under the tabs.
  * - Frost: frosted cards and icon-only frost circles.
  * - Kiesel: a dashboard: three stat pebbles, the black channel capsule, a grid of pebbles.
  * Nothing is cut at the screen edge: the action sets are laid out in even rows instead of a
@@ -199,6 +201,7 @@ fun YtWatchPage(
         YtDesign.GLASS -> GlassPage(palette, imageLoader, basics, controller, actions)
         YtDesign.POP -> PopPage(palette, imageLoader, basics, controller, actions)
         YtDesign.SHAPES -> ShapesPage(palette, imageLoader, basics, controller, actions)
+        YtDesign.FREQUENCY -> FrequencyPage(palette, imageLoader, basics, controller, actions)
         YtDesign.FROST -> FrostPage(palette, imageLoader, basics, controller, actions)
         YtDesign.KIESEL -> KieselPage(palette, imageLoader, basics, controller, actions)
         else -> YouTubePage(palette, imageLoader, basics, controller, actions)
@@ -523,6 +526,79 @@ private fun YouTubePage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBa
         ) {
             Text(stringResource(R.string.yt_watch_comments), color = palette.text, style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 14.sp))
             Text(stringResource(R.string.yt_watch_open_comments), color = palette.textSecondary, style = TextStyle(fontFamily = palette.font, fontSize = 12.5.sp), modifier = Modifier.padding(top = 3.dp))
+        }
+        if (streams.chapters.isNotEmpty()) WatchChapters(palette, imageLoader, streams, controller.chapterIndex, actions.onSeek)
+        WatchUpNextTitle(palette)
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Frequency: YouTube neu's page, Formen's shapes, moving with the sound
+
+@Composable
+private fun FrequencyPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics, controller: YtWatchController, actions: YtWatchActions) {
+    // the page holds the sound pulse while it is shown
+    FrequencyPulseHost()
+    val streams = b.streams
+    var open by remember(streams.title) { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            text = ytTitle(streams.title),
+            color = palette.text,
+            maxLines = if (open) Int.MAX_VALUE else 2,
+            overflow = TextOverflow.Ellipsis,
+            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 19.sp, lineHeight = 24.sp),
+            modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp),
+        )
+        Text(
+            text = buildAnnotatedString {
+                append(b.meta)
+                append("  ")
+                withStyle(SpanStyle(color = palette.text, fontWeight = FontWeight.SemiBold)) {
+                    append(stringResource(if (open) R.string.yt_watch_less else R.string.yt_watch_more))
+                }
+            },
+            color = palette.textSecondary,
+            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
+            modifier = Modifier
+                .padding(start = 10.dp, end = 10.dp, top = 2.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { open = !open }
+                .padding(4.dp),
+        )
+        if (open) {
+            WatchDescription(
+                streams, actions.onLink, palette.text, palette.lime, R.font.font_geist_400, expanded = true,
+                modifier = Modifier
+                    .padding(start = 13.dp, end = 13.dp, top = 8.dp)
+                    .ytSurface(palette, RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp, bottomEnd = 22.dp, bottomStart = 8.dp))
+                    .padding(16.dp),
+            )
+        }
+        WatchCreator(palette, imageLoader, streams, b.hasChannel, b.subscribed, b.toggle, actions.onOpenChannel)
+        WatchActionRow(palette, listOf(b.like) + b.actions, Modifier.padding(top = 16.dp))
+        // the comments as a card, as on YouTube neu, in Formen's widget corners
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(start = 13.dp, end = 13.dp, top = 16.dp)
+                .fillMaxWidth()
+                .ytPressable(RoundedCornerShape(topStart = 22.dp, topEnd = 8.dp, bottomEnd = 22.dp, bottomStart = 22.dp)) { actions.onComments() }
+                .ytSurface(palette, RoundedCornerShape(topStart = 22.dp, topEnd = 8.dp, bottomEnd = 22.dp, bottomStart = 22.dp))
+                .padding(14.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.yt_watch_comments), color = palette.text, style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 14.sp))
+                Text(stringResource(R.string.yt_watch_open_comments), color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp), modifier = Modifier.padding(top = 3.dp))
+            }
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(30.dp)
+                    .frequencyCookie(palette.lavender, lobes = 6, rest = 0.1f),
+            ) {
+                Icon(painterResource(R.drawable.ic_yt_chevron_right), contentDescription = null, tint = palette.ink, modifier = Modifier.size(14.dp))
+            }
         }
         if (streams.chapters.isNotEmpty()) WatchChapters(palette, imageLoader, streams, controller.chapterIndex, actions.onSeek)
         WatchUpNextTitle(palette)

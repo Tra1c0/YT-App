@@ -245,6 +245,16 @@ private fun choiceLook(palette: YtPalette): ChoiceLook {
             scrim = palette.background, grid = true, badge = CookieShape(9, 0.08f),
             minuteFill = palette.lime, minuteInk = palette.ink,
         )
+        // Frequency: Formen's coloured tiles with the cookie badge, in aqua, violet, coral and
+        // amber, YouTube neu's type; night ink on every one of them
+        YtSignature.FREQUENCY -> ChoiceLook(
+            shape = RoundedCornerShape(28.dp),
+            fills = listOf(palette.lime, palette.lavender, palette.accent, palette.pink),
+            inks = four(palette.ink),
+            font = YtFonts.geist, titleFont = YtFonts.geist, titleSize = 34.sp, titleColor = palette.text,
+            scrim = palette.background, grid = true, badge = CookieShape(9, 0.08f),
+            minuteFill = palette.accent, minuteInk = palette.onAccent,
+        )
         YtSignature.FROST -> ChoiceLook(
             // the dark pill of the design as tiles: white on the frosted sage stayed under 4:1
             shape = RoundedCornerShape(24.dp), fills = four(palette.ink), inks = four(palette.text),

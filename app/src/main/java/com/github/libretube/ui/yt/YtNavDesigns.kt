@@ -718,3 +718,91 @@ fun KieselNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onS
         }
     }
 }
+
+// ---------------------------------------------------------------------------------------------
+// Frequency: YouTube neu's labelled bar (one surface with the mini player when it docks), the
+// active tab on a Formen cookie in its shape colour that blooms in, breathes with the bass and
+// lifts softly on hits (FrequencyPulse, read while drawing; at most 3 changes a second).
+
+@Composable
+fun FrequencyNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
+    FrequencyPulseHost()
+    val stacks = remember { YtMiniPlayer.stacks(com.github.libretube.helpers.YtDesign.FREQUENCY) }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(66.dp)
+                .ytDockedBar(30.dp, stacks, SolidColor(FrequencyBar), FrequencyBarBorder),
+        ) {
+            items.forEachIndexed { i, item ->
+                val active = item.id == state.selected
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .noRippleClick { onSelect(item.id) }
+                        .ytNavHoldTarget(item.id),
+                ) {
+                    val bloom = animateFloatAsState(
+                        if (active) 1f else 0f,
+                        ytSpec(spring(dampingRatio = 0.5f, stiffness = 340f)),
+                        label = "frequencyBloom",
+                    )
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(width = 52.dp, height = 36.dp)) {
+                        FrequencyNavMark(frequencyTag(palette, i), lobes = if (i % 2 == 0) 9 else 6, bloom = { bloom.value }, Modifier.size(38.dp))
+                        NavIcon(item, active, if (active) palette.ink else palette.textSecondary, 22.dp)
+                        Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopEnd).offset((-4).dp, 0.dp))
+                    }
+                    Text(
+                        text = stringResource(item.label),
+                        color = if (active) palette.text else palette.textSecondary,
+                        maxLines = 1,
+                        style = TextStyle(
+                            fontFamily = YtFonts.geist,
+                            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+                            fontSize = 11.sp,
+                        ),
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** The bar of Frequency: the night of the mini player's card, so both are one surface. */
+private val FrequencyBar = Color(0xFF17152B)
+private val FrequencyBarBorder = Color(0xFF2C2850)
+
+/**
+ * The active tab's cookie: grows out of a circle as [bloom] goes to 1 (scallops deepen, a turn
+ * settles), then breathes with the bass, turns with the music and lifts on hits. Everything is
+ * read while drawing; the path is reused.
+ */
+@Composable
+private fun FrequencyNavMark(color: Color, lobes: Int, bloom: () -> Float, modifier: Modifier) {
+    val path = remember { Path() }
+    Canvas(modifier) {
+        val b = bloom().coerceIn(0f, 1.2f)
+        if (b <= 0.01f) return@Canvas
+        val e = FrequencyPulse.energy.floatValue
+        val scale = FrequencyPulseMath.breathScale(e, 0.05f) * (0.55f + 0.45f * b.coerceAtMost(1f))
+        val radius = size.minDimension / 2f / FrequencyPulseMath.breathScale(1f, 0.05f) * scale
+        val depth = FrequencyPulseMath.cookieDepth(0.07f * b.coerceAtMost(1f), e)
+        val turn = Math.toRadians((FrequencyPulse.turn.floatValue - 60f * (1f - b)).toDouble()).toFloat()
+        cookiePath(path, center, radius, lobes, depth, turn)
+        val alpha = b.coerceIn(0f, 1f)
+        drawPath(path, color, alpha = alpha)
+        // a soft white veil on hits: the luminance lifts at most 18 %, never strobing
+        val lift = FrequencyPulseMath.pulseLift(FrequencyPulse.punch.floatValue)
+        if (lift > 0.003f) drawPath(path, Color.White, alpha = lift * alpha)
+    }
+}

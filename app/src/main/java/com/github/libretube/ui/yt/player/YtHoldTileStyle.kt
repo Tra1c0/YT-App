@@ -180,6 +180,13 @@ class YtHoldTileStyle private constructor(
                     cornerDp = 20f, videoCorner = 18f,
                 )
 
+                // Frequency: Formen's cookies in aqua, violet, coral and amber, rimmed in the night;
+                // armed, the light of its type
+                YtSignature.FREQUENCY -> style(
+                    YtHoldTileShape.COOKIE, bg, intArrayOf(lime, lavender, paletteAccent, pink), armed = text,
+                    stroke = raised, strokeDp = 1.5f, cornerDp = 20f, videoCorner = 16f,
+                )
+
                 // Frost's own surfaces are see-through white on sage, too pale for white text: here
                 // the tiles are its ink frosted with a little sage, the room a darker sage
                 YtSignature.FROST -> style(

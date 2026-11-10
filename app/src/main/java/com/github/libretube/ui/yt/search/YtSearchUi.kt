@@ -134,6 +134,8 @@ import kotlin.math.sin
  *   Formen       the cookie flies out of the button and morphs into the field
  *   Frost        a frost panel thaws open from the top, the screen behind blurs
  *   Kiesel       a black capsule grows out of the header, the past searches fall in as pebbles
+ *   Frequency    Formen's cookie flies out of the button into an aqua field, YouTube neu's
+ *                filters under it, the past searches as coral, violet and amber chips
  */
 
 private enum class EntryLayout { ROWS, CHIPS, TILES }
@@ -182,6 +184,9 @@ private fun lookOf(kind: YtSearchKind, palette: YtPalette): SearchLook {
             16.dp, EntryLayout.CHIPS, 0.dp, soft(0.45f, 380f), out, quickOut)
         YtSearchKind.SHAPES -> SearchLook(palette.font, FontWeight.Medium, 17.sp, 0.sp, 54.dp, palette.font, FontWeight.Medium, 15.sp, false,
             16.dp, EntryLayout.CHIPS, 0.dp, soft(0.68f, 210f), out, quickOut)
+        // Frequency: YouTube neu's type, Formen's chips and spring
+        YtSearchKind.FREQUENCY -> SearchLook(YtFonts.geist, FontWeight.Medium, 17.sp, 0.sp, 54.dp, YtFonts.geist, FontWeight.Medium, 15.sp, false,
+            16.dp, EntryLayout.CHIPS, 0.dp, soft(0.66f, 230f), out, quickOut)
         YtSearchKind.FROST -> SearchLook(palette.font, FontWeight.Medium, 17.sp, 0.sp, 50.dp, palette.font, FontWeight.Normal, 15.sp, false,
             14.dp, EntryLayout.ROWS, 30.dp, tween(520, easing = YtEaseOut), tween(300, easing = FastOutLinearInEasing), quickOut)
         YtSearchKind.KIESEL -> SearchLook(palette.font, FontWeight.SemiBold, 17.sp, 0.sp, 52.dp, palette.font, FontWeight.Bold, 15.sp, false,
@@ -327,8 +332,11 @@ internal fun YtSearchLayer(session: YtSearchSession) {
                 startPx = startPx,
                 actions = actions,
             )
-            if (kind == YtSearchKind.YOUTUBE) {
-                Filters(inks, look, filter, k::value) {
+            if (kind == YtSearchKind.YOUTUBE || kind == YtSearchKind.FREQUENCY) {
+                // Frequency: YouTube neu's filters, the chosen one on a coral pill
+                val on = if (kind == YtSearchKind.FREQUENCY) inks.mark else inks.fieldText
+                val onText = if (kind == YtSearchKind.FREQUENCY) YtSearchPalette.onFill(inks.mark) else inks.scrim
+                Filters(inks, look, filter, k::value, Color(on), Color(onText).copy(alpha = 1f)) {
                     if (it != filter) haptics.tick()
                     filter = it
                 }
@@ -514,7 +522,7 @@ private fun Field(
     ) {
         val content = Modifier.graphicsLayer {
             alpha = when (kind) {
-                YtSearchKind.SHAPES -> phase(progress(), 0.55f, 0.95f)
+                YtSearchKind.SHAPES, YtSearchKind.FREQUENCY -> phase(progress(), 0.55f, 0.95f)
                 YtSearchKind.GLASS, YtSearchKind.CLAY, YtSearchKind.POP, YtSearchKind.KIESEL -> phase(progress(), 0.35f, 0.85f)
                 else -> 1f
             }
@@ -531,7 +539,7 @@ private fun Field(
                 letterSpacing = look.fieldSpacing,
                 color = Color(inks.fieldText),
             ),
-            cursorBrush = SolidColor(Color(if (kind == YtSearchKind.MOVO || kind == YtSearchKind.SHAPES || kind == YtSearchKind.SIDE || kind == YtSearchKind.POP) inks.fieldText else inks.mark)),
+            cursorBrush = SolidColor(Color(if (kind == YtSearchKind.MOVO || kind == YtSearchKind.SHAPES || kind == YtSearchKind.FREQUENCY || kind == YtSearchKind.SIDE || kind == YtSearchKind.POP) inks.fieldText else inks.mark)),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { actions.submit(value.text) }),
             modifier = content
@@ -656,7 +664,7 @@ private fun Modifier.fieldMotion(kind: YtSearchKind, progress: () -> Float, orig
                 rotationZ = (1f - t) * -8f
                 alpha = phase(t, 0f, 0.12f)
             }
-            YtSearchKind.SHAPES -> {
+            YtSearchKind.SHAPES, YtSearchKind.FREQUENCY -> {
                 // the cookie flies from the button to the field's middle while it opens up
                 val o = origin ?: Offset(r.right - 24.dp.toPx(), r.top - 24.dp.toPx())
                 if (r.width > 0f) {
@@ -727,7 +735,7 @@ private fun Modifier.fieldSurface(kind: YtSearchKind, inks: YtSearchInks, progre
             )
         }
         YtSearchKind.POP -> drawBubble(fill, tail.toPx())
-        YtSearchKind.SHAPES -> {
+        YtSearchKind.SHAPES, YtSearchKind.FREQUENCY -> {
             val outline = CookieMorphShape(t.coerceIn(0f, 1f)).createOutline(size, layoutDirection, this)
             drawOutline(outline, fill)
         }
@@ -751,7 +759,15 @@ private fun DrawScope.drawBubble(fill: Color, tail: Float) {
 
 /** YouTube neu: the filters of the results screen, picked before the search. */
 @Composable
-private fun Filters(inks: YtSearchInks, look: SearchLook, selected: String, progress: () -> Float, onPick: (String) -> Unit) {
+private fun Filters(
+    inks: YtSearchInks,
+    look: SearchLook,
+    selected: String,
+    progress: () -> Float,
+    onFill: Color,
+    onText: Color,
+    onPick: (String) -> Unit,
+) {
     val labels = listOf(
         "all" to R.string.yt_r12_search_filter_all,
         "videos" to R.string.yt_r12_search_filter_videos,
@@ -779,13 +795,13 @@ private fun Filters(inks: YtSearchInks, look: SearchLook, selected: String, prog
                         translationY = (1f - p) * -8.dp.toPx()
                     }
                     .heightIn(min = 36.dp)
-                    .background(if (on) Color(inks.fieldText) else Color(inks.chip), shape)
+                    .background(if (on) onFill else Color(inks.chip), shape)
                     .selectable(selected = on, role = Role.RadioButton, onClick = { onPick(key) })
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             ) {
                 Text(
                     stringResource(label),
-                    color = if (on) Color(inks.scrim).copy(alpha = 1f) else Color(inks.chipText),
+                    color = if (on) onText else Color(inks.chipText),
                     style = TextStyle(fontFamily = look.rowFont, fontWeight = FontWeight.Medium, fontSize = 14.sp),
                 )
             }
@@ -804,7 +820,7 @@ private fun Modifier.entryMotion(kind: YtSearchKind, progress: () -> Float, inde
             translationY = -(1f - YtSearchRules.bounce(p)) * 56.dp.toPx()
             rotationZ = (1f - p) * (if (index % 2 == 0) 14f else -14f)
         }
-        YtSearchKind.MOVO, YtSearchKind.POP, YtSearchKind.SHAPES, YtSearchKind.CLAY -> {
+        YtSearchKind.MOVO, YtSearchKind.POP, YtSearchKind.SHAPES, YtSearchKind.CLAY, YtSearchKind.FREQUENCY -> {
             val s = lerp(0.7f, 1f, p)
             scaleX = s
             scaleY = s
@@ -1025,7 +1041,7 @@ private fun Chip(kind: YtSearchKind, look: SearchLook, inks: YtSearchInks, item:
         else -> RoundedCornerShape(50)
     }
     val fillInt = when (kind) {
-        YtSearchKind.KIESEL, YtSearchKind.POP, YtSearchKind.SHAPES -> YtSearchPalette.tile(kind, index, ytNight)
+        YtSearchKind.KIESEL, YtSearchKind.POP, YtSearchKind.SHAPES, YtSearchKind.FREQUENCY -> YtSearchPalette.tile(kind, index, ytNight)
         else -> inks.chip
     }
     val textColor = Color(if (fillInt == inks.chip) inks.chipText else YtSearchPalette.onFill(fillInt))
@@ -1050,7 +1066,7 @@ private fun Chip(kind: YtSearchKind, look: SearchLook, inks: YtSearchInks, item:
             .widthIn(max = 280.dp)
             .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
-        if (kind == YtSearchKind.SHAPES) {
+        if (kind == YtSearchKind.SHAPES || kind == YtSearchKind.FREQUENCY) {
             Box(Modifier.padding(end = 8.dp).size(12.dp).background(textColor, CookieShape(6, 0.12f)))
         }
         Text(

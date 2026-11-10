@@ -188,10 +188,20 @@ internal fun WatchCreator(
                 contentDescription = streams.uploader,
                 imageLoader = imageLoader,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(if (kiesel) 44.dp else 42.dp)
-                    .clip(CircleShape)
-                    .background(if (kiesel) KieselPanelCard else palette.surface),
+                modifier = if (palette.isFrequency) {
+                    // Frequency: the avatar in an aqua cookie frame that breathes with the bass
+                    Modifier
+                        .size(46.dp)
+                        .frequencyCookie(palette.lime, lobes = 9, rest = 0.07f)
+                        .padding(4.dp)
+                        .clip(CircleShape)
+                        .background(palette.surface)
+                } else {
+                    Modifier
+                        .size(if (kiesel) 44.dp else 42.dp)
+                        .clip(CircleShape)
+                        .background(if (kiesel) KieselPanelCard else palette.surface)
+                },
             )
             Spacer(Modifier.width(if (kiesel) 12.dp else 15.dp))
             Column {
@@ -233,6 +243,7 @@ internal fun WatchSubscribe(palette: YtPalette, subscribed: Boolean, onToggle: (
         YtSignature.GLASS -> GlassSubscribe(palette, subscribed, label, toggle)
         YtSignature.POP -> PopSubscribe(subscribed, label, toggle)
         YtSignature.SHAPES -> ShapesSubscribe(palette, subscribed, label, toggle)
+        YtSignature.FREQUENCY -> FrequencySubscribe(palette, subscribed, label, toggle)
         YtSignature.FROST -> FrostSubscribe(subscribed, label, toggle)
         YtSignature.KIESEL -> KieselSubscribe(subscribed, label, toggle)
         else -> PillSubscribe(palette, subscribed, label, toggle)
@@ -422,6 +433,32 @@ private fun ShapesSubscribe(palette: YtPalette, subscribed: Boolean, label: Stri
     }
 }
 
+/**
+ * Frequency: YouTube neu's pill in coral with night ink, glowing softly with the level; it bounces
+ * as Formen's does and turns violet when subscribed.
+ */
+@Composable
+private fun FrequencySubscribe(palette: YtPalette, subscribed: Boolean, label: String, toggle: () -> Unit) {
+    val fill by animateColorAsState(if (subscribed) palette.lavender else palette.accent, ytStateSpec(), label = "frequencyFill")
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .ytSelectBounce(subscribed)
+            .ytBurst(subscribed, palette.accent)
+            .then(if (subscribed) Modifier else Modifier.frequencyGlow(palette.accent, reach = 1.05f, rest = 0.12f, peak = 0.35f))
+            .clip(RoundedCornerShape(50))
+            .drawBehind { drawRect(fill) }
+            .clickable(onClick = toggle)
+            .height(36.dp)
+            .padding(horizontal = 20.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SubscribedCheck(subscribed, palette.ink)
+            Text(label, color = palette.ink, style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 13.sp))
+        }
+    }
+}
+
 /** Frost: a solid white pill; subscribed it turns to frosted glass that thaws under the finger. */
 @Composable
 private fun FrostSubscribe(subscribed: Boolean, label: String, toggle: () -> Unit) {
@@ -476,9 +513,77 @@ internal fun WatchActionRow(palette: YtPalette, actions: List<WatchAction>, modi
         YtSignature.GLASS -> GlassActions(palette, actions, modifier)
         YtSignature.POP -> PopActions(palette, actions, modifier)
         YtSignature.SHAPES -> ShapesActions(palette, actions, modifier)
+        YtSignature.FREQUENCY -> FrequencyActions(palette, actions, modifier)
         YtSignature.FROST -> FrostActions(palette, actions, modifier)
         YtSignature.KIESEL -> KieselActions(actions, modifier)
         else -> PillActions(palette, actions, modifier)
+    }
+}
+
+/**
+ * Frequency: Formen's material shapes in aqua, violet, coral and amber, a quarter turn on a tap;
+ * each breathes with the bass and a band of light runs over it with the highs (FrequencyPulse,
+ * read while drawing). The icon stays upright, the caption below never moves.
+ */
+@Composable
+internal fun FrequencyActions(palette: YtPalette, actions: List<WatchAction>, modifier: Modifier) {
+    val haptics = rememberYtHaptics()
+    val shapes = remember {
+        listOf(
+            CookieShape(9, 0.07f),
+            RoundedCornerShape(topStartPercent = 50, topEndPercent = 20, bottomEndPercent = 50, bottomStartPercent = 20),
+            CookieShape(6, 0.1f),
+            RoundedCornerShape(30),
+            CircleShape,
+        )
+    }
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = modifier
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 14.dp),
+    ) {
+        actions.forEachIndexed { i, action ->
+            var taps by remember { mutableIntStateOf(0) }
+            val spin by animateFloatAsState(taps * 45f, ytSpec(spring(dampingRatio = 0.55f, stiffness = 300f)), label = "frequencySpin")
+            val shape = shapes[i % shapes.size]
+            val fill = frequencyTag(palette, i)
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(66.dp)) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .then(action.gesture)
+                        .size(54.dp)
+                        .frequencyBreath(0.05f)
+                        .graphicsLayer { rotationZ = spin }
+                        .clip(shape)
+                        .background(fill)
+                        .frequencyShimmer(Color.White, shape)
+                        .clickable {
+                            taps++
+                            haptics.tick()
+                            action.onClick()
+                        },
+                ) {
+                    Icon(
+                        painterResource(action.icon),
+                        contentDescription = null,
+                        tint = palette.ink,
+                        modifier = Modifier
+                            .size(22.dp)
+                            .graphicsLayer { rotationZ = -spin },
+                    )
+                }
+                Text(
+                    text = action.label,
+                    color = palette.text,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 11.5.sp),
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+        }
     }
 }
 
@@ -889,7 +994,8 @@ internal fun WatchTabs(
         YtSignature.EDITORIAL -> EditorialTabs(palette, labels, selected, pick, modifier)
         YtSignature.GLASS -> GlassTabs(palette, labels, selected, onSelect, modifier, trailingAction)
         YtSignature.POP -> PopTabs(palette, labels, selected, pick, modifier)
-        YtSignature.SHAPES -> ShapesTabs(palette, labels, selected, pick, modifier)
+        // Frequency: Formen's travelling wave under the tabs, in aqua
+        YtSignature.SHAPES, YtSignature.FREQUENCY -> ShapesTabs(palette, labels, selected, pick, modifier)
         YtSignature.FROST -> FrostTabs(labels, selected, pick, modifier)
         YtSignature.KIESEL -> KieselTabs(labels, selected, pick, modifier)
         else -> UnderlineTabs(palette, labels, selected, pick, modifier)
@@ -1159,7 +1265,7 @@ private fun ShapesTabs(palette: YtPalette, labels: List<String>, selected: Int, 
     Column(modifier.fillMaxWidth()) {
         TabLabels(labels, selected, pick, Modifier.height(40.dp), indication = false) { label, active ->
             val ink by animateColorAsState(if (active) palette.text else palette.textSecondary, ytStateSpec(), label = "shapesTabInk")
-            Text(label, color = ink, textAlign = TextAlign.Center, style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Medium, fontSize = 14.sp))
+            Text(label, color = ink, textAlign = TextAlign.Center, style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 14.sp))
         }
         WavyProgress(
             progress = 1f,
@@ -1240,7 +1346,8 @@ internal fun WatchChapters(palette: YtPalette, imageLoader: ImageLoader, streams
         YtSignature.EDITORIAL -> EditorialChapters(palette, imageLoader, chapters, lengths, fallback, activeIndex, seek)
         YtSignature.GLASS -> GlassChapters(palette, imageLoader, chapters, fallback, activeIndex, seek)
         YtSignature.POP -> PopChapters(palette, imageLoader, chapters, fallback, activeIndex, seek)
-        YtSignature.SHAPES -> ShapesChapters(palette, imageLoader, chapters, lengths, fallback, activeIndex, seek)
+        // Frequency: Formen's cookie pictures, the current one turning in an aqua ring
+        YtSignature.SHAPES, YtSignature.FREQUENCY -> ShapesChapters(palette, imageLoader, chapters, lengths, fallback, activeIndex, seek)
         YtSignature.FROST -> FrostChapters(palette, imageLoader, chapters, lengths, fallback, activeIndex, seek)
         YtSignature.KIESEL -> KieselChapters(imageLoader, chapters, lengths, fallback, activeIndex, seek)
         else -> ListChapters(palette, imageLoader, chapters, lengths, fallback, activeIndex, seek)
@@ -1661,20 +1768,20 @@ private fun ShapesChapters(palette: YtPalette, imageLoader: ImageLoader, chapter
                         color = palette.text,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Medium, fontSize = 14.sp),
+                        style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 14.sp),
                     )
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                         Text(
                             time(chapter.start),
                             color = ShapesInk,
-                            style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Bold, fontSize = 10.5.sp),
+                            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 10.5.sp),
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
                                 .background(palette.lime)
                                 .padding(horizontal = 7.dp, vertical = 2.dp),
                         )
                         if (lengths[i] > 0) {
-                            Text(time(lengths[i]), color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 11.5.sp), modifier = Modifier.padding(start = 8.dp))
+                            Text(time(lengths[i]), color = palette.textSecondary, style = TextStyle(fontFamily = palette.font, fontSize = 11.5.sp), modifier = Modifier.padding(start = 8.dp))
                         }
                     }
                 }

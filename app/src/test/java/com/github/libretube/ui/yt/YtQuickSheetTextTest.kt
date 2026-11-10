@@ -23,6 +23,7 @@ class YtQuickSheetTextTest {
         "Frost" to YtPalettes.Frost,
         "Kiesel" to YtPalettes.Kiesel,
         "KieselDark" to YtPalettes.KieselDark,
+        "Frequency" to YtPalettes.Frequency,
     )
 
     @Test

@@ -38,8 +38,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * YT: home of the second round of designs (Clay, Editorial, Glas, Pop) and of the inspiration
- * designs (Formen, Frost). Collects the data the screens show and dispatches to the design.
+ * YT: home of the second round of designs (Clay, Editorial, Glas, Pop), of the inspiration
+ * designs (Formen, Frost, Kiesel) and of Frequency. Collects the data the screens show and
+ * dispatches to the design.
  */
 @Composable
 internal fun YtRound2Home(
@@ -162,6 +163,21 @@ internal fun YtRound2Home(
                 actions = actions,
             )
             YtDesign.FROST -> FrostHomeScreen(palette, imageLoader, data, actions)
+            YtDesign.FREQUENCY -> FrequencyHomeScreen(
+                palette = palette,
+                imageLoader = imageLoader,
+                data = data,
+                categories = MediaServiceRepository.instance.getTrendingCategories(),
+                category = category,
+                onSelectCategory = { category = it },
+                categoryVideos = categoryVideos,
+                progress = { video ->
+                    val position = video.url?.toID()?.let { positions[it] } ?: 0L
+                    val duration = (video.duration ?: 0L) * 1000
+                    if (duration > 0) position.toFloat() / duration else 0f
+                },
+                actions = actions,
+            )
             YtDesign.KIESEL -> KieselHomeScreen(
                 palette = palette,
                 imageLoader = imageLoader,

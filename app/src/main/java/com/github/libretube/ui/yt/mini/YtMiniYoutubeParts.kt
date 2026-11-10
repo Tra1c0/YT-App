@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,6 +64,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.github.libretube.R
 import com.github.libretube.helpers.ImageHelper
+import com.github.libretube.ui.yt.FrequencyPulse
 import com.github.libretube.ui.yt.LocalYtMotion
 import com.github.libretube.ui.yt.YtDock
 import com.github.libretube.ui.yt.YtFonts
@@ -80,24 +83,46 @@ import kotlin.math.roundToInt
  * or laying out, so nothing composes again while the player moves.
  */
 
-/** The colours of the YouTube neu player (the bar's: YtNavBar's style for YouTube). */
-internal object YtMiniYoutubeStyle {
-    val card = Color(0xFF17171D)
-    val cardTop = Color(0xFF1B1B22)
-    val border = Color(0xFF2A2A33)
-    val title = Color(0xFFE6E6EC)
-    val secondary = Color(0xFF9A9AA6)
-    val pill = Color(0xFF282830)
-    val row = Color(0xFF1E1E25)
-    val rowActive = Color(0xFF2A2A33)
-    val thumbGround = Color(0xFF282830)
-
+/**
+ * The colours of a "Rote Naht" player. YouTube neu has its own (the bar's: YtNavBar's style for
+ * YouTube); Frequency draws the same player in its night and coral ([YtMiniFrequency]) and
+ * adds its own layers that follow the sound.
+ */
+internal class YtMiniYoutubeColors(
+    val card: Color,
+    val cardTop: Color,
+    val border: Color,
+    val title: Color,
+    val secondary: Color,
+    val pill: Color,
+    val row: Color,
+    val rowActive: Color,
+    val thumbGround: Color,
     /** A rejected drop: the thread loses its colour for a moment. */
-    val dull = Color(0xFF5A5A66)
-
+    val dull: Color,
     /** The light at the needle's point and the played part's head. */
-    val hot = Color(0xFFFF8A98)
-}
+    val hot: Color,
+    /** Words and glyphs on the accent (the pill under the finger). */
+    val onAccent: Color = Color.White,
+)
+
+/** The colours of the YouTube neu player (the bar's: YtNavBar's style for YouTube). */
+internal val YtMiniYoutubeStyle = YtMiniYoutubeColors(
+    card = Color(0xFF17171D),
+    cardTop = Color(0xFF1B1B22),
+    border = Color(0xFF2A2A33),
+    title = Color(0xFFE6E6EC),
+    secondary = Color(0xFF9A9AA6),
+    pill = Color(0xFF282830),
+    row = Color(0xFF1E1E25),
+    rowActive = Color(0xFF2A2A33),
+    thumbGround = Color(0xFF282830),
+    dull = Color(0xFF5A5A66),
+    hot = Color(0xFFFF8A98),
+)
+
+/** The colours the parts below draw with ([YoutubeUnder] provides them). */
+private val LocalMiniYoutubeColors = staticCompositionLocalOf { YtMiniYoutubeStyle }
 
 /** The docked geometry for the box's current width, computed once per width. */
 private class YoutubeSpace(private val design: YtMiniDesign) {
@@ -135,8 +160,14 @@ private fun DrawScope.halo(color: Color, center: Offset, radius: Float) {
 
 /** The player of YouTube neu behind the picture, inside the box. */
 @Composable
-internal fun YoutubeUnder(scene: YtMiniScene, design: YtMiniDesign) {
+internal fun YoutubeUnder(scene: YtMiniScene, design: YtMiniDesign, colors: YtMiniYoutubeColors = YtMiniYoutubeStyle) {
+    CompositionLocalProvider(LocalMiniYoutubeColors provides colors) { YoutubeUnderParts(scene, design) }
+}
+
+@Composable
+private fun YoutubeUnderParts(scene: YtMiniScene, design: YtMiniDesign) {
     val palette = scene.palette ?: return
+    val c = LocalMiniYoutubeColors.current
     val red = palette.accent
     val density = LocalDensity.current.density
     val motion = LocalYtMotion.current
@@ -228,8 +259,8 @@ internal fun YoutubeUnder(scene: YtMiniScene, design: YtMiniDesign) {
         else -> stringResource(R.string.yt_mini_drop_end, lastDrop.position)
     }
     val measurer = rememberTextMeasurer()
-    val pillStyle = remember {
-        TextStyle(color = Color.White, fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+    val pillStyle = remember(c) {
+        TextStyle(color = c.onAccent, fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
     }
     val cardPath = remember { Path() }
     val borderPath = remember { Path() }
@@ -239,10 +270,10 @@ internal fun YoutubeUnder(scene: YtMiniScene, design: YtMiniDesign) {
         Canvas(Modifier.fillMaxSize()) {
             val r = YtMiniYoutubeMath.corner(YtDock.progress, spec.radius * density)
             cardPath.card(size.width, size.height, r, 0f, open = false)
-            drawPath(cardPath, Brush.verticalGradient(listOf(YtMiniYoutubeStyle.cardTop, YtMiniYoutubeStyle.card), endY = size.height))
+            drawPath(cardPath, Brush.verticalGradient(listOf(c.cardTop, c.card), endY = size.height))
             val stroke = 1f * density
             borderPath.card(size.width, size.height, r, stroke / 2f, open = true)
-            drawPath(borderPath, YtMiniYoutubeStyle.border, style = Stroke(stroke))
+            drawPath(borderPath, c.border, style = Stroke(stroke))
         }
 
         // 2: title and channel beside the docked picture
@@ -257,7 +288,7 @@ internal fun YoutubeUnder(scene: YtMiniScene, design: YtMiniDesign) {
             if (shown <= 0f) return@Canvas
             val g = space.of(size.width, density)
             val near = scene.hover()
-            val thread = lerp(red, YtMiniYoutubeStyle.dull, reject.value)
+            val thread = lerp(red, c.dull, reject.value)
             val y = size.height - overlap / 2f
             val left = 1f * density
             val right = size.width - left
@@ -308,7 +339,7 @@ internal fun YoutubeUnder(scene: YtMiniScene, design: YtMiniDesign) {
                 )
                 val head = Offset(left + played, y)
                 halo(thread.copy(alpha = 0.5f * shown), head, (6f + 4f * near) * density)
-                drawCircle(YtMiniYoutubeStyle.hot.copy(alpha = shown), 1.8f * density, head)
+                drawCircle(c.hot.copy(alpha = shown), 1.8f * density, head)
             }
 
             // the needle running ahead while the seam is sewn in
@@ -384,6 +415,7 @@ internal fun YoutubeUnder(scene: YtMiniScene, design: YtMiniDesign) {
 /** Title and channel beside the docked picture, at the foot of the box; they dim under a drop's pill. */
 @Composable
 private fun RestText(scene: YtMiniScene, space: YoutubeSpace, restBox: Float, drop: Animatable<Float, AnimationVector1D>) {
+    val c = LocalMiniYoutubeColors.current
     val density = LocalDensity.current.density
     val info = scene.info
     Layout(
@@ -401,7 +433,7 @@ private fun RestText(scene: YtMiniScene, space: YoutubeSpace, restBox: Float, dr
                 Column(Modifier.align(Alignment.CenterStart)) {
                     Text(
                         text = info.title,
-                        style = TextStyle(color = YtMiniYoutubeStyle.title, fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.5.sp),
+                        style = TextStyle(color = c.title, fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.5.sp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -409,7 +441,7 @@ private fun RestText(scene: YtMiniScene, space: YoutubeSpace, restBox: Float, dr
                         Spacer(Modifier.height(1.dp))
                         Text(
                             text = info.channel,
-                            style = TextStyle(color = YtMiniYoutubeStyle.secondary, fontFamily = YtFonts.geist, fontWeight = FontWeight.Normal, fontSize = 11.5.sp),
+                            style = TextStyle(color = c.secondary, fontFamily = YtFonts.geist, fontWeight = FontWeight.Normal, fontSize = 11.5.sp),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -438,6 +470,7 @@ private fun RestText(scene: YtMiniScene, space: YoutubeSpace, restBox: Float, dr
  */
 @Composable
 private fun YoutubePeek(scene: YtMiniScene, red: Color, timer: Animatable<Float, AnimationVector1D>) {
+    val c = LocalMiniYoutubeColors.current
     val grown = scene.peekLayout ?: return
     val density = LocalDensity.current.density
     val next = scene.next
@@ -460,7 +493,7 @@ private fun YoutubePeek(scene: YtMiniScene, red: Color, timer: Animatable<Float,
             ) {
                 Text(
                     text = scene.info.title,
-                    style = TextStyle(color = YtMiniYoutubeStyle.title, fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 18.sp),
+                    style = TextStyle(color = c.title, fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 18.sp),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -468,7 +501,7 @@ private fun YoutubePeek(scene: YtMiniScene, red: Color, timer: Animatable<Float,
                     Spacer(Modifier.height(3.dp))
                     Text(
                         text = scene.info.channel,
-                        style = TextStyle(color = YtMiniYoutubeStyle.secondary, fontFamily = YtFonts.geist, fontSize = 12.sp),
+                        style = TextStyle(color = c.secondary, fontFamily = YtFonts.geist, fontSize = 12.sp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -490,14 +523,14 @@ private fun YoutubePeek(scene: YtMiniScene, red: Color, timer: Animatable<Float,
                         scaleY = s
                     }
                     .clip(RoundedCornerShape(50))
-                    .background(if (onPill) red else YtMiniYoutubeStyle.pill),
+                    .background(if (onPill) red else c.pill),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 14.dp)) {
-                    YtMiniParts.Glyph(!playing, Color.White, Modifier.size(11.dp))
+                    YtMiniParts.Glyph(!playing, if (onPill) c.onAccent else Color.White, Modifier.size(11.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(if (playing) R.string.yt_mini_youtube_pause else R.string.yt_mini_youtube_resume),
-                        style = TextStyle(color = Color.White, fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                        style = TextStyle(color = if (onPill) c.onAccent else Color.White, fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -533,6 +566,7 @@ private fun YoutubePeek(scene: YtMiniScene, red: Color, timer: Animatable<Float,
 /** "Als Nächstes": the next thumbnail, title and channel, a red line filling under it while held. */
 @Composable
 private fun NextRow(next: YtMiniNext, red: Color, active: Boolean, timer: Animatable<Float, AnimationVector1D>, modifier: Modifier) {
+    val c = LocalMiniYoutubeColors.current
     val density = LocalDensity.current.density
     val shape = RoundedCornerShape(12.dp)
     Row(
@@ -547,7 +581,7 @@ private fun NextRow(next: YtMiniNext, red: Color, active: Boolean, timer: Animat
                 scaleY = s
             }
             .clip(shape)
-            .background(if (active) YtMiniYoutubeStyle.rowActive else YtMiniYoutubeStyle.row)
+            .background(if (active) c.rowActive else c.row)
             .drawBehind {
                 // the timer: a thin red line along the row's foot, between its rounded corners
                 val line = 2f * density
@@ -571,7 +605,7 @@ private fun NextRow(next: YtMiniNext, red: Color, active: Boolean, timer: Animat
                 .fillMaxHeight()
                 .width((YtMiniYoutubeLayout.ROW_THUMB_HEIGHT * 16f / 9f).dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(YtMiniYoutubeStyle.thumbGround),
+                .background(c.thumbGround),
         )
         Spacer(Modifier.width(10.dp))
         Column(verticalArrangement = Arrangement.Center) {
@@ -583,14 +617,14 @@ private fun NextRow(next: YtMiniNext, red: Color, active: Boolean, timer: Animat
             )
             Text(
                 text = next.title,
-                style = TextStyle(color = YtMiniYoutubeStyle.title, fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.5.sp),
+                style = TextStyle(color = c.title, fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.5.sp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             if (next.channel.isNotBlank()) {
                 Text(
                     text = next.channel,
-                    style = TextStyle(color = YtMiniYoutubeStyle.secondary, fontFamily = YtFonts.geist, fontSize = 11.5.sp),
+                    style = TextStyle(color = c.secondary, fontFamily = YtFonts.geist, fontSize = 11.5.sp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -605,7 +639,12 @@ private fun NextRow(next: YtMiniNext, red: Color, active: Boolean, timer: Animat
  * toggle: a dark disc with the glyph and a red ring running out of it.
  */
 @Composable
-internal fun YoutubeOver(scene: YtMiniScene, thumbRadius: Float) {
+internal fun YoutubeOver(
+    scene: YtMiniScene,
+    thumbRadius: Float,
+    /** Frequency: a coral rim inside the picture breathes with the sound. */
+    pulse: Boolean = false,
+) {
     val red = scene.palette?.accent ?: Color(0xFFFF334B)
     val motion = LocalYtMotion.current
     val mirror = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -625,9 +664,29 @@ internal fun YoutubeOver(scene: YtMiniScene, thumbRadius: Float) {
         flash.snapTo(0f)
     }
     val playing = scene.flashPlaying
+    val rimWidth = 1.8f * LocalDensity.current.density
+    val rim = remember(rimWidth) { Stroke(rimWidth) }
     Canvas(Modifier.fillMaxSize().clearAndSetSemantics {}) {
         val peek = YtDock.peek
         val near = scene.hover()
+        // Frequency: a coral rim inside the picture's edge breathes with the level. This canvas
+        // is laid out on the picture, so the rim follows its live bounds while it is dragged
+        // (the video itself is a SurfaceView and cannot be changed)
+        if (pulse && near <= 0f) {
+            val g = FrequencyPulse.glow.floatValue
+            val docked = YtMiniYoutubeMath.seamShown(YtDock.progress) * (1f - peek.coerceIn(0f, 1f))
+            val a = (0.25f + 0.6f * g) * docked
+            if (a > 0.01f) {
+                val sw = rimWidth
+                drawRoundRect(
+                    red.copy(alpha = a),
+                    topLeft = Offset(sw / 2f, sw / 2f),
+                    size = Size(size.width - sw, size.height - sw),
+                    cornerRadius = CornerRadius(max(0f, thumbRadius * density - sw / 2f)),
+                    style = rim,
+                )
+            }
+        }
         if (near > 0f && peek <= 0f) {
             val sw = (1.5f + 1f * near) * density
             drawRoundRect(

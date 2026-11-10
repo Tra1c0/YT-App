@@ -367,6 +367,8 @@ private fun lensLook(palette: YtPalette): YtLensLook {
             Color(0x99FFFFFF), 1.dp, palette.text, false,
         )
         YtSignature.SHAPES -> YtLensLook(CookieShape(9), solid(palette.lime), null, 0.dp, palette.ink, true)
+        // Frequency: the header's coral cookie lens with night ink
+        YtSignature.FREQUENCY -> YtLensLook(CookieShape(9), solid(palette.accent), null, 0.dp, palette.ink, true)
         YtSignature.EDITORIAL -> YtLensLook(RectangleShape, solid(ytDayNight(Color.Black, palette.text)), null, 0.dp, ytDayNight(Color.White, palette.background), false)
         YtSignature.POP -> YtLensLook(BlobShape(0.6f, 0.5f, 0.56f, 0.64f), solid(ytDayNight(Color(0xFFDCD6F5), Color(0xFF382548))), null, 0.dp, palette.text, true)
         YtSignature.CLAY -> YtLensLook(
@@ -388,8 +390,8 @@ private fun SearchLens(ghost: YtSearchGhost) {
     val look = remember(ghost) { lensLook(ghost.palette) }
     val lensSize = 60.dp
     val lensPx = with(LocalDensity.current) { lensSize.toPx() }
-    // Formen: the cookie keeps turning, as on the header
-    val spin = if (ghost.palette.signature == YtSignature.SHAPES && ghost.motion) {
+    // Formen and Frequency: the cookie keeps turning, as on the header
+    val spin = if ((ghost.palette.signature == YtSignature.SHAPES || ghost.palette.signature == YtSignature.FREQUENCY) && ghost.motion) {
         rememberInfiniteTransition(label = "lensSpin").animateFloat(
             initialValue = 0f,
             targetValue = 360f,

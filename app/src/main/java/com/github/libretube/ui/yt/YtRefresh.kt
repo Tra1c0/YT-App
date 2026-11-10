@@ -191,6 +191,24 @@ private fun YtRefreshIndicator(palette: YtPalette, state: PullToRefreshState, re
                         translate(center.x - r, center.y - r) { drawOutline(outline, palette.lime) }
                     }
                 }
+                YtSignature.FREQUENCY -> {
+                    // YouTube neu's arc in coral fills with the pull, Formen's aqua cookie turns in it
+                    val r = 13.dp.toPx()
+                    drawArc(
+                        color = palette.accent,
+                        startAngle = if (refreshing) s - 90f else -90f,
+                        sweepAngle = if (refreshing) 260f else 330f * p,
+                        useCenter = false,
+                        topLeft = Offset(center.x - r, center.y - r),
+                        size = Size(r * 2, r * 2),
+                        style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+                    )
+                    val c = (4 + 4 * p).dp.toPx()
+                    rotate(120f * p - s, center) {
+                        val outline = CookieShape(7, 0.12f).createOutline(Size(c * 2, c * 2), layoutDirection, this)
+                        translate(center.x - c, center.y - c) { drawOutline(outline, palette.lime) }
+                    }
+                }
                 YtSignature.FROST -> {
                     val breath = if (refreshing) 1f + 0.1f * sin(rad) else 1f
                     val r = 12.dp.toPx() * (1.25f - 0.25f * p) * breath

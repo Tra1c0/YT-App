@@ -79,10 +79,13 @@ internal val LocalScreenBackdrop = androidx.compose.runtime.staticCompositionLoc
 fun YtScreenSurface(palette: YtPalette, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val glass = palette.signature == YtSignature.GLASS || palette.signature == YtSignature.FROST
     val backdrop = if (glass) rememberLayerBackdrop() else null
+    // Frequency: the screen holds the pulse, and its aura moves with the sound
+    if (palette.isFrequency) FrequencyPulseHost()
     Box(
         modifier.then(
             when (palette.signature) {
                 YtSignature.SHAPES -> Modifier.background(Brush.verticalGradient(listOf(Color(0xFF12122A), Color(0xFF1C1A45), Color(0xFF3F3489), Color(0xFF6656C4))))
+                YtSignature.FREQUENCY -> Modifier.frequencyAura(palette)
                 else -> Modifier.background(palette.background)
             },
         ),
@@ -279,6 +282,27 @@ internal fun LibraryHeadline(palette: YtPalette, headline: String, subline: Stri
                 style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Bold, fontSize = 38.sp, lineHeight = 40.sp),
             )
             Text(text = subline, color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 17.sp))
+        }
+        YtSignature.FREQUENCY -> Column(padding) {
+            // YouTube neu's big headline; three of Formen's shapes above it breathe with the sound
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 10.dp)) {
+                listOf<Shape>(CookieShape(8), CircleShape, RoundedCornerShape(topStartPercent = 50, topEndPercent = 20, bottomEndPercent = 50, bottomStartPercent = 20)).forEachIndexed { i, shape ->
+                    Box(
+                        Modifier
+                            .size(20.dp)
+                            .frequencyBreath()
+                            .frequencyTurn(if (i % 2 == 0) 1f else -1f)
+                            .clip(shape)
+                            .background(frequencyTag(palette, i)),
+                    )
+                }
+            }
+            Text(
+                text = headline,
+                color = palette.text,
+                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.ExtraBold, fontSize = 41.sp, lineHeight = 42.sp, letterSpacing = (-0.8).sp),
+            )
+            Text(text = subline, color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.geist, fontSize = 20.sp))
         }
         YtSignature.FROST -> Column(padding) {
             Text(
@@ -566,6 +590,66 @@ internal fun LibraryContinue(
                 }
                 Text(title, color = palette.ink, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Medium, fontSize = 15.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 6.dp, top = 8.dp, end = 6.dp))
                 Text(channel, color = palette.ink.copy(alpha = 0.6f), style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 12.sp), modifier = Modifier.padding(start = 6.dp, top = 1.dp, bottom = 2.dp))
+            }
+        }
+        YtSignature.FREQUENCY -> {
+            // YouTube neu's still in a Formen widget corner; a coral cookie as the play button
+            // breathes with the bass, the coral progress shimmers with the highs
+            val shape = RoundedCornerShape(topStart = 22.dp, topEnd = 60.dp, bottomEnd = 22.dp, bottomStart = 22.dp)
+            Column(
+                Modifier
+                    .padding(horizontal = 12.dp)
+                    .ytPressable(shape) { onOpen(item) },
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(2.6f)
+                        .clip(shape),
+                ) {
+                    AsyncImage(
+                        model = item.video.thumbnail, contentDescription = null, imageLoader = imageLoader, contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 14.dp, bottom = 22.dp)
+                            .size(44.dp)
+                            .frequencyCookie(palette.accent, lobes = 9, rest = 0.08f),
+                    ) {
+                        Icon(painterResource(R.drawable.ic_play), contentDescription = null, tint = palette.onAccent, modifier = Modifier.size(18.dp))
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .fillMaxWidth()
+                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xB30B0A18))))
+                            .padding(start = 12.dp, end = 12.dp, bottom = 6.dp, top = 10.dp),
+                    ) {
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(Color(0x66FFFFFF))
+                                .drawBehind { drawRect(palette.accent, size = size.copy(width = size.width * fill.value.coerceIn(0f, 1f))) }
+                                .frequencyShimmer(),
+                        )
+                        remaining?.let {
+                            Text(
+                                text = stringResource(R.string.yt_library_remaining, it),
+                                color = Color.White,
+                                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                                modifier = Modifier.padding(start = 66.dp),
+                            )
+                        }
+                    }
+                }
+                Text(title, color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 3.dp, top = 8.dp))
+                Text(channel, color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp), modifier = Modifier.padding(start = 3.dp, top = 1.dp))
             }
         }
         YtSignature.FROST -> {
@@ -888,6 +972,25 @@ internal fun LibraryCollection(
                 Previews(imageLoader, collection, CookieShape(8, 0.06f), Color(0x33000000))
             }
         }
+        YtSignature.FREQUENCY -> {
+            // Formen's alternating widget corners in aqua and violet, YouTube neu's heavy type
+            val shape: Shape = if (index % 2 == 0) {
+                RoundedCornerShape(topStart = 36.dp, topEnd = 14.dp, bottomEnd = 36.dp, bottomStart = 14.dp)
+            } else {
+                RoundedCornerShape(topStart = 14.dp, topEnd = 36.dp, bottomEnd = 14.dp, bottomStart = 36.dp)
+            }
+            Column(
+                modifier
+                    .ytPressable(shape, onClick = onClick)
+                    .background(if (index % 2 == 0) palette.lime else palette.lavender)
+                    .padding(14.dp),
+            ) {
+                Text(name, color = palette.ink, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Black, fontSize = 24.sp, lineHeight = 26.sp, letterSpacing = (-0.4).sp))
+                Text(countOf(collection), color = palette.ink, style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp), modifier = Modifier.padding(top = 2.dp))
+                Spacer(Modifier.weight(1f))
+                Previews(imageLoader, collection, CookieShape(8, 0.06f), Color(0x33000000))
+            }
+        }
         YtSignature.FROST -> {
             val backdrop = LocalScreenBackdrop.current
             val press = remember { MutableInteractionSource() }
@@ -1050,6 +1153,7 @@ internal fun LibraryAdd(palette: YtPalette, onClick: () -> Unit) {
             val fill = when (palette.signature) {
                 YtSignature.POP -> PopFrames[0]
                 YtSignature.SHAPES -> palette.lime
+                YtSignature.FREQUENCY -> palette.accent
                 YtSignature.KIESEL -> KieselPanel
                 YtSignature.CLAY -> ClayLight
                 else -> palette.raised
@@ -1057,6 +1161,7 @@ internal fun LibraryAdd(palette: YtPalette, onClick: () -> Unit) {
             val ink = when (palette.signature) {
                 YtSignature.POP -> PopInk
                 YtSignature.SHAPES -> ShapesInk
+                YtSignature.FREQUENCY -> palette.onAccent
                 YtSignature.KIESEL -> KieselCream
                 YtSignature.CLAY -> ClayInk
                 YtSignature.FROST -> Color.White

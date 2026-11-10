@@ -21,7 +21,7 @@ import kotlin.math.sin
  * straight cut: Kiesel a rounded lip, Pop a wave, Formen scallops, Clay a puffy shelf with a
  * shadow, Glas and Frost a frosted strip with a light edge, After a long cinematic fade,
  * Editorial a printed rule (a deliberate line, as on a folded page), YouTube, Movo and Side a
- * soft fade with a hairline. The scroll bar is hidden; the page has no use for it.
+ * soft fade with a hairline, Frequency small scallops with a coral hairline. The scroll bar is hidden; the page has no use for it.
  */
 object YtWatchEdge {
     fun install(scroll: ScrollView) {
@@ -101,6 +101,19 @@ object YtWatchEdge {
                     x += 2 * r
                 }
                 fade(canvas, width, s * 0.6f, dp(4f) + r, dp(12f))
+            }
+            YtDesign.FREQUENCY -> { canvas, width, s ->
+                // Formen's scallops, smaller, over YouTube neu's soft fade, a coral hairline on top
+                paint.color = alpha(bg(), s)
+                val r = dp(6f)
+                canvas.drawRect(0f, 0f, width.toFloat(), dp(3f), paint)
+                var x = r
+                while (x - r < width) {
+                    canvas.drawCircle(x, dp(3f), r, paint)
+                    x += 2 * r
+                }
+                fade(canvas, width, s * 0.6f, dp(3f) + r, dp(14f))
+                line(canvas, width, 0f, dp(1f), alpha(ColorUtils.setAlphaComponent(palette.accent.toArgb(), 140), s))
             }
             YtDesign.CLAY -> { canvas, width, s ->
                 // a puffy shelf with a soft shadow below it

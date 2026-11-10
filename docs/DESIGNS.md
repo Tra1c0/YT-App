@@ -386,3 +386,55 @@ Navigationsleiste und eine eigene Kopfzeile. Die Leiste ist so gebaut, dass weit
    System-Animationsskala, „Animationen entfernen“ macht daraus direkte Wechsel. **Erledigt.**
    Ein echter Übergang des Covers in den Player (Shared Element) ist mit dem klassischen
    Player-Layout (MotionLayout) nicht möglich und wäre ein eigener Umbau.
+
+## Frequency (Runde 21)
+
+Das 13. Design, eigenständig vor dem eigentlichen Musik-Modus: der Aufbau von **YouTube neu**
+(große Überschrift, Themenfilter, die oben bleiben, große Videokarten, „Gerade live“, Videoseite
+mit Titel, „Mehr“, Kanalzeile, Aktionen, Kommentar-Karte) mit den Material-Formen von **Formen**
+(Keks- und Wellenformen, Widget-Ecken, verspielte Formfarben auf tiefer Nacht). Die Oberfläche
+reagiert auf den Klang, der gerade läuft. Dunkel, beschriftete Leiste (Home, Shorts, Abos, Du),
+Schrift Geist wie YouTube neu. Einstellungen → Darstellung → Design → „Frequency“.
+
+**Palette** (`YtPalettes.Frequency`, alle Textrollen ≥ 4,5:1, `YtFrequencyPaletteTest`):
+Nacht `#0B0A18`, Flächen `#17152B` / `#231F3F`, Text `#F4F2FF` / `#B7B2D6`, Signal-Koralle
+`#FF4D6D` (Akzent, ein Gruß an YouTubes Rot; darauf dunkle Schrift `#170812`), Live `#E0234D`
+(weiße Schrift), Formfarben Aqua `#5BE7DA` und Violett `#B3A6FF`, dazu Bernstein `#FFC46B`.
+
+**Was auf den Klang reagiert** (`ui/yt/FrequencyPulse.kt`, Abbildung in `FrequencyPulseMath.kt`):
+Der Klang kommt über den Vertrag `ui/yt/sound/YtSound.kt` (Pegel, Bass, Mitten, Höhen, Schlag).
+Jeder Kanal wird geglättet (schneller Anstieg, langsameres Abklingen) und in der Geschwindigkeit
+begrenzt: höchstens drei volle Wechsel pro Sekunde, kein Flackern. Alles wird erst beim Zeichnen
+gelesen, nichts setzt die Oberfläche neu zusammen; Schrift bewegt sich nie.
+
+| Teil | reagiert auf | wie |
+| --- | --- | --- |
+| Formen (Kekse um Avatare, Aktionsknöpfe, Filterpille, Kopfzeilen-Knöpfe) | Bass + Pegel | atmen (max. 6 % größer), Kekse werden tiefer, drehen sich langsam mit der Musik |
+| Akzent-Leuchten (Abonnieren, Miniplayer-Naht) | Pegel | Leuchtkraft |
+| Hintergrund-Aura (Startseite, Abos, Du, Shorts) | Bass, Mitten, Höhen, Pegel | drei weiche Lichter (Koralle, Violett, Aqua) wandern und werden heller |
+| Leiste: Form unter dem aktiven Reiter | Schlag (geglättet), Bass | leichter weißer Schleier (max. 18 %), atmet |
+| Miniplayer | Pegel, Schlag, Bass | Leuchten der Naht steigt, ihr Kopf schwillt bei Schlägen, ein Korallenrand im Bild atmet (folgt der Lage des Bildes beim Ziehen; das Video selbst lässt sich nicht verändern), ein Aqua-Keks um Play dreht sich |
+| Videoseite: Aktionsknöpfe | Höhen, Bass | Lichtband läuft darüber, Formen atmen |
+| Zeitleiste des Players | Höhen | gespielter Teil schimmert heller (max. 35 % Richtung Weiß) |
+| Logo in der Kopfzeile | Bass, Mitten, Höhen | Korallen-Keks atmet, drei Balken wie ein kleiner Equalizer |
+
+In Stille, bei pausiertem Video, mit „Animationen der Designs“ aus oder Androids „Animationen
+entfernen“ ruht alles in einem fertigen, ruhigen Zustand; die Analyse ist dann aus, ebenso im
+Hintergrund und in jedem anderen Design. Im Ruhezustand läuft keine Bildschleife.
+
+| Bereich | Frequency |
+| --- | --- |
+| Startseite | „Hör rein.“ mit drei atmenden Formen, Filterreihe mit Aqua-Keks (Feed-Regler) und Korallenpille, Weiterschauen-Widget mit Wellen-Fortschritt (die Welle läuft nur mit Klang; ziehen springt an die Stelle), große Karten in Widget-Ecken mit Keks-Avatar, „Gerade live“ („Alle“ wählt den Live-Filter), Shorts in Formen, „Mehr für dich“ |
+| Kopfzeile | Logo-Keks mit Equalizer, Wortmarke „frequency“ in Geist, Aqua-Keks (Suche), violettes Quadrat (Profil) |
+| Leiste | beschriftet, Nacht wie der Miniplayer (eine Fläche beim Andocken), aktiver Reiter auf einem Keks in seiner Formfarbe |
+| Videoseite | Aufbau von YouTube neu, Aktionen als Formen in Aqua/Violett/Koralle/Bernstein, Avatar im Aqua-Keks, Korallen-Abo-Pille (violett, wenn abonniert), Formen-Welle unter den Reitern, Kapitel als Keks-Bilder, Rand: kleine Bögen mit Korallenlinie |
+| Miniplayer „Pulsnaht“ | Aufsatz wie YouTube neu (Nadel näht die Naht ein, gleiche Vorschau mit „Als Nächstes“), Haptik wie ein Beat (Kick + Hi-Hat) |
+| Suche | Aqua-Feld, in das der Keks fliegt (Formen), Filter von YouTube neu (gewählter auf Koralle), Verlauf als bunte Chips |
+| Shorts | Raster in Formen-Rahmen über der Aura; Shorts-Ansicht: Korallenleiste, drehender Keks als Griff, Seitenwechsel als Kick |
+| Abos / Du | Aura, Kanäle in atmenden Keksen, Karten in Widget-Ecken; Weiterschauen mit Keks-Play und schimmerndem Fortschritt, Sammlungen in Aqua und Violett |
+| Wischen, Halten, Ziehen | Keks dreht sich beim Wischen (Aqua merken, Koralle ausblenden), Kekskacheln beim Halten, Korallenrahmen beim Anheben, Keks-Lupe |
+| Gesehen-Abzeichen, Rückgängig-Pille, Schnellaktionen, „Worauf hast du Lust?“ | Korallen-Keks, Nachtpille mit Korallenrand, Flächen der Palette, bunte Kacheln mit Keks |
+| Klassische Bildschirme | Ecken 20 / 32, Pillenknöpfe, feiner Korallenrand, Icons im Halo, Geist |
+
+Nicht umgesetzt: kein Suchfeld auf der Startseite (also keine Verwandlung in den Such-Knopf wie
+bei Formen); ohne Klang-Engine (Vertrag liefert nur Stille) ist alles im Ruhezustand.

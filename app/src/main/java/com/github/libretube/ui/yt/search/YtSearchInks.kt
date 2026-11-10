@@ -7,7 +7,7 @@ package com.github.libretube.ui.yt.search
  */
 
 /** The design search per design (the names of YtSignature). */
-enum class YtSearchKind { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL }
+enum class YtSearchKind { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL, FREQUENCY }
 
 /**
  * Colours of one design's search.
@@ -131,6 +131,15 @@ object YtSearchPalette {
             rowText = 0xFFF5F3FF.toInt(), rowSecondary = 0xFFB8B5D8.toInt(),
             chip = 0xFF2A2950.toInt(), chipText = 0xFFF5F3FF.toInt(), mark = 0xFFC6F36B.toInt(),
             tiles = listOf(0xFF8B7CF6.toInt(), 0xFFF4A9B8.toInt(), 0xFFE6E1FF.toInt(), 0xFF2A2950.toInt()),
+        )
+        // Frequency: Formen's bright field in aqua with night ink, the rows on the night,
+        // coral marks, chips in coral, violet and amber
+        YtSearchKind.FREQUENCY -> YtSearchInks(
+            scrim = 0xF50B0A18.toInt(), panel = NONE,
+            field = 0xFF5BE7DA.toInt(), fieldText = 0xFF0B0A18.toInt(), fieldHint = 0xFF1C4743.toInt(),
+            rowText = 0xFFF4F2FF.toInt(), rowSecondary = 0xFFB7B2D6.toInt(),
+            chip = 0xFF231F3F.toInt(), chipText = 0xFFF4F2FF.toInt(), mark = 0xFFFF4D6D.toInt(),
+            tiles = listOf(0xFFFF4D6D.toInt(), 0xFFB3A6FF.toInt(), 0xFFFFC46B.toInt(), 0xFF231F3F.toInt()),
         )
         YtSearchKind.FROST -> YtSearchInks(
             scrim = 0x8C2E3B36.toInt(), panel = 0xE63A4A44.toInt(),

@@ -185,6 +185,20 @@ data class YtShortsLook(
                 ),
                 second = tick("shapes", 0.3f),
             )
+            // Frequency: night chips with a coral bar, Formen's turning cookie as the handle,
+            // YouTube neu's Geist; a page lands like a kick with a hi-hat after it
+            YtDesign.FREQUENCY -> YtShortsLook(
+                accent = 0xFFFF4D6D.toInt(), track = WHITE_TRACK,
+                chip = 0xEB0B0A18.toInt(), chipInk = 0xFFF4F2FF.toInt(),
+                radiusDp = -1, barDp = 7, knob = YtShortsKnob.COOKIE,
+                font = YtShortsFont.GEIST, timeFont = YtShortsFont.GEIST_MONO, upper = false,
+                motion = YtShortsMotion.SPRINGY, heart = 0xFFFF4D6D.toInt(),
+                page = YtHapticTexture.of(
+                    "shorts_page_frequency", YtFeedback.SEGMENT_TICK,
+                    YtHapticStep(YtPrimitive.THUD, 0.4f), YtHapticStep(YtPrimitive.TICK, 0.3f, 70),
+                ),
+                second = tick("frequency", 0.3f),
+            )
             // dark frost on sage with an orange bar; the scroll lands with a crackle
             YtDesign.FROST -> YtShortsLook(
                 accent = 0xFFF08A3C.toInt(), track = WHITE_TRACK,

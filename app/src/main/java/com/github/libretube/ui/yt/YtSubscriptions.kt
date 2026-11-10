@@ -317,6 +317,7 @@ private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels:
     val shape: Shape = when (palette.signature) {
         YtSignature.POP -> BlobShape(0.6f, 0.5f, 0.56f, 0.64f)
         YtSignature.SHAPES -> CookieShape(8, 0.06f)
+        YtSignature.FREQUENCY -> CookieShape(9, 0.07f)
         YtSignature.EDITORIAL -> RectangleShape
         YtSignature.KIESEL, YtSignature.CLAY -> RoundedCornerShape(18.dp)
         YtSignature.AFTER -> RoundedCornerShape(4.dp)
@@ -340,6 +341,7 @@ private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels:
             val ring = when (palette.signature) {
                 YtSignature.POP -> PopFrames[i % PopFrames.size]
                 YtSignature.SHAPES -> ShapesTags[i % ShapesTags.size]
+                YtSignature.FREQUENCY -> frequencyTag(palette, i)
                 YtSignature.KIESEL -> if (i % 2 == 0) KieselLavender else KieselPeach
                 YtSignature.CLAY -> ClayLight
                 YtSignature.EDITORIAL -> palette.text
@@ -374,6 +376,8 @@ private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels:
                 Box(
                     Modifier
                         .size(56.dp)
+                        // Frequency: the cookie frames breathe with the bass
+                        .then(if (palette.isFrequency) Modifier.frequencyBreath(0.04f) else Modifier)
                         .then(if (palette.signature == YtSignature.CLAY) Modifier.shadow(6.dp, shape, ambientColor = ClayShadow, spotColor = ClayShadow) else Modifier)
                         .clip(shape)
                         .background(ring)
@@ -831,6 +835,44 @@ private fun SubsCardFace(
                             )
                         }
                         Text(video.uploaderName.orEmpty(), color = KieselGrey, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 11.5.sp), modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+        }
+        YtSignature.FREQUENCY -> {
+            // YouTube neu's card on a raised night in Formen's widget corners; the avatar in a
+            // cookie frame of the card's shape colour that breathes with the bass
+            val shape = RoundedCornerShape(topStart = 22.dp, topEnd = 10.dp, bottomEnd = 22.dp, bottomStart = 22.dp)
+            val tag = frequencyTag(palette, index)
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .ytPressable(shape, onLongClick = onQuick, onClick = onOpen)
+                    .background(palette.surface)
+                    .padding(6.dp),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(shape)
+                        .ytSeenTop(video, palette, shape),
+                ) {
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
+                    DurationBadge(video, tag, palette.ink, palette.font, Modifier.align(Alignment.BottomEnd).ytHeldFade().padding(10.dp))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 6.dp, bottom = 4.dp)) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(42.dp)
+                            .frequencyCookie(tag, lobes = if (index % 2 == 0) 9 else 7, rest = 0.07f),
+                    ) {
+                        AsyncImage(model = video.uploaderAvatar, contentDescription = null, imageLoader = imageLoader, contentScale = ContentScale.Crop, modifier = Modifier.size(34.dp).clip(CircleShape).background(palette.raised))
+                    }
+                    Column(Modifier.padding(start = 10.dp)) {
+                        Text(title, color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 19.sp))
+                        Meta(video, palette.textSecondary, TextStyle(fontFamily = palette.font, fontSize = 12.5.sp), Modifier.padding(top = 3.dp))
                     }
                 }
             }

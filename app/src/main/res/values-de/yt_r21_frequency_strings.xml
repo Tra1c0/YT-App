@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the design "Frequency" (YouTube neu's layout, the shapes of Formen, moves with the sound) -->
+<resources>
+    <string name="yt_design_frequency">Frequency: dunkel, bewegt sich mit dem Klang</string>
+    <string name="yt_frequency_headline">Hör rein.</string>
+    <string name="yt_frequency_continue">Weiterschauen</string>
+    <string name="yt_frequency_more">Mehr für dich</string>
+    <string name="yt_frequency_shorts">Shorts</string>
+</resources>

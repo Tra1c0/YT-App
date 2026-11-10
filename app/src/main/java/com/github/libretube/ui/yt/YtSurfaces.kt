@@ -38,6 +38,9 @@ enum class YtSurfaceStyle {
 
     /** Frost: frosted glass on sage. */
     FROST,
+
+    /** Frequency: raised night with a faint coral rim, the shapes of Formen. */
+    FREQUENCY,
 }
 
 /** The shape of a pill in this design (square in Editorial, a blob in Pop). */
@@ -52,6 +55,13 @@ fun ytCardShape(palette: YtPalette, radius: Int = 16): Shape = when (palette.sur
     YtSurfaceStyle.EDITORIAL -> RectangleShape
     YtSurfaceStyle.CLAY -> RoundedCornerShape((radius * 1.4f).dp)
     YtSurfaceStyle.POP -> RoundedCornerShape((radius * 1.3f).dp)
+    // Frequency: Formen's widget corners, one of them tucked in
+    YtSurfaceStyle.FREQUENCY -> RoundedCornerShape(
+        topStart = (radius * 1.4f).dp,
+        topEnd = (radius * 0.6f).dp,
+        bottomEnd = (radius * 1.4f).dp,
+        bottomStart = (radius * 1.4f).dp,
+    )
     else -> RoundedCornerShape(radius.dp)
 }
 
@@ -77,6 +87,10 @@ fun Modifier.ytSurface(palette: YtPalette, shape: Shape): Modifier = when (palet
         .clip(shape)
         .background(Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x1FFFFFFF))))
         .border(1.dp, Color(0x59FFFFFF), shape)
+    YtSurfaceStyle.FREQUENCY -> this
+        .clip(shape)
+        .background(palette.raised)
+        .border(1.dp, palette.accent.copy(alpha = 0.22f), shape)
     YtSurfaceStyle.FLAT -> this
         .clip(shape)
         .background(palette.surface)
@@ -93,7 +107,7 @@ fun ytSurfaceTones(palette: YtPalette, under: Int): IntArray {
         YtSurfaceStyle.CLAY -> on(ytDayNight(Color(0xFFFBEDE2), Color(0xFF46352E)), palette.surface)
         YtSurfaceStyle.GLASS -> on(ytDayNight(Color(0x9EFFFFFF), Color(0x4D6FB5AA)), ytDayNight(Color(0x5CFFFFFF), Color(0x296FB5AA)))
         YtSurfaceStyle.EDITORIAL -> on(palette.background)
-        YtSurfaceStyle.POP, YtSurfaceStyle.SHAPES -> on(palette.raised)
+        YtSurfaceStyle.POP, YtSurfaceStyle.SHAPES, YtSurfaceStyle.FREQUENCY -> on(palette.raised)
         YtSurfaceStyle.FROST -> on(Color(0x40FFFFFF), Color(0x1FFFFFFF))
         YtSurfaceStyle.FLAT -> on(palette.surface)
     }

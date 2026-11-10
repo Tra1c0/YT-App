@@ -68,6 +68,7 @@ class YtPlayerHudStyle private constructor(
                 YtSignature.GLASS, YtSignature.SHAPES -> font(context, R.font.font_google_sans_500)
                 YtSignature.FROST, YtSignature.KIESEL -> font(context, R.font.font_jakarta_600)
                 YtSignature.SIDE -> font(context, R.font.font_figtree_600)
+                // YouTube neu, Movo, After and Frequency: Geist
                 else -> font(context, R.font.font_geist_600)
             }
             // digits that do not shift while they count
@@ -109,6 +110,12 @@ class YtPlayerHudStyle private constructor(
                 YtSignature.CLAY, YtSignature.POP, YtSignature.KIESEL -> YtPlayerHudStyle(
                     accent, ColorUtils.setAlphaComponent(palette.surface.toArgb(), 0xF2), text, secondary,
                     0, 0f, 0.5f, textFont, mono, stiffness, damping,
+                )
+
+                // Frequency: its night, a little see-through, with a faint coral rim
+                YtSignature.FREQUENCY -> YtPlayerHudStyle(
+                    accent, ColorUtils.setAlphaComponent(palette.background.toArgb(), 0xE6), text, secondary,
+                    ColorUtils.setAlphaComponent(palette.accent.toArgb(), 0x66), 1f, 0.5f, textFont, mono, stiffness, damping,
                 )
 
                 // the dark designs: their background, a little see-through

@@ -114,7 +114,7 @@ data class YtPalette(
 )
 
 /** The designs, as the shared screens tell them apart. */
-enum class YtSignature { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL }
+enum class YtSignature { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL, FREQUENCY }
 
 object YtPalettes {
     /** "YouTube, neu gedacht": graphite, warm white, YouTube red, lime and lavender collections. */
@@ -340,6 +340,33 @@ val YtPalettes.Kiesel: YtPalette
         surfaceStyle = YtSurfaceStyle.FLAT,
     )
 
+/**
+ * "Frequency": the layout of YouTube neu with the shapes of Formen, on a deep night. One vivid
+ * signal coral (a nod to YouTube's red, dark type on it), aqua and violet as the shape colours,
+ * amber as a third tag. Everything moves with the sound (FrequencyPulse); the colours never do,
+ * so every text role keeps its contrast (YtFrequencyPaletteTest).
+ */
+val YtPalettes.Frequency: YtPalette
+    get() = YtPalette(
+        signature = YtSignature.FREQUENCY,
+        background = Color(0xFF0B0A18),
+        surface = Color(0xFF17152B),
+        raised = Color(0xFF231F3F),
+        text = Color(0xFFF4F2FF),
+        textSecondary = Color(0xFFB7B2D6),
+        accent = Color(0xFFFF4D6D),
+        onAccent = Color(0xFF170812),
+        live = Color(0xFFE0234D),
+        // the shape colours: aqua and violet
+        lime = Color(0xFF5BE7DA),
+        lavender = Color(0xFFB3A6FF),
+        ink = Color(0xFF0B0A18),
+        pink = Color(0xFFFFC46B),
+        font = YtFonts.geist,
+        motion = YtMotionStyle.SPRINGY,
+        surfaceStyle = YtSurfaceStyle.FREQUENCY,
+    )
+
 /*
  * YT: the dark mode of the light designs (YtDesignDark). Same roles, same type, motion and
  * surfaces; only the colours move to a dark variant of the design's own palette. Every text
@@ -450,7 +477,8 @@ val YtDesign.palette: YtPalette?
             YtDesign.SHAPES -> YtPalettes.Shapes
             YtDesign.FROST -> YtPalettes.Frost
             YtDesign.KIESEL -> if (night) YtPalettes.KieselDark else YtPalettes.Kiesel
-            else -> null
+            YtDesign.FREQUENCY -> YtPalettes.Frequency
+            YtDesign.STANDARD -> null
         }
     }
 
