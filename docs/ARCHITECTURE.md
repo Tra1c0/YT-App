@@ -16,7 +16,7 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
 
 ## Designs
 
-- `J/helpers/YtDesign.kt`: enum of the 12 designs (key, overlay style, brand font, `light`).
+- `J/helpers/YtDesign.kt`: enum of the 13 designs (key, overlay style, brand font, `light`).
   Pref `yt_design`. `STANDARD` = classic LibreTube look; YT code mostly checks `palette == null`.
 - `Y/YtTheme.kt`: `YtPalette` per design (+ dark variants of the light designs, `ytDayNight`),
   `YtFonts`, `ytScale` (width scaling, see `docs/DESIGN-MASSE.md`), `YtTheme()` composable.
@@ -316,6 +316,21 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   `ytHeldFade()` for chips/play buttons; `YtCardDrag.held` is a set of tokens (pure `YtHeldSet`).
   Time left from the real position (`YtSeenMark.left`, `pickFit` for small thumbnails).
   Pitfall: anything drawn on the thumbnail image sits under the Box's later children.
+
+## Round 21 notes
+
+- Sound engine: contract `Y/sound/YtSound.kt` (`YtSoundFrame` level/bass/mid/high/punch/playing,
+  `YtSound.frame` read in draw/layout only, `setReactive`). Analysis in `YtAudioTap` (shares the
+  wave's FFT, runs while `soundListening`), features `J/helpers/YtSoundFeatures.kt` (K-weighted
+  level, adaptive ranges, spectral-flux onset, silence gate), main-thread `Y/sound/YtSoundEngine.kt`
+  (Choreographer, heard-moment sync via `leadMs`/`startOf`, idle when paused/background/motion off,
+  half rate in power saver), shaping `Y/sound/YtSoundShaping.kt` (envelopes, punch budget 330 ms,
+  `YtSwingGuard` ≤ 3 swings/s), player hook `J/services/YtSoundModule.kt`.
+- Frequency (13th design): `YtDesign.FREQUENCY`, palette `YtPalettes.Frequency`, `YtSignature.FREQUENCY`,
+  `Y/FrequencyHome.kt`, `FrequencyChrome.kt` (logo), `FrequencyTimeBar.kt`, `Y/mini/YtMiniFrequency*.kt`,
+  pulse `Y/FrequencyPulse.kt` (+ pure `FrequencyPulseMath.kt`, slew-limited). `YtDesignRegistryTest`
+  checks every design has palette, signature, mini player, nav, search kind, picker entry.
+  A new design must be added there and everywhere the compiler/registry test points to.
 
 ## Open points
 

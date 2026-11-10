@@ -7,13 +7,14 @@ im Einzelnen in [DESIGNS.md](DESIGNS.md).
 Status: **E** = im Emulator geprüft · **T** = durch Tests abgedeckt · **–** = noch nicht geprüft.
 Getestet auf einem echten Handy wurde bisher nur, was du selbst benutzt hast.
 
-Stand: Build 105.
+Stand: Build 116.
 
 ## Designs und Aussehen
 
 | Funktion | Was sie macht | Status |
 | --- | --- | --- |
-| 12 Designs | Standard, YouTube neu, Movo, After, Side, Clay, Editorial, Glas, Pop, Formen, Frost, Kiesel. Jedes hat eigene Startseite, Videoseite, Leiste, Kopfzeile, Miniplayer, Farben, Schriften, Animationen und Haptik. Einstellungen → Darstellung → Design. | E |
+| 13 Designs | Standard, YouTube neu, Movo, After, Side, Clay, Editorial, Glas, Pop, Formen, Frost, Kiesel, Frequency. Jedes hat eigene Startseite, Videoseite, Leiste, Kopfzeile, Miniplayer, Farben, Schriften, Animationen und Haptik. Einstellungen → Darstellung → Design. | E |
+| Frequency | 13. Design: Aufbau von YouTube neu mit den Formen von Formen auf tiefer Nacht (Koralle, Aqua, Violett). Formen, Leuchten, Hintergrund-Aura, Leiste, Miniplayer, Zeitleiste und Logo reagieren sanft auf den Klang (Lautstärke, Bass/Mitten/Höhen, Anschläge; höchstens 3 Wechsel pro Sekunde); Schrift bleibt ruhig. Ohne Ton, im Hintergrund oder mit „Animationen der Designs“ aus ruht alles. | T |
 | Hell / Dunkel / System | Für die hellen Designs (Clay, Editorial, Glas, Pop, Kiesel): Hell, Dunkel oder dem Handy folgen. Nur die Farben ändern sich. | T |
 | Kein Neustart beim Wechsel | Design, Hell/Dunkel und Animationen greifen sofort; nur wenn gerade ein Video spielt, kommt noch der Neustart-Dialog. Es werden nur Optionen gezeigt, die zum Design passen. | T |
 | Animationen der Designs | Schaltet alle Design-Bewegungen ab, Zustände wechseln dann direkt. | E |

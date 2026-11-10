@@ -20,6 +20,10 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
   Platte mit harter Kante; keine „unsichtbare Wand“ (Abschneide-Linie nur beim Wegwerfen/Zurückholen).
   Gemeinsamer Teil + Feinschliff je Design (12), am besten mit 2 Pilot-Designs zuerst (L, 3–4 Runden)
 
+- **Musikmodus für die übrigen Designs:** die Oberfläche jedes Designs reagiert auf die Musik, mit
+  eigener „Tanz-Sprache“ je Design. Klang-Motor ist fertig (mit Frequency gebaut); offen: noch nicht
+  freigegeben (L)
+
 ## Eventuell / später (noch nicht entschieden)
 
 - **10** Warteschlange nach Neustart der App wiederherstellen, mit Position (M) – pausiert

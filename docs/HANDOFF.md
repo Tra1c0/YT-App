@@ -8,14 +8,16 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 115 (watched bar on hold everywhere, pill on top). 114: mini player never
+- Latest release: build 117 (Frequency design + sound engine). 115: watched bar on hold everywhere. 114: mini player never
   parked half behind the bar. 111: no hard edge after
   a design switch + throw-away stays behind the bar (run 110 cancelled by CI concurrency).
 - NEXT SESSION (user's quota resets 2026-11-11), agreed to do then:
   1. (done in 114: mini player half behind the bar — guarded, cause inferred from code.)
   2. (done in 113: time left on the grown bar.)
-  3. Music mode ("Theme tanzt mit der Musik") was discussed for Wednesday: engine + 2 pilot designs
-     (Pop, Glas), estimate 5–6 rounds total; NOT yet confirmed in ROADMAP — ask before starting. 109: guide buttons jump to the
+  3. Music mode for the other designs: the user wanted the separate theme first — done as
+     "Frequency" (build 117). The sound engine is ready (Round 21 notes); the music mode for the 12
+     other designs is NOT started — ask before starting. Tune Frequency's amplitudes after the
+     user hears it. 109: guide buttons jump to the
   setting. 108: guide in settings. 107: release notes in the update dialog. 106: landscape page after
   fullscreen, stuck minimize drag. 105: watch
   position ledger. 104: battery review fixes. 103: battery cue preview. 102 = round 18 ( chapter double tap, battery quality cap + cue, storage
@@ -117,6 +119,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 117: Frequency (13th design, reacts to sound) + sound engine.
 
 - 115: watched bar on hold: all cards incl. Glas/Abos/shorts, pill above chips/gradients, per-instance.
 

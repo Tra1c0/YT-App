@@ -6,7 +6,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 
 /**
- * YT: what the sound is doing right now, for a UI that reacts to it (the Soundspace design, later
+ * YT: what the sound is doing right now, for a UI that reacts to it (the Frequency design, later
  * the music mode). All values are smoothed and normalised to 0..1, safe to map straight onto scale,
  * glow, colour or blur. [punch] is a short transient (a hit, a consonant), decaying quickly;
  * [level] is the overall loudness envelope. [playing] is false while paused, stopped or silent.
