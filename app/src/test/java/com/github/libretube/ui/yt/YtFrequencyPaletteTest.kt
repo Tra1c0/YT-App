@@ -55,15 +55,20 @@ class YtFrequencyPaletteTest {
 
     @Test
     fun `text reads where the aura is brightest`() {
-        // the aura's lights at their peak, stacked on the night (FrequencyPulse.frequencyAura)
+        // the aura's lights at their peak, stacked on the night (FrequencyBackdrop), then a
+        // blob of any colour at its peak and the spectrum wave's fill on top: the worst spot
         val a = FrequencyPulseMath.AURA_PEAK
-        var bright = p.background.toArgb()
-        bright = YtContrast.over(p.accent.copy(alpha = a * 0.7f).toArgb(), bright)
-        bright = YtContrast.over(p.lavender.copy(alpha = a * 0.55f).toArgb(), bright)
-        bright = YtContrast.over(p.lime.copy(alpha = a * 0.35f).toArgb(), bright)
-        for ((name, fg) in listOf("text" to p.text, "secondary" to p.textSecondary)) {
-            val ratio = YtContrast.ratio(fg.toArgb(), bright)
-            assertTrue("$name on the aura: %.2f".format(ratio), ratio >= YtContrast.BODY)
+        var aura = p.background.toArgb()
+        aura = YtContrast.over(p.accent.copy(alpha = a * 0.7f).toArgb(), aura)
+        aura = YtContrast.over(p.lavender.copy(alpha = a * 0.55f).toArgb(), aura)
+        aura = YtContrast.over(p.lime.copy(alpha = a * 0.35f).toArgb(), aura)
+        for (blob in listOf(p.accent, p.lavender, p.lime, p.pink)) {
+            var bright = YtContrast.over(blob.copy(alpha = FrequencyPulseMath.BLOB_PEAK).toArgb(), aura)
+            bright = YtContrast.over(p.accent.copy(alpha = FrequencyPulseMath.WAVE_FILL).toArgb(), bright)
+            for ((name, fg) in listOf("text" to p.text, "secondary" to p.textSecondary)) {
+                val ratio = YtContrast.ratio(fg.toArgb(), bright)
+                assertTrue("$name on the aura with a blob: %.2f".format(ratio), ratio >= YtContrast.BODY)
+            }
         }
     }
 

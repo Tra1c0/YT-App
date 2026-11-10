@@ -401,26 +401,45 @@ Nacht `#0B0A18`, Flächen `#17152B` / `#231F3F`, Text `#F4F2FF` / `#B7B2D6`, Sig
 `#FF4D6D` (Akzent, ein Gruß an YouTubes Rot; darauf dunkle Schrift `#170812`), Live `#E0234D`
 (weiße Schrift), Formfarben Aqua `#5BE7DA` und Violett `#B3A6FF`, dazu Bernstein `#FFC46B`.
 
-**Was auf den Klang reagiert** (`ui/yt/FrequencyPulse.kt`, Abbildung in `FrequencyPulseMath.kt`):
-Der Klang kommt über den Vertrag `ui/yt/sound/YtSound.kt` (Pegel, Bass, Mitten, Höhen, Schlag).
-Jeder Kanal wird geglättet (schneller Anstieg, langsameres Abklingen) und in der Geschwindigkeit
-begrenzt: höchstens drei volle Wechsel pro Sekunde, kein Flackern. Alles wird erst beim Zeichnen
-gelesen, nichts setzt die Oberfläche neu zusammen; Schrift bewegt sich nie.
+**Was auf den Klang reagiert** (`ui/yt/FrequencyPulse.kt`, Abbildungen in `FrequencyPulseMath.kt`
+und `FrequencyMotion.kt`, Visualizer in `FrequencyVisuals.kt`; seit Runde 21b deutlich stärker):
+Der Klang kommt über den Vertrag `ui/yt/sound/YtSound.kt`. Zwei Arten von Kanälen, bewusst
+getrennt: **Bewegung** (Größe, Lage, Drehung, Form, Balken) folgt den ungebremsten Werten
+`YtSound.motion` und dem Spektrum `YtSound.bands` (16 Bänder) schnell und wird auf den Bereich
+gedehnt, in dem sich die Musik gerade bewegt (`FrequencyStretch`), damit auch gleichmäßig laute
+Musik sichtbar pumpt. **Helligkeit** (Leuchten, Schleier, Zeitleiste, Aura-Licht) kommt aus dem
+geschützten `YtSound.frame` und bleibt bei höchstens drei vollen Wechseln pro Sekunde; Licht-
+streifen starten höchstens alle 0,45 s. Alles wird erst beim Zeichnen gelesen (eigene Ebenen,
+keine Neuzusammensetzung, keine Allokation pro Bild); Schrift bewegt sich nie.
 
-| Teil | reagiert auf | wie |
-| --- | --- | --- |
-| Formen (Kekse um Avatare, Aktionsknöpfe, Filterpille, Kopfzeilen-Knöpfe) | Bass + Pegel | atmen (max. 6 % größer), Kekse werden tiefer, drehen sich langsam mit der Musik |
-| Akzent-Leuchten (Abonnieren, Miniplayer-Naht) | Pegel | Leuchtkraft |
-| Hintergrund-Aura (Startseite, Abos, Du, Shorts) | Bass, Mitten, Höhen, Pegel | drei weiche Lichter (Koralle, Violett, Aqua) wandern und werden heller |
-| Leiste: Form unter dem aktiven Reiter | Schlag (geglättet), Bass | leichter weißer Schleier (max. 18 %), atmet |
-| Miniplayer | Pegel, Schlag, Bass | Leuchten der Naht steigt, ihr Kopf schwillt bei Schlägen, ein Korallenrand im Bild atmet (folgt der Lage des Bildes beim Ziehen; das Video selbst lässt sich nicht verändern), ein Aqua-Keks um Play dreht sich |
-| Videoseite: Aktionsknöpfe | Höhen, Bass | Lichtband läuft darüber, Formen atmen |
-| Zeitleiste des Players | Höhen | gespielter Teil schimmert heller (max. 35 % Richtung Weiß) |
-| Logo in der Kopfzeile | Bass, Mitten, Höhen | Korallen-Keks atmet, drei Balken wie ein kleiner Equalizer |
+| Teil | Effekt | reagiert auf | Stärke |
+| --- | --- | --- | --- |
+| Kekse (Avatare, Filter-Keks, Weiterschauen, Abos-Kanäle, Shorts-Kopf) | wachsen, federn, drehen, verwandeln sich (Keks → Blob → Squircle → Kreis) | Beat (Bass + Pegel), Schläge | bis 16 % größer, Morph-Zyklus 4–12 s |
+| Aktionsknöpfe der Videoseite | Formen-Morph, Wachsen, Federsprung nacheinander, Lichtstreifen | Beat, Schläge, Höhen-Sprünge | bis 18 % größer, 5 dp Sprung, Streifen ≤ 32 % Weiß |
+| Drei Formen neben „Hör rein.“ / Mediathek-Überschrift | springen nacheinander, verwandeln sich | Schläge, Beat | 20 %, 5 dp |
+| Logo in der Kopfzeile | Keks wächst, morpht, Balken hüpfen nacheinander, Schleier | Bass/Mitten/Höhen, Schläge | 20 %, Balken über volle Höhe |
+| Kopfzeile | Spektrum-Balken zwischen Wortmarke und Knöpfen, Knöpfe federn | 16 Bänder, Schläge | volle Höhe bei lauten Stellen |
+| Leiste | Spektrum-Welle an der Unterkante, Icons hüpfen nacheinander, aktiver Keks morpht | Bänder, Schläge, Beat | Welle bis 10 dp, 4 dp Sprung |
+| Miniplayer | Spektrum-Welle auf der Naht, morphender Ring mit Spektrum-Strahlen um Play, Leuchten über dem gespielten Teil, Kopf schwillt | Bänder, Beat, Pegel, Schläge | Welle 8 dp, Strahlen 7 dp |
+| Hintergrund (Startseite, Mediathek, Shorts) | drei Lichter wandern, zähe Blobs fließen zusammen (Bass) und trennen sich (Mitten), große weiche Spektrum-Welle unten | Bass, Mitten, Höhen, Pegel | Blobs mit RuntimeShader ab Android 13, sonst Verläufe; Helligkeit niedrig, damit Text 4,5:1 behält |
+| Abonnieren-Pille | Leuchten wächst | Pegel (geschützt), Beat | Alpha 0,12–0,35 |
+| Erste Karte, Weiterschauen-Widget | Lichtstreifen | Schläge, Höhen-Sprünge | schwach (Text bleibt lesbar) |
+| Zeitleiste des Players | gespielter Teil Richtung Weiß | Höhen + Lichtstreifen (geschützt) | max. 45 % |
+
+**Je nach Handy** (`FrequencyTiers.pick`, alle 5 s neu): *hoch* (≥ 6 GB RAM, ≥ 6 Kerne, Android
+10+, nicht heiß) alles in der Bildrate des Displays, Blobs per Shader ab Android 13; *mittel*
+(weniger RAM/Kerne, mäßig warm) 3 Blobs aus Verläufen, 12 Balken, höchstens 60 Schritte/s;
+*niedrig* (Energiesparmodus, sehr warm, wenig RAM) nur Wachsen und Visualizer (8 Balken), kein
+Morph, kein Federn, keine Lichtstreifen, keine Blobs, halbe Rate (≈ 30/s). Größen in dp der
+Designs (wachsen mit der Bildschirmbreite) oder Anteilen der Fläche.
 
 In Stille, bei pausiertem Video, mit „Animationen der Designs“ aus oder Androids „Animationen
-entfernen“ ruht alles in einem fertigen, ruhigen Zustand; die Analyse ist dann aus, ebenso im
-Hintergrund und in jedem anderen Design. Im Ruhezustand läuft keine Bildschleife.
+entfernen“ (Skala 0; eine verkürzte Skala wie 0,5x zählt als an) ruht alles in einem fertigen,
+ruhigen Zustand (Balken als sanfter Bogen, Formen in ihrer eigenen Gestalt); die Analyse ist dann
+aus, ebenso im Hintergrund und in jedem anderen Design. Im Ruhezustand läuft keine Bildschleife.
+Diagnose (Einstellungen → Diagnose) zeigt live die Zeilen „Sound“ (hört die Oberfläche zu, Player,
+spielt, vorne, Bewegung, Analyse, Engine läuft, Bilder/s, Maxima der letzten 10 s) und „Frequency“
+(Halter, Schleife, Stufe).
 
 | Bereich | Frequency |
 | --- | --- |

@@ -376,8 +376,8 @@ private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels:
                 Box(
                     Modifier
                         .size(56.dp)
-                        // Frequency: the cookie frames breathe with the bass
-                        .then(if (palette.isFrequency) Modifier.frequencyBreath(0.04f) else Modifier)
+                        // Frequency: the cookie frames grow with the beat and bounce one after another
+                        .then(if (palette.isFrequency) Modifier.frequencyBreath(0.1f, index = i) else Modifier)
                         .then(if (palette.signature == YtSignature.CLAY) Modifier.shadow(6.dp, shape, ambientColor = ClayShadow, spotColor = ClayShadow) else Modifier)
                         .clip(shape)
                         .background(ring)
@@ -866,7 +866,7 @@ private fun SubsCardFace(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .size(42.dp)
-                            .frequencyCookie(tag, lobes = if (index % 2 == 0) 9 else 7, rest = 0.07f),
+                            .frequencyCookie(tag, lobes = if (index % 2 == 0) 9 else 7, rest = 0.07f, index = index),
                     ) {
                         AsyncImage(model = video.uploaderAvatar, contentDescription = null, imageLoader = imageLoader, contentScale = ContentScale.Crop, modifier = Modifier.size(34.dp).clip(CircleShape).background(palette.raised))
                     }

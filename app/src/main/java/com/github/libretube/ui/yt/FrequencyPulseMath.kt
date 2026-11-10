@@ -12,8 +12,9 @@ import kotlin.math.exp
  * - Every channel follows its target through [follow]: a quick attack, a slower release and a
  *   slew limit of [MAX_SLEW] per second. A full swing up and back takes at least 1/3 s, so no
  *   brightness or size changes faster than 3 times a second, whatever the sound does (no strobe).
- * - Every visual mapping is clamped to a small amplitude ([BREATH_MAX], [PULSE_LIFT_MAX], ...),
- *   so shapes breathe and light lifts, but nothing jumps and text never moves.
+ * - Every brightness mapping is clamped ([PULSE_LIFT_MAX], [GLOW_PEAK], [AURA_PEAK], ...), so
+ *   light lifts clearly but nothing strobes; text never moves. The larger motion (size,
+ *   bounce, morph, bars) lives in FrequencyMotion.kt and follows the unguarded motion values.
  * Silence (all inputs 0) maps to the rest values: the design looks finished without sound.
  */
 object FrequencyPulseMath {
@@ -32,8 +33,8 @@ object FrequencyPulseMath {
     /** The most a shape grows with the sound (6 %). */
     const val BREATH_MAX = 0.06f
 
-    /** The most the nav's selected indicator brightens on a hit (a white veil of 18 %). */
-    const val PULSE_LIFT_MAX = 0.18f
+    /** The most a shape brightens on a hit (a white veil of 25 %). */
+    const val PULSE_LIFT_MAX = 0.25f
 
     /** How far a cookie's scallops deepen with the bass, on top of their rest depth. */
     const val DEPTH_MAX = 0.05f
@@ -43,12 +44,24 @@ object FrequencyPulseMath {
 
     /** The glow's alpha at rest and at its loudest. */
     const val GLOW_REST = 0.16f
-    const val GLOW_PEAK = 0.5f
+    const val GLOW_PEAK = 0.6f
 
     /** The background aura's alpha at rest and at its loudest, and how far its lights drift. */
     const val AURA_REST = 0.14f
-    const val AURA_PEAK = 0.24f
+    const val AURA_PEAK = 0.2f
     const val AURA_DRIFT = 0.07f
+
+    /**
+     * The gooey blobs' alpha at rest and at their loudest, and the background wave's fill: kept
+     * low so the secondary text still reads 4.5:1 where aura, a blob and the wave all meet at
+     * their brightest (YtFrequencyPaletteTest). They show by moving, not by glaring.
+     */
+    const val BLOB_REST = 0.045f
+    const val BLOB_PEAK = 0.09f
+    const val WAVE_FILL = 0.05f
+
+    /** Alpha of the blobs at [glow] (guarded level). */
+    fun blobAlpha(glow: Float): Float = BLOB_REST + (BLOB_PEAK - BLOB_REST) * clamp01(glow)
 
     /** NaN and anything outside 0..1 as the nearest value in 0..1. */
     fun clamp01(x: Float): Float = if (x.isNaN()) 0f else x.coerceIn(0f, 1f)
@@ -99,8 +112,11 @@ object FrequencyPulseMath {
     /** The white veil over the nav's selected indicator at [punch] (rate-safe input). */
     fun pulseLift(punch: Float): Float = PULSE_LIFT_MAX * clamp01(punch)
 
-    /** Alpha of a shimmer band at [high]: nothing in silence, at most 0.35. */
-    fun shimmerAlpha(high: Float): Float = 0.35f * clamp01(high)
+    /** The most the time bar's played part lifts towards white. */
+    const val SHIMMER_MAX = 0.45f
+
+    /** Alpha of a shimmer at [high]: nothing in silence, at most [SHIMMER_MAX]. */
+    fun shimmerAlpha(high: Float): Float = SHIMMER_MAX * clamp01(high)
 
     /** Alpha of the background aura at [level]. */
     fun auraAlpha(level: Float): Float = AURA_REST + (AURA_PEAK - AURA_REST) * clamp01(level)

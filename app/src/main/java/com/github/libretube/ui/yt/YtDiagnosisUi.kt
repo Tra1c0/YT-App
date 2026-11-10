@@ -48,14 +48,39 @@ object YtDiagnosisUi {
         val text = YtDiagnosis.text(context)
         val crashes = YtCrashLog.allText(context)
         val builder = MaterialAlertDialogBuilder(context)
+        val scroll = textView(builder.context, text)
+        val view = scroll.getChildAt(0) as TextView
+        // the sound line is live: read again twice a second while the page is open
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        val soundRow = "Sound: "
+        val refresh = object : Runnable {
+            override fun run() {
+                val now = view.text.toString()
+                val at = now.indexOf(soundRow)
+                if (at >= 0) {
+                    val end = now.indexOf('\n', at).let { if (it < 0) now.length else it }
+                    view.text = now.substring(0, at) + soundRow + YtDiagnosis.sound() + now.substring(end)
+                }
+                handler.postDelayed(this, 500L)
+            }
+        }
+        view.addOnAttachStateChangeListener(object : android.view.View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: android.view.View) {
+                handler.post(refresh)
+            }
+
+            override fun onViewDetachedFromWindow(v: android.view.View) {
+                handler.removeCallbacks(refresh)
+            }
+        })
         builder.setTitle(R.string.yt_diag_title)
-            .setView(textView(builder.context, text))
-            .setPositiveButton(R.string.yt_diag_copy) { _, _ -> copy(context, text) }
+            .setView(scroll)
+            .setPositiveButton(R.string.yt_diag_copy) { _, _ -> copy(context, view.text.toString()) }
             .setNegativeButton(R.string.yt_diag_close, null)
         if (crashes.isNotEmpty()) {
             builder.setNeutralButton(R.string.yt_diag_crashes) { _, _ -> showCrashes(context, crashes) }
         } else {
-            builder.setNeutralButton(R.string.yt_diag_share) { _, _ -> share(context, text) }
+            builder.setNeutralButton(R.string.yt_diag_share) { _, _ -> share(context, view.text.toString()) }
         }
         builder.show()
     }

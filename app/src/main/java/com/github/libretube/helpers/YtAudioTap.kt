@@ -226,6 +226,13 @@ object YtAudioTap {
         return (heard - N / 2).toDouble() / HOP
     }
 
+    /**
+     * The [BANDS] shown levels at frame [at] (from [frameAt]/[latestFrame]), blended between
+     * its two neighbours; false when that frame is not kept. Valid for the sound-reactive UI
+     * only while the wave or [soundListening] has the analysis running.
+     */
+    fun bandsAtFrame(at: Double, out: FloatArray): Boolean = blend(at, out, frames, BANDS)
+
     /** The [FEATURES] sound features at frame [at], blended between its two neighbours. */
     fun soundAt(at: Double, out: FloatArray): Boolean = blend(at, out, features, FEATURES)
 

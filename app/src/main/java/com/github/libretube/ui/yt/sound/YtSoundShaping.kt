@@ -189,8 +189,14 @@ class YtSoundShaper {
     private val punch = YtPunch()
     private val guards = Array(FIELDS) { YtSwingGuard() }
 
-    /** level, bass, mid, high, punch as published (0..1). */
+    /** level, bass, mid, high, punch as published (0..1), each through the flash guard. */
     val out = FloatArray(FIELDS)
+
+    /**
+     * The same values before the flash guard (enveloped and faded, 0..1): for motion only
+     * (size, position, rotation, shape), which may follow the sound faster than brightness.
+     */
+    val motion = FloatArray(FIELDS)
 
     var fade = 0f
         private set
@@ -200,13 +206,14 @@ class YtSoundShaper {
     private var playingFor = 0f
 
     /** True when everything has come to rest at zero: SILENT, the engine may stop. */
-    val settled: Boolean get() = fade == 0f && out.all { it == 0f }
+    val settled: Boolean get() = fade == 0f && out.all { it == 0f } && motion.all { it == 0f }
 
     fun reset() {
         envelopes.forEach { it.reset() }
         punch.reset()
         guards.forEach { it.reset() }
         out.fill(0f)
+        motion.fill(0f)
         fade = 0f
         playing = false
         playingFor = 0f
@@ -241,7 +248,9 @@ class YtSoundShaper {
     }
 
     private fun shape(field: Int, value: Float, dt: Float): Float {
-        val guarded = guards[field].step((value * fade).coerceIn(0f, 1f), dt)
+        val faded = (value * fade).coerceIn(0f, 1f)
+        motion[field] = if (faded < SNAP) 0f else faded
+        val guarded = guards[field].step(faded, dt)
         return if (guarded < SNAP) 0f else guarded
     }
 
@@ -270,5 +279,88 @@ class YtSoundShaper {
         const val PLAY_ON = 0.04f
         const val PLAY_OFF = 0.015f
         const val PLAY_DWELL_S = 0.3f
+    }
+}
+
+/**
+ * The spectrum ([count] bands, bass to treble, 0..1 as YtSpectrum shows them) for a visualizer:
+ * each band through a quick envelope and the shaper's fade, so bars rise with a hit and fall
+ * softly. A motion channel (bar heights, wave shapes): no flash guard, never map it onto the
+ * brightness of a large area. Main thread, no allocation per frame.
+ */
+class YtBandShaper(val count: Int) {
+    private val envelopes = Array(count) { YtEnvelope(attackS = 0.02f, releaseS = 0.12f, easeS = 0.02f) }
+
+    /** The shaped bands (0..1). */
+    val out = FloatArray(count)
+
+    val settled: Boolean get() = out.all { it == 0f }
+
+    fun reset() {
+        envelopes.forEach { it.reset() }
+        out.fill(0f)
+    }
+
+    /** One display frame: [bands] of the heard moment (0 where unknown), scaled by [fade]. */
+    fun step(dt: Float, active: Boolean, bands: FloatArray, fade: Float) {
+        val d = dt.coerceIn(0f, YtSoundShaper.MAX_DT)
+        for (b in 0 until count) {
+            val x = if (active && b < bands.size) bands[b] else 0f
+            val target = if (x.isNaN()) 0f else x.coerceIn(0f, 1f)
+            val v = envelopes[b].step(target, d) * (if (fade.isNaN()) 0f else fade.coerceIn(0f, 1f))
+            out[b] = if (v < YtSoundShaper.SNAP) 0f else v.coerceIn(0f, 1f)
+        }
+    }
+}
+
+/**
+ * What the sound engine did lately, for the diagnosis page: frames per second and the loudest
+ * level, bass, high and punch of the last [seconds] seconds it ran (in one-second buckets of
+ * wall time). Pure, no allocation per frame.
+ */
+class YtSoundStats(private val seconds: Int = 10) {
+    private val ids = LongArray(seconds) { -1 }
+    private val counts = IntArray(seconds)
+    private val maxima = Array(seconds) { FloatArray(4) }
+
+    /** Wall time (ns) of the last frame recorded, 0 before the first. */
+    var lastNs = 0L
+        private set
+
+    /** Records one published frame at [nowNs]. */
+    fun frame(nowNs: Long, level: Float, bass: Float, high: Float, punch: Float) {
+        val id = nowNs / 1_000_000_000L
+        val slot = Math.floorMod(id, seconds.toLong()).toInt()
+        if (ids[slot] != id) {
+            ids[slot] = id
+            counts[slot] = 0
+            maxima[slot].fill(0f)
+        }
+        counts[slot]++
+        val m = maxima[slot]
+        if (level > m[0]) m[0] = level
+        if (bass > m[1]) m[1] = bass
+        if (high > m[2]) m[2] = high
+        if (punch > m[3]) m[3] = punch
+        lastNs = nowNs
+    }
+
+    /** Frames in the last whole second before the last frame (0 if it did not run then). */
+    fun fps(): Int {
+        if (lastNs == 0L) return 0
+        val id = lastNs / 1_000_000_000L - 1
+        val slot = Math.floorMod(id, seconds.toLong()).toInt()
+        return if (ids[slot] == id) counts[slot] else 0
+    }
+
+    /** The loudest of [field] (0 level, 1 bass, 2 high, 3 punch) in the [seconds] up to the last frame. */
+    fun max(field: Int): Float {
+        if (lastNs == 0L) return 0f
+        val last = lastNs / 1_000_000_000L
+        var best = 0f
+        for (i in 0 until seconds) {
+            if (ids[i] in (last - seconds + 1)..last) best = maxOf(best, maxima[i][field])
+        }
+        return best
     }
 }

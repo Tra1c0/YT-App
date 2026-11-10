@@ -738,7 +738,9 @@ fun FrequencyNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
             modifier = Modifier
                 .fillMaxWidth()
                 .height(66.dp)
-                .ytDockedBar(30.dp, stacks, SolidColor(FrequencyBar), FrequencyBarBorder),
+                .ytDockedBar(30.dp, stacks, SolidColor(FrequencyBar), FrequencyBarBorder)
+                // the spectrum as a wave along the bar's bottom edge, behind the tabs
+                .frequencyEdgeWave(palette),
         ) {
             items.forEachIndexed { i, item ->
                 val active = item.id == state.selected
@@ -756,8 +758,14 @@ fun FrequencyNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
                         ytSpec(spring(dampingRatio = 0.5f, stiffness = 340f)),
                         label = "frequencyBloom",
                     )
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(width = 52.dp, height = 36.dp)) {
-                        FrequencyNavMark(frequencyTag(palette, i), lobes = if (i % 2 == 0) 9 else 6, bloom = { bloom.value }, Modifier.size(38.dp))
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(width = 52.dp, height = 36.dp)
+                            // the icons hop on hits, one after another; the labels stay still
+                            .frequencyBounce(i + 1, lift = 4.dp, amount = 0.06f),
+                    ) {
+                        FrequencyNavMark(frequencyTag(palette, i), lobes = if (i % 2 == 0) 9 else 6, index = i, bloom = { bloom.value }, Modifier.size(38.dp))
                         NavIcon(item, active, if (active) palette.ink else palette.textSecondary, 22.dp)
                         Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopEnd).offset((-4).dp, 0.dp))
                     }
@@ -783,25 +791,26 @@ private val FrequencyBar = Color(0xFF17152B)
 private val FrequencyBarBorder = Color(0xFF2C2850)
 
 /**
- * The active tab's cookie: grows out of a circle as [bloom] goes to 1 (scallops deepen, a turn
- * settles), then breathes with the bass, turns with the music and lifts on hits. Everything is
- * read while drawing; the path is reused.
+ * The active tab's cookie: grows in as [bloom] goes to 1 (scallops deepen, a turn settles),
+ * then grows with the beat, morphs on with the sound, turns and lifts softly on hits
+ * (a guarded veil). Everything is read while drawing; the path is reused.
  */
 @Composable
-private fun FrequencyNavMark(color: Color, lobes: Int, bloom: () -> Float, modifier: Modifier) {
+private fun FrequencyNavMark(color: Color, lobes: Int, index: Int, bloom: () -> Float, modifier: Modifier) {
     val path = remember { Path() }
     Canvas(modifier) {
         val b = bloom().coerceIn(0f, 1.2f)
         if (b <= 0.01f) return@Canvas
+        FrequencyPulse.tick.intValue
         val e = FrequencyPulse.energy.floatValue
-        val scale = FrequencyPulseMath.breathScale(e, 0.05f) * (0.55f + 0.45f * b.coerceAtMost(1f))
-        val radius = size.minDimension / 2f / FrequencyPulseMath.breathScale(1f, 0.05f) * scale
+        val grow = FrequencyMotionMath.scale(e, 0f, 0.12f, FrequencyPulse.tier.amplitude)
+        val radius = size.minDimension / 2f * 0.92f * grow * (0.55f + 0.45f * b.coerceAtMost(1f))
         val depth = FrequencyPulseMath.cookieDepth(0.07f * b.coerceAtMost(1f), e)
         val turn = Math.toRadians((FrequencyPulse.turn.floatValue - 60f * (1f - b)).toDouble()).toFloat()
-        cookiePath(path, center, radius, lobes, depth, turn)
+        frequencyShapePath(path, center, radius, lobes, depth, frequencyPhase(index), turn)
         val alpha = b.coerceIn(0f, 1f)
         drawPath(path, color, alpha = alpha)
-        // a soft white veil on hits: the luminance lifts at most 18 %, never strobing
+        // a soft white veil on hits: guarded, never strobing
         val lift = FrequencyPulseMath.pulseLift(FrequencyPulse.punch.floatValue)
         if (lift > 0.003f) drawPath(path, Color.White, alpha = lift * alpha)
     }

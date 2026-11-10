@@ -192,7 +192,7 @@ internal fun WatchCreator(
                     // Frequency: the avatar in an aqua cookie frame that breathes with the bass
                     Modifier
                         .size(46.dp)
-                        .frequencyCookie(palette.lime, lobes = 9, rest = 0.07f)
+                        .frequencyCookie(palette.lime, lobes = 9, rest = 0.07f, index = 0)
                         .padding(4.dp)
                         .clip(CircleShape)
                         .background(palette.surface)
@@ -522,21 +522,16 @@ internal fun WatchActionRow(palette: YtPalette, actions: List<WatchAction>, modi
 
 /**
  * Frequency: Formen's material shapes in aqua, violet, coral and amber, a quarter turn on a tap;
- * each breathes with the bass and a band of light runs over it with the highs (FrequencyPulse,
- * read while drawing). The icon stays upright, the caption below never moves.
+ * with the sound each grows with the beat, bounces on hits one after another, morphs on through
+ * cookie, blob, squircle and circle, and a light sweeps over it (FrequencyPulse, read while
+ * drawing). The icon stays upright, the caption below never moves.
  */
 @Composable
 internal fun FrequencyActions(palette: YtPalette, actions: List<WatchAction>, modifier: Modifier) {
     val haptics = rememberYtHaptics()
-    val shapes = remember {
-        listOf(
-            CookieShape(9, 0.07f),
-            RoundedCornerShape(topStartPercent = 50, topEndPercent = 20, bottomEndPercent = 50, bottomStartPercent = 20),
-            CookieShape(6, 0.1f),
-            RoundedCornerShape(30),
-            CircleShape,
-        )
-    }
+    // each button's own form at rest (FrequencyMorph) and its scallops
+    val bases = remember { intArrayOf(FrequencyMorph.COOKIE, FrequencyMorph.SQUIRCLE, FrequencyMorph.COOKIE, FrequencyMorph.BLOB, FrequencyMorph.CIRCLE) }
+    val lobes = remember { intArrayOf(9, 8, 6, 8, 7) }
     Row(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = modifier
@@ -546,7 +541,6 @@ internal fun FrequencyActions(palette: YtPalette, actions: List<WatchAction>, mo
         actions.forEachIndexed { i, action ->
             var taps by remember { mutableIntStateOf(0) }
             val spin by animateFloatAsState(taps * 45f, ytSpec(spring(dampingRatio = 0.55f, stiffness = 300f)), label = "frequencySpin")
-            val shape = shapes[i % shapes.size]
             val fill = frequencyTag(palette, i)
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(66.dp)) {
                 Box(
@@ -554,12 +548,11 @@ internal fun FrequencyActions(palette: YtPalette, actions: List<WatchAction>, mo
                     modifier = Modifier
                         .then(action.gesture)
                         .size(54.dp)
-                        .frequencyBreath(0.05f)
+                        .frequencyBounce(i, lift = 5.dp, amount = 0f)
                         .graphicsLayer { rotationZ = spin }
-                        .clip(shape)
-                        .background(fill)
-                        .frequencyShimmer(Color.White, shape)
-                        .clickable {
+                        .frequencyShape(fill, index = i, base = bases[i % bases.size], lobes = lobes[i % lobes.size], amount = 0.18f)
+                        // the shape grows and morphs past its box: no ripple clipped to the box
+                        .clickable(interactionSource = null, indication = null) {
                             taps++
                             haptics.tick()
                             action.onClick()

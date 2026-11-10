@@ -595,7 +595,7 @@ private fun FrequencyPage(palette: YtPalette, imageLoader: ImageLoader, b: Watch
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(30.dp)
-                    .frequencyCookie(palette.lavender, lobes = 6, rest = 0.1f),
+                    .frequencyCookie(palette.lavender, lobes = 6, rest = 0.1f, index = 5),
             ) {
                 Icon(painterResource(R.drawable.ic_yt_chevron_right), contentDescription = null, tint = palette.ink, modifier = Modifier.size(14.dp))
             }
