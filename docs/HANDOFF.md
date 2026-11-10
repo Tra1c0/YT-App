@@ -8,7 +8,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 118 (Frequency reacts clearly: morph, bounce, visualizer, tiers). 117:
+- Latest release: build 121+ (equalizer on the Frequency subscribe pill). 120: removed a one-off
+  device-gated behaviour again (119 still carries it as an old release). 118: Frequency rework. 117:
   Frequency + sound engine. 115: watched bar on hold everywhere. 114: mini player never
   parked half behind the bar. 111: no hard edge after
   a design switch + throw-away stays behind the bar (run 110 cancelled by CI concurrency).
@@ -120,6 +121,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 121: Frequency subscribe pill shows a Deezer-style equalizer (heights only, label >= 4.5:1).
 
 - 118: Frequency rework: motion vs brightness channels, morph/bounce/spectrum/blobs, device tiers,
   live sound readout in Diagnose. If it still looks weak, ask for the Diagnose "Sound" line.

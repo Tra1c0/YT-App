@@ -337,6 +337,9 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   morph, tiers), visuals `Y/FrequencyVisuals.kt` (backdrop blobs: RuntimeShader on 33+, gradients
   below; header spectrum; nav edge wave). Tiers `FrequencyTiers.pick` (HIGH/MID/LOW, re-read 5 s).
   Diagnose shows a live "Sound" and "Frequency" line. Watch action buttons have no tap ripple here.
+- Subscribe pill equalizer: `Y/FrequencyPillBars.kt` (pure geometry, rest arch, band->bar via
+  `FrequencyMotion.barLevel`, contrast-safe alpha 0.16 on coral), hooked in `FrequencySubscribe`
+  (YtWatchDesigns) between fill and label; heights only, alpha constant.
 
 ## Open points
 
