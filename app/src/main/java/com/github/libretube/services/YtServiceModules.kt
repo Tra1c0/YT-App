@@ -55,6 +55,7 @@ object YtServiceModules {
         YtSessionModule,
         YtSoftCloseModule,
         YtBatteryQualityModule,
+        YtSoundModule,
     )
 
     /** True if a module handled the command; the first one that does wins. */
