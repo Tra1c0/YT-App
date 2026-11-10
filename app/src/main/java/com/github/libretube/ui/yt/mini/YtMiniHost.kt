@@ -101,6 +101,15 @@ class YtMiniHost private constructor(
     // the restored player's rise onto the bar: armed before its page docks, run once it has
     private var risePending = false
     private var rise: android.animation.ValueAnimator? = null
+
+    // a page found parked below (or above) its place with nobody moving it: checked once more
+    // after a moment, then moved back onto the bar ([watchParked])
+    private var back: android.animation.ValueAnimator? = null
+    private var parkCheckPosted = false
+    private val parkCheck = Runnable {
+        parkCheckPosted = false
+        if (parkedNow()) moveBack()
+    }
     private var reaction: Animator? = null
     private var resizeBefore: Int? = null
     private var page: YtPlayerHost? = null
@@ -372,8 +381,62 @@ class YtMiniHost private constructor(
 
     private val boundsCheck = ViewTreeObserver.OnPreDrawListener {
         publishBounds()
+        watchParked()
         clipToBar()
         true
+    }
+
+    /**
+     * The docked page rests at its end but is still moved down (or up) by an offset that no
+     * gesture, throw or rise owns any more: a release that never came to its end, a rise or a
+     * throw that was stopped half way. Cut at the bar's edge ([clipToBar]), the mini player then
+     * stayed half behind the bar until the next drag. Seen again after [YtDockMath.PARKED_MS]
+     * (an owner this check does not know ends first), it is moved back onto its place.
+     */
+    private fun watchParked() {
+        if (parkCheckPosted || !parkedNow()) return
+        parkCheckPosted = true
+        motion.postDelayed(parkCheck, YtDockMath.PARKED_MS)
+    }
+
+    private fun parkedNow(): Boolean = YtDockMath.parked(
+        shift = motion.translationY,
+        docked = YtDock.docked,
+        atEnd = motion.currentState == R.id.end,
+        pageProgress = motion.progress,
+        peeking = motion.peeking || peekActive,
+        owned = rise != null || risePending || back != null || YtMinimizeModule.dragging || YtMinimizeModule.closing,
+    )
+
+    /** Moves a parked page back onto its place, as the rise ends: from where it is, up to 0. */
+    private fun moveBack() {
+        val from = motion.translationY
+        YtTestHooks.log("YtMini") { "parked ty=${from.roundToInt()}, back onto the bar" }
+        if (!YtMotionPrefs.enabled) {
+            motion.translationY = 0f
+            clipToBar()
+            return
+        }
+        back = android.animation.ValueAnimator.ofFloat(from, 0f).apply {
+            duration = design.motion.duration.toLong()
+            interpolator = android.view.animation.DecelerateInterpolator()
+            addUpdateListener {
+                // a drag or a throw that takes the page moves it from here itself
+                if (YtMinimizeModule.dragging || YtMinimizeModule.closing) {
+                    cancel()
+                    return@addUpdateListener
+                }
+                motion.translationY = it.animatedValue as Float
+            }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (!YtMinimizeModule.dragging && !YtMinimizeModule.closing) motion.translationY = 0f
+                    clipToBar()
+                    back = null
+                }
+            })
+            start()
+        }
     }
 
     private val barClip = android.graphics.Rect()
@@ -451,6 +514,7 @@ class YtMiniHost private constructor(
                 if (progress < 1f) {
                     landing?.cancel()
                     rise?.cancel()
+                    back?.cancel()
                 }
                 YtMiniPlayer.keepDock()
                 val p = progress.coerceIn(0f, 1f)
@@ -952,6 +1016,9 @@ class YtMiniHost private constructor(
         reaction?.cancel()
         risePending = false
         rise?.cancel()
+        back?.cancel()
+        motion.removeCallbacks(parkCheck)
+        parkCheckPosted = false
         peekSpring.cancel()
         peekBack?.remove()
         peekBack = null

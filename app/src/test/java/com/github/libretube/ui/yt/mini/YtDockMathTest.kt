@@ -78,4 +78,32 @@ class YtDockMathTest {
             YtDockMath.sideLine(0, 2400, 2400, 96, 132),
         )
     }
+
+    @Test
+    fun aPageLeftBelowItsPlaceWithoutOwnerIsParked() {
+        // the report: docked, half the box below its place, nothing moves it any more
+        assertTrue(YtDockMath.parked(95f, docked = true, atEnd = true, pageProgress = 1f, peeking = false, owned = false))
+        // above its place is just as wrong
+        assertTrue(YtDockMath.parked(-40f, docked = true, atEnd = true, pageProgress = 1f, peeking = false, owned = false))
+        // at its place (rounding allowed)
+        assertFalse(YtDockMath.parked(0f, docked = true, atEnd = true, pageProgress = 1f, peeking = false, owned = false))
+        assertFalse(YtDockMath.parked(0.4f, docked = true, atEnd = true, pageProgress = 1f, peeking = false, owned = false))
+        // a drag, a throw or a rise owns the offset
+        assertFalse(YtDockMath.parked(95f, docked = true, atEnd = true, pageProgress = 1f, peeking = false, owned = true))
+        // thrown or swiped away: the bar let it go, its close owns the fall
+        assertFalse(YtDockMath.parked(95f, docked = false, atEnd = true, pageProgress = 1f, peeking = false, owned = false))
+        // on its way (minimize or open) or peeking: not at rest
+        assertFalse(YtDockMath.parked(95f, docked = true, atEnd = false, pageProgress = 0.6f, peeking = false, owned = false))
+        assertFalse(YtDockMath.parked(95f, docked = true, atEnd = true, pageProgress = 0.98f, peeking = false, owned = false))
+        assertFalse(YtDockMath.parked(95f, docked = true, atEnd = true, pageProgress = 1f, peeking = true, owned = false))
+    }
+
+    @Test
+    fun aThrowThatRunsTooLongCloses() {
+        assertFalse(YtDockMath.throwOverdue(0))
+        // the slowest throw from the bar takes well under a second
+        assertFalse(YtDockMath.throwOverdue(900))
+        assertTrue(YtDockMath.throwOverdue(YtDockMath.THROW_LIMIT_MS))
+        assertTrue(YtDockMath.throwOverdue(5000))
+    }
 }

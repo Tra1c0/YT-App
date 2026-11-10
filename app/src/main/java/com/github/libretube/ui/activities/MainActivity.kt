@@ -179,41 +179,7 @@ class MainActivity : AbstractPlayerHostActivity() {
             })
         }
         // manually update the bottom bar height in the mini player transition
-        binding.bottomNav.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            val transition = binding.root.getTransition(R.id.bottom_bar_transition)
-            transition.keyFrameList.forEach { keyFrame ->
-                // These frame positions are hardcoded in activity_main_scene.xml!
-                for (key in keyFrame.getKeyFramesForView(binding.bottomNav.id)) {
-                    if (key.framePosition == 1) key.setValue(
-                        Key.TRANSLATION_Y,
-                        binding.bottomNav.height
-                    )
-                }
-                // YT: the mini player docks on the design's bar instead of floating above it
-                val dock = if (binding.bottomNav.isVisible && binding.bottomNav.height > 0) {
-                    com.github.libretube.ui.yt.YtMiniPlayer.dockOffsetPx(this)
-                } else 0
-                com.github.libretube.ui.yt.YtMiniPlayer.containerDockPx = dock
-                for (key in keyFrame.getKeyFramesForView(binding.container.id)) {
-                    if (key.framePosition == 100) key.setValue(
-                        Key.TRANSLATION_Y,
-                        -binding.bottomNav.height + dock
-                    )
-                }
-            }
-            binding.root.scene.setTransition(transition)
-            // YT: the keyframes are read only when the transition sets up its views, which
-            // happened in the measure before this layout: at rest (a docked player, no player)
-            // the container would keep the shift of the old bar height until the next minimize,
-            // so the docked player sat in or under the bar after the bar changed its height
-            // (back from picture-in-picture, rotation, the bar's first composition, insets that
-            // came late). Moved to the new keyframes once the layout pass is over.
-            val keys = binding.bottomNav.height to com.github.libretube.ui.yt.YtMiniPlayer.containerDockPx
-            if (keys != containerKeys) {
-                containerKeys = keys
-                binding.root.post { applyContainerKeys() }
-            }
-        }
+        binding.bottomNav.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> writeContainerKeys() }
 
         // Check update automatically
         if (PreferenceHelper.getBoolean(PreferenceKeys.AUTOMATIC_UPDATE_CHECKS, false)) {
@@ -315,7 +281,13 @@ class MainActivity : AbstractPlayerHostActivity() {
         com.github.libretube.ui.yt.YtHeader.overlayAfterHome(binding.appBarLayout, binding.fragment, navController)
         // YT: a recreate (new design without a restart) attached the layout before the lines
         // above changed it; let the transition's states take the views as they are now
-        androidx.constraintlayout.motion.widget.YtMotionAccess.takeViewsAgain(binding.mainMotionLayout, R.xml.activity_main_scene)
+        if (androidx.constraintlayout.motion.widget.YtMotionAccess.takeViewsAgain(binding.mainMotionLayout, R.xml.activity_main_scene)) {
+            // the reloaded scene has the XML's keyframes again (the bar's 80 dp, no dock offset):
+            // write the measured bar into them now if it has its height, and apply them again
+            // at the bar's next layout even if its height stayed
+            containerKeys = null
+            if (binding.bottomNav.height > 0) writeContainerKeys()
+        }
 
         // YT: the own crash report first; it clears the upstream log so only one dialog shows
         if (savedInstanceState == null) com.github.libretube.ui.yt.YtDiagnosisUi.showCrashIfNew(this)
@@ -889,6 +861,46 @@ class MainActivity : AbstractPlayerHostActivity() {
 
     // YT: the bar height and dock offset the container's keyframes were last written with
     private var containerKeys: Pair<Int, Int>? = null
+
+    /**
+     * Writes the bar's height and the design's dock offset into the keyframes of the activity's
+     * transition (the container's docked shift) and, when they changed, moves the views to them.
+     */
+    private fun writeContainerKeys() {
+        val transition = binding.root.getTransition(R.id.bottom_bar_transition)
+        transition.keyFrameList.forEach { keyFrame ->
+            // These frame positions are hardcoded in activity_main_scene.xml!
+            for (key in keyFrame.getKeyFramesForView(binding.bottomNav.id)) {
+                if (key.framePosition == 1) key.setValue(
+                    Key.TRANSLATION_Y,
+                    binding.bottomNav.height
+                )
+            }
+            // YT: the mini player docks on the design's bar instead of floating above it
+            val dock = if (binding.bottomNav.isVisible && binding.bottomNav.height > 0) {
+                com.github.libretube.ui.yt.YtMiniPlayer.dockOffsetPx(this)
+            } else 0
+            com.github.libretube.ui.yt.YtMiniPlayer.containerDockPx = dock
+            for (key in keyFrame.getKeyFramesForView(binding.container.id)) {
+                if (key.framePosition == 100) key.setValue(
+                    Key.TRANSLATION_Y,
+                    -binding.bottomNav.height + dock
+                )
+            }
+        }
+        binding.root.scene.setTransition(transition)
+        // YT: the keyframes are read only when the transition sets up its views, which
+        // happened in the measure before this layout: at rest (a docked player, no player)
+        // the container would keep the shift of the old bar height until the next minimize,
+        // so the docked player sat in or under the bar after the bar changed its height
+        // (back from picture-in-picture, rotation, the bar's first composition, insets that
+        // came late). Moved to the new keyframes once the layout pass is over.
+        val keys = binding.bottomNav.height to com.github.libretube.ui.yt.YtMiniPlayer.containerDockPx
+        if (keys != containerKeys) {
+            containerKeys = keys
+            binding.root.post { applyContainerKeys() }
+        }
+    }
 
     /** YT: the views of the activity's transition where its keyframes now put them. */
     private fun applyContainerKeys() {

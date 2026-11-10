@@ -581,11 +581,19 @@ internal class YtMinimizeDrag(
             velocity = vx
         }
         var last = System.nanoTime()
+        val started = SystemClock.uptimeMillis()
         val callback = object : Choreographer.FrameCallback {
             override fun doFrame(frameTimeNanos: Long) {
                 if (release !== this) return
                 val dt = ((frameTimeNanos - last) / 1e9f).coerceIn(0f, MAX_STEP)
                 last = max(last, frameTimeNanos)
+                // a fall that ran too long (frames lost or late) closes from where it is
+                if (YtDockMath.throwOverdue(SystemClock.uptimeMillis() - started)) {
+                    log { "minimize close overdue ty=${r1(ty)}" }
+                    stop(reset = false)
+                    host.close()
+                    return
+                }
                 speed += GRAVITY * density * dt
                 ty += speed * dt
                 s.ty = ty
@@ -603,6 +611,14 @@ internal class YtMinimizeDrag(
         }
         release = callback
         choreographer.postFrameCallback(callback)
+        // the player is never left half thrown: without frames at all the time limit closes it
+        motion.postDelayed({
+            if (release === callback) {
+                log { "minimize close without frames ty=${r1(ty)}" }
+                stop(reset = false)
+                host.close()
+            }
+        }, YtDockMath.THROW_LIMIT_MS + FRAME_GRACE_MS)
     }
 
     /** Ends the gesture and its release; [reset] puts the page back where the transition has it. */
@@ -800,6 +816,9 @@ internal class YtMinimizeDrag(
 
         /** The longest step a late frame takes (s): longer gaps just go on from there. */
         const val MAX_STEP = 0.1f
+
+        // how long after the throw's time limit the fallback without frames closes it
+        const val FRAME_GRACE_MS = 100L
 
         /** The slowest throw (dp/s) and how it speeds up (dp/s²). */
         const val MIN_THROW = 520f
