@@ -1,6 +1,8 @@
 package com.github.libretube.ui.yt
 
 import android.animation.ValueAnimator
+import android.os.Handler
+import android.os.Looper
 import android.view.Choreographer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -73,6 +75,24 @@ object FrequencyPulse {
     /** Degrees the shapes have turned; advances only while there is sound. */
     val turn = mutableFloatStateOf(0f)
 
+    /**
+     * Views that follow the pulse (the player's time bar): called after every frame's step on
+     * the main thread, and once more after the pulse came to rest. No allocation per frame.
+     */
+    private val viewListeners = ArrayList<() -> Unit>(2)
+
+    fun addViewListener(listener: () -> Unit) {
+        if (listener !in viewListeners) viewListeners.add(listener)
+    }
+
+    fun removeViewListener(listener: () -> Unit) {
+        viewListeners.remove(listener)
+    }
+
+    private fun notifyViews() {
+        for (i in viewListeners.indices) viewListeners[i]()
+    }
+
     private var holders = 0
     private var running = false
     private var lastNs = 0L
@@ -115,18 +135,25 @@ object FrequencyPulse {
         get() = holders > 0 && motionAllowed && !pageSaysPaused && YtDesign.current() == YtDesign.FREQUENCY
 
     private fun update() {
-        val on = wanted
-        YtSound.setReactive(on)
+        YtSound.setReactive(wanted)
         if (holders > 0 && motionAllowed) {
-            // keeps running while paused, so the shapes settle back to rest smoothly
-            start()
+            // runs on while paused, so the shapes settle back to rest smoothly; at rest it only
+            // looks a few times a second whether sound came (no frame loop in silence)
+            if (!running && (!idling || soundComing)) start()
         } else {
             stop()
+            stopIdle()
             rest()
+            notifyViews()
         }
     }
 
+    /** Whether there is sound to follow now. */
+    private val soundComing: Boolean
+        get() = wanted && YtSound.frame.value.playing
+
     private fun start() {
+        stopIdle()
         if (running) return
         running = true
         lastNs = 0L
@@ -138,6 +165,30 @@ object FrequencyPulse {
         running = false
         Choreographer.getInstance().removeFrameCallback(frame)
     }
+
+    private var idling = false
+    private val handler = Handler(Looper.getMainLooper())
+    private val idleCheck = Runnable {
+        idling = false
+        if (holders > 0 && motionAllowed) {
+            if (soundComing) start() else idle()
+        }
+    }
+
+    /** At rest and silent: the frame loop stops, a check every [IDLE_MS] waits for sound. */
+    private fun idle() {
+        if (idling) return
+        idling = true
+        handler.postDelayed(idleCheck, IDLE_MS)
+    }
+
+    private fun stopIdle() {
+        if (!idling) return
+        idling = false
+        handler.removeCallbacks(idleCheck)
+    }
+
+    private const val IDLE_MS = 200L
 
     private fun rest() {
         energy.floatValue = 0f
@@ -155,7 +206,7 @@ object FrequencyPulse {
             val dt = if (lastNs == 0L) 0f else (frameTimeNanos - lastNs) / 1_000_000_000f
             lastNs = frameTimeNanos
             step(dt)
-            Choreographer.getInstance().postFrameCallback(this)
+            if (running) Choreographer.getInstance().postFrameCallback(this)
         }
     }
 
@@ -178,6 +229,15 @@ object FrequencyPulse {
         high.floatValue = M.follow(high.floatValue, h, dt)
         val e = energy.floatValue
         if (e > M.REST_EPSILON) turn.floatValue = (turn.floatValue + M.turnStep(e, dt)) % 360f
+        // the loudest channel left (no array: nothing is allocated per frame)
+        val most = maxOf(maxOf(maxOf(e, glow.floatValue), maxOf(punch.floatValue, shimmer.floatValue)), maxOf(maxOf(bass.floatValue, mid.floatValue), high.floatValue))
+        if (!live && most < M.REST_EPSILON) {
+            // settled into silence: exactly the rest state, then no frame loop until sound comes
+            rest()
+            stop()
+            idle()
+        }
+        notifyViews()
     }
 }
 

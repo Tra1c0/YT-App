@@ -836,6 +836,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         com.github.libretube.helpers.YtDesign.current().timelineColor?.let { color ->
             playerControlsBinding.exoProgress.setPlayedColor(color)
             playerControlsBinding.exoProgress.setScrubberColor(color)
+            // YT: in Frequency the played part shimmers with the highs
+            com.github.libretube.ui.yt.FrequencyTimeBar.attach(playerControlsBinding.exoProgress, color)
         }
 
         // YT: the selected design shows its own video page details, reusing the classic buttons
