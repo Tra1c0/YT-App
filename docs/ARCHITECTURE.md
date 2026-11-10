@@ -331,6 +331,12 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   pulse `Y/FrequencyPulse.kt` (+ pure `FrequencyPulseMath.kt`, slew-limited). `YtDesignRegistryTest`
   checks every design has palette, signature, mini player, nav, search kind, picker entry.
   A new design must be added there and everywhere the compiler/registry test points to.
+- Frequency rework (build 118): fast motion channels `YtSound.motion` / `YtSound.bands` (unguarded:
+  size, bounce, morph, rays) vs the guarded `YtSound.frame` (brightness: glow, veils, aura, time bar
+  colour). Pure maths `Y/FrequencyMotion.kt` (stretch, kick detector, spring, sweeps ≥ 0.45 s apart,
+  morph, tiers), visuals `Y/FrequencyVisuals.kt` (backdrop blobs: RuntimeShader on 33+, gradients
+  below; header spectrum; nav edge wave). Tiers `FrequencyTiers.pick` (HIGH/MID/LOW, re-read 5 s).
+  Diagnose shows a live "Sound" and "Frequency" line. Watch action buttons have no tap ripple here.
 
 ## Open points
 

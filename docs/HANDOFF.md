@@ -8,7 +8,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 117 (Frequency design + sound engine). 115: watched bar on hold everywhere. 114: mini player never
+- Latest release: build 118 (Frequency reacts clearly: morph, bounce, visualizer, tiers). 117:
+  Frequency + sound engine. 115: watched bar on hold everywhere. 114: mini player never
   parked half behind the bar. 111: no hard edge after
   a design switch + throw-away stays behind the bar (run 110 cancelled by CI concurrency).
 - NEXT SESSION (user's quota resets 2026-11-11), agreed to do then:
@@ -119,6 +120,9 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 118: Frequency rework: motion vs brightness channels, morph/bounce/spectrum/blobs, device tiers,
+  live sound readout in Diagnose. If it still looks weak, ask for the Diagnose "Sound" line.
 
 - 117: Frequency (13th design, reacts to sound) + sound engine.
 
