@@ -33,12 +33,35 @@ object YtSeenMark {
         data class Hours(val h: Int, val m: Int) : Left
     }
 
-    fun left(progress: Float, durationSeconds: Long?): Left? {
+    /**
+     * What is left of a video of [durationSeconds] watched to [positionMillis], from the real
+     * position (not the bar, which never looks emptier than [MIN_BAR]); null when nothing is
+     * left or the length is unknown.
+     */
+    fun left(positionMillis: Long?, durationSeconds: Long?): Left? {
         val total = durationSeconds?.takeIf { it > 0 } ?: return null
-        val rest = (total * (1f - progress.coerceIn(0f, 1f))).toLong().coerceAtLeast(0)
+        val watched = ((positionMillis ?: 0L).coerceAtLeast(0L) / 1000L).coerceAtMost(total)
+        val rest = total - watched
         if (rest <= 0) return null
         if (rest < 60) return Left.Seconds(rest.toInt())
         val minutes = ((rest + 59) / 60).toInt()
         return if (minutes < 60) Left.Minutes(minutes) else Left.Hours(minutes / 60, minutes % 60)
     }
+
+    /**
+     * The first of the pill's texts (longest first) whose width fits into [available] px, or
+     * null when none fits: a small thumbnail then shows no pill instead of a clipped one.
+     */
+    fun pickFit(widths: List<Int>, available: Int): Int? =
+        widths.indexOfFirst { it <= available }.takeIf { it >= 0 && available > 0 }
+}
+
+/**
+ * YT: which card instances are held right now. Per instance, not per video: two fingers on two
+ * cards, or the same video twice on screen, each grow on their own. Pure, for the JVM tests.
+ */
+object YtHeldSet {
+    fun <T> add(set: Set<T>, token: T): Set<T> = if (token in set) set else set + token
+
+    fun <T> remove(set: Set<T>, token: T): Set<T> = if (token in set) set - token else set
 }

@@ -327,7 +327,8 @@ private fun EditorialItem(
                 Modifier
                     .weight(1f)
                     .aspectRatio(317f / 103f)
-                    .background(palette.surface),
+                    .background(palette.surface)
+                    .ytSeenTop(video, palette),
             ) {
                 AsyncImage(
                     model = video.thumbnail,
@@ -342,6 +343,7 @@ private fun EditorialItem(
                     video,
                     Modifier
                         .align(Alignment.BottomEnd)
+                        .ytHeldFade()
                         .padding(3.dp),
                 )
             }
@@ -462,13 +464,16 @@ private fun EditorialShorts(
                 Column(
                     Modifier
                         .width(174.dp)
+                        // held: the watched bar grows and shows the time left
+                        .ytHeldMark()
                         .clickable { actions.onOpenVideo(short) },
                 ) {
                     Box(
                         Modifier
                             .fillMaxWidth()
                             .aspectRatio(174f / 83f)
-                            .background(palette.surface),
+                            .background(palette.surface)
+                            .ytSeenTop(short, palette),
                     ) {
                         AsyncImage(
                             model = short.thumbnail,
@@ -483,6 +488,7 @@ private fun EditorialShorts(
                             short,
                             Modifier
                                 .align(Alignment.BottomEnd)
+                                .ytHeldFade()
                                 .padding(3.dp),
                         )
                     }

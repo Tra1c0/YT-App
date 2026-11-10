@@ -258,7 +258,8 @@ private fun PopFeature(
                 .fillMaxWidth()
                 .height(165.dp)
                 .clip(FeatureShape(smallFraction = 0.04f, largeFraction = 0.16f))
-                .background(PopLilac),
+                .background(PopLilac)
+                .ytSeenTop(video, palette),
         ) {
             YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
             (if (video.isLive) stringResource(R.string.yt_live_badge) else ytDuration(video))?.let {
@@ -268,6 +269,7 @@ private fun PopFeature(
                     style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
+                        .ytHeldFade()
                         .padding(8.dp)
                         .clip(RoundedCornerShape(9.dp))
                         .background(if (video.isLive) PopPinkStrong else Color(0xBF2B1A45))
@@ -409,7 +411,8 @@ private fun PopListCard(
                 .width(180.dp)
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(14.dp))
-                .background(PopLilac),
+                .background(PopLilac)
+                .ytSeenTop(video, palette),
         ) {
             YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
             (if (video.isLive) stringResource(R.string.yt_live_badge) else ytDuration(video))?.let {
@@ -419,6 +422,7 @@ private fun PopListCard(
                     style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 12.5.sp),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
+                        .ytHeldFade()
                         .padding(6.dp)
                         .clip(RoundedCornerShape(9.dp))
                         .background(if (video.isLive) PopPinkStrong else Color(0xBF2B1A45))
@@ -556,9 +560,12 @@ private fun PopShortCard(palette: YtPalette, imageLoader: ImageLoader, video: St
         Modifier
             .width(148.dp)
             .height(158.dp)
+            // held: the watched bar grows and shows the time left
+            .ytHeldMark()
             .clip(RoundedCornerShape(12.dp))
             .background(PopLilac)
-            .clickable { actions.onOpenVideo(video) },
+            .clickable { actions.onOpenVideo(video) }
+            .ytSeenTop(video, palette),
     ) {
         YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
         Icon(

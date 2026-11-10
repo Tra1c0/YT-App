@@ -602,6 +602,9 @@ private fun KieselCategorySheet(
                             .ytEnter(enter, video.url!!, index)
                             .padding(vertical = 5.dp)
                             .fillMaxWidth()
+                            // held: the watched bar grows and shows the time left (before the
+                            // squish, so its slop is measured unscaled)
+                            .ytHeldMark()
                             .ytPressable(RoundedCornerShape(18.dp), squish = true) { onOpenVideo(video) }
                             .background(ytDayNight(Color(0xFFF7F4F1), Color(0xFF2B2826)))
                             .padding(8.dp),
@@ -615,7 +618,8 @@ private fun KieselCategorySheet(
                                 .size(108.dp, 61.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(KieselLavender)
-                                .ytSeen(video, YtDesign.KIESEL.palette ?: YtPalettes.Kiesel),
+                                .ytSeen(video, YtDesign.KIESEL.palette ?: YtPalettes.Kiesel)
+                                .ytSeenTop(video, YtDesign.KIESEL.palette ?: YtPalettes.Kiesel),
                         )
                         Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
                             Text(

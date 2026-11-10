@@ -571,7 +571,9 @@ private fun AfterPoster(
             // held: the poster lifts and drags onto the mini player; let go unmoved: quick actions
             .ytHomeCard(palette, video, RoundedCornerShape(10.dp), onRelease = onQuick?.let { quick -> { quick(video) } })
             .ytPressable(RoundedCornerShape(10.dp)) { onOpenVideo(video) }
-            .background(palette.surface),
+            .background(palette.surface)
+            // above the gradient, which used to hide the bar, and the duration
+            .ytSeenTop(video, palette),
     ) {
         AsyncImage(
             model = video.thumbnail,
@@ -619,7 +621,7 @@ private fun AfterPoster(
                     text = DateUtils.formatElapsedTime(it),
                     color = palette.text,
                     style = TextStyle(fontFamily = YtFonts.geist, fontSize = 11.sp),
-                    modifier = Modifier.padding(start = 6.dp),
+                    modifier = Modifier.ytHeldFade().padding(start = 6.dp),
                 )
             }
         }

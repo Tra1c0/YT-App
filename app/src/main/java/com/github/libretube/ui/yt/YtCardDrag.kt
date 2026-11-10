@@ -120,8 +120,11 @@ internal class YtVideoGhost(
 
 /** The drag of a video card across the screens; the source calls begin, move and end. */
 object YtCardDrag {
-    /** The id of the home card held right now (pressed long), for its watched bar to grow. */
-    val held = androidx.compose.runtime.mutableStateOf<String?>(null)
+    /**
+     * The card instances held right now (pressed long), for their watched bars to grow (see
+     * YtHeld.kt): per instance, so two held cards or a video shown twice do not clobber each other.
+     */
+    val held = mutableStateOf<Set<YtHeldToken>>(emptySet())
 
     private const val NONE = 0
     private const val MINI = 1
@@ -311,6 +314,8 @@ fun Modifier.ytLiftToQueue(
     val lifted = remember(id) { Animatable(0f) }
     val holder = remember(id) { YtCoords() }
     val outlineShape = remember(shape, inset) { YtInsetShape(shape, inset) }
+    // this card instance, for its watched bar (ytSeenTop) to grow while held
+    val token = remember { YtHeldToken() }
 
     fun lift(up: Boolean) {
         scope.launch {
@@ -342,14 +347,19 @@ fun Modifier.ytLiftToQueue(
             hold.consume()
             haptics.grab()
             if (!dragOn) {
-                // as before: the long press acts at once
-                release?.invoke()
-                consumeUntilUp(hold.id)
+                // as before: the long press acts at once; the watched bar is large while pressed
+                YtCardDrag.hold(token)
+                try {
+                    release?.invoke()
+                    consumeUntilUp(hold.id)
+                } finally {
+                    YtCardDrag.letGo(token)
+                }
                 return@awaitEachGesture
             }
             lift(true)
             // the watched bar stays large until the finger leaves, also while the card is dragged
-            YtCardDrag.held.value = id
+            YtCardDrag.hold(token)
             val coords = holder.coords?.takeIf { it.isAttached }
             val grab = coords?.localToWindow(hold.position)
             var moved = false
@@ -376,7 +386,7 @@ fun Modifier.ytLiftToQueue(
                 }
             } finally {
                 // every end (release, cancel, the card leaving the screen) lets the bar shrink
-                if (YtCardDrag.held.value == id) YtCardDrag.held.value = null
+                YtCardDrag.letGo(token)
                 when {
                     dragging -> YtCardDrag.end(scope, haptics, screen(), cancelled = !released)
                     released && !moved -> {
@@ -418,6 +428,7 @@ fun Modifier.ytLiftToQueue(
 
     return this
         .onGloballyPositioned { holder.coords = it }
+        .ytHeldScope(token)
         .then(actions)
         .then(gesture)
         .then(visuals)

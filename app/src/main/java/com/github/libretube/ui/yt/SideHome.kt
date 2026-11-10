@@ -366,7 +366,8 @@ private fun SidePost(
                         pops++
                     },
                 ) { actions.onOpenVideo(post) }
-                .background(palette.surface),
+                .background(palette.surface)
+                .ytSeenTop(post, palette),
         ) {
             YtLargeThumbnail(post, imageLoader, Modifier.fillMaxSize().ytSeen(post, palette))
             SideHeartPop(palette, pops)
@@ -394,6 +395,7 @@ private fun SidePost(
                     style = TextStyle(fontFamily = YtFonts.figtree, fontWeight = FontWeight.Medium, fontSize = 12.5.sp),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
+                        .ytHeldFade()
                         .padding(9.dp)
                         .clip(RoundedCornerShape(6.dp))
                         .background(Color(0xB3222224))

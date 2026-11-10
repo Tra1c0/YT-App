@@ -418,13 +418,15 @@ private fun LargeVideo(
             .ytPressable(RoundedCornerShape(14.dp)) { onOpenVideo(video) }
             .padding(start = 4.dp, end = 4.dp, bottom = 16.dp),
     ) {
-        Box {
+        // the watched bar and, held, the time left draw above the duration chip
+        Box(Modifier.ytSeenTop(video, palette, RoundedCornerShape(14.dp))) {
             Thumbnail(imageLoader, video.thumbnail, corner = 14, modifier = Modifier.fillMaxWidth(), ratio = 2f, over = Modifier.ytSeen(video, palette))
             formatDuration(video.duration)?.let {
                 DurationChip(
                     it,
                     Modifier
                         .align(Alignment.BottomEnd)
+                        .ytHeldFade()
                         .padding(8.dp),
                 )
             }

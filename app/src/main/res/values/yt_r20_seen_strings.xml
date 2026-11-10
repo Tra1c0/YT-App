@@ -4,4 +4,8 @@
     <string name="yt_seen_left_sec">%1$d s</string>
     <string name="yt_seen_left_min">%1$d min</string>
     <string name="yt_seen_left_hour">%1$d h %2$d min</string>
+    <!-- a whole number of hours: no "0 min" -->
+    <string name="yt_seen_left_hour_only">%1$d h</string>
+    <!-- the shortest form, for small thumbnails: 1:05 h -->
+    <string name="yt_seen_left_hour_compact">%1$d:%2$02d h</string>
 </resources>
