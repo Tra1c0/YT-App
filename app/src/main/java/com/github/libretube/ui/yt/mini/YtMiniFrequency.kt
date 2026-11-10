@@ -65,7 +65,7 @@ object YtMiniFrequency : YtMiniLookDesign(YtDesign.FREQUENCY) {
         secondary = Color(0xFFB7B2D6),
         pill = Color(0xFF231F3F),
         row = Color(0xFF1D1A35),
-        rowActive = Color(0xFF2C2850),
+        rowActive = Color(0xFF241F45),
         thumbGround = Color(0xFF231F3F),
         dull = Color(0xFF5A5670),
         hot = Color(0xFFFFB3C1),

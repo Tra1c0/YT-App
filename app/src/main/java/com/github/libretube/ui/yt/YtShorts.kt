@@ -171,6 +171,7 @@ private fun YtShortsScreen(
     val glass = signature == YtSignature.GLASS || signature == YtSignature.FROST
     val backdrop = if (glass) rememberLayerBackdrop() else null
     val columns = if (signature == YtSignature.EDITORIAL) 3 else 2
+    if (signature == YtSignature.FREQUENCY) FrequencyPulseHost()
     val gap = when (signature) {
         YtSignature.EDITORIAL -> 8.dp
         YtSignature.POP -> 14.dp
@@ -180,8 +181,12 @@ private fun YtShortsScreen(
         Modifier
             .fillMaxSize()
             .then(
-                if (signature == YtSignature.SHAPES) Modifier.background(Brush.verticalGradient(ShapesNight))
-                else Modifier.background(palette.background),
+                when (signature) {
+                    YtSignature.SHAPES -> Modifier.background(Brush.verticalGradient(ShapesNight))
+                    // Frequency: the aura that drifts with the sound
+                    YtSignature.FREQUENCY -> Modifier.frequencyAura(palette)
+                    else -> Modifier.background(palette.background)
+                },
             ),
     ) {
         if (backdrop != null) {
@@ -224,6 +229,11 @@ private fun YtShortsScreen(
                             YtSignature.GLASS -> GlassShort(palette, imageLoader, short, onOpen)
                             YtSignature.POP -> PopShort(palette, imageLoader, short, index, onOpen)
                             YtSignature.SHAPES -> ShapesShort(palette, imageLoader, short, index, onOpen)
+                            // Frequency: Formen's shaped frames in its own colours
+                            YtSignature.FREQUENCY -> ShapesShort(
+                                palette, imageLoader, short, index, onOpen,
+                                tag = frequencyTag(palette, index), ink = palette.ink,
+                            )
                             YtSignature.FROST -> FrostShort(palette, imageLoader, short, backdrop, onOpen)
                             else -> PlainShort(palette, imageLoader, short, onOpen)
                         }
@@ -338,6 +348,23 @@ private fun ShortsHeader(palette: YtPalette, count: Int?, backdrop: Backdrop?) {
                 text = title,
                 color = Color.White,
                 style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Bold, fontSize = 28.sp),
+                modifier = Modifier.padding(start = 12.dp),
+            )
+        }
+        YtSignature.FREQUENCY -> Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp, bottom = 6.dp)) {
+            // a coral cookie that breathes and turns with the sound, YouTube neu's heavy title
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(44.dp)
+                    .frequencyCookie(palette.accent, lobes = 8, rest = 0.08f),
+            ) {
+                YtShortsGlyph(palette.ink, filled = true, modifier = Modifier.size(22.dp))
+            }
+            Text(
+                text = title,
+                color = palette.text,
+                style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, letterSpacing = (-0.5).sp),
                 modifier = Modifier.padding(start = 12.dp),
             )
         }
@@ -612,13 +639,20 @@ private fun PopShort(palette: YtPalette, imageLoader: ImageLoader, short: Stream
 
 /** Formen: alternating widget shapes in the night, each with its own tag color. */
 @Composable
-private fun ShapesShort(palette: YtPalette, imageLoader: ImageLoader, short: StreamItem, index: Int, onOpen: (StreamItem) -> Unit) {
+private fun ShapesShort(
+    palette: YtPalette,
+    imageLoader: ImageLoader,
+    short: StreamItem,
+    index: Int,
+    onOpen: (StreamItem) -> Unit,
+    tag: Color = ShapesTags[index % ShapesTags.size],
+    ink: Color = Color(0xFF12122A),
+) {
     val shape: Shape = if (index % 2 == 0) {
         RoundedCornerShape(topStart = 56.dp, topEnd = 16.dp, bottomEnd = 56.dp, bottomStart = 16.dp)
     } else {
         RoundedCornerShape(topStart = 16.dp, topEnd = 56.dp, bottomEnd = 16.dp, bottomStart = 56.dp)
     }
-    val tag = ShapesTags[index % ShapesTags.size]
     val longPress = LocalShortLongPress.current
     Column(Modifier.ytPressable(RoundedCornerShape(16.dp), onLongClick = { longPress(short) }) { onOpen(short) }) {
         Box(
@@ -631,7 +665,7 @@ private fun ShapesShort(palette: YtPalette, imageLoader: ImageLoader, short: Str
         ) {
             YtLargeThumbnail(short, imageLoader, Modifier.fillMaxSize().clip(shape))
             ViewsBadge(
-                short, Color(0xFF12122A), YtFonts.googleSans,
+                short, ink, palette.font,
                 Modifier
                     .align(if (index % 2 == 0) Alignment.BottomEnd else Alignment.BottomStart)
                     .padding(12.dp)
@@ -653,7 +687,7 @@ private fun ShapesShort(palette: YtPalette, imageLoader: ImageLoader, short: Str
                 color = palette.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = YtFonts.googleSans, fontSize = 11.5.sp),
+                style = TextStyle(fontFamily = palette.font, fontSize = 11.5.sp),
             )
         }
         Text(
@@ -661,7 +695,7 @@ private fun ShapesShort(palette: YtPalette, imageLoader: ImageLoader, short: Str
             color = palette.text,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 17.sp),
+            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 17.sp),
             modifier = Modifier.padding(top = 2.dp, start = 4.dp, end = 4.dp),
         )
     }

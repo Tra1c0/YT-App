@@ -55,6 +55,13 @@ fun ytCardShape(palette: YtPalette, radius: Int = 16): Shape = when (palette.sur
     YtSurfaceStyle.EDITORIAL -> RectangleShape
     YtSurfaceStyle.CLAY -> RoundedCornerShape((radius * 1.4f).dp)
     YtSurfaceStyle.POP -> RoundedCornerShape((radius * 1.3f).dp)
+    // Frequency: Formen's widget corners, one of them tucked in
+    YtSurfaceStyle.FREQUENCY -> RoundedCornerShape(
+        topStart = (radius * 1.4f).dp,
+        topEnd = (radius * 0.6f).dp,
+        bottomEnd = (radius * 1.4f).dp,
+        bottomStart = (radius * 1.4f).dp,
+    )
     else -> RoundedCornerShape(radius.dp)
 }
 

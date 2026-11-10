@@ -84,6 +84,7 @@ class YtSentimentTest {
         YtSignature.FROST to 0xFF6F8A80.toInt(),
         YtSignature.KIESEL to 0xFFE9E5E0.toInt(),
         YtSignature.KIESEL to 0xFF1E1C1A.toInt(),
+        YtSignature.FREQUENCY to 0xFF0B0A18.toInt(),
     )
 
     @Test

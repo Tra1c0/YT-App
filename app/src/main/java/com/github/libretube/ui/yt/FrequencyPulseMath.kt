@@ -46,8 +46,8 @@ object FrequencyPulseMath {
     const val GLOW_PEAK = 0.5f
 
     /** The background aura's alpha at rest and at its loudest, and how far its lights drift. */
-    const val AURA_REST = 0.16f
-    const val AURA_PEAK = 0.3f
+    const val AURA_REST = 0.14f
+    const val AURA_PEAK = 0.24f
     const val AURA_DRIFT = 0.07f
 
     /** NaN and anything outside 0..1 as the nearest value in 0..1. */
@@ -86,10 +86,11 @@ object FrequencyPulseMath {
 
     /** Scale of a breathing shape at [energy]; [amount] is capped at [BREATH_MAX]. */
     fun breathScale(energy: Float, amount: Float = BREATH_MAX): Float =
-        1f + amount.coerceIn(0f, BREATH_MAX) * clamp01(energy)
+        1f + (if (amount.isNaN()) 0f else amount.coerceIn(0f, BREATH_MAX)) * clamp01(energy)
 
     /** Depth of a cookie's scallops: [rest] in silence, deeper with [energy]. */
-    fun cookieDepth(rest: Float, energy: Float): Float = rest.coerceIn(0f, 0.2f) + DEPTH_MAX * clamp01(energy)
+    fun cookieDepth(rest: Float, energy: Float): Float =
+        (if (rest.isNaN()) 0f else rest.coerceIn(0f, 0.2f)) + DEPTH_MAX * clamp01(energy)
 
     /** Alpha of a glow at [glow] (0 = rest). */
     fun glowAlpha(glow: Float, rest: Float = GLOW_REST, peak: Float = GLOW_PEAK): Float =
@@ -131,7 +132,8 @@ object FrequencyPulseMath {
      */
     fun cookieRadius(angle: Float, lobes: Int, depth: Float, turn: Float = 0f): Float {
         val wave = 0.5f - 0.5f * cos(lobes * (angle - turn).toDouble()).toFloat()
-        return 1f - depth.coerceIn(0f, 0.5f) * wave
+        val d = if (depth.isNaN()) 0f else depth.coerceIn(0f, 0.5f)
+        return 1f - d * wave
     }
 
     /** Whether all channels are at rest (nothing to draw differently from silence). */
