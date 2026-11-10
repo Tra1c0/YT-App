@@ -8,8 +8,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 114 (mini player never parked half behind the bar). 113: watched bar grows
-  while a home card is held, with time left (first version; review fixes pending on r20/seenbar). 111: no hard edge after
+- Latest release: build 115 (watched bar on hold everywhere, pill on top). 114: mini player never
+  parked half behind the bar. 111: no hard edge after
   a design switch + throw-away stays behind the bar (run 110 cancelled by CI concurrency).
 - NEXT SESSION (user's quota resets 2026-11-11), agreed to do then:
   1. (done in 114: mini player half behind the bar — guarded, cause inferred from code.)
@@ -117,6 +117,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 115: watched bar on hold: all cards incl. Glas/Abos/shorts, pill above chips/gradients, per-instance.
 
 - 114: guards against a mini player left shifted/cut behind the bar (parked-page watch, throw limit).
 - 113: watched bar grows on hold + time-left pill (112 cancelled; its notes carried over).

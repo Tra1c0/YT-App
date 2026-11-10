@@ -309,6 +309,14 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   The container (20 dp) is above the bar (4 dp): a mini player half BEHIND the bar = page shifted
   down and cut by `clipToBar`, not a wrong dock offset.
 
+- Watched bar on hold: `Y/YtSeen.kt` — `ytSeen` (dim + badge) and `ytSeenTop` (bar + time-left
+  pill, a Modifier.Node placed on the thumbnail Box AFTER its children, grow animated in the node,
+  read in draw only). `Y/YtHeld.kt`: `YtHeldToken` per card instance, `ytHeldScope(token)` on the card
+  root (found by ancestor lookup), `ytHeldMark()` for cards without the drag gesture (never consumes),
+  `ytHeldFade()` for chips/play buttons; `YtCardDrag.held` is a set of tokens (pure `YtHeldSet`).
+  Time left from the real position (`YtSeenMark.left`, `pickFit` for small thumbnails).
+  Pitfall: anything drawn on the thumbnail image sits under the Box's later children.
+
 ## Open points
 
 - Not verified on a real phone: most round-12/13 features (the user tests on their phone).
