@@ -59,5 +59,27 @@ internal object YtDockMath {
         shift > 0.5f && boxHeight > 0 && pageWidth > 0 &&
             (barProgress >= DOCKED || (!peeking && pageProgress >= DOCKED))
 
+    /**
+     * Whether the page is parked off its place on the bar with nobody to bring it back: it rests
+     * docked ([docked], the transition at its end and not [peeking]) but is still moved by
+     * [shift] px, while no gesture, throw or rise owns that offset ([owned]). Cut at the bar's
+     * edge (clipsToBar), such a page shows the mini player half behind the bar and stays so
+     * until the next drag. The host then moves it back onto its place.
+     */
+    fun parked(shift: Float, docked: Boolean, atEnd: Boolean, pageProgress: Float, peeking: Boolean, owned: Boolean): Boolean =
+        abs(shift) > 0.5f && docked && atEnd && pageProgress >= DOCKED && !peeking && !owned
+
+    /** How long a parked page waits before it is moved back (an owner the host missed ends first). */
+    const val PARKED_MS = 300L
+
+    /**
+     * Whether a throw that started [elapsedMs] ago has run too long: its fall takes well under a
+     * second at the throw's lowest speed, so a longer one lost its frames (or was stopped) and
+     * the player is closed from where it is instead of staying half behind the bar.
+     */
+    fun throwOverdue(elapsedMs: Long): Boolean = elapsedMs >= THROW_LIMIT_MS
+
+    const val THROW_LIMIT_MS = 1500L
+
     private const val DOCKED = 0.999f
 }

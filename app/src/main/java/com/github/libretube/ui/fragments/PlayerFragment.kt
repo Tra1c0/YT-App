@@ -728,17 +728,30 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         PictureInPictureCompat.setPictureInPictureParams(activity, pipParams)
     }
 
+    // YT: the swiped-away mini player is closed once, by its animation's end or by the fallback
+    private var ytMiniClosed = false
+    private val ytCloseMini = Runnable {
+        if (!ytMiniClosed && _binding != null && isAdded) {
+            ytMiniClosed = true
+            killPlayerFragment()
+        }
+    }
+
     private fun closeMiniPlayer() {
         ytRememberClosed()
         // YT: the bar no longer carries the player that is swiped away
         com.github.libretube.ui.yt.YtMiniPlayer.undock()
+        // YT: the page is never left half way down (cut behind the bar): an animation that is
+        // cancelled runs no end action, so a fallback closes it too; whichever comes first does
         binding
             .playerMotionLayout
             .animateDown(
                 duration = 300L,
                 dy = 500F,
-                onEnd = ::killPlayerFragment
+                onEnd = { ytCloseMini.run() }
             )
+        binding.playerMotionLayout.removeCallbacks(ytCloseMini)
+        binding.playerMotionLayout.postDelayed(ytCloseMini, 600L)
     }
 
     // actions that don't depend on video information

@@ -38,9 +38,13 @@ internal object YtMotionAccess {
      * running down behind the bar); the old layout would come back. Reloading the scene while
      * attached takes the copy again and puts the progress back, like the attach does.
      * Does nothing when [layout] is not attached: its attach still comes and reads the views.
+     * The reloaded scene has its keyframes as the XML writes them: values written into the old
+     * scene's keyframes (MainActivity's docked shift) must be written again. Returns whether the
+     * scene was reloaded.
      */
-    fun takeViewsAgain(layout: MotionLayout, scene: Int) {
-        if (!layout.isAttachedToWindow) return
+    fun takeViewsAgain(layout: MotionLayout, scene: Int): Boolean {
+        if (!layout.isAttachedToWindow) return false
         layout.loadLayoutDescription(scene)
+        return true
     }
 }

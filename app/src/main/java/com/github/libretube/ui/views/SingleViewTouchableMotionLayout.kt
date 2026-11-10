@@ -265,6 +265,13 @@ class SingleViewTouchableMotionLayout(context: Context, attributeSet: AttributeS
             MotionEvent.ACTION_DOWN -> {
                 shouldInterceptTouchEvent = false
                 isTouchDownInsideHitArea = false
+                // YT: a drag whose UP or CANCEL never came (the stream broke off) ends now as
+                // cancelled, so it puts the page back instead of leaving it where the finger was
+                if (gesture == Gesture.DRAG) {
+                    val lost = activeDrag
+                    activeDrag = null
+                    lost?.onRelease(event, 0f, 0f, cancelled = true)
+                }
                 // YT: a new gesture; whether delegates take part is decided once per gesture
                 gesture = Gesture.IDLE
                 activeMini = null
