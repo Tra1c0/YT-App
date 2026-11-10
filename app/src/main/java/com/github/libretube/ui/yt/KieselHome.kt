@@ -550,6 +550,9 @@ private fun KieselCardItem(video: StreamItem, imageLoader: ImageLoader, color: C
     Column(
         modifier
             .width(212.dp)
+            // held: the watched bar grows and shows the time left (before the squish, so its
+            // slop is measured unscaled)
+            .ytHeldMark()
             .ytPressable(RoundedCornerShape(22.dp), squish = true) { actions.onOpenVideo(video) }
             .background(color)
             .padding(12.dp),
@@ -565,7 +568,8 @@ private fun KieselCardItem(video: StreamItem, imageLoader: ImageLoader, color: C
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
                 .clip(RoundedCornerShape(14.dp))
-                .background(KieselInk.copy(alpha = 0.08f)),
+                .background(KieselInk.copy(alpha = 0.08f))
+                .ytSeenTop(video, YtDesign.KIESEL.palette ?: YtPalettes.Kiesel),
         ) {
             YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, YtDesign.KIESEL.palette ?: YtPalettes.Kiesel))
             ytDuration(video)?.let {
@@ -575,6 +579,7 @@ private fun KieselCardItem(video: StreamItem, imageLoader: ImageLoader, color: C
                     style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.Bold, fontSize = 11.sp),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
+                        .ytHeldFade()
                         .padding(6.dp)
                         .clip(RoundedCornerShape(6.dp))
                         .background(KieselBlack)
@@ -634,7 +639,8 @@ private fun KieselRow(
                 .size(84.dp, 48.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(KieselBeige)
-                .ytSeen(video, palette),
+                .ytSeen(video, palette)
+                .ytSeenTop(video, palette),
         )
         Column(Modifier.weight(1f).padding(start = 12.dp, end = 6.dp)) {
             Text(

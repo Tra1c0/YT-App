@@ -403,7 +403,9 @@ private fun ShapesContinue(palette: YtPalette, imageLoader: ImageLoader, video: 
                 .padding(start = 14.dp)
                 .size(84.dp)
                 .clip(RoundedCornerShape(26.dp))
-                .background(Color(0xFF6656C4)),
+                .background(Color(0xFF6656C4))
+                // the thin watched bar only: this card has its own wavy bar and no hold
+                .ytSeenTop(video, palette),
         ) {
             AsyncImage(
                 model = video.thumbnail,
@@ -476,7 +478,9 @@ private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: Str
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
                 .clip(shape)
-                .background(palette.raised),
+                .background(palette.raised)
+                // the 60 dp bottom-end corner would cut the time-left pill: it goes to the start there
+                .ytSeenTop(video, palette, pillSide = if (index % 3 == 1) YtPillSide.START else YtPillSide.END),
         ) {
             YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
             (if (video.isLive) stringResource(R.string.yt_live_badge) else ytDuration(video))?.let {
@@ -486,6 +490,7 @@ private fun ShapesVideo(palette: YtPalette, imageLoader: ImageLoader, video: Str
                     style = TextStyle(fontFamily = YtFonts.googleSans, fontWeight = FontWeight.Bold, fontSize = 12.sp),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
+                        .ytHeldFade()
                         .padding(12.dp)
                         .clip(RoundedCornerShape(50))
                         .background(tag)

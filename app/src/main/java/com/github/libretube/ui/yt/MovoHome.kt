@@ -295,7 +295,9 @@ private fun MovoCard(
             // held: lifts off the mosaic and drags onto the mini player; let go unmoved: quick actions
             .ytHomeCard(palette, video, RoundedCornerShape(16.dp), onRelease = { onQuick(video) })
             .ytPressable(RoundedCornerShape(16.dp)) { onOpenVideo(video) }
-            .background(color),
+            .background(color)
+            // above the colour gradient, which used to hide the bar, and the play button
+            .ytSeenTop(video, palette),
     ) {
         AsyncImage(
             model = video.thumbnail,
@@ -360,6 +362,7 @@ private fun MovoCard(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
+                .ytHeldFade()
                 .padding(8.dp)
                 .size(if (titleSize > 22.sp) 36.dp else 32.dp)
                 .clip(CircleShape)

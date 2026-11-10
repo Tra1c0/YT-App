@@ -293,11 +293,16 @@ private fun ClayCard(
         modifier
             .padding(vertical = 5.dp)
             .fillMaxSize()
+            // held: the watched bar grows and shows the time left (before the squish, so its
+            // slop is measured unscaled)
+            .ytHeldMark()
             .ytSquish(interaction)
             .shadow(14.dp, shape, ambientColor = ClayCardShadow, spotColor = ClayCardShadow)
             .clip(shape)
             .background(Color(0xFF7A5A4C))
-            .clickable(interactionSource = interaction, indication = LocalIndication.current) { onOpen(video) },
+            .clickable(interactionSource = interaction, indication = LocalIndication.current) { onOpen(video) }
+            // above the gradient and the title
+            .ytSeenTop(video, palette),
     ) {
         YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
         Box(
@@ -467,7 +472,8 @@ private fun ClayNextCard(
         Box(
             Modifier
                 .width(152.dp)
-                .height(89.dp),
+                .height(89.dp)
+                .ytSeenTop(video, palette, RoundedCornerShape(14.dp)),
         ) {
             YtLargeThumbnail(
                 video,
@@ -485,6 +491,7 @@ private fun ClayNextCard(
                     style = TextStyle(fontFamily = YtFonts.nunito, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
+                        .ytHeldFade()
                         .padding(6.dp)
                         .clip(RoundedCornerShape(9.dp))
                         .background(Color(0xB33A2A2A))

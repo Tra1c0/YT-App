@@ -282,6 +282,8 @@ private fun GlassVideo(
     val picture = remember { YtCoords() }
     val scope = rememberCoroutineScope()
     val view = LocalView.current
+    // this card instance, for its watched bar to grow while held
+    val token = remember { YtHeldToken() }
     // left hides, right queues: a glass drop swells in the gap the video leaves
     Column(
         modifier
@@ -299,15 +301,30 @@ private fun GlassVideo(
                 .aspectRatio(355f / 175f)
                 .shadow(6.dp, RoundedCornerShape(12.dp), clip = false, ambientColor = GlassShadow, spotColor = GlassShadow)
                 .clip(RoundedCornerShape(12.dp))
+                .ytHeldScope(token)
+                // the watched bar and, held, the time left: above the drop, the chip and the loupe
+                .ytSeenTop(video, palette)
                 .background(palette.lime)
                 .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
                 .onGloballyPositioned { picture.coords = it }
-                .pointerInput(motion, dragOn) {
-                    if (!motion && !dragOn) return@pointerInput
+                .pointerInput(motion, dragOn, token) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         if (YtDrag.session != null) return@awaitEachGesture
                         val hold = awaitLongPressOrCancellation(down.id) ?: return@awaitEachGesture
+                        if (!motion && !dragOn) {
+                            // no loupe and no drag: only the watched bar grows while the finger
+                            // stays; nothing is consumed, so the click acts as before
+                            YtCardDrag.hold(token)
+                            try {
+                                while (true) {
+                                    if (awaitPointerEvent().changes.none { it.pressed }) break
+                                }
+                            } finally {
+                                YtCardDrag.letGo(token)
+                            }
+                            return@awaitEachGesture
+                        }
                         hold.consume()
                         haptics.tick()
                         val units: Density = this
@@ -326,6 +343,8 @@ private fun GlassVideo(
                         var dragging = false
                         var released = false
                         try {
+                            // the watched bar stays large until the finger leaves, also while dragged
+                            YtCardDrag.hold(token)
                             released = drag(hold.id) { change ->
                                 change.consume()
                                 val coords = picture.coords?.takeIf { it.isAttached }
@@ -344,6 +363,7 @@ private fun GlassVideo(
                                 }
                             }
                         } finally {
+                            YtCardDrag.letGo(token)
                             magnifier = null
                             if (dragging) YtCardDrag.end(scope, haptics, screen, cancelled = !released)
                         }
@@ -372,6 +392,7 @@ private fun GlassVideo(
                 Box(
                     Modifier
                         .align(Alignment.BottomEnd)
+                        .ytHeldFade()
                         .padding(8.dp)
                         .liquidGlass(
                             thumb, RoundedCornerShape(8.dp),
@@ -507,8 +528,11 @@ private fun GlassShorts(palette: YtPalette, imageLoader: ImageLoader, shorts: Li
                     Modifier
                         .width(173.dp)
                         .aspectRatio(173f / 132f)
+                        // held: the watched bar grows and shows the time left
+                        .ytHeldMark()
                         .shadow(5.dp, RoundedCornerShape(12.dp), clip = false, ambientColor = GlassShadow, spotColor = GlassShadow)
                         .clip(RoundedCornerShape(12.dp))
+                        .ytSeenTop(short, palette)
                         .background(palette.lime)
                         .clickable { actions.onOpenVideo(short) },
                 ) {

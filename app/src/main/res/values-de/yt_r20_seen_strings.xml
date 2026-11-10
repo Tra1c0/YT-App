@@ -4,4 +4,8 @@
     <string name="yt_seen_left_sec">%1$d Sek.</string>
     <string name="yt_seen_left_min">%1$d Min.</string>
     <string name="yt_seen_left_hour">%1$d Std. %2$d Min.</string>
+    <!-- volle Stunden: ohne "0 Min." -->
+    <string name="yt_seen_left_hour_only">%1$d Std.</string>
+    <!-- die kürzeste Form, für kleine Vorschaubilder: 1:05 h -->
+    <string name="yt_seen_left_hour_compact">%1$d:%2$02d h</string>
 </resources>

@@ -304,7 +304,9 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
             .ytHomeCard(palette, video, RoundedCornerShape(26.dp), onRelease = { actions.onQuick(video) })
             .frost(RoundedCornerShape(26.dp), clear = { thaw })
             .clickable(interactionSource = press, indication = LocalIndication.current) { actions.onOpenVideo(video) }
-            .padding(8.dp),
+            .padding(8.dp)
+            // inside the padding, as the picture: above its gradient and the play button
+            .ytSeenTop(video, palette, RoundedCornerShape(20.dp)),
     ) {
         YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)).ytSeen(video, palette))
         Box(
@@ -344,6 +346,7 @@ private fun FrostBig(palette: YtPalette, imageLoader: ImageLoader, video: Stream
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
+                .ytHeldFade()
                 .padding(12.dp)
                 .size(46.dp)
                 .clip(CircleShape)
@@ -377,7 +380,8 @@ private fun FrostRow(palette: YtPalette, imageLoader: ImageLoader, video: Stream
                 .width(128.dp)
                 .aspectRatio(16f / 10f)
                 .clip(RoundedCornerShape(14.dp))
-                .ytSeen(video, palette),
+                .ytSeen(video, palette)
+                .ytSeenTop(video, palette),
         )
         Column(
             Modifier
