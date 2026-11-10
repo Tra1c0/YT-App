@@ -25,4 +25,20 @@ object YtSeenMark {
             Mark(watched = false, progress = share)
         }
     }
+
+    /** What is left of a started video, rounded up to whole minutes from one minute on. */
+    sealed interface Left {
+        data class Seconds(val s: Int) : Left
+        data class Minutes(val m: Int) : Left
+        data class Hours(val h: Int, val m: Int) : Left
+    }
+
+    fun left(progress: Float, durationSeconds: Long?): Left? {
+        val total = durationSeconds?.takeIf { it > 0 } ?: return null
+        val rest = (total * (1f - progress.coerceIn(0f, 1f))).toLong().coerceAtLeast(0)
+        if (rest <= 0) return null
+        if (rest < 60) return Left.Seconds(rest.toInt())
+        val minutes = ((rest + 59) / 60).toInt()
+        return if (minutes < 60) Left.Minutes(minutes) else Left.Hours(minutes / 60, minutes % 60)
+    }
 }

@@ -114,7 +114,18 @@ fun Modifier.ytSeen(video: StreamItem, palette: YtPalette): Modifier {
         if (motion) androidx.compose.animation.core.tween(220) else androidx.compose.animation.core.snap(),
         label = "seenBarGrow",
     )
+    // what is left, shown on the grown bar
+    val leftText = mark.progress?.let { com.github.libretube.ui.yt.feed.YtSeenMark.left(it, video.duration) }?.let {
+        val amount = when (it) {
+            is com.github.libretube.ui.yt.feed.YtSeenMark.Left.Seconds -> stringResource(R.string.yt_seen_left_sec, it.s)
+            is com.github.libretube.ui.yt.feed.YtSeenMark.Left.Minutes -> stringResource(R.string.yt_seen_left_min, it.m)
+            is com.github.libretube.ui.yt.feed.YtSeenMark.Left.Hours -> stringResource(R.string.yt_seen_left_hour, it.h, it.m)
+        }
+        stringResource(R.string.yt_seen_left, amount)
+    }
+    val leftStyle = TextStyle(color = Color.White, fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
     return this.drawWithCache {
+        val left = leftText?.let { measurer.measure(it, leftStyle) }
         val thin = 3.dp.toPx()
         val thick = 9.dp.toPx()
         val inset = 6.dp.toPx()
@@ -154,6 +165,18 @@ fun Modifier.ytSeen(video: StreamItem, palette: YtPalette): Modifier {
                     size = Size(size.width * mark.progress, bar),
                     cornerRadius = CornerRadius(bar / 2f),
                 )
+                val g = grow.value
+                if (left != null && g > 0.01f) {
+                    // a small dark pill above the grown bar, right-aligned, fading with the growth
+                    val padH = 6.dp.toPx()
+                    val padV = 2.dp.toPx()
+                    val w = left.size.width + 2 * padH
+                    val h = left.size.height + 2 * padV
+                    val x = size.width - w - inset
+                    val y = top - h - 4.dp.toPx()
+                    drawRoundRect(Color.Black.copy(alpha = 0.66f * g), Offset(x, y), Size(w, h), CornerRadius(h / 2f))
+                    drawText(left, topLeft = Offset(x + padH, y + padV), alpha = g)
+                }
             }
         }
     }
