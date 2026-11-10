@@ -446,15 +446,22 @@ object FrequencyMotionMath {
      */
     fun bar(bands: FloatArray, i: Int, count: Int): Float {
         val rest = barRest(i, count)
-        if (count <= 0 || bands.isEmpty()) return rest
+        return rest + (1f - rest) * barLevel(bands, i, count)
+    }
+
+    /**
+     * The sound of bar [i] of [count] from the [bands], without a rest height: the mean of its
+     * share of the bands (left bar = lowest bands), lifted a little (square root). 0..1, 0 in silence.
+     */
+    fun barLevel(bands: FloatArray, i: Int, count: Int): Float {
+        if (count <= 0 || bands.isEmpty()) return 0f
         val n = bands.size
         val from = (i.coerceIn(0, count - 1) * n) / count
         val to = max(from + 1, ((i.coerceIn(0, count - 1) + 1) * n) / count)
         var sum = 0f
         for (b in from until min(to, n)) sum += FrequencyPulseMath.clamp01(bands[b])
         val mean = sum / (min(to, n) - from)
-        val lifted = sqrt(mean)
-        return rest + (1f - rest) * lifted
+        return sqrt(mean)
     }
 
     /**

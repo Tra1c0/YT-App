@@ -54,6 +54,15 @@ class YtFrequencyPaletteTest {
     }
 
     @Test
+    fun `the subscribe label reads on the pill's equalizer bars`() {
+        // the bars (FrequencyPillBars) are the ink at a reduced alpha; at full height they lie
+        // under the label: coral (Abonnieren) and violet (Abonniert) with the bars on top
+        val bars = p.ink.copy(alpha = frequencyPillBarAlpha(p))
+        reads("label on the bars on coral", p.ink, Color(FrequencyPillBars.under(p.ink.toArgb(), bars.alpha, p.accent.toArgb())))
+        reads("label on the bars on violet", p.ink, Color(FrequencyPillBars.under(p.ink.toArgb(), bars.alpha, p.lavender.toArgb())))
+    }
+
+    @Test
     fun `text reads where the aura is brightest`() {
         // the aura's lights at their peak, stacked on the night (FrequencyBackdrop), then a
         // blob of any colour at its peak and the spectrum wave's fill on top: the worst spot
