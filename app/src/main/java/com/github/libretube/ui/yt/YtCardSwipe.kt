@@ -589,6 +589,16 @@ private fun swipeLook(palette: YtPalette): YtSwipeLook {
                 arm = armTexture(name, step(YtPrimitive.CLICK, 0.5f)), hide = hide, queue = queue,
             )
         }
+        // Frequency: Formen's turning cookie in aqua and coral, YouTube neu's type, a kick
+        YtSignature.FREQUENCY -> {
+            val (hide, queue) = pair(step(YtPrimitive.THUD, 0.55f), step(YtPrimitive.TICK, 0.35f, 70))
+            YtSwipeLook(
+                s, queueField = palette.lime, hideField = palette.accent, queueInk = palette.ink, hideInk = palette.ink,
+                text = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                icon = 22f, popDamping = 0.5f, detents = true,
+                arm = armTexture(name, step(YtPrimitive.CLICK, 0.5f)), hide = hide, queue = queue,
+            )
+        }
         YtSignature.FROST -> {
             // crystals: three fading ticks, then the frost gives way
             val (hide, queue) = pair(step(YtPrimitive.SLOW_RISE, 0.3f), step(YtPrimitive.TICK, 0.4f, 160))
@@ -745,7 +755,7 @@ private fun DrawScope.drawUnderlay(
                 drawIcon(ink)
                 drawWord(ink, after = blob / 2f + gap)
             }
-            YtSignature.SHAPES -> {
+            YtSignature.SHAPES, YtSignature.FREQUENCY -> {
                 // a cookie that turns with the pull, a detent every 30 degrees
                 val cookie = 52.dp.toPx() * (0.6f + 0.4f * a) * (1f + 0.1f * pop)
                 val shape = CookieShape(9, 0.08f).createOutline(Size(cookie, cookie), layoutDirection, this)
@@ -975,6 +985,7 @@ object YtFlightLayer {
         YtSignature.EDITORIAL -> RectangleShape
         YtSignature.POP -> BlobShape(0.6f, 0.5f, 0.56f, 0.64f)
         YtSignature.SHAPES -> RoundedCornerShape(topStart = 22.dp, topEnd = 8.dp, bottomEnd = 22.dp, bottomStart = 8.dp)
+        YtSignature.FREQUENCY -> RoundedCornerShape(topStart = 20.dp, topEnd = 10.dp, bottomEnd = 20.dp, bottomStart = 10.dp)
         YtSignature.KIESEL -> RoundedCornerShape(50)
         YtSignature.CLAY -> RoundedCornerShape(18.dp)
         YtSignature.AFTER -> RoundedCornerShape(4.dp)

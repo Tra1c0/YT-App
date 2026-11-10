@@ -1611,4 +1611,92 @@
         <item name="android:windowLightNavigationBar" tools:ignore="NewApi">true</item>
     </style>
 
+    <!-- Frequency: YouTube neu's type (Geist) and layout, the shapes of Formen, a deep night with
+         a signal coral, aqua and violet (YtPalettes.Frequency) -->
+    <style name="TextAppearance.YT.Frequency.Brand" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/font_geist_800</item>
+        <item name="android:fontFamily">@font/font_geist_800</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+    <style name="YtDesign.Frequency" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Frequency.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Frequency.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.Frequency.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.Frequency.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Frequency.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.Frequency.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.Frequency.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.Frequency.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.Frequency.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.Frequency.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.Frequency.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.Frequency.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.Frequency.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.Frequency.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.Frequency.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.Frequency.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.Frequency.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.Frequency.Snackbar</item>
+        <item name="ytCardCorner">22dp</item>
+        <item name="ytRowCorner">18dp</item>
+        <item name="ytThumbCorner">14dp</item>
+        <item name="ytOutlineColor">#33FF4D6D</item>
+        <item name="ytOutlineWidth">1dp</item>
+        <item name="ytIconHalo">@drawable/yt_icon_halo</item>
+        <item name="ytIconPadding">8dp</item>
+        <item name="ytIconTint">?attr/colorOnSecondaryContainer</item>
+        <item name="ytUppercase">false</item>
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.YouTube.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.YT.YouTube.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.YT.YouTube.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.YT.YouTube.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.YT.YouTube.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.YT.YouTube.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.YT.YouTube.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.YT.YouTube.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.YT.YouTube.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.YT.YouTube.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.YT.YouTube.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.YT.YouTube.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.YT.YouTube.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.YT.YouTube.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.YT.YouTube.LabelSmall</item>
+        <item name="colorPrimary">#FF4D6D</item>
+        <item name="colorOnPrimary">#170812</item>
+        <item name="colorPrimaryContainer">#4A1626</item>
+        <item name="colorOnPrimaryContainer">#FFD9E0</item>
+        <item name="colorSecondary">#5BE7DA</item>
+        <item name="colorOnSecondary">#0B0A18</item>
+        <item name="colorSecondaryContainer">#5BE7DA</item>
+        <item name="colorOnSecondaryContainer">#0B0A18</item>
+        <item name="colorTertiary">#B3A6FF</item>
+        <item name="colorOnTertiary">#0B0A18</item>
+        <item name="colorTertiaryContainer">#FFC46B</item>
+        <item name="colorOnTertiaryContainer">#0B0A18</item>
+        <item name="android:colorBackground">#0B0A18</item>
+        <item name="colorOnBackground">#F4F2FF</item>
+        <item name="colorSurface">#0B0A18</item>
+        <item name="colorOnSurface">#F4F2FF</item>
+        <item name="colorSurfaceVariant">#231F3F</item>
+        <item name="colorOnSurfaceVariant">#B7B2D6</item>
+        <item name="colorOutline">#4C4670</item>
+        <item name="colorOutlineVariant">#2C2850</item>
+        <item name="colorSurfaceDim">#08070F</item>
+        <item name="colorSurfaceBright">#231F3F</item>
+        <item name="colorSurfaceContainerLowest">#06050E</item>
+        <item name="colorSurfaceContainerLow">#110F22</item>
+        <item name="colorSurfaceContainer">#17152B</item>
+        <item name="colorSurfaceContainerHigh">#1D1A35</item>
+        <item name="colorSurfaceContainerHighest">#231F3F</item>
+        <item name="colorSurfaceInverse">#F4F2FF</item>
+        <item name="colorOnSurfaceInverse">#0B0A18</item>
+        <item name="colorPrimaryInverse">#C2183F</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+    </style>
 </resources>

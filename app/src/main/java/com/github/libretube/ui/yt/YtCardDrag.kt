@@ -504,12 +504,15 @@ private fun liftLook(palette: YtPalette): YtLiftLook = when (palette.signature) 
     YtSignature.FROST -> YtLiftLook(1.03f, 0f, 0.7f, 380f, 0.dp, Color(0xCCFFFFFF), 1.5.dp, false)
     // Kiesel: a pebble picked up, leaning
     YtSignature.KIESEL -> YtLiftLook(1.05f, -2f, 0.4f, 480f, 12.dp, null, 0.dp, true)
+    // Frequency: YouTube neu's calm lift with a little of Formen's lean, ringed in coral
+    YtSignature.FREQUENCY -> YtLiftLook(1.035f, 1f, 0.55f, 500f, 12.dp, palette.accent, 1.5.dp, true)
 }
 
 private fun ghostShape(palette: YtPalette): Shape = when (palette.signature) {
     YtSignature.EDITORIAL, YtSignature.SIDE -> RectangleShape
     YtSignature.POP -> BlobShape(0.6f, 0.5f, 0.56f, 0.64f)
     YtSignature.SHAPES -> RoundedCornerShape(topStart = 22.dp, topEnd = 8.dp, bottomEnd = 22.dp, bottomStart = 8.dp)
+    YtSignature.FREQUENCY -> RoundedCornerShape(topStart = 20.dp, topEnd = 10.dp, bottomEnd = 20.dp, bottomStart = 10.dp)
     YtSignature.KIESEL -> RoundedCornerShape(50)
     YtSignature.CLAY -> RoundedCornerShape(18.dp)
     YtSignature.AFTER -> RoundedCornerShape(4.dp)
@@ -521,6 +524,7 @@ private fun ghostShape(palette: YtPalette): Shape = when (palette.signature) {
 private fun ghostRim(palette: YtPalette): Pair<Dp, Color>? = when (palette.signature) {
     YtSignature.EDITORIAL -> 1.5.dp to ytDayNight(Color.Black, palette.text)
     YtSignature.MOVO -> 2.dp to palette.lime
+    YtSignature.FREQUENCY -> 1.5.dp to palette.accent
     YtSignature.GLASS -> 1.5.dp to ytDayNight(Color(0xE6FFFFFF), Color(0x80CFEDE7))
     YtSignature.FROST -> 1.dp to Color(0x99FFFFFF)
     YtSignature.AFTER -> 1.dp to palette.accent
@@ -540,6 +544,7 @@ private fun VideoGhost(ghost: YtVideoGhost) {
         YtSignature.POP -> 4f
         YtSignature.KIESEL -> -3f
         YtSignature.MOVO -> -2f
+        YtSignature.FREQUENCY -> 2f
         else -> 0f
     }
     Box(

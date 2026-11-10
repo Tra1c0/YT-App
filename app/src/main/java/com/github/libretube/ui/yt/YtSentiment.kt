@@ -51,6 +51,8 @@ data class YtSentimentStyle(
                 YtSentimentStyle(YtSentimentPlacement.ARC, 2.5f, 2.5f, 1f, roundCaps = true, sweepDegrees = 84f)
             YtSignature.POP -> YtSentimentStyle(YtSentimentPlacement.UNDER, 4f, 3.5f, 0.44f, roundCaps = true)
             YtSignature.SHAPES -> YtSentimentStyle(YtSentimentPlacement.WAVE, 1.8f, 3f, 0.62f, roundCaps = true, amplitudeDp = 1.1f)
+            // Frequency: Formen's wave, a little flatter (the page is YouTube neu's)
+            YtSignature.FREQUENCY -> YtSentimentStyle(YtSentimentPlacement.WAVE, 2f, 3f, 0.6f, roundCaps = true, amplitudeDp = 0.9f)
             YtSignature.KIESEL -> YtSentimentStyle(YtSentimentPlacement.UNDER, 4f, 5f, 0.5f, roundCaps = true)
             else -> YtSentimentStyle(YtSentimentPlacement.UNDER, 3f, 4f, 0.56f, roundCaps = true)
         }
@@ -131,6 +133,8 @@ object YtSentiment {
         YtSignature.POP -> if (dark) 0xFF8FE8B8.toInt() to 0xFFF27AA6.toInt() else 0xFF2E9E66.toInt() to 0xFFD0386F.toInt()
         // night shapes: lime and salmon
         YtSignature.SHAPES -> 0xFFC6F36B.toInt() to 0xFFF28B82.toInt()
+        // night with coral: aqua and the coral
+        YtSignature.FREQUENCY -> 0xFF5BE7DA.toInt() to 0xFFFF4D6D.toInt()
         // frosted sage: ice mint and coral
         YtSignature.FROST -> 0xFFD2F5DC.toInt() to 0xFFFF9E8A.toInt()
         // pebbles: pebble green and brick

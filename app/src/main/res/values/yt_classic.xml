@@ -678,6 +678,78 @@
         <item name="shapeAppearance">@style/ShapeAppearance.YT.Shapes.L</item>
     </style>
 
+    <!-- Frequency: between YouTube neu (14 / 24) and Formen (24 / 36), pill buttons -->
+    <style name="ShapeAppearance.YT.Frequency.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">10dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frequency.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frequency.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frequency.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">28dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frequency.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">32dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frequency.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.YT.Frequency.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">32dp</item>
+        <item name="cornerSizeTopRight">32dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.Frequency.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frequency.Button</item>
+    </style>
+    <style name="Widget.YT.Frequency.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frequency.Button</item>
+    </style>
+    <style name="Widget.YT.Frequency.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frequency.Button</item>
+    </style>
+    <style name="Widget.YT.Frequency.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frequency.Button</item>
+    </style>
+    <style name="Widget.YT.Frequency.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frequency.Button</item>
+    </style>
+    <style name="Widget.YT.Frequency.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frequency.SheetTop</item>
+    </style>
+    <style name="ThemeOverlay.YT.Frequency.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.Frequency.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.Frequency.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Frequency.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.Frequency.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.Frequency.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.Frequency.Button.Text</item>
+    </style>
+    <style name="Widget.YT.Frequency.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.Frequency.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.Frequency.ToolbarTitle</item>
+    </style>
+    <style name="TextAppearance.YT.Frequency.ToolbarTitle" parent="TextAppearance.YT.YouTube.TitleLarge">
+        <item name="android:textSize">20sp</item>
+    </style>
+    <style name="Widget.YT.Frequency.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Frequency.L</item>
+    </style>
+
     <!-- Frost -->
     <style name="ShapeAppearance.YT.Frost.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
         <item name="cornerFamily">rounded</item>

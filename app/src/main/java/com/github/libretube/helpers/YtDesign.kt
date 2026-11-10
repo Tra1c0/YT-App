@@ -28,11 +28,18 @@ enum class YtDesign(
     POP("pop", R.style.YtDesign_Pop, R.style.TextAppearance_YT_YouTube_Brand, true, light = true),
     SHAPES("shapes", R.style.YtDesign_Shapes, R.style.TextAppearance_YT_YouTube_Brand, true),
     FROST("frost", R.style.YtDesign_Frost, R.style.TextAppearance_YT_YouTube_Brand, true),
-    KIESEL("kiesel", R.style.YtDesign_Kiesel, R.style.TextAppearance_YT_YouTube_Brand, false, light = true);
+    KIESEL("kiesel", R.style.YtDesign_Kiesel, R.style.TextAppearance_YT_YouTube_Brand, false, light = true),
+
+    /**
+     * "Frequency": the layout of YouTube neu with the Material shapes of Formen on a deep night,
+     * and a UI that moves with the sound that plays (ui/yt/FrequencyPulse.kt).
+     */
+    FREQUENCY("frequency", R.style.YtDesign_Frequency, R.style.TextAppearance_YT_Frequency_Brand, true);
 
     /** Designs with a Shorts tab (in place of the trends tab) and the tabs Home, Shorts, Abos, Du. */
     val hasShortsTab: Boolean
-        get() = this == CLAY || this == EDITORIAL || this == GLASS || this == POP || this == SHAPES || this == FROST
+        get() = this == CLAY || this == EDITORIAL || this == GLASS || this == POP || this == SHAPES || this == FROST ||
+            this == FREQUENCY
 
     /** The wordmark in the toolbar, as HTML; [accentHex] colors the accented part. */
     fun wordmarkHtml(accentHex: String): String = when (this) {
@@ -41,6 +48,7 @@ enum class YtDesign(
         MOVO -> "movo"
         AFTER -> "after"
         SIDE -> "side<span style='color:$accentHex';>.</span>"
+        FREQUENCY -> "frequency"
         else -> "YouTube"
     }
 
@@ -59,6 +67,7 @@ enum class YtDesign(
             SHAPES -> 0xFFC6F36B.toInt()
             FROST -> 0xFFF08A3C.toInt()
             KIESEL -> 0xFFB4A7F5.toInt()
+            FREQUENCY -> 0xFFFF4D6D.toInt()
         }
 
     /** The label of a bottom navigation destination in this design, or null to keep the default. */
@@ -96,6 +105,7 @@ enum class YtDesign(
             R.id.libraryFragment -> R.string.yt_nav_you
             else -> null
         }
+        // Frequency, Clay, Editorial, Glas, Pop, Formen, Frost: Home, Shorts, Abos, Du
         else -> when (itemId) {
             R.id.homeFragment -> R.string.yt_nav_home
             R.id.trendsFragment -> R.string.yt_nav_shorts
