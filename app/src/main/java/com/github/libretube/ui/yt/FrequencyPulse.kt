@@ -131,8 +131,15 @@ object FrequencyPulse {
     private val wanted: Boolean
         get() = holders > 0 && motionAllowed && !pageSaysPaused && YtDesign.current() == YtDesign.FREQUENCY
 
+    /**
+     * [wanted] as last worked out (on every hold, release and change of the playback clock):
+     * the frame loop reads this instead of the preferences every frame.
+     */
+    private var active = false
+
     private fun update() {
-        YtSound.setReactive(wanted)
+        active = wanted
+        YtSound.setReactive(active)
         if (holders > 0 && motionAllowed) {
             // runs on while paused, so the shapes settle back to rest smoothly; at rest it only
             // looks a few times a second whether sound came (no frame loop in silence)
@@ -147,7 +154,7 @@ object FrequencyPulse {
 
     /** Whether there is sound to follow now. */
     private val soundComing: Boolean
-        get() = wanted && YtSound.frame.value.playing
+        get() = active && YtSound.frame.value.playing
 
     private fun start() {
         stopIdle()
@@ -167,7 +174,7 @@ object FrequencyPulse {
     private val handler = Handler(Looper.getMainLooper())
     private val idleCheck = Runnable {
         idling = false
-        if (holders > 0 && motionAllowed) {
+        if (holders > 0) {
             if (soundComing) start() else idle()
         }
     }
@@ -210,7 +217,7 @@ object FrequencyPulse {
     /** One frame: every channel follows the sound, rate-limited; silence while not wanted. */
     private fun step(dt: Float) {
         val sound = YtSound.frame.value
-        val live = wanted && sound.playing
+        val live = active && sound.playing
         val level = if (live) sound.level else 0f
         val b = if (live) sound.bass else 0f
         val m = if (live) sound.mid else 0f
