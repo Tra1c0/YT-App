@@ -9,7 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -35,8 +40,7 @@ import com.github.libretube.ui.yt.cookiePath
  * YT: the mini player of Frequency, "Pulsnaht": YouTube neu's stacked card ("Rote Naht": card and
  * bar are one surface, the seam between them, the needle sews it in when the player lands, the
  * same preview with "Als Nächstes"), drawn in Frequency's night with its coral, and alive with
- * the sound: the glow of the played seam rises and lights with the level, its head swells on
- * hits, a coral rim inside the picture breathes (drawn over the picture, so it follows its live
+ * the sound: a glow above the played seam lights with the level, its head swells on hits, a coral rim inside the picture breathes (drawn over the picture, so it follows its live
  * bounds while dragged; the video itself cannot be changed), and a Formen cookie ring around the
  * play button deepens with the bass and turns while it plays. In silence all of it rests.
  */
@@ -70,7 +74,6 @@ object YtMiniFrequency : YtMiniLookDesign(YtDesign.FREQUENCY) {
         dull = Color(0xFF5A5670),
         hot = Color(0xFFFFB3C1),
         onAccent = Color(0xFF170812),
-        pulse = true,
     )
 
     override fun look(palette: YtPalette): YtMiniLook = YtMiniLook(
@@ -91,6 +94,7 @@ object YtMiniFrequency : YtMiniLookDesign(YtDesign.FREQUENCY) {
         FrequencyPulseHost()
         Box(Modifier.fillMaxSize()) {
             YoutubeUnder(scene, this@YtMiniFrequency, colors)
+            SeamPulse(scene)
             PlayRing(scene)
         }
     }
@@ -98,6 +102,54 @@ object YtMiniFrequency : YtMiniLookDesign(YtDesign.FREQUENCY) {
     @Composable
     override fun Over(scene: YtMiniScene) {
         YoutubeOver(scene, spec.thumbRadius.toFloat(), pulse = true)
+    }
+
+    /**
+     * Over the seam: a coral glow above the played part that rises in light with the level, and
+     * a soft light at its head that swells on hits. The brushes are made once per size and only
+     * moved and scaled while drawing, so a frame allocates nothing.
+     */
+    @Composable
+    private fun SeamPulse(scene: YtMiniScene) {
+        val palette = scene.palette ?: return
+        val density = LocalDensity.current.density
+        val mirror = LocalLayoutDirection.current == LayoutDirection.Rtl
+        val coral = palette.accent
+        Box(
+            Modifier
+                .fillMaxSize()
+                .clearAndSetSemantics {}
+                .drawWithCache {
+                    val overlap = spec.overlap * density
+                    val y = size.height - overlap / 2f
+                    val glowHeight = YtMiniYoutubeLayout.GLOW_HOVER * density
+                    val glow = Brush.verticalGradient(listOf(Color.Transparent, coral), startY = y - glowHeight, endY = y)
+                    val headRadius = 12f * density
+                    val head = Brush.radialGradient(listOf(coral, coral.copy(alpha = 0f)), Offset.Zero, headRadius)
+                    onDrawBehind {
+                        val shown = YtMiniYoutubeMath.seamShown(YtDock.progress) * (1f - YtDock.peek.coerceIn(0f, 1f))
+                        if (shown <= 0.01f) return@onDrawBehind
+                        val left = 1f * density
+                        val length = size.width - 2f * left
+                        val played = length * scene.info.fraction.coerceIn(0f, 1f)
+                        if (played <= 0f) return@onDrawBehind
+                        val light = FrequencyPulse.glow.floatValue
+                        val hit = FrequencyPulse.punch.floatValue
+                        val start = if (mirror) size.width - left - played else left
+                        if (light > 0.01f) {
+                            drawRect(glow, Offset(start, y - glowHeight), Size(played, glowHeight), alpha = 0.32f * light * shown)
+                        }
+                        if (hit > 0.01f) {
+                            val x = if (mirror) start else left + played
+                            translate(x, y) {
+                                scale(0.6f + 0.6f * hit, Offset.Zero) {
+                                    drawCircle(head, headRadius, Offset.Zero, alpha = 0.55f * hit * shown)
+                                }
+                            }
+                        }
+                    }
+                },
+        )
     }
 
     /** The cookie ring around the play button: aqua, deepening with the bass, turning while it plays. */
@@ -109,10 +161,12 @@ object YtMiniFrequency : YtMiniLookDesign(YtDesign.FREQUENCY) {
         val path = remember { Path() }
         val stroke = remember(density) { Stroke(1.6f * density) }
         val ring = palette.lime
+        // the docked geometry, computed again only when the width changes (not every frame)
+        val cache = remember { GeometryCache(this@YtMiniFrequency) }
         Canvas(Modifier.fillMaxSize().clearAndSetSemantics {}) {
             val shown = YtMiniYoutubeMath.restText(YtDock.progress, YtDock.peek)
             if (shown <= 0.01f) return@Canvas
-            val g = geometry(size.width, density)
+            val g = cache.of(size.width, density)
             val play = g.play ?: return@Canvas
             val restTop = size.height - (spec.height + spec.overlap) * density
             val cx = if (mirror) size.width - play.centerX else play.centerX
@@ -152,5 +206,20 @@ object YtMiniFrequency : YtMiniLookDesign(YtDesign.FREQUENCY) {
             })
             start()
         }
+    }
+}
+
+/** One docked geometry per box width and density. */
+private class GeometryCache(private val design: YtMiniDesign) {
+    private var width = -1f
+    private var density = 0f
+    private var cached: YtMiniGeometry? = null
+
+    fun of(width: Float, density: Float): YtMiniGeometry {
+        val c = cached
+        if (c != null && width == this.width && density == this.density) return c
+        this.width = width
+        this.density = density
+        return design.geometry(width, density).also { cached = it }
     }
 }

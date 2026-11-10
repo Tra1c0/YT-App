@@ -13,13 +13,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.addOutline
-import androidx.compose.ui.graphics.drawOutline
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
@@ -404,40 +401,4 @@ fun Modifier.frequencyShimmer(color: Color = Color.White, shape: Shape = Rectang
             translate(x, 0f) { drawRect(brush, Offset.Zero, androidx.compose.ui.geometry.Size(band, size.height), alpha = a) }
         }
     }
-}
-
-/**
- * Brightens the element softly on hits (the rate-safe punch), clipped to [shape]: a white veil
- * of at most 18 %, never changing more than 3 times a second.
- */
-fun Modifier.frequencyPulseLift(shape: Shape): Modifier = drawWithCache {
-    val outline: Outline = shape.createOutline(size, layoutDirection, this)
-    onDrawWithContent {
-        drawContent()
-        val lift = M.pulseLift(FrequencyPulse.punch.floatValue)
-        if (lift > 0.003f) drawOutline(outline, Color.White, alpha = lift)
-    }
-}
-
-/** A rim of [color] along [shape], [width] px, whose alpha follows the level ([rest] in silence). */
-fun Modifier.frequencyRim(color: Color, shape: Shape, width: Float, rest: Float = 0.35f): Modifier = drawWithCache {
-    val outline = shape.createOutline(
-        androidx.compose.ui.geometry.Size((size.width - width).coerceAtLeast(0f), (size.height - width).coerceAtLeast(0f)),
-        layoutDirection,
-        this,
-    )
-    val stroke = Stroke(width)
-    onDrawWithContent {
-        drawContent()
-        val g = FrequencyPulse.glow.floatValue
-        translate(width / 2f, width / 2f) {
-            drawOutline(outline, color, alpha = rest + (1f - rest) * M.clamp01(g), style = stroke)
-        }
-    }
-}
-
-/** Draws the rate-safe pulse as a white veil over the current drawing (for Canvas users). */
-fun DrawScope.frequencyVeil(outline: Outline) {
-    val lift = M.pulseLift(FrequencyPulse.punch.floatValue)
-    if (lift > 0.003f) drawOutline(outline, Color.White, alpha = lift)
 }

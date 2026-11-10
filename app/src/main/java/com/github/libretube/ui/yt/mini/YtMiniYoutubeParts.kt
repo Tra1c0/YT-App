@@ -85,9 +85,8 @@ import kotlin.math.roundToInt
 
 /**
  * The colours of a "Rote Naht" player. YouTube neu has its own (the bar's: YtNavBar's style for
- * YouTube); Frequency draws the same player in its night and coral ([YtMiniFrequency]), with
- * [pulse] on: then the seam's glow, the head and the picture's rim follow the sound
- * (FrequencyPulse, read while drawing).
+ * YouTube); Frequency draws the same player in its night and coral ([YtMiniFrequency]) and
+ * adds its own layers that follow the sound.
  */
 internal class YtMiniYoutubeColors(
     val card: Color,
@@ -105,8 +104,6 @@ internal class YtMiniYoutubeColors(
     val hot: Color,
     /** Words and glyphs on the accent (the pill under the finger). */
     val onAccent: Color = Color.White,
-    /** Whether the seam and the picture's rim move with the sound (Frequency). */
-    val pulse: Boolean = false,
 )
 
 /** The colours of the YouTube neu player (the bar's: YtNavBar's style for YouTube). */
@@ -302,12 +299,10 @@ private fun YoutubeUnderParts(scene: YtMiniScene, design: YtMiniDesign) {
             val played = length * min(scene.info.fraction.coerceIn(0f, 1f), reach)
 
             // the glow of the played part, up into the card; a video dragged near lights it all
-            // Frequency: the glow rises and lights with the level (rest: as YouTube neu)
-            val sound = if (c.pulse) FrequencyPulse.glow.floatValue else 0f
-            val glow = YtMiniYoutubeMath.glowHeight(near) * density * (1f + 1.2f * sound)
+            val glow = YtMiniYoutubeMath.glowHeight(near) * density
             if (played > 0f) {
                 drawRect(
-                    Brush.verticalGradient(listOf(Color.Transparent, thread.copy(alpha = (0.24f + 0.3f * sound) * shown)), startY = y - glow, endY = y),
+                    Brush.verticalGradient(listOf(Color.Transparent, thread.copy(alpha = 0.24f * shown)), startY = y - glow, endY = y),
                     topLeft = Offset(left, y - glow),
                     size = Size(played, glow),
                 )
@@ -343,8 +338,7 @@ private fun YoutubeUnderParts(scene: YtMiniScene, design: YtMiniDesign) {
                     StrokeCap.Butt,
                 )
                 val head = Offset(left + played, y)
-                val hit = if (c.pulse) FrequencyPulse.punch.floatValue else 0f
-                halo(thread.copy(alpha = (0.5f + 0.3f * hit) * shown), head, (6f + 4f * near + 6f * hit) * density)
+                halo(thread.copy(alpha = 0.5f * shown), head, (6f + 4f * near) * density)
                 drawCircle(c.hot.copy(alpha = shown), 1.8f * density, head)
             }
 
@@ -645,7 +639,12 @@ private fun NextRow(next: YtMiniNext, red: Color, active: Boolean, timer: Animat
  * toggle: a dark disc with the glyph and a red ring running out of it.
  */
 @Composable
-internal fun YoutubeOver(scene: YtMiniScene, thumbRadius: Float, pulse: Boolean = false) {
+internal fun YoutubeOver(
+    scene: YtMiniScene,
+    thumbRadius: Float,
+    /** Frequency: a coral rim inside the picture breathes with the sound. */
+    pulse: Boolean = false,
+) {
     val red = scene.palette?.accent ?: Color(0xFFFF334B)
     val motion = LocalYtMotion.current
     val mirror = LocalLayoutDirection.current == LayoutDirection.Rtl
