@@ -42,6 +42,9 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 - `MODIFICATIONS.md` (GPL change list) is current up to build 95 (rows split into LibreTube /
   YT files); add a row for every change to an upstream file.
 - Unverified on a phone: most features of rounds 12-15 (see FEATURES.md status column).
+- `J/helpers/YtDeviceEgg.kt` (hooks: YtActivityHooks.onStart, MainSettings.onResume): intentional
+  device-gated one-time local behaviour, no network/data touched, no-op on every other device and
+  after it has run once. Keep it; not a bug, not for user-facing notes.
 
 ## How to work (cheap and safe)
 
