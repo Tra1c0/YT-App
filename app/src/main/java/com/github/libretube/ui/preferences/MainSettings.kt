@@ -15,12 +15,6 @@ import kotlinx.coroutines.launch
 
 class MainSettings : BasePreferenceFragment() {
 
-    override fun onResume() {
-        super.onResume()
-        // device-gated one-time surprise: this is the settings home (root list), no-op unless armed
-        com.github.libretube.helpers.YtDeviceEgg.onSettingsHome(listView, requireActivity())
-    }
-
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.settings, rootKey)
 
