@@ -364,4 +364,20 @@ class SynthwaveMathTest {
             assertTrue("$crossings", crossings <= (60f * S.PALM_SWAY_MAX_HZ * 2f).toInt() + 1)
         }
     }
+
+    @Test
+    fun `the floor's rows reach the horizon at every phase`() {
+        // the far end: at any phase the last row drawn lies at the horizon's glow, not far below it
+        for (step in 0..20) {
+            val phase = step / 20f
+            var lowest = 1f
+            for (k in 0..S.ROWS_TO_HORIZON) {
+                val at = S.rowAt(k, phase)
+                if (at > 1.02f) continue
+                if (at < S.ROW_MIN) break
+                lowest = minOf(lowest, at)
+            }
+            assertTrue("phase $phase: rows end at $lowest", lowest < S.ROW_MIN * 1.6f)
+        }
+    }
 }

@@ -47,6 +47,15 @@ object SynthwaveMath {
     /** The lowest row drawn: rows closer to the horizon than this melt into one glow. */
     const val ROW_MIN = 0.045f
 
+    /**
+     * How many rows it takes to fill the floor from the bottom up to [ROW_MIN] at any phase. The
+     * floor always draws this many (far rows are thin and cheap); a tier's row count only decides
+     * how many near rows get a glow. With a fixed small count the last row stopped well below the
+     * horizon, so the mountains and the sun floated above a band without grid lines in which rows
+     * kept popping in and out while the floor drove.
+     */
+    val ROWS_TO_HORIZON: Int = kotlin.math.ceil((1f / ROW_MIN - 1f) / ROW_GAP).toInt() + 2
+
     // -- the sun --------------------------------------------------------------------------------
 
     /** Where the slits begin, in sun radii from its centre (a little above the middle). */

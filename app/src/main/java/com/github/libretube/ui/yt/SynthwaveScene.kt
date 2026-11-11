@@ -505,14 +505,15 @@ private fun BoxScope.SynthwaveSky(horizon: Float, scroll: (() -> Float)?) {
                         val x1 = S.columnX(j, 1f, sunX, spacing)
                         drawLine(columnBrush, Offset(x0, farY), Offset(x1, h), strokeWidth = 1.1f * px)
                     }
-                    for (k in 0..d.rows) {
+                    // every row up to the horizon (see ROWS_TO_HORIZON); the tier's count is for glow only
+                    for (k in 0..S.ROWS_TO_HORIZON) {
                         val at = S.rowAt(k, SynthwaveScene.drive)
                         if (at > 1.02f) continue
                         if (at < S.ROW_MIN) break
                         val y = hy + floorH * at
                         val a = S.rowAlpha(at)
                         val color = lerp(c.gridFar, c.grid, S.smooth(0.05f, 0.4f, at))
-                        if (d.glowLines) drawLine(color, Offset(0f, y), Offset(w, y), strokeWidth = 4f * px, alpha = 0.16f * a)
+                        if (d.glowLines && k <= d.rows) drawLine(color, Offset(0f, y), Offset(w, y), strokeWidth = 4f * px, alpha = 0.16f * a)
                         drawLine(color, Offset(0f, y), Offset(w, y), strokeWidth = px * (0.7f + 1.1f * at), alpha = 0.85f * a, cap = StrokeCap.Butt)
                     }
 
