@@ -377,6 +377,18 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   `YtShortsView` + `YtShortsScreen`, hidden timeline `YtShortsTimeline`, pure rules `YtShortsMath`
   (autoscroll, scrub), look per design `YtShortsLook` + `YtShortsStyle`, what a short plays
   `YtShortsSource`, settings `YtShortsPrefs` (`R/xml/yt_r12_shorts_prefs.xml`).
+- News overlay `Y/news/` (stage 1 of 4; all designs with a Compose home, not STANDARD): pinch
+  apart on the home root opens a card pager. Model `YtNewsModel` (`YtNewsItem`, `YtNewsCard` with
+  `Single`; stage 3 adds `Story`), sources `YtNewsMerge` (pure: news-channel + topic videos from the
+  feed cache and `YtFeed.topicVideo`, no Shorts/live, ≤ 7 days, never-words, dedup, caps 5 per
+  channel / 30 total), card text `YtNewsText` (pure description cleaning), gesture rules
+  `YtNewsGestureRules` (pure, thresholds in `Spec`), channel rules `YtNewsChannelRules` and store
+  `YtNewsChannels` (pref `yt_news_channels`; auto-marks "News & Politics" via `noteWatched` from
+  `YtWatch`; mark/unmark in `YtQuickSheet` and `YtFeedSheet`), shared state + `YtNewsSource` in
+  `YtNews` (deck frozen while open, hint pref `yt_news_hint_seen`), pinch `YtNewsGestures`
+  (`Modifier.ytNewsPinch`, Initial pass, consumes only after claim, resets in `finally`, P2), home
+  hook + hint pill `YtNewsHome`, overlay `YtNewsLayer` (activity layer at 23.5 dp like
+  `YtTimeUpLayer`, touch only while `layerUp`). Attached in `Y/YtHome.kt`.
 
 ## Sound, Frequency, Synthwave
 
@@ -546,7 +558,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (344 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (354 files; generated, do not edit)</summary>
 
 - `J/helpers/` (24): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDesign, YtDesignDark, YtGuard,
@@ -602,6 +614,8 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtMiniTextures, YtMiniTouch, YtMiniYouTube, YtMiniYoutubeLayout, YtMiniYoutubeParts,
   YtMiniYoutubeTextures, YtMinimizeDrag, YtMinimizeGeometry, YtMinimizeModule, YtMinimizeTestHooks,
   YtPageStart, YtSoftClose, YtSoftCloseRules, YtUnderFinger
+- `Y/news/` (10): YtNews, YtNewsChannelRules, YtNewsChannels, YtNewsGestureRules, YtNewsGestures,
+  YtNewsHome, YtNewsLayer, YtNewsMerge, YtNewsModel, YtNewsText
 - `Y/player/` (34): YtBatteryCapLabel, YtBatteryCueModule, YtBatteryCueView, YtChapterTap,
   YtChapterTapLabel, YtHoldDirection, YtHoldGesture, YtHoldLayout, YtHoldTileStyle, YtHoldTilesView,
   YtLoopChipView, YtLoopController, YtLoopPlan, YtLoopSheet, YtLoops, YtPageLayoutRules,

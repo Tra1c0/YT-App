@@ -8,8 +8,9 @@ not here.
 
 ## Current state
 
-- Latest release: build 128 (update notification) on `main`. 127: Synthwave grid reaches the
-  horizon. In progress: News feature in 4 stages (stage 1 = pinch overlay, branch r27/news1). 126: queue survives
+- Latest release: build 129 (News stage 1: pinch-to-open card overlay) on `main`. 128: update
+  notification. 127: Synthwave grid reaches the horizon. News stages 2–4 are in ROADMAP
+  "Beschlossen"; start stage 2 after the user has seen stage 1. 126: queue survives
   restarts. Build 125 = docs system only
   (`scripts/docs_sync.py`, hooks, `templates/ai-workflow/`), app code identical to 124.
 - Next work: `docs/ROADMAP.md` → "Beschlossen", top to bottom. The music mode for the designs
@@ -138,6 +139,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 129: News stage 1 (pinch apart on the home opens a card pager; news channels + topics).
 - 128: background update check + notification per new build.
 - 127: Synthwave floor grid reaches the horizon (rows up to ROW_MIN, tier count = glow only).
 - 126: queue survives every restart (saved file, "Weiter" pill, mini restore uses the same copy).
