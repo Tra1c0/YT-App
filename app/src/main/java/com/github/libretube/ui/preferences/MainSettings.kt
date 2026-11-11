@@ -14,6 +14,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainSettings : BasePreferenceFragment() {
+    // YT: "notify about new versions" next to "check for update"
+    private val ytUpdateNotify = YtUpdateNotifyPrefs(this)
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.settings, rootKey)
@@ -29,6 +31,7 @@ class MainSettings : BasePreferenceFragment() {
 
             true
         }
+        ytUpdateNotify.bind()
 
         val crashlog = findPreference<Preference>("crashlog")
         crashlog?.isVisible = PreferenceHelper.getErrorLog().isNotEmpty() && BuildConfig.DEBUG

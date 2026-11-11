@@ -81,6 +81,32 @@
             app:summary="@string/version"
             app:title="@string/update_summary" />
 
+        <!-- YT: a notification when a new build is out (YtUpdateNotifyPrefs, YtUpdateCheckWorker) -->
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:icon="@drawable/ic_notification"
+            app:key="yt_update_notify"
+            app:summary="@string/yt_r27_updnotify_summary"
+            app:title="@string/yt_r27_updnotify_title_setting" />
+
+        <!-- YT: shown only while Android does not let YT notify -->
+        <Preference
+            android:icon="@drawable/ic_bell"
+            app:isPreferenceVisible="false"
+            app:key="yt_update_notify_allow"
+            app:summary="@string/yt_r27_updnotify_allow_permission"
+            app:title="@string/yt_r27_updnotify_allow_title" />
+
+        <ListPreference
+            android:defaultValue="6"
+            android:entries="@array/yt_update_notify_interval_entries"
+            android:entryValues="@array/yt_update_notify_interval_values"
+            android:icon="@drawable/ic_time"
+            app:dependency="yt_update_notify"
+            app:key="yt_update_notify_interval"
+            app:title="@string/yt_r27_updnotify_interval_title"
+            app:useSimpleSummaryProvider="true" />
+
         <Preference
             android:icon="@drawable/ic_info"
             app:key="crashlog"

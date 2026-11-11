@@ -25,7 +25,7 @@
     <string name="yt_update_retrying_play_protect">Play Protect interrupted the installation. New attempt (%1$d of %2$d)…</string>
     <string name="yt_update_system_installer">Android\'s installer takes over. Tap “Install” or “Update” there; YT reopens afterwards via a notification.</string>
     <string name="yt_update_open_installer">Open with Android installer</string>
-    <string name="yt_update_channel_name">App updates</string>
+    <string name="yt_update_channel_name">Update installation</string>
     <string name="yt_update_channel_description">Confirming an update and reopening YT after it</string>
     <string name="yt_update_ready_title">YT update ready – tap to install</string>
     <string name="yt_update_done_title">YT was updated – tap to open</string>

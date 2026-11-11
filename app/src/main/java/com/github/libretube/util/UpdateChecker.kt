@@ -12,6 +12,7 @@ import com.github.libretube.constants.IntentData.appUpdateURL
 import com.github.libretube.extensions.TAG
 import com.github.libretube.extensions.toastFromMainDispatcher
 import com.github.libretube.obj.update.UpdateAsset
+import com.github.libretube.obj.update.UpdateInfo
 import com.github.libretube.ui.dialogs.UpdateAvailableDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -23,21 +24,14 @@ import java.util.Locale
 
 class UpdateChecker(private val context: Context) {
     suspend fun checkUpdate(isManualCheck: Boolean = false) {
-        // YT: builds are numbered ("32.1-yt.88", release "YT Build 88"); only a newer build is an
-        // update. Comparing all digits for inequality offered the latest release (an older build)
-        // to every test build of a branch.
-        val currentBuild = YtUpdateRules.currentBuild(BuildConfig.VERSION_NAME)
-
         try {
-            val response = RetrofitInstance.externalApi.getLatestRelease()
-            val update = YtUpdateRules.buildNumber(response.name)
-                ?: YtUpdateRules.buildNumber(response.tagName)
-
-            if (YtUpdateRules.isNewer(currentBuild, update)) {
+            val newer = newerRelease()
+            if (newer != null) {
+                val (response, update) = newer
                 // the APK of that build, downloaded and installed in the app; null -> release page
                 val apk = YtUpdateRules.pickApk(response.assets, update)
                 // YT: the notes of every build since the installed one (the user may skip some)
-                val notes = fetchNotes(currentBuild, update ?: return, response.body)
+                val notes = fetchNotes(installedBuild(), update, response.body)
                 withContext(Dispatchers.Main) {
                     showUpdateAvailableDialog(response.body, response.htmlUrl, apk, notes, update)
                 }
@@ -47,6 +41,8 @@ class UpdateChecker(private val context: Context) {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            // YT: asked for (button, guide, update notification): say that it did not work
+            if (isManualCheck) context.toastFromMainDispatcher(R.string.yt_r27_updnotify_check_failed)
         }
     }
 
@@ -101,7 +97,13 @@ class UpdateChecker(private val context: Context) {
         dialog.arguments = args
         val fragmentManager = (context as? FragmentActivity)?.supportFragmentManager
         fragmentManager?.let {
-            dialog.show(it, UpdateAvailableDialog::class.java.simpleName)
+            val tag = UpdateAvailableDialog::class.java.simpleName
+            // YT: one dialog at a time (the start check and a tap on the update notification)
+            runCatching { it.executePendingTransactions() }
+            if (it.findFragmentByTag(tag) != null) return
+            dialog.show(it, tag)
+            // YT: seen in the app: no notification for this build any more
+            offered?.let { build -> YtUpdateNotifier.markSeen(context, build) }
         }
     }
 
@@ -116,5 +118,28 @@ class UpdateChecker(private val context: Context) {
             .replace("*", "•")
             .lines()
             .joinToString("\n") { it.trim() }
+    }
+
+    companion object {
+        /**
+         * YT: builds are numbered ("32.1-yt.88", release "YT Build 88"); the installed one, or
+         * null for an unnumbered local build.
+         */
+        fun installedBuild(): Int? = YtUpdateRules.currentBuild(BuildConfig.VERSION_NAME)
+
+        /**
+         * YT: the latest release with its build number when that build is newer than the installed
+         * one, else null. Only a newer build is an update: comparing all digits for inequality
+         * offered the latest release (an older build) to every test build of a branch. Throws when
+         * the request fails. Shared by the dialog check and the background check
+         * ([com.github.libretube.workers.YtUpdateCheckWorker]).
+         */
+        suspend fun newerRelease(): Pair<UpdateInfo, Int>? {
+            val response = RetrofitInstance.externalApi.getLatestRelease()
+            val update = YtUpdateRules.buildNumber(response.name)
+                ?: YtUpdateRules.buildNumber(response.tagName)
+                ?: return null
+            return if (YtUpdateRules.isNewer(installedBuild(), update)) response to update else null
+        }
     }
 }

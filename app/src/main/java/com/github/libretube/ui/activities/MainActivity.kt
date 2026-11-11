@@ -182,7 +182,10 @@ class MainActivity : AbstractPlayerHostActivity() {
         binding.bottomNav.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> writeContainerKeys() }
 
         // Check update automatically
-        if (PreferenceHelper.getBoolean(PreferenceKeys.AUTOMATIC_UPDATE_CHECKS, false)) {
+        // YT: not when opened from the "new build" notification: that shows the dialog itself
+        if (PreferenceHelper.getBoolean(PreferenceKeys.AUTOMATIC_UPDATE_CHECKS, false) &&
+            !com.github.libretube.util.YtUpdateNotifier.isFromNotification(intent)
+        ) {
             lifecycleScope.launch(Dispatchers.IO) {
                 UpdateChecker(this@MainActivity).checkUpdate(false)
             }
@@ -643,6 +646,8 @@ class MainActivity : AbstractPlayerHostActivity() {
         if (com.github.libretube.helpers.YtGuard.isEmulator) {
             intent?.let { com.github.libretube.ui.yt.YtTestHooks.apply(this, it) }
         }
+        // YT: tapped the "new build" notification: check again and show the update dialog
+        com.github.libretube.util.YtUpdateNotifier.handleIntent(this, intent)
         // If activity is running in PiP mode, then start it in front.
         if (PictureInPictureCompat.isInPictureInPictureMode(this)) {
             val nIntent = Intent(this, MainActivity::class.java)

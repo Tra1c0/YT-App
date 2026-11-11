@@ -40,6 +40,9 @@ class LibreTubeApp : Application() {
             existingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.KEEP
         )
 
+        // YT: the background check for a new YT build (kept as scheduled; off cancels it)
+        com.github.libretube.util.YtUpdateNotifier.schedule(this)
+
         /**
          * Handler for uncaught exceptions
          */

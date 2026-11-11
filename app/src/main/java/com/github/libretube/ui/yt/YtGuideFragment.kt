@@ -225,6 +225,18 @@ class YtGuideFragment : Fragment() {
             YtGuideTarget.AUDIO_VIDEO -> R.id.action_global_audioVideoSettings
             YtGuideTarget.SPONSORBLOCK -> R.id.action_global_sponsorBlockSettings
             YtGuideTarget.GENERAL -> R.id.action_global_generalSettings
+            YtGuideTarget.SETTINGS -> {
+                // the main page is below the guide: a fresh copy on top, so back returns here
+                val args = setting?.let { androidx.core.os.bundleOf(YtSettingJump.ARG_KEY to it) }
+                val options = androidx.navigation.NavOptions.Builder()
+                    .setEnterAnim(androidx.navigation.ui.R.animator.nav_default_enter_anim)
+                    .setExitAnim(androidx.navigation.ui.R.animator.nav_default_exit_anim)
+                    .setPopEnterAnim(androidx.navigation.ui.R.animator.nav_default_pop_enter_anim)
+                    .setPopExitAnim(androidx.navigation.ui.R.animator.nav_default_pop_exit_anim)
+                    .build()
+                runCatching { findNavController().navigate(R.id.mainSettings, args, options) }
+                return
+            }
             YtGuideTarget.DIAGNOSIS -> {
                 YtDiagnosisUi.showDiagnosis(context)
                 return
