@@ -457,3 +457,69 @@ spielt, vorne, Bewegung, Analyse, Engine läuft, Bilder/s, Maxima der letzten 10
 
 Nicht umgesetzt: kein Suchfeld auf der Startseite (also keine Verwandlung in den Such-Knopf wie
 bei Formen); ohne Klang-Engine (Vertrag liefert nur Stille) ist alles im Ruhezustand.
+
+## Synthwave (Runde 24)
+
+Das 14. Design, „Neon-Chrom“ nach den beiden Vorlagen des Besitzers (gestreifte Retro-Sonne über
+Drahtgitter-Bergen; Outrun mit Palmen und Neon-Gitter bis zum Horizont). Eine animierte Szene ist
+der **ganze Hintergrund** der Startseite (auch hinter der Kopfzeile, wie das Plakat bei After) und
+liegt gedimmt hinter Abos, Du und dem Shorts-Reiter. Karten und Pillen sind dunkles Glas mit
+Neonkante (Magenta → Cyan), Knöpfe haben ein weiches Neon-Leuchten, die Wortmarke „SYNTHWAVE“ ist
+Chrom. Überschriften in **Audiowide** (Retro-Schrift, SIL OFL, 70 KB, `fonts/Audiowide-OFL.txt`),
+alles zum Lesen in Geist. Beschriftete Leiste (Home, Shorts, Abos, Du).
+Einstellungen → Darstellung → Design → „Synthwave“.
+
+**Palette** (`YtPalettes.Synthwave`, `YtSynthwavePaletteTest`): Nacht `#0D0620`, Flächen
+`#1A0F36` / `#271848`, Text `#FBF4FF` / `#CDBDEB`, Neon-Magenta `#FF3FD8` (Akzent, darauf dunkle
+Schrift `#14051F`), Neon-Cyan `#36E4FF`, Violett `#A98BFF`, Sonnen-Orange `#FFB04A` (dunkle Schrift
+auf allen Neons), Live `#D4145A` (weiße Schrift). Sonne `#FFE45E` → `#FF9E3D` → `#FF4F7B` →
+`#FF2E97`. Das Glas der Karten (`SynthwaveGlass`, 86–90 % Deckkraft) hält jede Textrolle auch über
+dem hellsten Punkt der Szene (Oberkante der Sonne) bei mindestens 4,5:1; auf den geteilten
+Bildschirmen (Du, Abos, Shorts), wo Wörter direkt auf dem Hintergrund stehen, liegt ein
+Nachtschleier von 86 % über der Szene. Kein Wort steht auf der Szene selbst.
+
+**Die Szene** (`ui/yt/SynthwaveScene.kt`, reine Mathematik in `SynthwaveMath.kt`, getestet in
+`SynthwaveMathTest`). Gezeichnet nur in der Zeichenphase in einer eigenen Ebene: keine
+Neuzusammensetzung pro Bild, keine Allokation pro Bild (Pfade, Pinsel und Sterne einmal je Größe).
+
+| Ebene | Bewegung | reagiert auf | Stärke |
+| --- | --- | --- | --- |
+| Sternenhimmel | Sterne funkeln langsam (0,12–0,55 Hz je Stern) | Höhen (geschützt): tieferes Funkeln | Tiefe 0,30 → 0,65 |
+| Sonne mit Schlitzen | Schlitze wandern langsam nach unten, wachsen aus dem Nichts, verlassen die Sonne unten (nahtlos) | – (immer ruhig) | 0,11 Schlitze/s |
+| Halo und Ringe | Halo leuchtet sanft | Pegel (geschützt, ≤ 3 Wechsel/s) | Alpha 0,50 → 0,72 |
+| Drahtgitter-Berge | 5–9 Konturlinien, hinten violett, vorne elektrisch blau | Bänder (Bewegung): jede Linie wird etwas höher | bis 7 % |
+| Neon-Boden | Gitter fährt endlos auf den Betrachter zu (Perspektive 1/Tiefe, nahtlos) | Bass (Bewegung): schneller | 0,55 → 1,3 Reihen/s |
+| Dunst am Horizont, Sonnenlicht auf dem Boden | Licht am Horizont | Pegel (geschützt) | leicht |
+| Palmen links und rechts | Silhouetten | – | – |
+| Parallaxe | Szene hebt sich beim Scrollen leicht, nahe Ebenen mehr | Scrollen | höchstens 40 dp |
+
+Ohne Ton fährt das Gitter ruhig weiter, die Sonne scrollt, die Sterne funkeln. Der Klang kommt
+über den Puls von Frequency (`FrequencyPulse`, hört jetzt für jedes klangreaktive Design zu,
+`YtDesign.soundReactive`): Helligkeit nur aus dem geschützten Kanal, Bewegung aus den schnellen.
+
+**Je nach Handy** (`FrequencyTiers` wie bei Frequency, alle 5 s neu; `SynthwaveTiers`): *hoch*
+alles in der Bildrate des Displays (96 Sterne, 15 Reihen, 21 Linien, 9 Bergkonturen, Leuchtlinien);
+*mittel* 52 Sterne, 11 Reihen, 15 Linien, 6 Konturen, ohne Leuchtlinien, höchstens 60 Bilder/s;
+*niedrig* / Energiesparmodus: stiller Himmel und stille Sonne, nur der Boden fährt (≈ 30 Bilder/s),
+kein Klang. Mit „Animationen der Designs“ aus oder Androids „Animationen entfernen“ steht ein
+fertiges, ruhiges Bild (volle Szene, nichts bewegt sich). Im Hintergrund, in einem anderen Design
+und solange die Videoseite die Startseite ganz verdeckt, läuft keine Bildschleife. Diagnose zeigt
+eine Zeile „Synthwave“ (Halter, Schleife, Stufe, Sterne, Reihen).
+
+| Bereich | Synthwave |
+| --- | --- |
+| Startseite | Szene über den ganzen Bildschirm; oben ein Fenster auf die Sonne mit „NACHTFAHRT“ auf Glas, Filterreihe aus Glaspillen (gewählte Magenta mit Leuchten, Feed-Regler als Cyan-Scheibe), beim Anheften ein Glasband mit Neonkante; Weiterschauen, große Videokarten aus Glas (die erste leuchtet), „Gerade live“, Shorts, „Mehr für dich“; Abschnittstitel auf kleinen Glasplatten mit Neonröhre |
+| Kopfzeile | gestreifte Sonne im Chromring als Logo, Wortmarke „SYNTHWAVE“ in Chrom mit Magenta-Leuchten, runde Glasknöpfe mit Neonring (Suche Cyan, Profil Magenta) |
+| Leiste | Nachtglas wie der Miniplayer (eine Fläche beim Andocken), Neonkante oben, aktiver Reiter mit Cyan-Icon und Magenta-Neonröhre, die sanft mit dem Pegel leuchtet |
+| Videoseite | Titel über einem Neon-Horizont mit kleiner Sonne, Beschreibung und Kommentare auf Glas, Aktionen als Neonkacheln in einer Reihe (nichts abgeschnitten), Abo-Pille Magenta mit Leuchten (abonniert: Glas mit Cyan-Kante), Neonröhre unter den Reitern, Kapitel als Neon-Straße; Rand unter dem Video: Neon-Horizont |
+| Miniplayer „Neonkante“ | Nachtglas mit Neonkante und Leuchten, Magenta-Naht, darüber Sonnenuntergangs-Licht (Pegel) und eine kleine gestreifte Sonne am Kopf; Landung wie ein Auto, das eine Bodenwelle nimmt, danach läuft einmal Licht über die Kante; Haptik wie ein Synthesizer (Kick mit Anschwellen, Arpeggio) |
+| Suche | Feld schaltet sich ein wie ein alter Bildschirm (eine Linie öffnet sich), Neonkante mit Leuchten, Filter von YouTube neu (gewählter Magenta), Verlauf als Nachtchips mit Neonrand, Zeilen mit feiner Neonlinie |
+| Shorts | Reiter: Szene gedimmt, Shorts in Glaskarten mit Neonrand; Shorts-Ansicht: Magenta-Leiste, eckiger Griff, Seitenwechsel als Synth-Stoß |
+| Abos / Du | gedimmte Szene, Kanäle in Neonringen, Karten aus Glas, „Deine Mixtapes.“ in Audiowide, Weiterschauen mit Cyan-Play und Neon-Fortschritt, Sammlungen mit Neonkante |
+| Wischen, Halten, Ziehen | Wischen: Neonscheibe mit Speed-Lines auf der Nacht, Haptik als Arpeggio; Anheben mit Cyan-Rand; Halte-Kacheln Nacht mit Neonkante und Leuchten; Lupe als Glaskreis mit Cyan-Ring |
+| Gesehen-Abzeichen, Rückgängig-Pille, Themen-Chip, „Worauf hast du Lust?“ | Magenta-Etikett in Großbuchstaben, Nachtpille mit Neonkante und Leuchten, Magenta-Etikett, dunkle Kacheln mit Magenta-Kante und Audiowide-Frage |
+| Aktualisieren | eine gestreifte Sonne geht über einem Neon-Horizont auf; beim Laden wandern ihre Schlitze |
+| Klassische Bildschirme | Ecken 14 / 24, Pillenknöpfe, Magenta-Rand, Titel in Audiowide, Geist |
+
+Nicht umgesetzt: kein echter Unschärfe-Effekt hinter dem Glas (getöntes Glas statt Blur); die
+Zeitleiste des Players bleibt ruhig Magenta; ohne Klang-Engine fährt die Szene ruhig weiter.
