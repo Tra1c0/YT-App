@@ -58,8 +58,8 @@ class YtNewsSummaryStyle(
 )
 
 /**
- * YT: the description area of a News card with the opt-in summary. Without a key it is
- * exactly [description] (the cleaned description), nothing else. With a key a small
+ * YT: the description area of a News card with the opt-in summary. Without a provider it is
+ * exactly [description] (the cleaned description), nothing else. With one a small
  * "Kurzfassung" button sits under it; a tap asks for the cited key statements, which then take
  * the description's place, each with its second: a tap plays the video from there. A summary
  * cached from an earlier tap shows at once. Closing the overlay cancels a running request.
@@ -72,7 +72,7 @@ fun YtNewsSummaryBlock(
     modifier: Modifier = Modifier,
     description: @Composable () -> Unit,
 ) {
-    val hasKey by YtNewsSummaryKey.present.collectAsState()
+    val hasKey by YtNewsSummaryKey.ready.collectAsState()
     if (!hasKey) {
         Box(modifier) { description() }
         return
@@ -224,6 +224,9 @@ object YtNewsSummaryUi {
         YtNewsSummaryFailure.NO_TRANSCRIPT -> R.string.yt_r28_newssum_no_subtitles
         YtNewsSummaryFailure.INVALID_KEY -> R.string.yt_r28_newssum_invalid_key
         YtNewsSummaryFailure.RATE_LIMITED -> R.string.yt_r28_newssum_rate_limited
+        YtNewsSummaryFailure.NO_CREDIT -> R.string.yt_r28_newssum_no_credit
+        YtNewsSummaryFailure.MODEL_UNKNOWN -> R.string.yt_r28_newssum_model_unknown
+        YtNewsSummaryFailure.UNVERIFIED -> R.string.yt_r28_newssum_unverified
         YtNewsSummaryFailure.OFFLINE -> R.string.yt_r28_newssum_offline
         YtNewsSummaryFailure.REFUSED -> R.string.yt_r28_newssum_refused
         YtNewsSummaryFailure.SERVICE -> R.string.yt_r28_newssum_service

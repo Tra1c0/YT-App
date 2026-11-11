@@ -26,13 +26,20 @@ object YtCrashText {
     )
     private val bearer = Regex("(?i)\\bbearer\\s+[A-Za-z0-9._~+/=-]+")
 
-    // API keys of the news summaries ("sk-ant-…"), wherever they appear in a message
+    // API keys of the news summaries, wherever they appear in a message: "sk-ant-…", other
+    // "sk-…" keys (also "sk-proj-…") and Google keys ("AIza…"); the header forms are below
     private val apiKey = Regex("\\bsk-ant-[A-Za-z0-9_-]+")
+    private val skKey = Regex("\\bsk-(?!ant-)[A-Za-z0-9_-]{16,}")
+    private val googleKey = Regex("\\bAIza[A-Za-z0-9_-]{20,}")
+    private val keyHeader = Regex("(?i)\\b(x-goog-api-key|x-api-key)(\\s*[=:]\\s*)([^\\s&;,\"']+)")
 
     /** Replaces values that look like secrets with "***". */
     fun scrub(text: String): String = text
         .replace(bearer, "Bearer ***")
         .replace(apiKey, "sk-ant-***")
+        .replace(skKey, "sk-***")
+        .replace(googleKey, "AIza***")
+        .replace(keyHeader) { "${it.groupValues[1]}${it.groupValues[2]}***" }
         .replace(secretPair) { "${it.groupValues[1]}${it.groupValues[2]}***" }
 
     /**

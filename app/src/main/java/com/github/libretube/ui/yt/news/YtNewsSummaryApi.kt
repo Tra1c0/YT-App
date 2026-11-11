@@ -4,6 +4,7 @@ import com.anthropic.client.AnthropicClient
 import com.anthropic.client.okhttp.AnthropicOkHttpClient
 import com.anthropic.errors.AnthropicIoException
 import com.anthropic.errors.AnthropicServiceException
+import com.anthropic.errors.NotFoundException
 import com.anthropic.errors.PermissionDeniedException
 import com.anthropic.errors.RateLimitException
 import com.anthropic.errors.UnauthorizedException
@@ -24,18 +25,19 @@ import java.util.concurrent.ExecutionException
 import kotlinx.coroutines.future.await
 
 /**
- * YT: the request and the reading of the answer for the news summaries, through the official
- * SDK. Free of Android, so the request shape and the answer mapping are tested on the JVM.
+ * YT: the request and the reading of the answer for the news summaries of the provider with
+ * character citations ([YtNewsAnthropic]), through its official SDK. Free of Android, so the request shape and the answer mapping are tested on the JVM.
  *
  * The transcripts go in as plain-text documents with citations on; every statement of the
  * answer then carries the character range it rests on, which [YtNewsTranscriptDoc] turns back
  * into the second. Citations and structured outputs do not mix, so the answer is plain lines.
  * Thinking is left at the model's default (it cannot be switched off there); the effort is low,
  * as a short summary needs little. A declined request is retried server-side on the model the
- * service picks for that case ("fallbacks: default").
+ * service picks for that case ("fallbacks: default"). Effort and fallbacks are set for the
+ * default model only; a model the user names gets the plain request, which every model takes.
  */
 object YtNewsSummaryApi {
-    /** The only place the model is named. */
+    /** The default model; the user can name another in the settings. */
     const val MODEL = "claude-opus-5-5"
 
     /** Room for the adaptive thinking plus a few short lines; billed only as far as used. */
@@ -69,7 +71,7 @@ object YtNewsSummaryApi {
             .build()
 
     /** The request for one video ([sources] has one entry) or a story of several. */
-    fun params(sources: List<YtNewsSource>): MessageCreateParams {
+    fun params(sources: List<YtNewsSource>, model: String = MODEL): MessageCreateParams {
         val content = ArrayList<BetaContentBlockParam>(sources.size + 1)
         for (source in sources) {
             val document = BetaRequestDocumentBlock.builder()
@@ -82,12 +84,16 @@ object YtNewsSummaryApi {
         val ask = if (sources.size > 1) ASK_STORY else ASK_SINGLE
         content += BetaContentBlockParam.ofText(BetaTextBlockParam.builder().text(ask).build())
         return MessageCreateParams.builder()
-            .model(MODEL)
+            .model(model)
             .maxTokens(MAX_TOKENS)
             .system(SYSTEM)
-            .outputConfig(BetaOutputConfig.builder().effort(BetaOutputConfig.Effort.LOW).build())
-            .addBeta(AnthropicBeta.SERVER_SIDE_FALLBACK_2026_07_01)
-            .fallbacksDefault()
+            .apply {
+                if (model == MODEL) {
+                    outputConfig(BetaOutputConfig.builder().effort(BetaOutputConfig.Effort.LOW).build())
+                    addBeta(AnthropicBeta.SERVER_SIDE_FALLBACK_2026_07_01)
+                    fallbacksDefault()
+                }
+            }
             .addUserMessageOfContentBlockParams(content)
             .build()
     }
@@ -123,8 +129,8 @@ object YtNewsSummaryApi {
      * One request: the statements of [sources], or why there are none. Cancelling the coroutine
      * cancels the request's future, so a closed overlay stops waiting at once.
      */
-    suspend fun summarize(client: AnthropicClient, sources: List<YtNewsSource>): Result {
-        val message = client.async().beta().messages().create(params(sources)).await()
+    suspend fun summarize(client: AnthropicClient, sources: List<YtNewsSource>, model: String = MODEL): Result {
+        val message = client.async().beta().messages().create(params(sources, model)).await()
         return when (val answer = answer(message)) {
             Answer.Refused -> Result.Failed(YtNewsSummaryFailure.REFUSED)
             is Answer.Blocks -> {
@@ -144,17 +150,17 @@ object YtNewsSummaryApi {
      * Whether [apiKey] works: a free lookup of the model (no tokens). Null when it does, else
      * the reason. Blocking.
      */
-    fun check(apiKey: String): YtNewsSummaryFailure? {
+    fun check(apiKey: String, model: String = MODEL): YtNewsSummaryFailure? {
         val client = client(apiKey)
         return try {
-            check(client)
+            check(client, model)
         } finally {
             client.close()
         }
     }
 
-    fun check(client: AnthropicClient): YtNewsSummaryFailure? = try {
-        client.models().retrieve(MODEL)
+    fun check(client: AnthropicClient, model: String = MODEL): YtNewsSummaryFailure? = try {
+        client.models().retrieve(model)
         null
     } catch (e: Exception) {
         failure(e)
@@ -168,6 +174,8 @@ object YtNewsSummaryApi {
             // a key without access to the model, or a workspace that may not use it
             is PermissionDeniedException -> YtNewsSummaryFailure.INVALID_KEY
             is RateLimitException -> YtNewsSummaryFailure.RATE_LIMITED
+            // the model named in the settings does not exist
+            is NotFoundException -> YtNewsSummaryFailure.MODEL_UNKNOWN
             is AnthropicServiceException -> YtNewsSummaryFailure.SERVICE
             is AnthropicIoException, is IOException -> YtNewsSummaryFailure.OFFLINE
             else -> YtNewsSummaryFailure.SERVICE

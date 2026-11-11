@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- YT: the News overlay's settings, a section of "Gesten & Interaktion". Stage 4: the opt-in
-     summaries with sources; off until the user enters their own API key (YtNewsSummaryKeyPreference). -->
+     summaries with sources; off until the user picks a provider and enters their own key
+     (YtNewsSummaryKeyPreference.kt: provider, key, model, address of a compatible server). -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -8,10 +9,25 @@
         app:key="yt_r28_news_category"
         app:title="@string/yt_r28_newssum_category">
 
-        <com.github.libretube.ui.yt.news.YtNewsSummaryKeyPreference
+        <com.github.libretube.ui.yt.news.YtNewsSummaryProviderPreference
             android:icon="@drawable/ic_caption"
-            app:key="yt_news_summary_key"
+            app:key="yt_news_summary_provider"
             app:title="@string/yt_r28_newssum_setting" />
+
+        <com.github.libretube.ui.yt.news.YtNewsSummaryAddressPreference
+            app:iconSpaceReserved="true"
+            app:key="yt_news_summary_address"
+            app:title="@string/yt_r28_newssum_address" />
+
+        <com.github.libretube.ui.yt.news.YtNewsSummaryKeyPreference
+            app:iconSpaceReserved="true"
+            app:key="yt_news_summary_key"
+            app:title="@string/yt_r28_newssum_dialog_hint" />
+
+        <com.github.libretube.ui.yt.news.YtNewsSummaryModelPreference
+            app:iconSpaceReserved="true"
+            app:key="yt_news_summary_model"
+            app:title="@string/yt_r28_newssum_model" />
 
     </PreferenceCategory>
 

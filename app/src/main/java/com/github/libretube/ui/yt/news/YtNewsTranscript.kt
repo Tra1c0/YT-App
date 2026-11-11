@@ -173,6 +173,29 @@ class YtNewsTranscriptDoc private constructor(
 ) {
     val lines: Int get() = starts.size
 
+    /** The words of each line, without its "[m:ss] " stamp (for the quote check). */
+    private val words: List<String> by lazy {
+        text.split('\n').take(starts.size).map { it.substringAfter("] ", it) }
+    }
+
+    /** The words of line [index] (0-based), without the stamp. */
+    fun lineText(index: Int): String = words[index]
+
+    /** The second line [index] (0-based) starts at. */
+    fun lineSecond(index: Int): Long = seconds[index]
+
+    /**
+     * The document with a number in front of every line, "L1 [0:04] words", for services without
+     * character citations: an answer names the line and quotes it, [YtNewsQuotes] checks the quote.
+     */
+    fun numbered(): String {
+        val out = StringBuilder(text.length + starts.size * 6)
+        for (i in 0 until starts.size) {
+            out.append('L').append(i + 1).append(" [").append(stamp(seconds[i])).append("] ").append(words[i]).append('\n')
+        }
+        return out.toString()
+    }
+
     /** The second of the line a character (code point offset) belongs to; null for an empty document. */
     fun secondAt(codePoint: Int): Long? {
         if (starts.isEmpty()) return null

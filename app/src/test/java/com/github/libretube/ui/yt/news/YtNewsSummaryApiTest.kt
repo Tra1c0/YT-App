@@ -160,6 +160,19 @@ class YtNewsSummaryApiTest {
     }
 
     @Test
+    fun unknownModelOfTheSettings() {
+        server.answer(404, """{"type":"error","error":{"type":"not_found_error","message":"model: nope"}}""")
+        val client = YtNewsSummaryApi.client("k", server.url, retries = 0)
+        try {
+            assertEquals(YtNewsSummaryFailure.MODEL_UNKNOWN, YtNewsSummaryApi.check(client, "nope"))
+        } finally {
+            client.close()
+        }
+        val request = server.requests.poll(5, TimeUnit.SECONDS)!!
+        assertTrue(request.line, request.line.startsWith("GET /v1/models/nope"))
+    }
+
+    @Test
     fun noServerMeansOffline() {
         val port = ServerSocket(0, 1, InetAddress.getLoopbackAddress()).use { it.localPort }
         val client = YtNewsSummaryApi.client("k", "http://127.0.0.1:$port", retries = 0)
