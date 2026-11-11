@@ -301,7 +301,7 @@ private fun GlassVideo(
                 .aspectRatio(355f / 175f)
                 .shadow(6.dp, RoundedCornerShape(12.dp), clip = false, ambientColor = GlassShadow, spotColor = GlassShadow)
                 .clip(RoundedCornerShape(12.dp))
-                .ytHeldScope(token)
+                .ytHeldScope(token, RoundedCornerShape(12.dp))
                 // the watched bar and, held, the time left: above the drop, the chip and the loupe
                 .ytSeenTop(video, palette)
                 .background(palette.lime)

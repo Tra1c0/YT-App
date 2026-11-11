@@ -7,6 +7,8 @@ import com.github.libretube.ui.yt.mini.YtMiniFrequencyTextures
 import com.github.libretube.ui.yt.mini.YtMiniSpecs
 import com.github.libretube.ui.yt.mini.YtMiniSynthwaveTextures
 import com.github.libretube.ui.yt.mini.YtMoment
+import com.github.libretube.ui.yt.news.YtNewsHaptic
+import com.github.libretube.ui.yt.news.YtNewsTextures
 import com.github.libretube.ui.yt.search.YtSearchKind
 import com.github.libretube.ui.yt.search.YtSearchPalette
 import com.github.libretube.ui.yt.shorts.YtShortsLook
@@ -67,6 +69,16 @@ class YtDesignRegistryTest {
         assertEquals(names.size, names.toSet().size)
         assertTrue(YtShortsLook.of(YtDesign.FREQUENCY).page.name.endsWith("frequency"))
         assertTrue(YtShortsLook.of(YtDesign.SYNTHWAVE).page.name.endsWith("synthwave"))
+    }
+
+    @Test
+    fun `every design has its own News feel`() {
+        for (design in designs) {
+            for (moment in YtNewsHaptic.entries) {
+                val texture = YtNewsTextures.of(design, moment)
+                assertTrue("$design $moment", texture.steps.isNotEmpty() && texture.name.endsWith(design.key))
+            }
+        }
     }
 
     @Test

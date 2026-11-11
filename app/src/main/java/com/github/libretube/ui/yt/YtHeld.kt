@@ -1,6 +1,7 @@
 package com.github.libretube.ui.yt
 
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -10,18 +11,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.findNearestAncestor
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.dp
 import com.github.libretube.ui.yt.feed.YtHeldSet
 
 /*
@@ -46,14 +51,30 @@ internal fun YtCardDrag.letGo(token: YtHeldToken) {
     held.value = YtHeldSet.remove(held.value, token)
 }
 
-/** Puts [token] on this card for the watched mark and chips inside it. Put it on the card's root. */
-fun Modifier.ytHeldScope(token: YtHeldToken): Modifier = this.then(HeldScopeElement(token))
+/**
+ * Puts [token] on this card for the watched mark and chips inside it. Put it on the card's root.
+ * [shape] and [inset] (the room between the bounds and the visible card) tell the News window,
+ * which can grow out of the card (YtCardFrames), where the card is and how round; null: unknown.
+ */
+fun Modifier.ytHeldScope(
+    token: YtHeldToken,
+    shape: Shape? = null,
+    inset: PaddingValues = NoInset,
+): Modifier = this.then(HeldScopeElement(token, shape, inset))
 
-private data class HeldScopeElement(val token: YtHeldToken) : ModifierNodeElement<YtHeldScopeNode>() {
-    override fun create() = YtHeldScopeNode(token)
+private val NoInset = PaddingValues(0.dp)
+
+private data class HeldScopeElement(
+    val token: YtHeldToken,
+    val shape: Shape?,
+    val inset: PaddingValues,
+) : ModifierNodeElement<YtHeldScopeNode>() {
+    override fun create() = YtHeldScopeNode(token, shape, inset)
 
     override fun update(node: YtHeldScopeNode) {
         node.token = token
+        node.shape = shape
+        node.inset = inset
     }
 
     override fun InspectorInfo.inspectableProperties() {
@@ -61,9 +82,30 @@ private data class HeldScopeElement(val token: YtHeldToken) : ModifierNodeElemen
     }
 }
 
-/** The card's end of the link; it lives as long as the card's layout node. */
-internal class YtHeldScopeNode(token: YtHeldToken) : Modifier.Node(), TraversableNode {
+/**
+ * The card's end of the link; it lives as long as the card's layout node. It is also the card's
+ * frame for the News window (YtCardFrames): registered while attached, and its draw hands the
+ * card to the window while lent (one snapshot read per card draw; nothing else otherwise).
+ */
+internal class YtHeldScopeNode(
+    token: YtHeldToken,
+    var shape: Shape?,
+    var inset: PaddingValues,
+) : Modifier.Node(), TraversableNode, DrawModifierNode {
     override val traverseKey: Any get() = KEY
+
+    override fun onAttach() {
+        YtCardFrames.attach(this)
+    }
+
+    override fun onDetach() {
+        YtCardFrames.detach(this)
+    }
+
+    override fun ContentDrawScope.draw() {
+        val frame = YtCardFrames.lent
+        if (frame == null || frame.node !== this@YtHeldScopeNode) drawContent() else frame.draw(this)
+    }
 
     /** The card instance (a reused list item gets a new one through update). */
     var token by mutableStateOf(token)
