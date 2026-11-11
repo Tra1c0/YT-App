@@ -61,9 +61,42 @@ object YtPageLayoutRules {
 
     /**
      * Whether a page built in landscape goes into fullscreen at once (auto fullscreen). Not for a
-     * docked page, and not for the page rebuilt because the user just left fullscreen in
-     * landscape ([leftFullscreen]): that is the windowed page they asked for.
+     * docked page, and not while the user keeps the page windowed in landscape ([windowed], see
+     * [windowedAfter]): a page rebuilt after they left fullscreen there is the page they asked for.
      */
-    fun fullscreenAtStart(autoFullscreen: Boolean, landscape: Boolean, docked: Boolean, leftFullscreen: Boolean): Boolean =
-        autoFullscreen && landscape && !docked && !leftFullscreen
+    fun fullscreenAtStart(autoFullscreen: Boolean, landscape: Boolean, docked: Boolean, windowed: Boolean): Boolean =
+        autoFullscreen && landscape && !docked && !windowed
+
+    /** What auto fullscreen does with a configuration the page hears ([autoFullscreenOnChange]). */
+    enum class AutoFullscreen { ENTER, LEAVE, NONE }
+
+    /**
+     * What auto fullscreen does when the page hears a configuration showing [orientation], the
+     * page having last heard [heardOrientation] (null: nothing yet). Only a turn counts: upstream
+     * went into fullscreen on every configuration change in landscape (screen size, keyboard,
+     * theme, the turn back after a rebuild asked for the setting's orientation for a moment), so
+     * the windowed landscape page the user had just asked for went back into fullscreen by
+     * itself. Not for a docked page, and no entering while the user keeps the page windowed in
+     * landscape ([windowed]).
+     */
+    fun autoFullscreenOnChange(
+        autoFullscreen: Boolean,
+        docked: Boolean,
+        orientation: Int,
+        heardOrientation: Int?,
+        windowed: Boolean,
+    ): AutoFullscreen {
+        if (!autoFullscreen || docked || orientation == heardOrientation) return AutoFullscreen.NONE
+        if (orientation != Configuration.ORIENTATION_LANDSCAPE) return AutoFullscreen.LEAVE
+        return if (windowed) AutoFullscreen.NONE else AutoFullscreen.ENTER
+    }
+
+    /**
+     * Whether the page stays windowed in landscape against auto fullscreen once it shows
+     * [orientation]: the user left fullscreen there ([leftFullscreen]: the button, the swipe down,
+     * back, the hold) and keeps it until the screen shows another orientation (turning back
+     * into landscape is auto fullscreen's turn again) or they ask for fullscreen themselves.
+     */
+    fun windowedAfter(windowed: Boolean, orientation: Int, leftFullscreen: Boolean = false): Boolean =
+        orientation == Configuration.ORIENTATION_LANDSCAPE && (windowed || leftFullscreen)
 }
