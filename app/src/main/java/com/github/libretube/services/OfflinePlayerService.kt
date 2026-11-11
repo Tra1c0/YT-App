@@ -49,6 +49,9 @@ open class OfflinePlayerService : AbstractPlayerService() {
     private var noInternetService: Boolean = false
 
     private var downloadWithItems: DownloadWithItems? = null
+
+    // YT: deleted downloads skipped in a row (see startPlayback)
+    private var ytMissingSkips = 0
     private lateinit var playerData: PlayerData
 
     private val scope = CoroutineScope(Dispatchers.Main)
@@ -80,7 +83,8 @@ open class OfflinePlayerService : AbstractPlayerService() {
         noInternetService = args.getBoolean(IntentData.noInternet, false)
         isAudioOnlyPlayer = args.getBoolean(IntentData.audioOnly, false)
 
-        PlayingQueue.clear()
+        // YT: a queue put back after a restart (YtQueueResume) is kept as it is
+        if (!playerData.keepQueue) PlayingQueue.clear()
 
         this.videoId = if (playerData.shuffle) {
             runBlocking(Dispatchers.IO) {
@@ -101,7 +105,7 @@ open class OfflinePlayerService : AbstractPlayerService() {
             setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioOnlyPlayer)
         }
 
-        fillQueue()
+        if (!playerData.keepQueue) fillQueue()
     }
 
     override fun getIntentActivity(): Class<*> {
@@ -116,7 +120,15 @@ open class OfflinePlayerService : AbstractPlayerService() {
 
         val downloadWithItems = withContext(Dispatchers.IO) {
             Database.downloadDao().findById(videoId)
-        } ?: return
+        }
+        if (downloadWithItems == null) {
+            // YT: a download deleted since the queue was put together (a queue kept over a
+            // restart): its item is skipped instead of the queue stopping there; at most once per
+            // item in a row, so a queue of deleted downloads cannot go round under repeat-all
+            if (ytMissingSkips++ < PlayingQueue.size()) withContext(Dispatchers.Main) { playNextVideo() }
+            return
+        }
+        ytMissingSkips = 0
         this.downloadWithItems = downloadWithItems
 
         PlayingQueue.updateCurrent(downloadWithItems.download.toStreamItem())

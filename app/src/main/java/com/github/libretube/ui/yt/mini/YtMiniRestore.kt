@@ -4,19 +4,20 @@ import android.os.SystemClock
 import android.view.View
 import androidx.fragment.app.FragmentActivity
 import com.github.libretube.R
-import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.helpers.NavigationHelper
 import com.github.libretube.parcelable.PlayerData
 import com.github.libretube.ui.yt.YtHaptics
 import com.github.libretube.util.PlayingQueue
+import com.github.libretube.util.YtQueueStore
 
 /**
  * YT: brings back the mini player that was swiped away or closed, by a long press on the
  * "Abos" tab of the navigation bar (all designs whose bar has it, and the classic bar).
  *
- * PlayerFragment reports a close ([closed]) with the video, its position and a copy of the
- * playing queue (the closing service clears the queue). For [YtMiniRestoreRules.KEEP_MS] a long
- * press puts the queue back and starts the video at that position, opened straight into the
+ * PlayerFragment reports a close ([closed]) with the video and its position; the closing service
+ * writes the queue to the saved copy (YtQueueStore) before it clears it. For
+ * [YtMiniRestoreRules.KEEP_MS] a long press puts that queue back and starts the video at that
+ * position, opened straight into the
  * docked mini player: the page takes the path a rotated, docked page uses
  * ([YtPageStart] with docked = true), which is known to dock cleanly after attach. With motion
  * on it then rises onto the bar from behind its edge, the throw-away reversed, and lands in the
@@ -33,7 +34,6 @@ object YtMiniRestore {
     private class Session(
         val videoId: String,
         val startSeconds: Long,
-        val queue: List<StreamItem>,
         val closedAt: Long,
     )
 
@@ -90,10 +90,11 @@ object YtMiniRestore {
             saved = null
             return
         }
+        // the queue itself is not copied here: the closing service writes it to the one saved
+        // copy (YtQueueStore), which the restore puts back
         saved = Session(
             videoId = videoId,
             startSeconds = YtMiniRestoreRules.startSeconds(positionMs, durationMs),
-            queue = PlayingQueue.getStreams(),
             closedAt = now(),
         )
     }
@@ -155,7 +156,9 @@ object YtMiniRestore {
         val start = Runnable {
             if (activity.isFinishing || activity.isDestroyed || playerShowing(activity)) return@Runnable
             mark("navigate")
-            PlayingQueue.setStreams(session.queue)
+            // the saved queue (YtQueueStore, written when the service ended); none saved (cleared
+            // or played to its end): the video starts on its own
+            if (!YtQueueStore.putBackForRestore()) PlayingQueue.clear()
             dockVideoId = session.videoId
             dockAt = now()
             NavigationHelper.navigateVideo(

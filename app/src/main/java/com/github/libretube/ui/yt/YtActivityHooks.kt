@@ -13,6 +13,8 @@ object YtActivityHooks {
     fun onCreate(activity: MainActivity, savedInstanceState: Bundle?) {
         // the time box's end card, over every screen
         YtTimeUpLayer.attach(activity)
+        // the queue kept over a restart goes back (with its resume pill) if nothing else plays
+        YtQueueResume.onActivityCreated(activity, savedInstanceState)
     }
 
     fun onStart(activity: MainActivity) {
@@ -24,6 +26,8 @@ object YtActivityHooks {
 
     fun onStop(activity: MainActivity) {
         YtIntentTrigger.onStop(activity)
+        // the app may be killed in the background from now on: the queue goes to disk at once
+        com.github.libretube.util.YtQueueStore.flush()
         if (!activity.isChangingConfigurations) YtTopicSession.onStop()
     }
 }

@@ -56,6 +56,9 @@ class LibreTubeApp : Application() {
 
         // YT: a sign-in window that was killed may have left Google cookies; they go now
         runCatching { com.github.libretube.ui.yt.account.YtAccount.wipeLeftovers() }
+
+        // YT: the playing queue is saved on every change and put back after a restart
+        com.github.libretube.util.YtQueueStore.start(this)
     }
 
     /**

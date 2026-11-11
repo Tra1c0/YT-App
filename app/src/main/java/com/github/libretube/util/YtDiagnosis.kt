@@ -18,6 +18,13 @@ import com.github.libretube.ui.yt.account.YtAccount
  */
 object YtDiagnosis {
 
+    /** The queue kept over a restart (YtQueueStore): size, place, when it was written, whether it waits. */
+    private fun savedQueue(): String {
+        val saved = YtQueueStore.saved ?: return "none"
+        val waits = if (YtQueueStore.pending) ", waiting" else ""
+        return "${saved.items.size} videos, at ${saved.currentIndex + 1}, saved ${YtCrashLog.formatTime(saved.savedAt)}$waits"
+    }
+
     fun text(context: Context): String {
         val crashes = YtCrashLog.reports(context)
         val rows = buildList<Pair<String, String?>> {
@@ -30,6 +37,7 @@ object YtDiagnosis {
             add("Last update" to runCatching { YtSelfUpdater.lastResult(context) }.getOrNull())
             add("YouTube account" to if (runCatching { YtAccount.signedIn }.getOrDefault(false)) "yes" else "no")
             add("Queue" to runCatching { PlayingQueue.size().toString() }.getOrNull())
+            add("Saved queue" to runCatching { savedQueue() }.getOrNull())
             add("Sound" to sound())
             add("Frequency" to runCatching { com.github.libretube.ui.yt.FrequencyPulse.diagnosis() }.getOrNull())
             add("Synthwave" to runCatching { com.github.libretube.ui.yt.SynthwaveScene.diagnosis() }.getOrNull())

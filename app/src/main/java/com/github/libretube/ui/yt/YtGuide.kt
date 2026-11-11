@@ -112,6 +112,7 @@ object YtGuide {
             "playback", R.string.yt_guide_s_playback, listOf(
                 item("positions", R.string.yt_guide_positions_t, R.string.yt_guide_positions_b),
                 item("queue", R.string.yt_guide_queue_t, R.string.yt_guide_queue_b),
+                item("queue_restart", R.string.yt_r25_guide_queue_restart_t, R.string.yt_r25_guide_queue_restart_b),
                 item("audio_only", R.string.yt_guide_audio_only_t, R.string.yt_guide_audio_only_b, R.string.yt_guide_where_audio_only, YtGuideTarget.GENERAL, "audio_only_mode"),
                 item("loud", R.string.yt_guide_loud_t, R.string.yt_guide_loud_b, R.string.yt_guide_where_loud, YtGuideTarget.AUDIO_VIDEO, "yt_loud"),
                 item("music", R.string.yt_guide_music_t, R.string.yt_guide_music_b, R.string.yt_guide_where_music, YtGuideTarget.PLAYER, "yt_music_audio_background"),
