@@ -80,6 +80,23 @@ class YtCrashTextTest {
     }
 
     @Test
+    fun otherProviderKeysAreScrubbed() {
+        val text = YtCrashText.scrub(
+            "a sk-proj-Ab12Cd34Ef56Gh78Ij90 b sk-Zz99Yy88Xx77Ww66Vv55 c AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2 " +
+                "x-goog-api-key: secretgoogle x-api-key=secretant Authorization: Bearer sk-live-aaaaaaaaaaaaaaaa",
+        )
+        for (secret in listOf("Ab12Cd34", "Zz99Yy88", "SyA1b2C3", "secretgoogle", "secretant", "aaaaaaaa")) {
+            assertFalse(text, text.contains(secret))
+        }
+        assertTrue(text.contains("sk-***"))
+        assertTrue(text.contains("AIza***"))
+        // the Anthropic form keeps its own mask
+        assertTrue(YtCrashText.scrub("sk-ant-api03-AbC_dEf-123").contains("sk-ant-***"))
+        // ordinary words with "sk-" stay
+        assertEquals("task-runner sk-learn", YtCrashText.scrub("task-runner sk-learn"))
+    }
+
+    @Test
     fun updateResultIsNotScrubbed() {
         val line = "session 12 try 2: status 3 aborted"
         assertEquals(line, YtCrashText.scrub(line))

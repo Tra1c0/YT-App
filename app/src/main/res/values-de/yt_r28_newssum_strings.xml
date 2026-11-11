@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- YT Runde 28: belegte Kurzfassungen der News (Kernaussagen aus dem Transkript). Gleiche Schlüssel wie values. -->
+<!-- YT Runde 28: belegte Kurzfassungen der News (Kernaussagen aus dem Transkript), mit Wahl des Anbieters. Gleiche Schlüssel wie values. -->
 <resources>
     <!-- die Karte -->
     <string name="yt_r28_newssum_button">Kurzfassung</string>
@@ -11,18 +11,49 @@
     <string name="yt_r28_newssum_no_subtitles">Keine Untertitel</string>
     <string name="yt_r28_newssum_invalid_key">Schlüssel ungültig</string>
     <string name="yt_r28_newssum_rate_limited">Gerade zu viele Anfragen, später erneut</string>
+    <string name="yt_r28_newssum_no_credit">Kein Guthaben auf dem API-Konto</string>
+    <string name="yt_r28_newssum_model_unknown">Modell unbekannt</string>
     <string name="yt_r28_newssum_offline">Offline</string>
     <string name="yt_r28_newssum_refused">Keine Kurzfassung möglich</string>
+    <string name="yt_r28_newssum_unverified">Keine belegbare Kurzfassung</string>
     <string name="yt_r28_newssum_service">Dienst gerade nicht erreichbar</string>
 
     <!-- Einstellungen -->
     <string name="yt_r28_newssum_category">News</string>
     <string name="yt_r28_newssum_setting">Belegte Kurzfassungen</string>
-    <string name="yt_r28_newssum_summary_off">Aus. Mit einem eigenen Anthropic-API-Schlüssel bekommen News-Karten den Knopf „Kurzfassung“: 3 bis 5 Kernaussagen aus den Untertiteln, jede mit der Sekunde, in der sie fällt. Alles andere funktioniert ohne Schlüssel.</string>
-    <string name="yt_r28_newssum_summary_on">An · Schlüssel gesetzt. Nur wenn du auf einer Karte „Kurzfassung“ tippst; die Kosten laufen über deinen Schlüssel.</string>
+    <string name="yt_r28_newssum_summary_off">Aus. Mit eigenem API-Schlüssel (OpenAI, Anthropic, Gemini, Mistral oder kompatibel) bekommen News-Karten den Knopf „Kurzfassung“: 3 bis 5 Kernaussagen aus den Untertiteln, jede mit der Sekunde, in der sie fällt. Aus schickt nichts irgendwohin.</string>
+    <string name="yt_r28_newssum_provider">Anbieter</string>
+    <string name="yt_r28_newssum_provider_is">Anbieter: %1$s</string>
+    <string name="yt_r28_newssum_provider_off">Aus</string>
+    <string name="yt_r28_newssum_provider_anthropic">Anthropic (Claude)</string>
+    <string name="yt_r28_newssum_provider_openai">OpenAI (ChatGPT)</string>
+    <string name="yt_r28_newssum_provider_gemini">Google Gemini</string>
+    <string name="yt_r28_newssum_provider_mistral">Mistral</string>
+    <string name="yt_r28_newssum_provider_compatible">OpenAI-kompatibel (eigene Adresse)</string>
+    <string name="yt_r28_newssum_key_named">%1$s-API-Schlüssel</string>
+    <string name="yt_r28_newssum_key_unset">Nicht gesetzt. %1$s</string>
+    <string name="yt_r28_newssum_hint_anthropic">Den Schlüssel gibt es auf console.anthropic.com.</string>
+    <string name="yt_r28_newssum_hint_openai">Den Schlüssel gibt es auf platform.openai.com, mit separat aufgeladenem Guthaben. Ein ChatGPT-Plus-Abo enthält keinen API-Zugang.</string>
+    <string name="yt_r28_newssum_hint_gemini">Den Schlüssel gibt es auf aistudio.google.com.</string>
+    <string name="yt_r28_newssum_hint_mistral">Den Schlüssel gibt es auf console.mistral.ai.</string>
+    <string name="yt_r28_newssum_hint_compatible">Nur wenn dein Server einen verlangt (z. B. Groq, DeepSeek, OpenRouter); ein lokaler Server wie Ollama braucht meist keinen.</string>
+    <string name="yt_r28_newssum_summary_on">Gesetzt. Nur wenn du auf einer Karte „Kurzfassung“ tippst; die Kosten laufen über deinen Schlüssel.</string>
     <string name="yt_r28_newssum_dialog_title">API-Schlüssel für Kurzfassungen</string>
-    <string name="yt_r28_newssum_dialog_message">Trage deinen eigenen Anthropic-API-Schlüssel ein. Er wird verschlüsselt nur auf diesem Gerät gespeichert, nicht in Backups übernommen und nur an die API geschickt. Die Untertitel eines Videos gehen dorthin, wenn du „Kurzfassung“ tippst.</string>
+    <string name="yt_r28_newssum_dialog_message">Trage deinen eigenen %1$s ein. %2$s Er wird verschlüsselt nur auf diesem Gerät gespeichert, nicht in Backups übernommen und nur an den Anbieter geschickt. Die Untertitel eines Videos gehen dorthin, wenn du „Kurzfassung“ tippst.</string>
     <string name="yt_r28_newssum_dialog_hint">API-Schlüssel</string>
+    <string name="yt_r28_newssum_wrong_key">Das ist ein Schlüssel für %1$s</string>
+    <string name="yt_r28_newssum_model">Modell</string>
+    <string name="yt_r28_newssum_model_default">Standard: %1$s</string>
+    <string name="yt_r28_newssum_model_needed">Nicht gesetzt (nötig)</string>
+    <string name="yt_r28_newssum_model_hint">Leer = %1$s</string>
+    <string name="yt_r28_newssum_model_hint_own">Modellname auf deinem Server</string>
+    <string name="yt_r28_newssum_address">Adresse</string>
+    <string name="yt_r28_newssum_address_unset">Nicht gesetzt, z. B. https://api.groq.com/openai/v1</string>
+    <string name="yt_r28_newssum_address_message">Die Basisadresse des Servers, bis /v1. HTTPS; einfaches HTTP nur auf diesem Gerät oder im eigenen Netz (z. B. http://192.168.1.20:11434/v1).</string>
+    <string name="yt_r28_newssum_address_hint">https://…/v1</string>
+    <string name="yt_r28_newssum_address_invalid">Nur HTTPS, oder HTTP im eigenen Netz</string>
+    <string name="yt_r28_newssum_address_first">Gespeichert; zum Testen die Adresse eintragen</string>
+    <string name="yt_r28_newssum_ok">OK</string>
     <string name="yt_r28_newssum_save">Speichern und testen</string>
     <string name="yt_r28_newssum_test">Testen</string>
     <string name="yt_r28_newssum_remove">Entfernen</string>
@@ -34,7 +65,8 @@
     <string name="yt_r28_newssum_test_invalid_set">Schlüssel ungültig</string>
     <string name="yt_r28_newssum_test_offline">Gespeichert; Test offline nicht möglich</string>
     <string name="yt_r28_newssum_test_offline_set">Test offline nicht möglich</string>
+    <string name="yt_r28_newssum_test_model">Gespeichert; das Modell ist unbekannt, bitte prüfen</string>
     <string name="yt_r28_newssum_test_busy">Gespeichert; der Dienst ist ausgelastet, später testen</string>
     <string name="yt_r28_newssum_test_busy_set">Der Dienst ist ausgelastet, später testen</string>
-    <string name="yt_r28_newssum_removed">Schlüssel entfernt, Kurzfassungen aus</string>
+    <string name="yt_r28_newssum_removed">Schlüssel entfernt</string>
 </resources>

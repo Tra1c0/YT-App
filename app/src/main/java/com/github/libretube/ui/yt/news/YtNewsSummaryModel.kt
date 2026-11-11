@@ -6,7 +6,7 @@ import kotlinx.serialization.json.Json
 /*
  * YT: the data and pure rules of the opt-in news summaries ("Kurzfassung"): the statements with
  * the second they come from, how an answer's text and citations become statements, and which
- * cached summaries are old enough to go. Free of Android and of the API SDK, so it runs on the JVM.
+ * cached summaries are old enough to go. Free of Android and of the API SDKs, so it runs on the JVM.
  */
 
 /** One key statement: what was said, in which video and at which second. */
@@ -36,14 +36,23 @@ enum class YtNewsSummaryFailure {
     /** The key was rejected (401). */
     INVALID_KEY,
 
-    /** Too many requests or no credit left for now (429). */
+    /** Too many requests for now (429). */
     RATE_LIMITED,
+
+    /** The account has no credit left (402, or 429 with a quota or billing code). */
+    NO_CREDIT,
+
+    /** The model named in the settings is not known to the service. */
+    MODEL_UNKNOWN,
 
     /** No connection. */
     OFFLINE,
 
     /** The request was declined, or the answer held no statement with a source. */
     REFUSED,
+
+    /** Too few statements of the answer were found in the transcript to show a summary. */
+    UNVERIFIED,
 
     /** Any other error of the service. */
     SERVICE,
@@ -142,6 +151,9 @@ object YtNewsSummaryCacheRules {
         val safe = key.all { it.isLetterOrDigit() || it == '-' || it == '_' } && key.length <= 64
         return (if (safe) key else "s" + Integer.toHexString(key.hashCode()) + key.length) + ".json"
     }
+
+    /** [key] within a provider's [scope] ([YtNewsProviders.cacheScope]); null keeps it as it is. */
+    fun scoped(scope: String?, key: String): String = if (scope == null) key else "$scope|$key"
 
     /** The key of a story of several videos: its ids, sorted, so the order of the cards does not matter. */
     fun storyKey(videoIds: List<String>): String = "story:" + videoIds.distinct().sorted().joinToString(",")

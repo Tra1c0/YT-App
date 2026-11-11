@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- YT round 28: the opt-in news summaries (cited key statements from the transcript). Same keys in values-de. -->
+<!-- YT round 28: the opt-in news summaries (cited key statements from the transcript), with a choice of provider. Same keys in values-de. -->
 <resources>
     <!-- the card -->
     <string name="yt_r28_newssum_button">Summary</string>
@@ -11,18 +11,49 @@
     <string name="yt_r28_newssum_no_subtitles">No subtitles</string>
     <string name="yt_r28_newssum_invalid_key">Key invalid</string>
     <string name="yt_r28_newssum_rate_limited">Too many requests, try again later</string>
+    <string name="yt_r28_newssum_no_credit">No credit on the API account</string>
+    <string name="yt_r28_newssum_model_unknown">Model unknown</string>
     <string name="yt_r28_newssum_offline">Offline</string>
     <string name="yt_r28_newssum_refused">No summary possible</string>
+    <string name="yt_r28_newssum_unverified">No summary with checkable sources</string>
     <string name="yt_r28_newssum_service">Service not reachable right now</string>
 
     <!-- settings -->
     <string name="yt_r28_newssum_category">News</string>
     <string name="yt_r28_newssum_setting">Summaries with sources</string>
-    <string name="yt_r28_newssum_summary_off">Off. With your own Anthropic API key, News cards get a \"Summary\" button: 3 to 5 key statements from the subtitles, each with the second it was said. Everything else works without a key.</string>
-    <string name="yt_r28_newssum_summary_on">On · key set. Only when you tap \"Summary\" on a card; costs go to your key.</string>
+    <string name="yt_r28_newssum_summary_off">Off. With your own API key (OpenAI, Anthropic, Gemini, Mistral or compatible), News cards get a \"Summary\" button: 3 to 5 key statements from the subtitles, each with the second it was said. Off sends nothing anywhere.</string>
+    <string name="yt_r28_newssum_provider">Provider</string>
+    <string name="yt_r28_newssum_provider_is">Provider: %1$s</string>
+    <string name="yt_r28_newssum_provider_off">Off</string>
+    <string name="yt_r28_newssum_provider_anthropic">Anthropic (Claude)</string>
+    <string name="yt_r28_newssum_provider_openai">OpenAI (ChatGPT)</string>
+    <string name="yt_r28_newssum_provider_gemini">Google Gemini</string>
+    <string name="yt_r28_newssum_provider_mistral">Mistral</string>
+    <string name="yt_r28_newssum_provider_compatible">OpenAI-compatible (own address)</string>
+    <string name="yt_r28_newssum_key_named">%1$s API key</string>
+    <string name="yt_r28_newssum_key_unset">Not set. %1$s</string>
+    <string name="yt_r28_newssum_hint_anthropic">The key comes from console.anthropic.com.</string>
+    <string name="yt_r28_newssum_hint_openai">The key comes from platform.openai.com, with separately prepaid credit. A ChatGPT Plus subscription does not include API access.</string>
+    <string name="yt_r28_newssum_hint_gemini">The key comes from aistudio.google.com.</string>
+    <string name="yt_r28_newssum_hint_mistral">The key comes from console.mistral.ai.</string>
+    <string name="yt_r28_newssum_hint_compatible">Only if your server asks for one (e.g. Groq, DeepSeek, OpenRouter); a local server such as Ollama usually needs none.</string>
+    <string name="yt_r28_newssum_summary_on">Set. Only when you tap \"Summary\" on a card; costs go to your key.</string>
     <string name="yt_r28_newssum_dialog_title">API key for summaries</string>
-    <string name="yt_r28_newssum_dialog_message">Enter your own Anthropic API key. It is stored encrypted on this device only, is not part of backups and is sent only to the API. The subtitles of a video go there when you tap \"Summary\".</string>
+    <string name="yt_r28_newssum_dialog_message">Enter your own %1$s. %2$s It is stored encrypted on this device only, is not part of backups and is sent only to the provider. The subtitles of a video go there when you tap \"Summary\".</string>
     <string name="yt_r28_newssum_dialog_hint">API key</string>
+    <string name="yt_r28_newssum_wrong_key">This is a key for %1$s</string>
+    <string name="yt_r28_newssum_model">Model</string>
+    <string name="yt_r28_newssum_model_default">Default: %1$s</string>
+    <string name="yt_r28_newssum_model_needed">Not set (needed)</string>
+    <string name="yt_r28_newssum_model_hint">Empty = %1$s</string>
+    <string name="yt_r28_newssum_model_hint_own">Model name on your server</string>
+    <string name="yt_r28_newssum_address">Address</string>
+    <string name="yt_r28_newssum_address_unset">Not set, e.g. https://api.groq.com/openai/v1</string>
+    <string name="yt_r28_newssum_address_message">The base address of the server, up to /v1. HTTPS; plain HTTP only on this device or in your own network (e.g. http://192.168.1.20:11434/v1).</string>
+    <string name="yt_r28_newssum_address_hint">https://…/v1</string>
+    <string name="yt_r28_newssum_address_invalid">Only HTTPS, or HTTP in your own network</string>
+    <string name="yt_r28_newssum_address_first">Saved; enter the address to test it</string>
+    <string name="yt_r28_newssum_ok">OK</string>
     <string name="yt_r28_newssum_save">Save and test</string>
     <string name="yt_r28_newssum_test">Test</string>
     <string name="yt_r28_newssum_remove">Remove</string>
@@ -34,7 +65,8 @@
     <string name="yt_r28_newssum_test_invalid_set">Key invalid</string>
     <string name="yt_r28_newssum_test_offline">Saved; test not possible offline</string>
     <string name="yt_r28_newssum_test_offline_set">Test not possible offline</string>
+    <string name="yt_r28_newssum_test_model">Saved; the model is unknown, check it</string>
     <string name="yt_r28_newssum_test_busy">Saved; the service is busy, test later</string>
     <string name="yt_r28_newssum_test_busy_set">The service is busy, test later</string>
-    <string name="yt_r28_newssum_removed">Key removed, summaries off</string>
+    <string name="yt_r28_newssum_removed">Key removed</string>
 </resources>

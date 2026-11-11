@@ -23,10 +23,11 @@ import org.schabi.newpipe.extractor.NewPipe
  * or a story page with [summarizeStory] (several, "what does each source say"); the answer
  * shows up in [states] under the key ([keyOf] / [YtNewsSummaryCacheRules.storyKey]).
  *
- * Nothing happens without the user's key ([YtNewsSummaryKey]). One request runs at a time: a new
- * one cancels the one before, and [cancel] (the overlay closes) stops it.
- * Finished summaries are kept on disk per key for a week ([YtNewsSummaryCacheRules]), so a card
- * seen again costs nothing.
+ * Nothing happens without a provider the user chose and set up ([YtNewsSummaryKey],
+ * [YtNewsProviders]). One request runs at a time: a new one cancels the one before, and [cancel]
+ * (the overlay closes) stops it. Finished summaries are kept on disk per key for a week
+ * ([YtNewsSummaryCacheRules]), so a card seen again costs nothing; the key names the provider and
+ * model, so a summary is never shown as another one's.
  */
 object YtNewsSummary {
     private const val CACHE_DIR = "yt_newssum"
@@ -39,7 +40,7 @@ object YtNewsSummary {
     private var runningKey: String? = null
     private var pruned = false
 
-    fun keyOf(item: YtNewsItem): String = item.id
+    fun keyOf(item: YtNewsItem): String = YtNewsSummaryCacheRules.scoped(YtNewsSummaryKey.cacheScope(), item.id)
 
     fun stateOf(key: String): YtNewsSummaryState = _states.value[key] ?: YtNewsSummaryState.Idle
 
@@ -62,7 +63,11 @@ object YtNewsSummary {
      */
     fun summarizeStory(items: List<YtNewsItem>): String {
         val distinct = items.distinctBy { it.id }
-        val key = if (distinct.size == 1) keyOf(distinct[0]) else YtNewsSummaryCacheRules.storyKey(distinct.map { it.id })
+        val key = if (distinct.size == 1) {
+            keyOf(distinct[0])
+        } else {
+            YtNewsSummaryCacheRules.scoped(YtNewsSummaryKey.cacheScope(), YtNewsSummaryCacheRules.storyKey(distinct.map { it.id }))
+        }
         start(key, distinct)
         return key
     }
@@ -96,7 +101,7 @@ object YtNewsSummary {
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Throwable) {
-                    YtNewsSummaryState.Failed(YtNewsSummaryApi.failure(e))
+                    YtNewsSummaryState.Failed(YtNewsHttp.failure(e))
                 }
                 synchronized(this@YtNewsSummary) {
                     // a cancelled request leaves the state to whoever cancelled it
@@ -113,21 +118,23 @@ object YtNewsSummary {
 
     private suspend fun run(key: String, items: List<YtNewsItem>): YtNewsSummaryState {
         cached(key)?.let { return YtNewsSummaryState.Ready(it) }
-        val apiKey = YtNewsSummaryKey.get() ?: return YtNewsSummaryState.Failed(YtNewsSummaryFailure.NO_KEY)
+        val setup = YtNewsSummaryKey.setup() ?: return YtNewsSummaryState.Failed(YtNewsSummaryFailure.NO_KEY)
         val sources = items.mapNotNull { item ->
             val doc = transcript(item) ?: return@mapNotNull null
             YtNewsSource(item.id, title(item), doc)
         }
         if (sources.isEmpty()) return YtNewsSummaryState.Failed(YtNewsSummaryFailure.NO_TRANSCRIPT)
-        val client = YtNewsSummaryApi.client(apiKey)
+        val provider = YtNewsProviders.of(setup.kind)
         val result = try {
-            YtNewsSummaryApi.summarize(client, sources)
-        } finally {
-            client.close()
+            provider.summarize(setup, sources)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            YtNewsSummaryResult.Failed(provider.failure(e))
         }
         return when (result) {
-            is YtNewsSummaryApi.Result.Failed -> YtNewsSummaryState.Failed(result.reason)
-            is YtNewsSummaryApi.Result.Done -> {
+            is YtNewsSummaryResult.Failed -> YtNewsSummaryState.Failed(result.reason)
+            is YtNewsSummaryResult.Done -> {
                 val digest = YtNewsDigest(key, result.statements, System.currentTimeMillis(), sources.any { it.doc.cut })
                 store(digest)
                 YtNewsSummaryState.Ready(digest)
