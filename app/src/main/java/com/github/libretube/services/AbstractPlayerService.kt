@@ -50,6 +50,7 @@ import com.github.libretube.util.DefaultTrackSelectorWithAudioQualitySupport
 import com.github.libretube.util.NowPlayingNotification
 import com.github.libretube.util.PlayingQueue
 import com.github.libretube.util.PlayingQueueMode
+import com.github.libretube.util.YtQueueStore
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -135,6 +136,12 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
             when (playbackState) {
                 Player.STATE_ENDED -> {
                     saveWatchPosition()
+                    // YT: a queue played to its end is no longer kept for the next start; else
+                    // the next start goes on after this item (an emptied player is no end)
+                    YtQueueStore.itemEnded(
+                        timelineEmpty = exoPlayer?.currentTimeline?.isEmpty != false,
+                        repeatOne = PlayingQueue.repeatMode == Player.REPEAT_MODE_ONE,
+                    )
                 }
 
                 Player.STATE_READY -> {
@@ -159,6 +166,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
 
                 CoroutineScope(Dispatchers.IO).launch {
                     onServiceCreated(args)
+                    // YT: saved with the queue, so a restart resumes it in the same mode
+                    YtQueueStore.playerMode(isAudioOnlyPlayer)
                     withContext(Dispatchers.Main) {
                         updateNotification()
                     }
@@ -322,6 +331,7 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
 
             args.containsKey(PlayerCommand.TOGGLE_AUDIO_ONLY_MODE.name) -> {
                 isAudioOnlyPlayer = args.getBoolean(PlayerCommand.TOGGLE_AUDIO_ONLY_MODE.name)
+                YtQueueStore.playerMode(isAudioOnlyPlayer)
                 trackSelector?.updateParameters {
                     setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioOnlyPlayer)
                 }
@@ -506,6 +516,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
 
     override fun onCreate() {
         super.onCreate()
+        // YT: while a player service runs its queue is the live one (a restored queue no longer waits)
+        YtQueueStore.serviceUp(this)
 
         notificationProvider = NowPlayingNotification(this) { onForegroundStartDenied() }
         setMediaNotificationProvider(notificationProvider!!)
@@ -641,6 +653,8 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
     override fun onDestroy() {
         // YT: save before anything is torn down (also reached from onTaskRemoved and Stop)
         ytPositions.flush()
+        // YT: the queue too, before it is emptied below; it is kept for the next start
+        YtQueueStore.flush(sync = true)
         // wait for a short time before killing the mediaSession
         // as the playerController must be released before we finish the session
         // otherwise there would be a
@@ -670,7 +684,10 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
                 mediaLibrarySession = null
             }
 
-            PlayingQueue.clear()
+            // YT: only this service's first end empties the queue, and only while no newer player
+            // service took over: Android calls onDestroy again after the stop above, and that
+            // second end used to empty a queue put back (or started) meanwhile
+            if (YtQueueStore.serviceDown(this)) PlayingQueue.clear()
 
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -696,6 +713,7 @@ abstract class AbstractPlayerService : MediaLibraryService(), MediaLibrarySessio
         super.onTrimMemory(level)
         // YT: also sent when the app's UI goes to the background (TRIM_MEMORY_UI_HIDDEN)
         ytPositions.flush()
+        YtQueueStore.flush()
         if (ytSoftClose.closed && com.github.libretube.ui.yt.mini.YtSoftCloseRules.releasesOnTrim(level)) onDestroy()
     }
 

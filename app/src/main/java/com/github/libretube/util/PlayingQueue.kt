@@ -123,6 +123,11 @@ object PlayingQueue {
     fun updateCurrent(streamItem: StreamItem) = synchronized(queue) {
         currentStream = streamItem
 
+        // YT: a placeholder of this video (only its id, put in by YtQueueResume.join) takes the
+        // loaded details in its place
+        val at = queue.indexOfFirst { it.url?.toID() == streamItem.url?.toID() }
+        if (at >= 0 && queue[at].title.isNullOrBlank() && !streamItem.title.isNullOrBlank()) queue[at] = streamItem
+
         if (!contains(streamItem)) add(streamItem)
         changed()
     }

@@ -80,6 +80,8 @@ class PlayingQueueSheet : ExpandedBottomSheet(R.layout.queue_bottom_sheet) {
                         PlayingQueue.getStreams()
                             .filterIndexed { index, _ -> index == currentIndex }
                     )
+                    // YT: cleared on purpose: the queue saved for the next start goes too
+                    com.github.libretube.util.YtQueueStore.delete(com.github.libretube.util.YtQueuePersist.Delete.USER_CLEARED)
                     adapter.refresh()
                 }
                 .setNegativeButton(R.string.cancel, null)

@@ -171,7 +171,8 @@ fun ytTogglePause(channel: String?, name: String?, avatar: String?) {
 
 /**
  * YT: the pills at the bottom of the home screens, above the navigation (and a docked mini
- * player): the undo pill and the draft queue "N in der Warteschlange · Abspielen". In the
+ * player): the undo pill, the draft queue "N in der Warteschlange · Abspielen" and the resume
+ * pill of a queue kept over a restart (YtQueueResume). In the
  * design's own surface, type and colors; they spring up from below and can be swiped away.
  * Lay it over the whole screen: it takes touches only on the pills. With [timeBox] (the home
  * only: what it would plan from) the time box chip sits at the end above them.
@@ -214,6 +215,14 @@ fun YtHomePills(palette: YtPalette, modifier: Modifier = Modifier, timeBox: (() 
             }
             AnimatedVisibility(visible = draft > 0 && !hasPlayer, enter = enter, exit = exit) {
                 DraftPill(look, draft.coerceAtLeast(1))
+            }
+            // YT: the queue kept over a restart waits: "Weiter: <title> · N in der Warteschlange"
+            // (the last content stays while the pill slides away)
+            val resume = YtQueueResume.rememberPill()
+            val resumeShown = remember { arrayOfNulls<YtQueueResume.PillInfo>(1) }
+            resume?.let { resumeShown[0] = it }
+            AnimatedVisibility(visible = resume != null, enter = enter, exit = exit) {
+                resumeShown[0]?.let { YtQueueResume.Pill(look, it) }
             }
             // YT: the keyword offer of a topic video, above the docked mini player (on the page
             // it shows there itself)

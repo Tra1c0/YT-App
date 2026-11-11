@@ -65,6 +65,12 @@ object NavigationHelper {
                 }
             }
         ) return
+        // YT: a queue kept over a restart that waits for a player: the video joins it instead of
+        // replacing it (then the player keeps the queue)
+        val joined = com.github.libretube.ui.yt.YtQueueResume.join(playerData)
+        if (joined !== playerData) {
+            return navigateVideo(context, joined, alreadyStarted, forceVideo, audioOnlyPlayerRequested)
+        }
         // attempt to attach to the current media session first by using the corresponding
         // video/audio player instance
         val activity = ContextHelper.unwrapActivity<AbstractPlayerHostActivity>(context)

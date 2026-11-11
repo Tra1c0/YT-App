@@ -15,6 +15,7 @@ import com.github.libretube.ui.yt.feed.YtQueueMove
 import com.github.libretube.ui.yt.feed.YtQueueRule
 import com.github.libretube.util.PlayingQueue
 import com.github.libretube.util.PlayingQueueMode
+import com.github.libretube.util.YtQueueStore
 
 /** What handing a card to the queue did: [move], and its place among the videos still to come (1 = next). */
 data class YtQueued(val move: YtQueueMove, val position: Int)
@@ -43,9 +44,14 @@ object YtQueue {
     /** The videos the user queued, so a tap on another card keeps them. */
     private val queued = HashSet<String>()
 
-    /** True while a player plays online videos; an offline queue takes no online videos. */
+    /**
+     * True while a player plays online videos; an offline queue takes no online videos. A queue
+     * restored after a restart that waits for a player (YtQueueResume) is no player: cards go to
+     * the draft as before, and the draft joins that queue when it starts.
+     */
     fun hasPlayer(): Boolean =
-        PlayingQueue.getCurrent() != null && PlayingQueue.queueMode == PlayingQueueMode.ONLINE
+        PlayingQueue.getCurrent() != null && PlayingQueue.queueMode == PlayingQueueMode.ONLINE &&
+            !YtQueueStore.pending
 
     private fun currentId(): String? = PlayingQueue.getCurrent()?.url?.toID()
 
@@ -123,7 +129,8 @@ object YtQueue {
             clearDraft()
             queued.clear()
             list.drop(1).mapNotNullTo(queued, ::idOf)
-            PlayingQueue.setStreams(list)
+            // a queue restored after a restart follows the draft instead of being replaced
+            PlayingQueue.setStreams(YtQueueResume.withRestored(list))
             YtTestHooks.log("YtQueue") { "start draft n=${list.size} id=$id" }
             NavigationHelper.navigateVideo(context, PlayerData(id, timestamp = seconds, keepQueue = true), audioOnlyPlayerRequested = audio)
             return

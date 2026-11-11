@@ -48,6 +48,8 @@ class YtServiceSoftClose(
         if (closed) return
         closed = true
         service.ytPositions.flush()
+        // the queue as it is now is on disk (it stays saved when the kept player is let go)
+        com.github.libretube.util.YtQueueStore.flush()
         exo.pause()
         exo.setAudioAttributes(exo.audioAttributes, false)
         YtResumeNotification.cancel(service)

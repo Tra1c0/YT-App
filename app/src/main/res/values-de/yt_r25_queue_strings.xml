@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the queue kept over a restart of the app (YtQueueStore, YtQueueResume). -->
+<resources>
+    <string name="yt_r25_queue_resume">Weiter: %1$s</string>
+    <string name="yt_r25_queue_count">%1$d in der Warteschlange</string>
+    <string name="yt_r25_queue_resume_action">Weiter</string>
+    <string name="yt_r25_queue_hide">Ausblenden</string>
+    <string name="yt_r25_queue_untitled">Video</string>
+    <string name="yt_r25_guide_queue_restart_t">Warteschlange bleibt nach Neustart</string>
+    <string name="yt_r25_guide_queue_restart_b">Die Warteschlange wird laufend gesichert und ist nach dem Schließen der App, dem Wegwischen oder einem Neustart des Handys wieder da. Eine Pille auf der Startseite macht dort weiter, wo du aufgehört hast; startest du stattdessen ein Video, läuft es zuerst und die Warteschlange folgt. Sie verschwindet nur, wenn du sie leerst oder sie zu Ende gespielt ist.</string>
+</resources>

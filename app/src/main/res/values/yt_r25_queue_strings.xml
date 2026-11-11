@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the queue kept over a restart of the app (YtQueueStore, YtQueueResume). -->
+<resources>
+    <string name="yt_r25_queue_resume">Continue: %1$s</string>
+    <string name="yt_r25_queue_count">%1$d in the queue</string>
+    <string name="yt_r25_queue_resume_action">Continue</string>
+    <string name="yt_r25_queue_hide">Hide</string>
+    <string name="yt_r25_queue_untitled">Video</string>
+    <string name="yt_r25_guide_queue_restart_t">Queue survives a restart</string>
+    <string name="yt_r25_guide_queue_restart_b">The queue is saved all the time and is back after closing the app, swiping it away or restarting the phone. A pill on the home continues where you stopped; a video you start instead plays first and the queue follows. It goes only when you clear it or it has played to its end.</string>
+</resources>
