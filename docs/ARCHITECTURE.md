@@ -16,7 +16,7 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
 
 ## Designs
 
-- `J/helpers/YtDesign.kt`: enum of the 13 designs (key, overlay style, brand font, `light`).
+- `J/helpers/YtDesign.kt`: enum of the 14 designs (key, overlay style, brand font, `light`).
   Pref `yt_design`. `STANDARD` = classic LibreTube look; YT code mostly checks `palette == null`.
 - `Y/YtTheme.kt`: `YtPalette` per design (+ dark variants of the light designs, `ytDayNight`),
   `YtFonts`, `ytScale` (width scaling, see `docs/DESIGN-MASSE.md`), `YtTheme()` composable.
@@ -349,6 +349,16 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   `YtFeedEngine.rank`, keyword scorer `YtFeedTopicsWords.kt`, card chip in `ytSeenTop`
   (`Y/YtTopicChip.kt`), suggestion pill `Y/YtTopicSuggest.kt` (from `YtWatch.attach`, after 10 s
   played, 2nd video per topic per session). Old `YtTopic` searches renamed "Suchen" in strings only.
+
+## Round 24 notes
+
+- Synthwave (14th design): `YtDesign.SYNTHWAVE` (`soundReactive` = true, like Frequency), palette
+  `YtPalettes.Synthwave`, scene `Y/SynthwaveScene.kt` (Canvas, draw phase, own graphicsLayers; stars,
+  striped sun, halo, ridges, perspective floor, haze, palms, parallax ≤ 40 dp), maths
+  `Y/SynthwaveMath.kt`, `SynthwaveTiers` (reuses FrequencyTiers), `SynthwaveChrome.kt`,
+  `SynthwaveHome.kt`, `Y/mini/YtMiniSynthwave*.kt`, font Audiowide (OFL, `fonts/`). Sound via the
+  generalised `FrequencyPulse` (`FrequencyDeviceProbe`, `YtHoldWhileStarted`). `YtHeader.overlayAfterHome`
+  renamed `overlayHome`. Text over the scene: glass cards on home, `TAB_VEIL` 0.86 on Du/Abos/Shorts.
 
 ## Open points
 

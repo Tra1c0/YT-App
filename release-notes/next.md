@@ -1,8 +1,2 @@
 ## Neu
-- Eigene Themen im Feed-Regler: Schlagwörter festlegen, per Regler bestimmen, wie viele Videos dazu auf der Startseite landen (gleichmäßig verteilt, mit Themen-Chip), Dauer wählen (Sitzung, 24 h, 7 Tage, unbegrenzt). Ab dem 2. Video eines Themas schlägt die App beim Schauen ein neues Schlagwort vor – ohne Unterbrechung.
-
-## Geändert
-- Die bisherigen einfachen „Themen“ im Feed-Regler heißen jetzt „Suchen“.
-
-## Behoben
-- Querformat: Nach dem Verlassen des Vollbilds bleibt die Videoseite im Querformat, auch beim Scrollen; „Zurück“ führt gleich beim ersten Mal in die richtige Queransicht.
+- Neues Design **Synthwave**: Neon-Chrom mit animierter Retro-Szene als Hintergrund – gestreifte Sonne, Drahtgitter-Berge, Palmen, Sterne und ein Neon-Gitter, das auf dich zufährt. Reagiert dezent auf Musik (Bass beschleunigt das Gitter, die Sonne glüht mit). Einstellungen → Darstellung → Design.
