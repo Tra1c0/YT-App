@@ -99,6 +99,7 @@ import com.github.libretube.helpers.ImageHelper
 import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.helpers.YtChannelPause
 import com.github.libretube.ui.fragments.TrendsFragment
+import com.github.libretube.ui.yt.news.YtNewsChannels
 import com.github.libretube.ui.yt.feed.YtChannelRule
 import com.github.libretube.ui.yt.feed.YtFeed
 import com.github.libretube.ui.yt.feed.YtFeedInput
@@ -1135,9 +1136,14 @@ private fun Groups(palette: YtPalette, chosen: List<String>, onChange: (List<Str
 private fun ChannelList(palette: YtPalette) {
     val profile by YtFeed.profile.collectAsState()
     val pauses by YtChannelPause.paused.collectAsState()
+    val news by YtNewsChannels.list.collectAsState()
     val personal = profile.personal
-    val keys = remember(personal, pauses) {
-        (personal.channels.keys + personal.musicChannels + personal.learnChannels + pauses.mapNotNull { it.id ?: it.name.takeIf { n -> n.isNotBlank() } }).distinct()
+    val keys = remember(personal, pauses, news) {
+        (
+            personal.channels.keys + personal.musicChannels + personal.learnChannels +
+                pauses.mapNotNull { it.id ?: it.name.takeIf { n -> n.isNotBlank() } } +
+                news.channels.mapNotNull { it.id ?: it.name.takeIf { n -> n.isNotBlank() } }
+            ).distinct()
     }
     if (keys.isEmpty()) {
         Note(palette, stringResource(R.string.yt_feed_channels_empty))
@@ -1149,7 +1155,8 @@ private fun ChannelList(palette: YtPalette) {
     val cardBack = remember(palette, sheetBack) { YtContrast.over(cardFill.toArgb(), sheetBack ?: palette.background.toArgb()) }
     keys.forEach { key ->
         val pause = pauses.firstOrNull { it.id == key || (it.id == null && it.name == key) }
-        val name = personal.channelNames[key] ?: pause?.name?.takeIf { it.isNotBlank() } ?: key
+        val newsEntry = news.channels.firstOrNull { it.id == key || (it.id == null && it.name == key) }
+        val name = personal.channelNames[key] ?: pause?.name?.takeIf { it.isNotBlank() } ?: newsEntry?.name?.takeIf { it.isNotBlank() } ?: key
         val rule = personal.channels[key]
         Column(
             Modifier
@@ -1183,6 +1190,14 @@ private fun ChannelList(palette: YtPalette) {
                 }
                 Toggle(palette, stringResource(R.string.yt_feed_channel_learn), key in personal.learnChannels, "yt_feed_channel_learn") { on ->
                     YtFeed.updatePersonal { it.copy(learnChannels = if (on) it.learnChannels + key else it.learnChannels - key) }
+                }
+                // YT: a news channel: its newest videos in the News overlay
+                Toggle(palette, stringResource(R.string.yt_r27_news_feed_channel), newsEntry != null, "yt_feed_channel_news") {
+                    if (newsEntry != null) {
+                        YtNewsChannels.toggle(newsEntry.id, newsEntry.name)
+                    } else {
+                        YtNewsChannels.toggle(key.takeIf { it != name }, name)
+                    }
                 }
             }
             }

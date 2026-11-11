@@ -72,6 +72,7 @@ import com.github.libretube.extensions.toID
 import com.github.libretube.helpers.YtChannelPause
 import com.github.libretube.helpers.YtHidden
 import com.github.libretube.ui.yt.feed.YtPausedChannel
+import com.github.libretube.ui.yt.news.YtNewsHintPill
 import com.github.libretube.util.PlayingQueue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -207,6 +208,8 @@ fun YtHomePills(palette: YtPalette, modifier: Modifier = Modifier, timeBox: (() 
             // at the end, above the pills so they never cover them
             if (timeBox != null) YtIntentChip(look, Modifier.align(Alignment.End))
             if (timeBox != null) YtTimeBoxChip(look, timeBox, Modifier.align(Alignment.End))
+            // YT: once after the update, how to open the News (home only)
+            if (timeBox != null) YtNewsHintPill(look)
             // the last entry stays while the pill slides away
             val shown = remember { arrayOfNulls<YtUndoEntry>(1) }
             entry?.let { shown[0] = it }

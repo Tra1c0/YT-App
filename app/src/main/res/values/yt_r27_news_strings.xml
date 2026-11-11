@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the News overlay (ui/yt/news): opened with two fingers spread apart on the home. -->
+<resources>
+    <string name="yt_r27_news_title">News</string>
+    <string name="yt_r27_news_position">%1$d / %2$d</string>
+    <string name="yt_r27_news_close">Close news</string>
+    <string name="yt_r27_news_empty_title">No news yet</string>
+    <string name="yt_r27_news_empty_body">Mark news channels: hold a video card and pick “Mark as news channel”; their newest videos show up here. Or add a topic in the feed controls: its newest videos come too.</string>
+    <string name="yt_r27_news_empty_feed">Open feed controls</string>
+    <string name="yt_r27_news_mark">Mark as news channel</string>
+    <string name="yt_r27_news_unmark">No longer a news channel</string>
+    <string name="yt_r27_news_feed_channel">News</string>
+    <string name="yt_r27_news_watch">Watch</string>
+    <string name="yt_r27_news_queue">To the end</string>
+    <string name="yt_r27_news_queued">Added to the end of the queue</string>
+    <string name="yt_r27_news_drafted">In the queue · %1$d</string>
+    <string name="yt_r27_news_rejected">Playing right now</string>
+    <string name="yt_r27_news_gestures">Tap: watch · up: queue · down: close</string>
+    <string name="yt_r27_news_topic">Topic: %1$s</string>
+    <string name="yt_r27_news_channel_tag">News channel</string>
+    <string name="yt_r27_news_hint">New: spread two fingers on the home for the news</string>
+    <string name="yt_r27_news_hint_open">Show</string>
+    <string name="yt_r27_news_hint_dismiss">Hide hint</string>
+    <string name="yt_r27_guide_news_t">News: spread two fingers on the home</string>
+    <string name="yt_r27_guide_news_b">Spread two fingers apart on the home and the news open as a slideshow: the newest videos of your news channels and your topics, one card each. Swipe sideways for the next, tap to watch, swipe up for the end of the queue, pinch, swipe down or press back to close. Mark a news channel by holding a video card.</string>
+</resources>
