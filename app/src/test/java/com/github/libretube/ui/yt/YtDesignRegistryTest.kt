@@ -4,6 +4,8 @@ import com.github.libretube.R
 import com.github.libretube.helpers.YtDesign
 import com.github.libretube.ui.yt.mini.YtMiniDesigns
 import com.github.libretube.ui.yt.mini.YtMiniFrequencyTextures
+import com.github.libretube.ui.yt.mini.YtMiniSpecs
+import com.github.libretube.ui.yt.mini.YtMiniSynthwaveTextures
 import com.github.libretube.ui.yt.mini.YtMoment
 import com.github.libretube.ui.yt.search.YtSearchKind
 import com.github.libretube.ui.yt.search.YtSearchPalette
@@ -17,7 +19,7 @@ import java.io.File
 
 /**
  * YT: every design is complete in the registries that tell the designs apart, so a new design
- * (Frequency, the 13th) cannot silently fall back to another one's look.
+ * (Frequency, the 13th, Synthwave, the 14th) cannot silently fall back to another one's look.
  */
 class YtDesignRegistryTest {
     private val designs = YtDesign.entries.filter { it != YtDesign.STANDARD }
@@ -64,6 +66,7 @@ class YtDesignRegistryTest {
         val names = YtDesign.entries.map { YtShortsLook.of(it).page.name }
         assertEquals(names.size, names.toSet().size)
         assertTrue(YtShortsLook.of(YtDesign.FREQUENCY).page.name.endsWith("frequency"))
+        assertTrue(YtShortsLook.of(YtDesign.SYNTHWAVE).page.name.endsWith("synthwave"))
     }
 
     @Test
@@ -71,6 +74,27 @@ class YtDesignRegistryTest {
         for (moment in YtMoment.entries) {
             assertTrue(moment.name, YtMiniFrequencyTextures.of(moment).name.endsWith("frequency"))
         }
+    }
+
+    @Test
+    fun `Synthwave has its own mini player feel and measures`() {
+        for (moment in YtMoment.entries) {
+            assertTrue(moment.name, YtMiniSynthwaveTextures.of(moment).name.endsWith("synthwave"))
+        }
+        assertEquals(YtMiniSpecs.SYNTHWAVE, YtMiniDesigns.of(YtDesign.SYNTHWAVE).spec)
+    }
+
+    @Test
+    fun `Synthwave has Shorts, Abos and Du as tabs and is sound-reactive`() {
+        val ids = YtNav.items(YtDesign.SYNTHWAVE).map { it.id }
+        assertEquals(listOf(R.id.homeFragment, R.id.trendsFragment, R.id.subscriptionsFragment, R.id.libraryFragment), ids)
+        assertTrue(YtDesign.SYNTHWAVE.hasShortsTab)
+        assertEquals(R.string.yt_nav_shorts, YtDesign.SYNTHWAVE.navigationLabel(R.id.trendsFragment))
+        assertTrue(YtDesign.SYNTHWAVE.soundReactive)
+        assertTrue(YtDesign.FREQUENCY.soundReactive)
+        for (design in YtDesign.entries - YtDesign.SYNTHWAVE - YtDesign.FREQUENCY) assertTrue(design.name, !design.soundReactive)
+        assertEquals("synthwave", YtDesign.SYNTHWAVE.key)
+        assertEquals("SYNTHWAVE", YtDesign.SYNTHWAVE.wordmarkHtml("#000000"))
     }
 
     @Test

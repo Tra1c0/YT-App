@@ -1002,6 +1002,14 @@ private fun EntryRow(
                     YtSearchKind.FROST -> Modifier.drawBehind {
                         drawRect(Color.White.copy(alpha = 0.12f), topLeft = Offset(0f, size.height - 1.dp.toPx()), size = Size(size.width, 1.dp.toPx()))
                     }
+                    // Synthwave: a faint neon line under each row, magenta to cyan
+                    YtSearchKind.SYNTHWAVE -> Modifier.drawBehind {
+                        drawRect(
+                            Brush.horizontalGradient(listOf(SynthwaveGlass.edgeStart.copy(alpha = 0.35f), SynthwaveGlass.edgeEnd.copy(alpha = 0.05f))),
+                            topLeft = Offset(0f, size.height - 1.dp.toPx()),
+                            size = Size(size.width, 1.dp.toPx()),
+                        )
+                    }
                     else -> Modifier
                 },
             )

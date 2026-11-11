@@ -121,11 +121,9 @@ fun SynthwaveHomeScreen(
     val window = (screen * HORIZON - headerOverlap - screen * 0.12f).coerceAtLeast(96.dp)
     Box(Modifier.fillMaxSize()) {
         // the scene in its own layer, read while drawing: a frame redraws it, not the list
-        SynthwaveBackdrop(
-            Modifier.matchParentSize(),
-            horizon = HORIZON,
-            scroll = { SynthwaveMath.scrolled(list.firstVisibleItemIndex, list.firstVisibleItemScrollOffset, itemPx) },
-        )
+        // read while drawing: scrolling redraws the scene's layer, it never recomposes
+        val scrolled = remember(list, itemPx) { { SynthwaveMath.scrolled(list.firstVisibleItemIndex, list.firstVisibleItemScrollOffset, itemPx) } }
+        SynthwaveBackdrop(Modifier.matchParentSize(), horizon = HORIZON, scroll = scrolled)
         YtRefreshBox(
             palette = palette,
             isRefreshing = loading && source != null,

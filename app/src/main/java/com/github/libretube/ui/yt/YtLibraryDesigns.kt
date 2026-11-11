@@ -317,7 +317,7 @@ internal fun LibraryHeadline(palette: YtPalette, headline: String, subline: Stri
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = headline,
-                    style = synthwaveDisplay(34.sp, palette.text),
+                    style = synthwaveDisplay(28.sp, palette.text).copy(lineHeight = 34.sp),
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 SynthwaveLogo(Modifier.padding(start = 12.dp).size(30.dp))

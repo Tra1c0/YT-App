@@ -263,6 +263,12 @@ object SynthwaveScene {
         sinceDevice += dt
         if (sinceDevice >= DEVICE_POLL_S) {
             sinceDevice = 0f
+            // Android's "remove animations" switched on meanwhile: the still picture, no loop
+            if (!ValueAnimator.areAnimatorsEnabled()) {
+                stop()
+                still()
+                return
+            }
             val next = FrequencyDeviceProbe.choice(full = false)
             if (next != null && next != choice) {
                 choice = next

@@ -50,6 +50,8 @@ internal fun topicChipLook(palette: YtPalette): TopicChipLook {
         YtSignature.EDITORIAL -> TopicChipLook(RectangleShape, Color.Black.copy(alpha = 0.8f), Color.White, YtFonts.plexMono, uppercase = true)
         YtSignature.GLASS, YtSignature.FROST -> TopicChipLook(RoundedCornerShape(50), Color.Black.copy(alpha = 0.62f), Color.White, palette.font, uppercase = false)
         YtSignature.YOUTUBE, YtSignature.SIDE, YtSignature.MOVO, YtSignature.AFTER -> accent(RoundedCornerShape(4.dp))
+        // Synthwave: a magenta tag like the seen badge, dark ink
+        YtSignature.SYNTHWAVE -> accent(RoundedCornerShape(5.dp))
         else -> accent(RoundedCornerShape(50))
     }
 }

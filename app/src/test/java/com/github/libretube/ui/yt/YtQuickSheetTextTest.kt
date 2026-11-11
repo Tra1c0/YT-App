@@ -24,6 +24,7 @@ class YtQuickSheetTextTest {
         "Kiesel" to YtPalettes.Kiesel,
         "KieselDark" to YtPalettes.KieselDark,
         "Frequency" to YtPalettes.Frequency,
+        "Synthwave" to YtPalettes.Synthwave,
     )
 
     @Test

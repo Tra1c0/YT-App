@@ -176,6 +176,7 @@ private fun YtShortsScreen(
     val gap = when (signature) {
         YtSignature.EDITORIAL -> 8.dp
         YtSignature.POP -> 14.dp
+        YtSignature.SYNTHWAVE -> 12.dp
         else -> 10.dp
     }
     Box(
