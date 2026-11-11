@@ -1,4 +1,8 @@
 ## Neu
-- News: Die Karte unter deinen Fingern wächst beim Aufziehen selbst zum Fenster und schrumpft beim Schließen wieder zurück. Beim Wischen gibt es Tiefe (Nachbarkarten treten zurück, Vorschaubild mit Parallaxe, Startseite dahinter rückt zurück und wird ab Android 12 weichgezeichnet) und eigene Haptik je Design.
-- News-Geschichten: Dieselbe Nachricht von mehreren Kanälen wird eine Karte mit „N Quellen“ und Verlauf; Neues seit deinem letzten Blick ist markiert. „Alle anhängen“ hängt die ganze Geschichte an. Zusammenlegen/Trennen über ⋮ oben oder Verlaufszeile lange drücken.
-- Belegte Kurzfassungen (optional): Mit eigenem Anthropic-API-Schlüssel (Einstellungen → Gesten & Interaktion → News) zeigt „Kurzfassung“ 3–5 Kernaussagen aus den Untertiteln, jede mit Sekunde zum Antippen. Nur auf Knopfdruck; ohne Schlüssel ändert sich nichts.
+- Belegte Kurzfassungen mit Anbieter-Wahl: Einstellungen → Gesten & Interaktion → News → „Belegte Kurzfassungen“. Wählbar: OpenAI (ChatGPT), Anthropic (Claude), Google Gemini, Mistral oder „OpenAI-kompatibel“ mit eigener Adresse (z. B. Groq, OpenRouter, Ollama im Heimnetz). Standard ist „Aus“.
+- Pro Anbieter ein eigener Schlüssel (verschlüsselt, kostenlos testbar) und ein optionales Modell-Feld.
+- Jede Aussage wird gegen das Transkript geprüft; was nicht belegbar ist, fällt weg.
+- Neue Hinweise: „Kein Guthaben auf dem API-Konto“, „Modell unbekannt“.
+
+## Hinweis
+- Ein ChatGPT-Plus-Abo enthält keinen API-Zugang: Schlüssel und Guthaben gibt es getrennt auf platform.openai.com.

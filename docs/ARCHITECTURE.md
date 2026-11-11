@@ -415,6 +415,18 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   cited second), settings row `YtNewsSummaryKeyPreference` (`R/xml/yt_r28_newssum_prefs.xml`, in
   `YtInteractionSettings`). Network only on tapping "Kurzfassung"; R8 needs
   `-dontwarn com.google.auto.value.AutoValue`.
+- News summary providers: interface + registry `YtNewsSummaryProvider` (`YtNewsProviders`: key
+  prefix check, `usable`, cache scope = provider + model (+ host), shared `quoted`; `YtNewsAnthropic`
+  wraps `YtNewsSummaryApi`, native citations). Others use quote verification `YtNewsQuotes` (pure:
+  German prompts, strict JSON schema `{statements:[{text,line,quote,video?}]}`, quote must match the
+  cited line ±2 with fuzzy tolerance, < 2 verified ⇒ description fallback) over one OkHttp client
+  `YtNewsHttp` (no logging, error mapping incl. quota vs rate limit, address rule HTTPS or private
+  LAN): OpenAI Responses API `YtNewsOpenAi` (`store:false`), Gemini `YtNewsGemini`
+  (`x-goog-api-key`, `responseJsonSchema`), Mistral and "OpenAI-kompatibel" `YtNewsChatCompletions`
+  (schema → json_object → plain retry). `YtNewsSummaryKey` stores provider, one Keystore-encrypted
+  key per provider (old Anthropic key name `api_key` kept), model and address in `yt_newssum`.
+  Default models are constants per provider and come from web-search summaries (unverified by a
+  real call); the user can override the model in settings.
 
 ## Sound, Frequency, Synthwave
 
@@ -584,7 +596,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (369 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (375 files; generated, do not edit)</summary>
 
 - `J/helpers/` (24): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDesign, YtDesignDark, YtGuard,
@@ -640,11 +652,12 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtMiniTextures, YtMiniTouch, YtMiniYouTube, YtMiniYoutubeLayout, YtMiniYoutubeParts,
   YtMiniYoutubeTextures, YtMinimizeDrag, YtMinimizeGeometry, YtMinimizeModule, YtMinimizeTestHooks,
   YtPageStart, YtSoftClose, YtSoftCloseRules, YtUnderFinger
-- `Y/news/` (24): YtNews, YtNewsChannelRules, YtNewsChannels, YtNewsGestureRules, YtNewsGestures,
-  YtNewsHome, YtNewsLayer, YtNewsMerge, YtNewsModel, YtNewsMotion, YtNewsSeen, YtNewsStories,
-  YtNewsStory, YtNewsStoryEdits, YtNewsStoryPage, YtNewsSummary, YtNewsSummaryApi, YtNewsSummaryKey,
-  YtNewsSummaryKeyPreference, YtNewsSummaryModel, YtNewsSummaryUi, YtNewsText, YtNewsTextures,
-  YtNewsTranscript
+- `Y/news/` (30): YtNews, YtNewsChannelRules, YtNewsChannels, YtNewsChatCompletions, YtNewsGemini,
+  YtNewsGestureRules, YtNewsGestures, YtNewsHome, YtNewsHttp, YtNewsLayer, YtNewsMerge, YtNewsModel,
+  YtNewsMotion, YtNewsOpenAi, YtNewsQuotes, YtNewsSeen, YtNewsStories, YtNewsStory,
+  YtNewsStoryEdits, YtNewsStoryPage, YtNewsSummary, YtNewsSummaryApi, YtNewsSummaryKey,
+  YtNewsSummaryKeyPreference, YtNewsSummaryModel, YtNewsSummaryProvider, YtNewsSummaryUi,
+  YtNewsText, YtNewsTextures, YtNewsTranscript
 - `Y/player/` (34): YtBatteryCapLabel, YtBatteryCueModule, YtBatteryCueView, YtChapterTap,
   YtChapterTapLabel, YtHoldDirection, YtHoldGesture, YtHoldLayout, YtHoldTileStyle, YtHoldTilesView,
   YtLoopChipView, YtLoopController, YtLoopPlan, YtLoopSheet, YtLoops, YtPageLayoutRules,

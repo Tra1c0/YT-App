@@ -8,7 +8,8 @@ not here.
 
 ## Current state
 
-- Latest release: build 130 (News stages 2–4: card grows into the window, stories with timeline,
+- Latest release: build 131 (summary provider choice: OpenAI, Anthropic, Gemini, Mistral,
+  OpenAI-compatible; default models from web search, unverified by a real call). 130: (News stages 2–4: card grows into the window, stories with timeline,
   cited summaries with the user's own API key) on `main`. 129: News stage 1. 128: update
   notification. 127: Synthwave grid reaches the horizon. Summaries are untested at runtime after R8
   (no key; check "Testen" with a dummy key ⇒ "Schlüssel ungültig", no crash). 126: queue survives
@@ -140,6 +141,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 131: news summaries: provider choice with quote verification for non-Anthropic providers.
 - 130: News stages 2–4 (grow out of the card, depth, design haptics; stories; cited summaries).
 - 129: News stage 1 (pinch apart on the home opens a card pager; news channels + topics).
 - 128: background update check + notification per new build.
