@@ -4,34 +4,42 @@ import android.animation.ValueAnimator
 import android.os.Handler
 import android.os.Looper
 import android.view.Choreographer
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.github.libretube.helpers.YtDesign
 import com.github.libretube.ui.yt.FrequencyPulseMath.follow
 import com.github.libretube.ui.yt.SynthwaveMath as S
 import com.github.libretube.ui.yt.sound.YtSound
-import kotlin.math.PI
-import kotlin.math.cos
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.min
-import kotlin.math.sin
 
 /**
  * YT: the colours of Synthwave's scene, shared by the drawing and the contrast test
@@ -66,9 +74,13 @@ object SynthwaveColors {
     val ridgeBodyFar = Color(0xFF1E0B40)
     val ridgeBodyNear = Color(0xFF0C0624)
 
-    /** The palms and the stars. */
-    val palm = Color(0xFF06020D)
+    /** The palms (very dark violet), their faint magenta rim light, and the stars. */
+    val palm = Color(0xFF0A0419)
+    val palmRim = Color(0xFFFF3FD8)
     val star = Color(0xFFFFF4FF)
+
+    /** How strong the palms' rim light is (alpha of [palmRim]). */
+    const val PALM_RIM = 0.42f
 
     /** How strong the halo's centre is at its loudest (alpha of [halo] where it meets the sun). */
     const val HALO_CORE = 0.6f
@@ -179,7 +191,7 @@ object SynthwaveScene {
     fun diagnosis(): String =
         "holders $holders, loop ${if (running) "running" else if (covered) "paused (page open)" else "still"}, " +
             "motion ${if (motionAllowed) "on" else "off"}, tier ${choice.tier}, every ${choice.frameDivider}. frame, " +
-            "stars ${detail.value.stars}, rows ${detail.value.rows}"
+            "stars ${detail.value.stars}, rows ${detail.value.rows}, palms ${detail.value.palms * 2}"
 
     private fun update() {
         if (holders > 0 && motionAllowed && YtDesign.current() == YtDesign.SYNTHWAVE) {
@@ -323,13 +335,15 @@ val YtPalette.isSynthwave: Boolean get() = signature == YtSignature.SYNTHWAVE
  * Modifier.matchParentSize()): a starry violet sky, a huge striped sun (its slits scroll down
  * slowly) with a halo that glows with the level, wireframe mountains on the horizon whose lines
  * sway a little with the bands, a neon floor driving towards the viewer (faster with the bass),
- * a soft haze along the horizon and palm silhouettes left and right. [horizon] is where the
- * horizon lies (a fraction of the height); [veil] dims the whole scene with the night (for screens
- * whose words stand on it); [scroll] (px the content above scrolled) lifts the
+ * a soft haze along the horizon and slim palm silhouettes at the left and right edges. [horizon]
+ * is where the horizon lies (a fraction of the height); [veil] dims the whole scene with the night
+ * (for screens whose words stand on it); [scroll] (px the content above scrolled) lifts the
  * scene a little, the near layers more than the far ones.
  *
- * It draws in its own layer: a step redraws the layer, never the list above it. Brushes, paths
- * and the stars are made once per size (and per detail); a frame only moves and draws them.
+ * The sky, sun, ridges and floor draw in one layer: a step redraws that layer, never the list
+ * above it. Brushes, paths and the stars are made once per size (and per detail); a frame only
+ * moves and draws them. Each palm has its own small offscreen layer, drawn once per size: its
+ * parallax and its slow sway are layer properties, so a frame never draws a palm again.
  */
 @Composable
 fun SynthwaveBackdrop(
@@ -339,9 +353,23 @@ fun SynthwaveBackdrop(
     veil: Float = 0f,
     scroll: (() -> Float)? = null,
 ) {
+    Box(modifier.clearAndSetSemantics {}) {
+        SynthwaveSky(horizon, scroll)
+        val perSide = SynthwaveScene.detail.value.palms
+        if (perSide > 0) {
+            val palms = remember { SynthwavePalmLayout() }
+            for (i in 0 until perSide * 2) SynthwavePalm(palms, i, perSide, horizon, scroll)
+        }
+        if (veil > 0f) Spacer(Modifier.matchParentSize().drawBehind { drawRect(SynthwaveColors.skyTop, alpha = veil) })
+    }
+}
+
+/** The scene without the palms: sky and stars, sun, ridges, floor, haze. */
+@Composable
+private fun BoxScope.SynthwaveSky(horizon: Float, scroll: (() -> Float)?) {
     Spacer(
-        modifier
-            .clearAndSetSemantics {}
+        Modifier
+            .matchParentSize()
             .graphicsLayer()
             .drawWithCache {
                 val w = size.width
@@ -349,11 +377,11 @@ fun SynthwaveBackdrop(
                 val d = SynthwaveScene.detail.value
                 val c = SynthwaveColors
                 val horizonY = h * horizon
-                val sunR = min(w * 0.38f, h * 0.22f)
+                val sunR = S.sunRadius(w, h)
                 val sunX = w * 0.5f
-                val sunY = horizonY - sunR * 0.32f
+                val sunY = S.sunCenterY(horizonY, sunR)
                 val mountainH = h * 0.13f
-                val maxShift = 40.dp.toPx()
+                val maxShift = SYNTHWAVE_PARALLAX.toPx()
 
                 val sky = Brush.verticalGradient(
                     0f to c.skyTop, 0.55f to c.skyMid, 1f to c.skyLow,
@@ -412,13 +440,6 @@ fun SynthwaveBackdrop(
                 val ridgeStroke = Stroke(1.2f * px)
                 val ridgeGlow = Stroke(3.5f * px)
 
-                // the palms, left and right, made once per size
-                val palms = Path()
-                synthwavePalm(palms, w * 0.06f, h * 0.86f, h * 0.44f, lean = 0.22f, flip = false)
-                synthwavePalm(palms, -w * 0.06f, h * 0.9f, h * 0.36f, lean = 0.32f, flip = false)
-                synthwavePalm(palms, w * 0.94f, h * 0.88f, h * 0.4f, lean = 0.2f, flip = true)
-                synthwavePalm(palms, w * 1.05f, h * 0.84f, h * 0.48f, lean = 0.28f, flip = true)
-
                 // the stars: places and sizes once per size
                 val starX = FloatArray(SynthwaveTiers.MAX_STARS) { w * S.hash(it, 0) }
                 val starY = FloatArray(SynthwaveTiers.MAX_STARS) { horizonY * 0.92f * S.hash(it, 1) }
@@ -426,7 +447,7 @@ fun SynthwaveBackdrop(
 
                 onDrawBehind {
                     SynthwaveScene.tick.intValue
-                    val shift = scroll?.let { S.parallax(it(), 0.06f, maxShift) } ?: 0f
+                    val shift = scroll?.let { S.parallax(it(), PARALLAX_FACTOR, maxShift) } ?: 0f
                     val hy = horizonY + shift
 
                     // 1 the sky and its stars
@@ -439,11 +460,10 @@ fun SynthwaveBackdrop(
                         drawCircle(c.star, starR[i], Offset(starX[i], y), alpha = S.starLight(i, time, depth))
                     }
 
-                    // 2 the sun: halo, rings, the disc with its slits
+                    // 2 the sun: halo, one faint ring, the disc with its slits
                     translate(0f, shift * 0.7f) {
                         drawCircle(halo, sunR * 2.2f, Offset(sunX, sunY), alpha = S.sunGlow(SynthwaveScene.glow) * SynthwaveColors.HALO_CORE / S.GLOW_PEAK)
-                        drawCircle(c.halo, sunR * 1.32f, Offset(sunX, sunY), alpha = 0.16f, style = ring)
-                        drawCircle(c.halo, sunR * 1.62f, Offset(sunX, sunY), alpha = 0.09f, style = ring)
+                        drawCircle(c.halo, sunR * 1.4f, Offset(sunX, sunY), alpha = 0.1f, style = ring)
                         drawPath(sunPath, sun)
                         clipPath(sunPath) {
                             for (i in 0 until d.slits) {
@@ -499,66 +519,116 @@ fun SynthwaveBackdrop(
                     // 5 the haze and the line of the horizon
                     drawRect(haze, Offset(0f, hy - hazeHalf), Size(w, hazeHalf * 2f))
                     drawLine(c.horizon, Offset(0f, hy), Offset(w, hy), strokeWidth = 1.4f * px, alpha = 0.85f)
-
-                    // 6 the palms in front, lifted a little more than the rest
-                    translate(0f, shift * 1.6f) { drawPath(palms, c.palm) }
-
-                    // 7 the veil of the shared screens
-                    if (veil > 0f) drawRect(c.skyTop, alpha = veil)
                 }
             },
     )
 }
 
+/** The most the scene lifts as the list scrolls (the palms lift [PALM_LIFT] times as much). */
+private val SYNTHWAVE_PARALLAX = 40.dp
+private const val PARALLAX_FACTOR = 0.06f
+private const val PALM_LIFT = 1.6f
+
 /**
- * A palm silhouette into [path] (added, not reset): a leaning, tapering trunk from its foot at
- * [baseX], [baseY] up [height], and nine drooping fronds from its crown. [flip] mirrors it (the
- * palms on the right lean to the left).
+ * The palms' geometry for one scene size (SynthwaveMath.palms), shared by the palm layers of a
+ * backdrop: worked out in the first layer's layout pass after a size change, read by every
+ * layer's layout and drawing. [version] tells the drawings that it changed.
  */
-fun synthwavePalm(path: Path, baseX: Float, baseY: Float, height: Float, lean: Float, flip: Boolean) {
-    val dir = if (flip) -1f else 1f
-    val topX = baseX + dir * height * lean
-    val topY = baseY - height
-    // the trunk: a quadratic curve, wide at the foot, narrow at the crown
-    val ctrlX = baseX + dir * height * lean * 0.15f
-    val ctrlY = baseY - height * 0.55f
-    val n = 14
-    val foot = height * 0.035f
-    val neck = height * 0.014f
-    for (side in 0..1) {
-        for (s in 0..n) {
-            val t = if (side == 0) s.toFloat() / n else 1f - s.toFloat() / n
-            val u = 1f - t
-            val x = u * u * baseX + 2f * u * t * ctrlX + t * t * topX
-            val y = u * u * baseY + 2f * u * t * ctrlY + t * t * topY
-            val half = foot + (neck - foot) * t
-            val off = if (side == 0) -half else half
-            if (side == 0 && s == 0) path.moveTo(x + off, y) else path.lineTo(x + off, y)
+private class SynthwavePalmLayout {
+    private var w = -1
+    private var h = -1
+    private var horizon = -1f
+    private var perSide = -1
+    var specs: List<SynthwavePalmSpec> = emptyList()
+        private set
+
+    /** Per palm: its box in the scene's px (left, top, right, bottom), with room for the rim. */
+    var boxes: List<IntArray> = emptyList()
+        private set
+
+    /** Per palm: its foot within its box, the pivot of the sway. */
+    var pivots: List<TransformOrigin> = emptyList()
+        private set
+    val version = mutableIntStateOf(0)
+
+    fun update(w: Int, h: Int, horizon: Float, perSide: Int, pad: Float) {
+        if (w == this.w && h == this.h && horizon == this.horizon && perSide == this.perSide) return
+        this.w = w
+        this.h = h
+        this.horizon = horizon
+        this.perSide = perSide
+        specs = S.palms(w.toFloat(), h.toFloat(), h * horizon, perSide)
+        boxes = specs.map { spec ->
+            val b = S.palmBounds(spec)
+            intArrayOf(floor(b[0] - pad).toInt(), floor(b[1] - pad).toInt(), ceil(b[2] + pad).toInt(), ceil(b[3] + pad).toInt())
         }
+        pivots = specs.mapIndexed { i, spec ->
+            val b = boxes[i]
+            TransformOrigin(
+                (spec.footX - b[0]) / (b[2] - b[0]).coerceAtLeast(1),
+                (spec.footY - b[1]) / (b[3] - b[1]).coerceAtLeast(1),
+            )
+        }
+        Snapshot.withoutReadObservation { version.intValue++ }
     }
-    path.close()
-    // the fronds: drooping leaves, longer to the sides
-    val fronds = 9
-    for (f in 0 until fronds) {
-        val a = (-PI.toFloat() * 0.95f) + (PI.toFloat() * 0.9f) * f / (fronds - 1)
-        val length = height * (0.36f + 0.12f * kotlin.math.abs(cos(a)))
-        val dx = cos(a) * dir
-        val dy = sin(a)
-        val droop = length * (0.32f + 0.18f * kotlin.math.abs(cos(a)))
-        val width = length * 0.11f
-        val m = 10
-        for (side in 0..1) {
-            for (s in 0..m) {
-                val t = if (side == 0) s.toFloat() / m else 1f - s.toFloat() / m
-                val x = topX + dx * length * t
-                val y = topY + dy * length * t * 0.55f + droop * t * t
-                // the leaf's normal (roughly): across its direction
-                val nx = -dy
-                val ny = dx
-                val half = width * sin(PI.toFloat() * t) * (if (side == 0) 1f else -1f)
-                if (side == 0 && s == 0) path.moveTo(x, y) else path.lineTo(x + nx * half, y + ny * half)
+}
+
+/**
+ * Palm [i] of the scene in its own offscreen layer, just as large as the palm: drawn once per
+ * size (a very dark violet silhouette over a faint magenta rim on the side facing the sun);
+ * the scroll lifts it and, while the sky moves, it sways very slowly about its foot. Both are
+ * layer properties, so neither draws the palm again.
+ */
+@Composable
+private fun BoxScope.SynthwavePalm(palms: SynthwavePalmLayout, i: Int, perSide: Int, horizon: Float, scroll: (() -> Float)?) {
+    Spacer(
+        Modifier
+            .matchParentSize()
+            .layout { measurable, constraints ->
+                val w = constraints.maxWidth
+                val h = constraints.maxHeight
+                palms.update(w, h, horizon, perSide, 3.dp.toPx())
+                val box = palms.boxes.getOrNull(i)
+                val placeable = if (box == null) {
+                    measurable.measure(Constraints.fixed(0, 0))
+                } else {
+                    measurable.measure(Constraints.fixed((box[2] - box[0]).coerceAtLeast(0), (box[3] - box[1]).coerceAtLeast(0)))
+                }
+                layout(w, h) { placeable.place(box?.get(0) ?: 0, box?.get(1) ?: 0) }
             }
-        }
-        path.close()
-    }
+            .graphicsLayer {
+                // a texture of its own: moving or turning it never draws the palm again
+                compositingStrategy = CompositingStrategy.Offscreen
+                SynthwaveScene.tick.intValue
+                val shift = scroll?.let { S.parallax(it(), PARALLAX_FACTOR, SYNTHWAVE_PARALLAX.toPx()) } ?: 0f
+                translationY = shift * PALM_LIFT
+                palms.pivots.getOrNull(i)?.let { transformOrigin = it }
+                rotationZ = if (SynthwaveScene.detail.value.sky) S.palmSway(i, SynthwaveScene.clock) else 0f
+            }
+            .drawWithCache {
+                palms.version.intValue
+                val spec = palms.specs.getOrNull(i)
+                val box = palms.boxes.getOrNull(i)
+                val path = Path()
+                if (spec != null && box != null) {
+                    val dx = -box[0].toFloat()
+                    val dy = -box[1].toFloat()
+                    S.palm(
+                        spec,
+                        object : PalmSink {
+                            override fun moveTo(x: Float, y: Float) = path.moveTo(x + dx, y + dy)
+                            override fun lineTo(x: Float, y: Float) = path.lineTo(x + dx, y + dy)
+                            override fun close() = path.close()
+                        },
+                    )
+                }
+                // the rim: the same silhouette a hair towards the sun and up, under the palm
+                val rimX = (if (spec?.left != false) 1f else -1f) * 1.3.dp.toPx()
+                val rimY = -0.9.dp.toPx()
+                onDrawBehind {
+                    translate(rimX, rimY) { drawPath(path, SynthwaveColors.palmRim, alpha = SynthwaveColors.PALM_RIM) }
+                    drawPath(path, SynthwaveColors.palm)
+                }
+            },
+    )
 }
