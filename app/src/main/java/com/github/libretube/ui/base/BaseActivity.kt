@@ -64,7 +64,11 @@ open class BaseActivity : AppCompatActivity() {
         if (isDialogActivity) ThemeHelper.applyDialogActivityTheme(this)
 
         // enable auto-rotation if enabled
-        requestOrientationChange()
+        // YT: not when this activity is only rebuilt in the same process (the player page turned,
+        // a new look): it keeps what it asked for. Asking for the setting's orientation here
+        // turned a player page rebuilt in landscape upright for a moment (auto fullscreen with
+        // the "portrait" setting), and the turn back sent it into fullscreen by itself.
+        if (lastNonConfigurationInstance == null) requestOrientationChange()
 
         // wait for the window decor view to be drawn before detecting display cutouts
         window.decorView.setOnApplyWindowInsetsListener { view, insets ->

@@ -27,9 +27,10 @@ class PlayerViewModel : ViewModel() {
     // (rotation, a new look) starts where this one was instead of opening
     var ytDocked = false
 
-    // YT: the page is rebuilt because fullscreen was left in landscape: it stays windowed even
-    // with auto fullscreen (read once by the rebuilt page)
-    var ytLeftFullscreen = false
+    // YT: the user left fullscreen in landscape: the page (and a page rebuilt for the same
+    // player) stays windowed against auto fullscreen until the screen shows another orientation
+    // or they ask for fullscreen (YtPageLayoutRules.windowedAfter)
+    var ytWindowed = false
 
     // YT: the explanation loop as the page last saw it (the service runs it), and an A set in
     // its sheet that waits for its B (-1: none)
