@@ -8,14 +8,14 @@ not here.
 
 ## Current state
 
-- Latest release: build 124 (Synthwave palms + home offset) on `main`. Round 25 (docs system:
-  `scripts/docs_sync.py`, hooks, `templates/ai-workflow/`) changed docs and scripts only, no build.
+- Latest release: build 126 (queue survives restarts) on `main`. Build 125 = docs system only
+  (`scripts/docs_sync.py`, hooks, `templates/ai-workflow/`), app code identical to 124.
 - Next work: `docs/ROADMAP.md` → "Beschlossen", top to bottom. The music mode for the designs
   that do not react to sound yet is in that list but NOT released by the user: ask before
   starting it.
 - Frequency: tune its amplitudes only after the user has heard it and asks.
-- Paused by the user: queue restore after restart (ROADMAP 10). Unreviewed WIP exists only on the
-  local, unpushed branch `r16/queue` (gone with a new container); restart from `main` when asked.
+- Queue restore after restart is built (build 126). Open: starting a download replaces a waiting
+  restored online queue; emulator screenshots may show the "Weiter" pill from an earlier run.
 - The user reports only what does not work: no report = fine, not a priority, or untested but
   harmless. Do not wait for confirmations.
 
@@ -136,6 +136,8 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 126: queue survives every restart (saved file, "Weiter" pill, mini restore uses the same copy).
+- 125: docs system: self-checking code map, generated blocks, session-start hook, template.
 - 124: Synthwave: slim feathered edge palms, calmer sky, home starts under the header.
 - 123: Synthwave (14th design, animated retro scene, subtle music reaction).
 - 122: feed topics with keyword suggestions; landscape stays windowed, back rebuilds on first try.

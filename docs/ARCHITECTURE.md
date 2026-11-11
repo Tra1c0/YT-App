@@ -304,6 +304,19 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   GPU path programs stalled the render thread), pure wave shape `Y/YtWaveShape.kt`, analysis
   `J/helpers/YtAudioTap.kt` + `J/helpers/YtSpectrum.kt`; fallback `Y/YtPipVisualizer.kt`. Needs
   SYSTEM_ALERT_WINDOW; Android 15 locks it for APK installs ("restricted settings").
+- Queue survives restarts: pure `J/util/YtQueuePersist.kt` (versioned JSON `YtSavedQueue` v1,
+  trim to 500 items, resumeIndex, write debounce, end action, restore decision, join), store
+  `J/util/YtQueueStore.kt` (`filesDir/yt_queue.json`, atomic tmp+rename on one background thread;
+  watches `PlayingQueue.revision`, writes 500 ms after the last change / ≤ 3 s; flushes on service
+  onDestroy, onTrimMemory, soft close, activity onStop; deleted ONLY by the queue sheet's "clear"
+  or when the queue played to its end via `itemEnded`; an empty queue is never written), resume
+  `Y/YtQueueResume.kt` (restore on process start / fresh activity only when PlayingQueue is empty
+  and no service runs; never autoplays; home pill "Weiter: … · N" in `YtHomePills`; a normal start
+  goes before the restored current item, `NavigationHelper` join hook). Positions come from the
+  position ledger, not this file. `YtMiniRestore` uses the store's copy (one source of truth).
+  `AbstractPlayerService` clears the queue only on a service's FIRST onDestroy and only if no newer
+  service runs (Android calls onDestroy twice). Limit: starting a download replaces a waiting
+  restored online queue (online/offline never mix in one queue).
 
 ## Home, feed, search, shorts
 
@@ -523,7 +536,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (337 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (340 files; generated, do not edit)</summary>
 
 - `J/helpers/` (24): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDesign, YtDesignDark, YtGuard,
@@ -537,9 +550,9 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - `J/ui/activities/` (1): YtSignInActivity
 - `J/ui/preferences/` (2): YtChannelSpeedsPreference, YtInteractionSettings
 - `J/ui/views/` (2): YtBottomNavigationView, YtEdgeScrollView
-- `J/util/` (11): YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules, YtQueueEdit, YtReleaseNotes,
-  YtSelfUpdater, YtStorage, YtStorageRules, YtTitleCalm, YtUpdateRules
-- `Y/` (112): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
+- `J/util/` (13): YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules, YtQueueEdit, YtQueuePersist,
+  YtQueueStore, YtReleaseNotes, YtSelfUpdater, YtStorage, YtStorageRules, YtTitleCalm, YtUpdateRules
+- `Y/` (113): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
   FrequencyMotion, FrequencyPillBars, FrequencyPulse, FrequencyPulseMath, FrequencyTimeBar,
   FrequencyVisuals, FrostHome, GlassHome, KieselDiscover, KieselHome, MovoHome, MovoWatch, PopHome,
   ShapesHome, SideHome, SideWatch, SynthwaveChrome, SynthwaveHome, SynthwaveMath, SynthwaveScene,
@@ -550,11 +563,11 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtHomeRound2, YtImages, YtInk, YtIntentChooser, YtIntentTrigger, YtLibrary, YtLibraryDesigns,
   YtLiquidKit, YtLiquidNav, YtLive, YtMaxHeightScrollView, YtMiniPlayer, YtMotion, YtNavBar,
   YtNavDesigns, YtNavHold, YtNotesText, YtOverlays, YtPebbles, YtPipVisualizer, YtPlaybackClock,
-  YtQueue, YtQuickSheet, YtRateHold, YtRatings, YtRefresh, YtRooms, YtSearchDrag, YtSearchMorph,
-  YtSeen, YtSentiment, YtSettingJump, YtSettingJumpUi, YtShapes, YtShorts, YtSideFill, YtSideInsets,
-  YtStorageUi, YtSubscriptions, YtSurfaces, YtTestHooks, YtTestTag, YtTheme, YtTiltSensor,
-  YtTimeBoxUi, YtTimeUp, YtTitles, YtTopicChip, YtTopicSuggest, YtUndoPill, YtVibes, YtWatch,
-  YtWatchDesigns, YtWatchEdge, YtWatchPages, YtWaveShape, YtWaveView
+  YtQueue, YtQueueResume, YtQuickSheet, YtRateHold, YtRatings, YtRefresh, YtRooms, YtSearchDrag,
+  YtSearchMorph, YtSeen, YtSentiment, YtSettingJump, YtSettingJumpUi, YtShapes, YtShorts,
+  YtSideFill, YtSideInsets, YtStorageUi, YtSubscriptions, YtSurfaces, YtTestHooks, YtTestTag,
+  YtTheme, YtTiltSensor, YtTimeBoxUi, YtTimeUp, YtTitles, YtTopicChip, YtTopicSuggest, YtUndoPill,
+  YtVibes, YtWatch, YtWatchDesigns, YtWatchEdge, YtWatchPages, YtWaveShape, YtWaveView
 - `Y/account/` (4): YtAccount, YtAccountSheet, YtImport, YtInnerTube
 - `Y/feed/` (22): YtDragRules, YtFeed, YtFeedEngine, YtFeedFresh, YtFeedRules, YtFeedTopics,
   YtFeedTopicsSession, YtFeedTopicsWords, YtHideRules, YtHomePreferences, YtHomeTestHooks,

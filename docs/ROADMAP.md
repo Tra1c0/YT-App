@@ -27,7 +27,6 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
 
 ## Eventuell / später (noch nicht entschieden)
 
-- **10** Warteschlange nach Neustart der App wiederherstellen, mit Position (M) – pausiert
 - **Startbildschirm beim ersten Öffnen** (optional, überspringbar): was anders ist als bei YouTube,
   mit Designs und Animationen nach deinen Entwürfen; nutzt die Inhalte der Anleitung (M–L)
 - **Browser-Erweiterung** für Firefox/Chrome mit den übertragbaren Funktionen (Titel, Gesehenes,
