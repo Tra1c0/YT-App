@@ -1,5 +1,5 @@
 {
-  "//": "Config of scripts/docs_sync.py for YT. Paths are relative to the repository root. Keys named // are comments. The script is the same file as templates/ai-workflow/scripts/docs_sync.py (kept identical by the 'copies' rule).",
+  "//": "Config of scripts/docs_sync.py for YT. Paths are relative to the repository root. Keys named // are comments. The script, the hook installer and the session hook are the same files as in templates/ai-workflow/ (the template's .claude/settings.json is its own file) (kept identical by the 'copies' rule; --write copies them).",
 
   "docs": ["CLAUDE.md", "docs/*.md"],
 
@@ -64,7 +64,9 @@
   ],
 
   "copies": [
-    {"from": "scripts/docs_sync.py", "to": "templates/ai-workflow/scripts/docs_sync.py"}
+    {"from": "scripts/docs_sync.py", "to": "templates/ai-workflow/scripts/docs_sync.py"},
+    {"from": "scripts/install-hooks.sh", "to": "templates/ai-workflow/scripts/install-hooks.sh"},
+    {"from": ".claude/hooks/session-start.sh", "to": "templates/ai-workflow/.claude/hooks/session-start.sh"}
   ],
 
   "base_branch": "main",

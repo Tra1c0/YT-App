@@ -16,14 +16,15 @@ Options:
   --base REF      diff base for the warnings (default: merge base with the base branch, else HEAD~1)
   --no-commands   skip the configured external commands (e.g. when CI runs them as own steps)
 
-Everything project-specific lives in the config file (JSON; keys named "//" are comments).
+Everything project-specific lives in the config file (JSON; keys starting with "//" are comments).
 Keys, all optional:
   docs        globs of markdown files that may hold generated blocks
   aliases     short path forms used in the map, e.g. {"Y/": "src/ui/"}; longest prefix wins
   map         {"file", "sources": [globs], "exclude": [globs], "match_stem": bool,
-               "search_roots": [dirs], "extensions": [".kt", ...]}
+               "max_glob_files": 30, "search_roots": [dirs], "extensions": [".kt", ...]}
               every source file must be named in the map file (outside generated blocks) by
-              file name, by stem (match_stem) or by a backticked glob such as `YtMini*.kt`
+              file name, by stem (match_stem) or by a backticked glob such as `YtMini*.kt`;
+              a glob matching more than max_glob_files sources is a rule, not a mention
   lists       {name: {"file", "pattern", "item"}}: items taken from a source file by a regex
               (multiline); "item" formats the groups, e.g. "`{1}`"
   blocks      {name: {"type": "list", "list", "template", "sep"}
@@ -148,7 +149,7 @@ def git(root, *args):
 
 def strip_comments(obj):
     if isinstance(obj, dict):
-        return {k: strip_comments(v) for k, v in obj.items() if k != "//"}
+        return {k: strip_comments(v) for k, v in obj.items() if not k.startswith("//")}
     if isinstance(obj, list):
         return [strip_comments(v) for v in obj]
     return obj
@@ -189,9 +190,12 @@ def list_items(root, cfg, name):
     if text is None:
         raise ValueError("list '%s': %s not found" % (name, spec["file"]))
     items = []
-    for m in re.finditer(spec["pattern"], text, re.M):
-        groups = m.groups() or (m.group(0),)
-        items.append(spec.get("item", "{0}").format(*groups))
+    try:
+        for m in re.finditer(spec["pattern"], text, re.M):
+            groups = m.groups() or (m.group(0),)
+            items.append(spec.get("item", "{0}").format(*groups))
+    except (re.error, KeyError, IndexError) as e:
+        raise ValueError("list '%s': bad pattern or item format (%s)" % (name, e))
     if not items:
         raise ValueError("list '%s': pattern found nothing in %s" % (name, spec["file"]))
     return items
@@ -274,7 +278,7 @@ def regenerate(root, cfg, rel, text):
     def sub(m):
         try:
             body = render(root, cfg, m.group(1), text)
-        except ValueError as e:
+        except (ValueError, KeyError, IndexError, re.error) as e:  # a config mistake, said plainly
             problems.append("%s: %s" % (rel, e))
             return m.group(0)
         return "<!-- gen:%s -->\n%s\n<!-- /gen:%s -->" % (m.group(1), body, m.group(1))
@@ -352,13 +356,19 @@ def check_map(root, cfg, rep):
     words = set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", prose))
     spans = re.findall(r"`([^`\n]+)`", prose)
     globs = [s.strip() for s in spans if any(c in s for c in "*{")]
+    sources = glob_files(root, spec.get("sources", []), spec.get("exclude", []))
+    # a glob names a small family of files; a broad one (a rule such as `*.kt`) names none
+    broad = spec.get("max_glob_files", 30)
     rx = []  # (regex, matches the whole path?) per glob
     for g in globs:
         full = expand(cfg, g)
-        rx.append((re.compile(("(?:^|/)" if "/" in full else "^") + glob_regex(full) + "$"),
-                   "/" in full))
+        r = re.compile(("(?:^|/)" if "/" in full else "^") + glob_regex(full) + "$")
+        whole = "/" in full
+        hits = sum(1 for p in sources if r.search(p if whole else p.rsplit("/", 1)[-1]))
+        if hits <= broad:
+            rx.append((r, whole))
     missing = []
-    for path in glob_files(root, spec.get("sources", []), spec.get("exclude", [])):
+    for path in sources:
         base = path.rsplit("/", 1)[-1]
         stem = os.path.splitext(base)[0]
         if base in prose or (spec.get("match_stem", True) and stem in words):
@@ -368,7 +378,7 @@ def check_map(root, cfg, rep):
         missing.append(short(cfg, path))
     if missing:
         rep.error("%s does not name %d source file(s)" % (spec["file"], len(missing)), missing,
-                  "add each to the right area of %s (its name, or a glob like `Foo*.kt`); "
+                  "add each to the right area of %s (its name, or a backticked glob like `Name*.ext`); "
                   "then %s --write" % (spec["file"], SCRIPT))
     # names and globs in the map that point at nothing (renamed or deleted files)
     exts = tuple(spec.get("extensions", [".kt"]))
@@ -407,7 +417,10 @@ def check(root, cfg, args, rep, regen_problems=None):
         for p in problems:
             rep.error(p)
         if new != text:
-            stale.append(rel + " [" + ", ".join(sorted(set(OPEN_RE.findall(text)))) + "]")
+            old_blocks = {m.group(1): m.group(0) for m in GEN_RE.finditer(text)}
+            names = sorted(m.group(1) for m in GEN_RE.finditer(new)
+                           if old_blocks.get(m.group(1)) != m.group(0))
+            stale.append("%s [%s]" % (rel, ", ".join(names)))
     if stale:
         rep.error("generated blocks are out of date", stale, "run: %s --write" % SCRIPT)
 
@@ -437,7 +450,7 @@ def check(root, cfg, args, rep, regen_problems=None):
     for c in cfg.get("counts", []):
         try:
             want = len(list_items(root, cfg, c["list"]))
-        except ValueError as e:
+        except (ValueError, KeyError, IndexError, re.error) as e:
             rep.error(str(e))
             continue
         text = read(root, c["file"]) or ""
@@ -503,7 +516,7 @@ def do_write(root, cfg):
         src, dst = os.path.join(root, c["from"]), os.path.join(root, c["to"])
         if os.path.isfile(src) and read(root, c["from"]) != read(root, c["to"]):
             os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.copyfile(src, dst)
+            shutil.copy(src, dst)  # keeps the mode (scripts stay executable)
             changed.append(c["to"])
     print("docs_sync --write: " + (", ".join(changed) if changed else "nothing to update"))
 
@@ -536,7 +549,8 @@ def do_brief(root, cfg, args):
     index = []
     toc = cfg.get("brief", {}).get("toc_file") or cfg.get("map", {}).get("file")
     if toc and read(root, toc):
-        parts = ["%s %d" % (t, a) for t, a, _, _ in sections(read(root, toc))]
+        skip = cfg.get("blocks", {}).get("toc", {}).get("skip")
+        parts = ["%s %d" % (t, a) for t, a, _, _ in sections(read(root, toc)) if t != skip]
         index = ["Map %s, section start lines: %s" % (toc, "; ".join(parts))]
     state = []
     st = cfg.get("state")
@@ -544,7 +558,7 @@ def do_brief(root, cfg, args):
         for title, a, b, _ in sections(read(root, st["file"])):
             if title == st.get("heading", "Current state"):
                 body = read(root, st["file"]).split("\n")[a:b]
-                state = [l for l in body if l.strip()]
+                state = [l for l in body if l.strip() and not l.lstrip().startswith("<!--")]
                 break
     room = max(0, limit - 1 - len(index) - len(summary))
     head = ["%s %s:" % (st["file"] if st else "state", st.get("heading", "") if st else "")]

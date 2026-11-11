@@ -479,11 +479,12 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - Emulator behaviour: Glas/Frost compile GPU programs over the slow GL pipe on a cold start → ANR;
   the script keeps error dialogs on and presses "Wait" (reported as a warning). Online videos do
   not play there, use the test video. uiautomator dumps can hang on never-idle screens.
-- Docs system: `scripts/docs_sync.py` (stdlib Python; config `scripts/docs_sync.json`; identical
-  copy in `templates/ai-workflow/scripts/`), `scripts/check-strings.sh`, git hook installer
-  `scripts/install-hooks.sh`, session-start hook `.claude/hooks/session-start.sh` (registered in
-  `.claude/settings.json`), reusable template `templates/ai-workflow/`. How to use it:
-  `docs/HANDOFF.md` → How to work.
+- Docs system: `scripts/docs_sync.py` (stdlib Python; config `scripts/docs_sync.json`),
+  `scripts/check-strings.sh`, git hook installer `scripts/install-hooks.sh`, session-start hook
+  `.claude/hooks/session-start.sh` (registered in `.claude/settings.json`). Reusable,
+  project-neutral template: `templates/ai-workflow/` (README there); its copies of the script, the
+  hook installer and the session hook must stay identical to the repo's (the check enforces it).
+  How to use it: `docs/HANDOFF.md` → How to work.
 
 ## Pitfalls
 

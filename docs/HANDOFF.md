@@ -76,7 +76,9 @@ the Read offset) and the docs check summary. It never blocks a session.
      (`YtMiniClay*.kt`); generated blocks do not count;
   3. FEATURES.md says another number of designs than the `YtDesign` enum has;
   4. string parity (`scripts/check-strings.sh`) fails;
-  5. `templates/ai-workflow/scripts/docs_sync.py` differs from `scripts/docs_sync.py` → `--write`.
+  5. a copy in `templates/ai-workflow/` (`scripts/docs_sync.py`, `scripts/install-hooks.sh`,
+     `.claude/hooks/session-start.sh`) differs from the repo's file → edit the repo's file, then
+     `--write` copies it.
 - Warnings (never fail): app code changed but `release-notes/next.md` is empty; an upstream
   LibreTube file changed but `MODIFICATIONS.md` did not; ARCHITECTURE.md names a file or glob that
   does not exist; HANDOFF.md over 400 lines. The diff for these is: staged changes (pre-commit),
