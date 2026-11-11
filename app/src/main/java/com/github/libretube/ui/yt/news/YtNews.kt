@@ -20,14 +20,27 @@ import com.github.libretube.ui.yt.feed.YtTopicSession
 import com.github.libretube.ui.yt.rememberYtVisible
 
 /**
- * What the News overlay shows: the [cards] in order and the videos behind them by id.
- * [ready] is false until the home has built it once.
+ * What the News overlay shows: the [items] in order (YtNewsMerge) and the videos behind them by
+ * id. [ready] is false until the home has built it once.
  */
 class YtNewsDeck(
-    val cards: List<YtNewsCard>,
+    val items: List<YtNewsItem>,
     val videos: Map<String, StreamItem>,
     val ready: Boolean = true,
 ) {
+    private var grouped: Pair<YtNewsStoryEdits, List<YtNewsCard>>? = null
+
+    /**
+     * The cards: the items grouped into stories (YtNewsStory) with the user's edits. Reads the
+     * edits as snapshot state, so a composition that shows the cards follows an edit at once.
+     */
+    val cards: List<YtNewsCard>
+        get() {
+            val edits = YtNewsStories.edits
+            grouped?.let { (by, cards) -> if (by === edits) return cards }
+            return YtNewsStory.cards(items, edits).also { grouped = edits to it }
+        }
+
     fun video(card: YtNewsCard): StreamItem? = videos[card.lead.id]
 
     companion object {
@@ -181,7 +194,7 @@ fun YtNewsSource(subscriptions: List<StreamItem>?) {
             nowMs = System.currentTimeMillis(),
         )
         // until the subscription feed loaded the overlay waits instead of saying "no news"
-        YtNewsDeck(YtNewsMerge.cards(items), items.associate { it.id to videos.getValue(it.id) }, ready = feed != null)
+        YtNewsDeck(items, items.associate { it.id to videos.getValue(it.id) }, ready = feed != null)
     }
     LaunchedEffect(deck) { YtNews.deck = deck }
 }
