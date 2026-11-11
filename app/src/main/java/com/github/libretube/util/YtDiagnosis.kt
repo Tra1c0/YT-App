@@ -36,6 +36,8 @@ object YtDiagnosis {
             add("Network" to network(context))
             add("Last update" to runCatching { YtSelfUpdater.lastResult(context) }.getOrNull())
             add("Update check" to runCatching { YtUpdateNotifier.diagnosis(context) }.getOrNull())
+            // only whether a key is set, never the key
+            add("News summaries" to runCatching { com.github.libretube.ui.yt.news.YtNewsSummaryKey.diagnosis() }.getOrNull())
             add("YouTube account" to if (runCatching { YtAccount.signedIn }.getOrDefault(false)) "yes" else "no")
             add("Queue" to runCatching { PlayingQueue.size().toString() }.getOrNull())
             add("Saved queue" to runCatching { savedQueue() }.getOrNull())

@@ -32,6 +32,8 @@ class YtInteractionSettings : BasePreferenceFragment() {
             R.xml.yt_r12_b_prefs,
             R.xml.yt_r12_c_prefs,
             R.xml.yt_r12_d_prefs,
+            // the News overlay (round 28: summaries with the user's own key)
+            R.xml.yt_r28_newssum_prefs,
             R.xml.yt_r12_e_prefs,
             R.xml.yt_r12_shorts_prefs,
             R.xml.yt_r12_search_prefs,

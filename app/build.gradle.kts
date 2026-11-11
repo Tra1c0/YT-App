@@ -201,6 +201,9 @@ dependencies {
     /* NewPipe Extractor */
     implementation(libs.newpipeextractor)
 
+    /* YT: official API SDK for the opt-in news summaries (off until the user enters a key) */
+    implementation(libs.anthropic.java)
+
 
     /* Coil */
     coreLibraryDesugaring(libs.desugaring)

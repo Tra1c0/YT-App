@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the News overlay's settings, a section of "Gesten & Interaktion". Stage 4: the opt-in
+     summaries with sources; off until the user enters their own API key (YtNewsSummaryKeyPreference). -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:key="yt_r28_news_category"
+        app:title="@string/yt_r28_newssum_category">
+
+        <com.github.libretube.ui.yt.news.YtNewsSummaryKeyPreference
+            android:icon="@drawable/ic_caption"
+            app:key="yt_news_summary_key"
+            app:title="@string/yt_r28_newssum_setting" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

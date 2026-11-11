@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT Runde 28: belegte Kurzfassungen der News (Kernaussagen aus dem Transkript). Gleiche Schlüssel wie values. -->
+<resources>
+    <!-- die Karte -->
+    <string name="yt_r28_newssum_button">Kurzfassung</string>
+    <string name="yt_r28_newssum_label">Kurzfassung · Quellen-Sekunden</string>
+    <string name="yt_r28_newssum_loading">Transkript wird gelesen…</string>
+    <string name="yt_r28_newssum_cut">Nur der Anfang eines langen Transkripts wurde gelesen.</string>
+    <string name="yt_r28_newssum_open">Ab %1$s abspielen</string>
+    <string name="yt_r28_newssum_back">Beschreibung</string>
+    <string name="yt_r28_newssum_no_subtitles">Keine Untertitel</string>
+    <string name="yt_r28_newssum_invalid_key">Schlüssel ungültig</string>
+    <string name="yt_r28_newssum_rate_limited">Gerade zu viele Anfragen, später erneut</string>
+    <string name="yt_r28_newssum_offline">Offline</string>
+    <string name="yt_r28_newssum_refused">Keine Kurzfassung möglich</string>
+    <string name="yt_r28_newssum_service">Dienst gerade nicht erreichbar</string>
+
+    <!-- Einstellungen -->
+    <string name="yt_r28_newssum_category">News</string>
+    <string name="yt_r28_newssum_setting">Belegte Kurzfassungen</string>
+    <string name="yt_r28_newssum_summary_off">Aus. Mit einem eigenen Anthropic-API-Schlüssel bekommen News-Karten den Knopf „Kurzfassung“: 3 bis 5 Kernaussagen aus den Untertiteln, jede mit der Sekunde, in der sie fällt. Alles andere funktioniert ohne Schlüssel.</string>
+    <string name="yt_r28_newssum_summary_on">An · Schlüssel gesetzt. Nur wenn du auf einer Karte „Kurzfassung“ tippst; die Kosten laufen über deinen Schlüssel.</string>
+    <string name="yt_r28_newssum_dialog_title">API-Schlüssel für Kurzfassungen</string>
+    <string name="yt_r28_newssum_dialog_message">Trage deinen eigenen Anthropic-API-Schlüssel ein. Er wird verschlüsselt nur auf diesem Gerät gespeichert, nicht in Backups übernommen und nur an die API geschickt. Die Untertitel eines Videos gehen dorthin, wenn du „Kurzfassung“ tippst.</string>
+    <string name="yt_r28_newssum_dialog_hint">API-Schlüssel</string>
+    <string name="yt_r28_newssum_save">Speichern und testen</string>
+    <string name="yt_r28_newssum_test">Testen</string>
+    <string name="yt_r28_newssum_remove">Entfernen</string>
+    <string name="yt_r28_newssum_replace">Ersetzen</string>
+    <string name="yt_r28_newssum_key_set">Schlüssel gesetzt</string>
+    <string name="yt_r28_newssum_testing">Schlüssel wird getestet…</string>
+    <string name="yt_r28_newssum_test_ok">Schlüssel funktioniert</string>
+    <string name="yt_r28_newssum_test_invalid">Schlüssel ungültig, nicht gespeichert</string>
+    <string name="yt_r28_newssum_test_invalid_set">Schlüssel ungültig</string>
+    <string name="yt_r28_newssum_test_offline">Gespeichert; Test offline nicht möglich</string>
+    <string name="yt_r28_newssum_test_offline_set">Test offline nicht möglich</string>
+    <string name="yt_r28_newssum_test_busy">Gespeichert; der Dienst ist ausgelastet, später testen</string>
+    <string name="yt_r28_newssum_test_busy_set">Der Dienst ist ausgelastet, später testen</string>
+    <string name="yt_r28_newssum_removed">Schlüssel entfernt, Kurzfassungen aus</string>
+</resources>
