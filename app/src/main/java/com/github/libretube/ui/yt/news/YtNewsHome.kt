@@ -1,5 +1,6 @@
 package com.github.libretube.ui.yt.news
 
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -22,8 +23,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -34,11 +43,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.libretube.R
+import com.github.libretube.helpers.YtDesign
 import com.github.libretube.ui.yt.PillAction
 import com.github.libretube.ui.yt.PillLook
 import com.github.libretube.ui.yt.PillRow
 import com.github.libretube.ui.yt.SwipeAway
+import com.github.libretube.ui.yt.LocalYtMotion
 import com.github.libretube.ui.yt.YtCardDrag
+import com.github.libretube.ui.yt.YtCardFrame
+import com.github.libretube.ui.yt.YtCardFrames
 import com.github.libretube.ui.yt.YtDrag
 import com.github.libretube.ui.yt.YtFeedUi
 import com.github.libretube.ui.yt.YtOverlays
@@ -53,31 +66,72 @@ import kotlinx.coroutines.delay
  */
 
 /**
- * The home's root: two fingers spread apart open the News overlay from their centre
- * (YtNewsGestures); one finger and everything else go on to the home untouched.
+ * The home's root: two fingers spread apart open the News overlay (YtNewsGestures); one finger
+ * and everything else go on to the home untouched. Over a card, that card grows into the window
+ * (YtCardFrames picks it once, at the claim); over a gap, the window grows from the fingers'
+ * centre. While the window is out the home sinks back behind it (YtNewsMotion.home: a little
+ * smaller, blurred from Android 12 on capable phones, read in the layer only), and the moments
+ * play the design's feel (YtNewsTextures).
  */
 @Composable
 fun Modifier.ytNewsHome(): Modifier {
     val coords = remember { arrayOfNulls<LayoutCoordinates>(1) }
     val haptics = rememberYtHaptics()
+    val view = LocalView.current
+    val design = remember { YtDesign.current() }
+    val motion = LocalYtMotion.current
+    val blurMax = with(LocalDensity.current) { 10.dp.toPx() }
+    fun root(): LayoutCoordinates? = coords[0]?.takeIf { it.isAttached }
+    fun card(at: Offset): () -> YtCardFrame? = { YtCardFrames.at(at, view, root()?.boundsInWindow()) }
     return this
         .onGloballyPositioned { coords[0] = it }
         .ytNewsPinch(
             enabled = true,
             inward = false,
-            toWindow = { local -> coords[0]?.takeIf { it.isAttached }?.localToWindow(local) ?: local },
+            toWindow = { local -> root()?.localToWindow(local) ?: local },
             // not over a sheet of the home, nor while a card is held or dragged
             allowed = {
                 !YtNews.shown && !YtOverlays.any && !YtFeedUi.sheet && !YtFeedUi.chooser && YtFeedUi.why == null &&
                     YtDrag.session == null && YtCardDrag.held.value.isEmpty()
             },
-            onProgress = { progress, at -> YtNews.pinching(progress, at) },
+            onProgress = { progress, at ->
+                if (YtNews.preview == 0f) haptics.play(YtNewsTextures.of(design, YtNewsHaptic.CLAIM))
+                YtNews.pinching(progress, at, card(at))
+            },
             onCommit = { at ->
-                haptics.confirm()
+                // committed at once, without a claim before: the card under the fingers all the same
+                if (YtNews.preview == 0f) YtNews.pinching(1f, at, card(at))
+                haptics.play(YtNewsTextures.of(design, YtNewsHaptic.OPEN))
                 YtNews.open(at)
             },
-            onCancel = { YtNews.pinchEnded() },
+            onCancel = {
+                if (YtNews.preview > 0f) haptics.play(YtNewsTextures.of(design, YtNewsHaptic.REJECT))
+                YtNews.pinchEnded()
+            },
         )
+        // inside the pinch, so its fingers are measured on the home as it is, not as it sinks back
+        .graphicsLayer {
+            val reveal = YtNews.reveal?.value ?: 0f
+            if (reveal <= 0f) {
+                scaleX = 1f
+                scaleY = 1f
+                renderEffect = null
+                return@graphicsLayer
+            }
+            val blur = if (YtNews.rich && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) blurMax else 0f
+            val home = YtNewsMotion.home(reveal, depth = motion, blurMax = blur)
+            val anchor = YtNews.anchor
+            val r = root()
+            transformOrigin = if (anchor != null && r != null && size.width > 0f && size.height > 0f) {
+                val at = r.windowToLocal(anchor)
+                TransformOrigin((at.x / size.width).coerceIn(0f, 1f), (at.y / size.height).coerceIn(0f, 1f))
+            } else {
+                TransformOrigin.Center
+            }
+            scaleX = home.scale
+            scaleY = home.scale
+            renderEffect = if (home.blur > 0f) BlurEffect(home.blur, home.blur, TileMode.Clamp) else null
+        }
 }
 
 /**

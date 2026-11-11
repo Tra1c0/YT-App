@@ -428,7 +428,7 @@ fun Modifier.ytLiftToQueue(
 
     return this
         .onGloballyPositioned { holder.coords = it }
-        .ytHeldScope(token)
+        .ytHeldScope(token, shape, inset)
         .then(actions)
         .then(gesture)
         .then(visuals)

@@ -2,6 +2,7 @@ package com.github.libretube.ui.yt.news
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -14,6 +15,9 @@ import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.extensions.toID
 import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.helpers.YtChannelPause
+import com.github.libretube.ui.yt.FrequencyDeviceProbe
+import com.github.libretube.ui.yt.FrequencyTier
+import com.github.libretube.ui.yt.YtCardFrame
 import com.github.libretube.ui.yt.YtTestHooks
 import com.github.libretube.ui.yt.feed.YtFeed
 import com.github.libretube.ui.yt.feed.YtTopicSession
@@ -68,12 +72,54 @@ object YtNews {
     var opens by mutableIntStateOf(0)
         private set
 
-    /** A pinch on the home is claimed and at [progress] towards opening. */
-    fun pinching(progress: Float, at: Offset?) {
+    /**
+     * The home card the window grows out of and goes back into (stage 2), or null: it grows from
+     * the fingers' centre. Lent while the window is out, given back once it is gone (YtNewsLayer).
+     */
+    var source by mutableStateOf<YtCardFrame?>(null)
+        private set
+
+    /** Where the claimed pinch's centre started (window px): the window follows the fingers from there. */
+    var anchor by mutableStateOf<Offset?>(null)
+        private set
+
+    /** The window's reveal (0 closed, 1 open) as the layer animates it; the home reads it in its layer. */
+    internal var reveal by mutableStateOf<State<Float>?>(null)
+
+    /** Whether this phone draws the costly depth (parallax, blur, shadows); asked once per pinch or opening. */
+    var rich by mutableStateOf(true)
+        private set
+
+    /** A pinch on the home is claimed and at [progress] towards opening, over [card] (null: none). */
+    fun pinching(progress: Float, at: Offset?, card: () -> YtCardFrame? = { null }) {
         if (shown) return
+        if (preview == 0f) {
+            // the claim: the card under the fingers becomes the window
+            anchor = at
+            rich = richPhone()
+            lendSource(card())
+        }
         if (at != null) origin = at
-        preview = progress.coerceIn(0f, 1f)
+        preview = progress.coerceIn(0f, 1f).coerceAtLeast(0.0001f)
     }
+
+    /** The card the window comes from, or none; the one before is given back. */
+    private fun lendSource(card: YtCardFrame?) {
+        val before = source
+        if (before != null && before !== card) before.giveBack()
+        card?.lend()
+        source = card
+    }
+
+    /** The window is gone (closed, or a pinch shrank back): the card draws itself again. */
+    internal fun windowGone() {
+        if (shown || preview > 0f) return
+        source?.giveBack()
+        source = null
+    }
+
+    private fun richPhone(): Boolean =
+        runCatching { FrequencyDeviceProbe.choice(false)?.tier != FrequencyTier.LOW }.getOrDefault(true)
 
     /** The pinch on the home ended without opening. */
     fun pinchEnded() {
@@ -82,6 +128,12 @@ object YtNews {
 
     fun open(at: Offset?) {
         if (shown) return
+        // not from a pinch (the hint's button): from the screen's centre
+        if (preview == 0f) {
+            lendSource(null)
+            anchor = at
+            rich = richPhone()
+        }
         origin = at
         preview = 0f
         opens++
@@ -103,6 +155,9 @@ object YtNews {
         shown = false
         preview = 0f
         layerUp = false
+        reveal = null
+        source?.giveBack()
+        source = null
     }
 
     /** Whether the hint pill is still due. */

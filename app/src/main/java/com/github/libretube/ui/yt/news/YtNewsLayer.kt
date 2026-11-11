@@ -9,6 +9,19 @@ import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import com.github.libretube.ui.yt.YtCardFrame
+import kotlinx.coroutines.flow.drop
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
@@ -99,9 +112,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.lerp
 import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -152,15 +163,18 @@ import com.github.libretube.ui.yt.feed.YtQueueMove
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlin.math.absoluteValue
 import kotlin.math.sign
 
 /**
  * YT: the News overlay, a full-screen window above the home, the player and the bar, in the
  * current design's palette, type and surfaces. A two-finger spread on the home opens it
- * (YtNewsGestures on the home's root): the window grows from the fingers' centre, following them
- * a little while the pinch is not yet far enough (the switch "Animationen der Designs" off: it
- * just appears). Inside, a horizontal pager of cards (YtNewsCard) with stories-like segments at
+ * (YtNewsGestures on the home's root): the card under the fingers becomes the window (its
+ * picture, recorded by YtCardFrames, fades into the window that grows out of its bounds and
+ * follows the fingers), over a gap the window grows from the fingers' centre; closing reverses
+ * into the card while it still shows. The geometry is YtNewsMotion's, read in the layers only.
+ * The pages recede in depth with a parallax thumbnail, a card dragged up or down tilts, and the
+ * moments play the design's feel (YtNewsTextures). The switch "Animationen der Designs" off: it
+ * just appears, no depth. Inside, a horizontal pager of cards (YtNewsCard) with stories-like segments at
  * the top: tap a card to watch it, swipe it up for the end of the queue, hold it for the quick
  * sheet; pinch, swipe down, back or the cross close it.
  *
@@ -170,12 +184,13 @@ import kotlin.math.sign
 object YtNewsLayer {
     private const val TAG = "yt_news_layer"
 
-    /** How far a pinch that is not yet committed lets the window grow (0..1 of the opening). */
-    private const val PREVIEW_REACH = 0.32f
+    /** The design whose feel the moments play (YtNewsTextures); set per activity, as the palette. */
+    private var design = YtDesign.STANDARD
 
     /** Adds the layer to [activity]'s content, once per activity, only for the designs. */
     fun attach(activity: ComponentActivity) {
         val palette = YtDesign.current().palette ?: return
+        design = YtDesign.current()
         val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
         if (content.findViewWithTag<View>(TAG) != null) return
         // a new window (a recreated activity): an overlay left open in the old one starts closed
@@ -210,27 +225,56 @@ object YtNewsLayer {
             if (YtNews.layerUp) super.dispatchGenericMotionEvent(event) else false
     }
 
+    /** Plays the design's feel of [moment]. */
+    private fun YtHaptics.news(moment: YtNewsHaptic) = play(YtNewsTextures.of(design, moment))
+
     @Composable
     private fun Layer(palette: YtPalette) {
         val reveal = remember { Animatable(0f) }
+        // how far the window follows the fingers' travel since the claim (window px)
+        val follow = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+        // whether the window goes back into its card: decided when it starts to close
+        val intoCard = remember { mutableStateOf(true) }
+        DisposableEffect(reveal) {
+            YtNews.reveal = reveal.asState()
+            onDispose { YtNews.reveal = null }
+        }
         LaunchedEffect(Unit) {
-            snapshotFlow { YtNews.shown to YtNews.preview }.collectLatest { (open, preview) ->
+            snapshotFlow { Triple(YtNews.shown, YtNews.preview, YtNews.origin) }.collectLatest { (open, preview, origin) ->
                 val motion = YtMotionPrefs.enabled
                 when {
-                    open -> if (motion) {
-                        reveal.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 320f))
-                    } else {
-                        reveal.snapTo(1f)
+                    open -> {
+                        intoCard.value = true
+                        launch { if (motion) follow.animateTo(Offset.Zero, spring(dampingRatio = 0.85f, stiffness = 380f)) else follow.snapTo(Offset.Zero) }
+                        if (motion) reveal.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 320f)) else reveal.snapTo(1f)
                     }
-                    // the window follows the fingers a little until the pinch is far enough
-                    preview > 0f -> if (motion) reveal.animateTo(PREVIEW_REACH * preview, spring(dampingRatio = 1f, stiffness = 1400f))
+                    // the card grows with the spread and follows the fingers until the pinch is far enough
+                    preview > 0f -> if (motion) {
+                        intoCard.value = true
+                        val anchor = YtNews.anchor
+                        if (anchor != null && origin != null) follow.snapTo(origin - anchor)
+                        reveal.animateTo(YtNewsMotion.PREVIEW_REACH * preview, spring(dampingRatio = 1f, stiffness = 1400f))
+                    }
                     else -> {
+                        val source = YtNews.source
+                        // back into the card if it still shows, else to the centre (the card shows again at
+                        // once); a pinch that shrinks back always goes into its card, which cannot have moved
+                        val bounds = source?.bounds()
+                        val back = bounds != null && (!YtNews.layerUp || YtNewsMotion.stillThere(bounds, source.visible()))
+                        if (!back) source?.hidden = false
+                        intoCard.value = back
+                        launch { if (motion) follow.animateTo(Offset.Zero, spring(dampingRatio = 1f, stiffness = 700f)) else follow.snapTo(Offset.Zero) }
                         if (motion && reveal.value > 0f) {
-                            reveal.animateTo(0f, if (YtNews.layerUp) tween(210, easing = YtEaseOut) else spring(dampingRatio = 1f, stiffness = 700f))
+                            reveal.animateTo(
+                                0f,
+                                if (YtNews.layerUp) spring(dampingRatio = 0.9f, stiffness = 420f) else spring(dampingRatio = 1f, stiffness = 700f),
+                            )
                         } else {
                             reveal.snapTo(0f)
                         }
+                        follow.snapTo(Offset.Zero)
                         YtNews.layerUp = false
+                        YtNews.windowGone()
                     }
                 }
             }
@@ -238,25 +282,68 @@ object YtNewsLayer {
         val present by remember { derivedStateOf { YtNews.shown || reveal.value > 0.001f } }
         if (!present) return
         YtTheme(palette) {
-            Window(palette, reveal)
+            Window(palette, Reveal(reveal, follow, intoCard))
+        }
+    }
+
+    /** The window's motion state, read in the draw phase only. */
+    private class Reveal(
+        val value: Animatable<Float, *>,
+        val follow: Animatable<Offset, *>,
+        val intoCard: androidx.compose.runtime.State<Boolean>,
+    ) {
+        /** The card the window grows out of, while it is to go back into it. */
+        fun card(): YtCardFrame? = if (intoCard.value) YtNews.source?.takeIf { it.bounds() != null } else null
+
+        /** Where the window starts: the card's visible rectangle, or a small window about the fingers' centre. */
+        fun start(full: YtNewsRect): YtNewsRect {
+            card()?.bounds()?.let { return it }
+            val o = YtNews.origin
+            return YtNewsMotion.centreStart(full, o?.x ?: full.centerX, o?.y ?: full.centerY)
+        }
+
+        /** The window's rectangle now (window px), dragged down [dragPx] of [full]'s height. */
+        fun rect(full: YtNewsRect, dragPx: Float): YtNewsRect {
+            val f = follow.value
+            val r = YtNewsMotion.window(start(full), full, value.value, f.x, f.y)
+            return YtNewsMotion.dragged(r, dragFraction(dragPx, full.height), dragPx)
         }
     }
 
     @Composable
-    private fun Window(palette: YtPalette, reveal: Animatable<Float, *>) {
+    private fun Window(palette: YtPalette, reveal: Reveal) {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         val haptics = rememberYtHaptics()
         val look = remember(palette) { newsLook(palette) }
         val pill = remember(palette) { pillLook(palette) }
         val motion = remember(YtNews.opens) { YtMotionPrefs.enabled }
+        // parallax, depth and shadows: with the motion switch on a phone that is not weak
+        val depth = remember(YtNews.opens) { motion && YtNews.rich }
         // the window dragged down to close; back at the top for every opening
         val dragY = remember { Animatable(0f) }
         LaunchedEffect(YtNews.opens) { dragY.snapTo(0f) }
         var layerOrigin by remember { mutableStateOf(Offset.Zero) }
         var quick by remember { mutableStateOf<StreamItem?>(null) }
         var note by remember { mutableStateOf<Note?>(null) }
-        YtBackHandler(enabled = YtNews.shown) { YtNews.close() }
+        val cornerFallback = with(LocalDensity.current) { 40.dp.toPx() }
+        YtBackHandler(enabled = YtNews.shown) {
+            haptics.news(YtNewsHaptic.CLOSE)
+            YtNews.close()
+        }
+        // the card hides on the home once its picture shows here, so it is never seen twice
+        val source = YtNews.source
+        LaunchedEffect(source) {
+            source ?: return@LaunchedEffect
+            repeat(30) {
+                withFrameNanos { }
+                if (source.recorded) {
+                    withFrameNanos { }
+                    if (YtNews.source === source && reveal.intoCard.value) source.hidden = true
+                    return@LaunchedEffect
+                }
+            }
+        }
 
         // the deck as it was when the overlay opened (cards do not move under the finger); taken
         // again only while it is still empty (the feed or a topic search still loading)
@@ -277,6 +364,8 @@ object YtNewsLayer {
             )
         }
 
+        fun full(width: Float, height: Float) = YtNewsRect(layerOrigin.x, layerOrigin.y, layerOrigin.x + width, layerOrigin.y + height)
+
         Box(
             Modifier
                 .fillMaxSize()
@@ -286,7 +375,7 @@ object YtNewsLayer {
             Box(
                 Modifier
                     .fillMaxSize()
-                    .graphicsLayer { alpha = reveal.value.coerceIn(0f, 1f) * (1f - dragFraction(dragY.value, size.height)) }
+                    .graphicsLayer { alpha = reveal.value.value.coerceIn(0f, 1f) * (1f - dragFraction(dragY.value, size.height)) }
                     .background(Color(0x99000000)),
             )
             Box(
@@ -294,24 +383,21 @@ object YtNewsLayer {
                     .fillMaxSize()
                     .testTag("yt_news_window")
                     .graphicsLayer {
-                        val r = reveal.value
-                        val o = YtNews.origin
-                        transformOrigin = if (o != null && size.width > 0f && size.height > 0f) {
-                            TransformOrigin(
-                                ((o.x - layerOrigin.x) / size.width).coerceIn(0f, 1f),
-                                ((o.y - layerOrigin.y) / size.height).coerceIn(0f, 1f),
-                            )
-                        } else {
-                            TransformOrigin.Center
-                        }
-                        val drag = dragFraction(dragY.value, size.height)
-                        val s = lerp(0.42f, 1f, r) * (1f - 0.1f * drag)
+                        // read here, in the layer: the window moves and grows without composing again
+                        val r = reveal.value.value
+                        val full = full(size.width, size.height)
+                        val now = reveal.rect(full, dragY.value)
+                        val s = if (full.width > 0f) (now.width / full.width).coerceAtLeast(0.01f) else 1f
+                        transformOrigin = TransformOrigin(0f, 0f)
                         scaleX = s
                         scaleY = s
-                        translationY = dragY.value
-                        alpha = (r * 1.8f).coerceIn(0f, 1f) * (1f - 0.5f * drag)
-                        // a card that grows into the screen: round while small, square when full
-                        shape = RoundedCornerShape(lerp(40.dp, 0.dp, r.coerceIn(0f, 1f)).toPx())
+                        translationX = now.left - full.left
+                        translationY = now.top - full.top
+                        val card = reveal.card()
+                        val radius = YtNewsMotion.corner(card?.cornerPx() ?: cornerFallback, r)
+                        alpha = YtNewsMotion.windowAlpha(r, card?.picture != null) * (1f - 0.5f * dragFraction(dragY.value, full.height))
+                        // a card that grows into the screen: its corners while small, square when full
+                        shape = WindowShape(now.height / s, radius / s)
                         clip = true
                     }
                     .background(look.ground)
@@ -322,16 +408,44 @@ object YtNewsLayer {
                         toWindow = { it },
                         onProgress = { _, _ -> },
                         onCommit = {
-                            haptics.tick()
+                            haptics.news(YtNewsHaptic.CLOSE)
                             YtNews.close()
                         },
                         onCancel = {},
                     ),
             ) {
-                Content(palette, look, deck, motion, actions, dragY, haptics, scope)
+                Content(palette, look, deck, motion, depth, actions, dragY, haptics, scope)
                 // the confirmation of a card handed to the queue
                 NotePill(pill, note, Modifier.align(Alignment.BottomCenter)) { note = null }
             }
+            // the card itself over the growing window, fading into it (and back out of it)
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        alpha = YtNewsMotion.pictureAlpha(reveal.value.value) * (1f - 0.5f * dragFraction(dragY.value, size.height))
+                        compositingStrategy = CompositingStrategy.ModulateAlpha
+                    }
+                    .drawBehind {
+                        val card = reveal.card() ?: return@drawBehind
+                        val picture = card.picture?.takeIf { !it.isReleased && it.size.width > 0 } ?: return@drawBehind
+                        val outer = card.outer() ?: return@drawBehind
+                        val inner = card.bounds() ?: return@drawBehind
+                        val now = reveal.rect(full(size.width, size.height), dragY.value)
+                        // the card's rectangle in the picture's own px (the home may be scaled back)
+                        val k = outer.width / picture.size.width
+                        if (k <= 0f || inner.width <= 0f) return@drawBehind
+                        val left = (inner.left - outer.left) / k
+                        val top = (inner.top - outer.top) / k
+                        val s = now.width / (inner.width / k)
+                        withTransform({
+                            translate(now.left - layerOrigin.x - left * s, now.top - layerOrigin.y - top * s)
+                            scale(s, s, Offset.Zero)
+                        }) {
+                            drawLayer(picture)
+                        }
+                    },
+            )
             YtQuickSheet(
                 palette = palette,
                 imageLoader = ImageHelper.loader(),
@@ -351,6 +465,15 @@ object YtNewsLayer {
         }
     }
 
+    /** The window's clip: [height] px of it from the top (the rest is still below the card), [radius] px corners. */
+    private class WindowShape(private val height: Float, private val radius: Float) : Shape {
+        override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+            val h = height.coerceIn(0f, size.height)
+            val r = radius.coerceAtLeast(0f)
+            return Outline.Rounded(RoundRect(0f, 0f, size.width, h, CornerRadius(r, r)))
+        }
+    }
+
     private fun dragFraction(dragY: Float, height: Float): Float =
         if (height <= 0f) 0f else (dragY / height).coerceIn(0f, 1f)
 
@@ -360,6 +483,7 @@ object YtNewsLayer {
         look: NewsLook,
         deck: YtNewsDeck,
         motion: Boolean,
+        depth: Boolean,
         actions: NewsActions,
         dragY: Animatable<Float, *>,
         haptics: YtHaptics,
@@ -367,6 +491,10 @@ object YtNewsLayer {
     ) {
         val cards = deck.cards
         val pager = key(YtNews.opens) { rememberPagerState { cards.size } }
+        // a tick of the design's feel as the pager passes into another card
+        LaunchedEffect(pager) {
+            snapshotFlow { pager.currentPage }.drop(1).collect { haptics.news(YtNewsHaptic.PAGE) }
+        }
         val ground = look.groundInk
         // down on the header or the empty state: the window follows and closes
         @Composable
@@ -379,7 +507,7 @@ object YtNewsLayer {
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
             Column(closeSwipe("header")) {
                 if (cards.size > 1) Segments(pager, cards.size, look, Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp))
-                Header(look, pager, cards.size)
+                Header(look, pager, cards.size, haptics)
             }
             if (cards.isEmpty()) {
                 Empty(look, deck.ready, closeSwipe("empty").weight(1f))
@@ -398,6 +526,8 @@ object YtNewsLayer {
             ) { page ->
                 val card = cards.getOrNull(page) ?: return@HorizontalPager
                 val video = deck.video(card) ?: return@HorizontalPager
+                // how far this page is from the middle, signed; read in the draw phase only
+                val offset = { (pager.currentPage - page) + pager.currentPageOffsetFraction }
                 NewsCardPage(
                     palette = palette,
                     look = look,
@@ -405,15 +535,16 @@ object YtNewsLayer {
                     video = video,
                     actions = actions,
                     motion = motion,
+                    depth = depth,
+                    offset = offset,
                     haptics = haptics,
                     dragY = dragY,
                     modifier = Modifier.graphicsLayer {
-                        // the neighbours wait a little smaller and dimmer, like slides
-                        val off = ((pager.currentPage - page) + pager.currentPageOffsetFraction).absoluteValue.coerceIn(0f, 1f)
-                        val s = lerp(1f, 0.92f, off)
-                        scaleX = s
-                        scaleY = s
-                        alpha = lerp(1f, 0.55f, off)
+                        // the neighbours recede: smaller and dimmer (with depth also lower, below)
+                        val p = YtNewsMotion.page(offset(), depth)
+                        scaleX = p.scale
+                        scaleY = p.scale
+                        alpha = p.alpha
                     },
                 )
             }
@@ -453,7 +584,7 @@ object YtNewsLayer {
     }
 
     @Composable
-    private fun Header(look: NewsLook, pager: PagerState, count: Int) {
+    private fun Header(look: NewsLook, pager: PagerState, count: Int, haptics: YtHaptics) {
         val ink = look.groundInk
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -484,7 +615,10 @@ object YtNewsLayer {
                     .testTag("yt_news_close")
                     .size(48.dp)
                     .clip(CircleShape)
-                    .clickable { YtNews.close() },
+                    .clickable {
+                        haptics.news(YtNewsHaptic.CLOSE)
+                        YtNews.close()
+                    },
             ) {
                 Icon(
                     painterResource(R.drawable.ic_close),
@@ -555,11 +689,18 @@ object YtNewsLayer {
         video: StreamItem,
         actions: NewsActions,
         motion: Boolean,
+        depth: Boolean,
+        offset: () -> Float,
         haptics: YtHaptics,
         dragY: Animatable<Float, *>,
         modifier: Modifier,
     ) {
         val scope = rememberCoroutineScope()
+        // a shadow under the card in the middle, where the card is opaque (glass shows it through)
+        val shadow = depth && palette.surfaceStyle !in setOf(YtSurfaceStyle.GLASS, YtSurfaceStyle.FROST, YtSurfaceStyle.CLAY)
+        val density = LocalDensity.current
+        val shadowPx = with(density) { 10.dp.toPx() }
+        val camera = 14f * density.density
         val lead = card.lead
         val ink = look.cardInk
         val shape = look.cardShape
@@ -580,7 +721,23 @@ object YtNewsLayer {
                 .fillMaxSize()
                 .padding(vertical = 8.dp)
                 .onSizeChanged { height = it.height.toFloat() }
-                .graphicsLayer { translationY = lift.value }
+                .graphicsLayer {
+                    translationY = lift.value
+                    if (!depth) return@graphicsLayer
+                    // dragged up (to the queue) or down (the window): the card leans and lifts a little
+                    val dy = if (lift.value < 0f) lift.value else dragY.value
+                    val tilt = YtNewsMotion.tilt(dy, queuePx * 1.5f)
+                    rotationX = tilt.rotationX
+                    scaleX = tilt.scale
+                    scaleY = tilt.scale
+                    cameraDistance = camera
+                    if (shadow) {
+                        val raised = (tilt.scale - 1f) / 0.03f
+                        shadowElevation = shadowPx * (0.6f * YtNewsMotion.page(offset(), true).elevation + 0.4f * raised)
+                        this.shape = look.cardShape
+                        clip = false
+                    }
+                }
                 .testTag("yt_news_card")
                 .semantics {
                     customActions = listOf(
@@ -655,7 +812,19 @@ object YtNewsLayer {
                     .clip(ytCardShape(palette, 12))
                     .background(look.imageBack),
             ) {
-                YtLargeThumbnail(video, ImageHelper.loader(), Modifier.fillMaxSize())
+                // the picture lags behind its card as the pages move (parallax), within its frame
+                YtLargeThumbnail(
+                    video,
+                    ImageHelper.loader(),
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            if (!depth) return@graphicsLayer
+                            scaleX = YtNewsMotion.PARALLAX_SCALE
+                            scaleY = YtNewsMotion.PARALLAX_SCALE
+                            translationX = YtNewsMotion.parallax(offset(), size.width)
+                        },
+                )
                 ytDuration(video)?.let { duration ->
                     Text(
                         text = duration,
@@ -806,7 +975,7 @@ object YtNewsLayer {
             YtQueueMove.DRAFT -> YtQueue.draftLanded++
             else -> Unit
         }
-        if (result.move == YtQueueMove.REJECT) haptics.reject() else haptics.confirm()
+        haptics.news(if (result.move == YtQueueMove.REJECT) YtNewsHaptic.REJECT else YtNewsHaptic.QUEUE)
         queueNotes.tryEmit(Note(result.move, result.position))
         YtTestHooks.log("YtNews") { "queue move=${result.move} id=${video.url?.toID()}" }
     }
@@ -821,7 +990,7 @@ object YtNewsLayer {
         scope: kotlinx.coroutines.CoroutineScope,
     ) {
         if (release == YtNewsGestureRules.Release.CLOSE) {
-            haptics.tick()
+            haptics.news(YtNewsHaptic.CLOSE)
             YtNews.close()
             return
         }
