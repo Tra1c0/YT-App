@@ -1,4 +1,4 @@
-# YT – instructions for Claude
+# YT – instructions for every session
 
 YT is an Android app, a LibreTube fork. These rules hold for every session; each rule is stated
 here once, details live in the file named next to it.
@@ -19,8 +19,8 @@ here once, details live in the file named next to it.
 - Agent: a session the lead starts for one track (one worktree and branch). It writes code and
   tests only.
 - Round: one batch of user requests, from the first task to the push to `main`.
-- build-N: the release CI makes from push number N to `main` (tag `build-N`, app version
-  `32.1-yt.N`). Run link: that CI run's page, `https://github.com/Tra1c0/YT-App/actions/runs/<id>`.
+- build-N: the release CI makes from a push to `main`; N is the CI run number (tag `build-N`,
+  app version `32.1-yt.N`). Run link: that CI run's page, `https://github.com/Tra1c0/YT-App/actions/runs/<id>`.
 
 ## Do
 

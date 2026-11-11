@@ -46,7 +46,7 @@ the Read offset) and the docs check summary. It never blocks a session.
 - `Tra1c0/YT-App`: this app. It is public and must stay public (GitHub Actions do not start jobs
   on a private repo here because of billing).
 - `Tra1c0/YT-Revanced-Revanced-`: a separate, older patch project (branch `ccr-06da63aa-8a5ovt`
-  only). Not part of this work.
+  only). Do not touch it unless the user asks.
 
 ### Parallel work (lead and agents)
 
@@ -67,7 +67,7 @@ the Read offset) and the docs check summary. It never blocks a session.
 
 - `python3 -I scripts/docs_sync.py --check`: prints errors and warnings, exits 1 on errors.
 - `python3 -I scripts/docs_sync.py --write`: regenerates the generated blocks (design lists,
-  ARCHITECTURE contents and file inventory) and the template copy of the script, then checks.
+  ARCHITECTURE contents and file inventory) and the template copies (error 5), then checks.
 - `python3 -I scripts/docs_sync.py --toc docs/ARCHITECTURE.md`: the sections with line ranges.
 - Errors (fail CI on `main` and the pre-commit hook on `main`):
   1. a generated block is out of date → run `--write`;
@@ -95,7 +95,8 @@ the Read offset) and the docs check summary. It never blocks a session.
 2. Update the docs as `CLAUDE.md` → "Keep the docs current" says, in the same push. Release
    notes: REPLACE `release-notes/next.md` with the German notes of this push (`## Neu` /
    `## Behoben` / `## Geändert`, bullets, no marker: CI adds it). Never leave the previous build's
-   notes in it: the app would show them twice. A push that builds nothing needs no notes.
+   notes in it: the app would show them twice. A push that builds nothing (docs, scripts) leaves
+   the file as it is; the next push that builds replaces it.
 3. `python3 -I scripts/docs_sync.py --check` must be green; then push `main` once (push a round's
    fixes together: a newer push cancels the running build and its release never exists; if that
    happens, carry the cancelled build's notes into the next `release-notes/next.md`).

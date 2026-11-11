@@ -1,4 +1,4 @@
-# <PROJECT> – instructions for Claude
+# <PROJECT> – instructions for every session
 
 <One sentence: what the project is.> These rules hold for every session; each rule is stated here
 once, details live in the file named next to it.

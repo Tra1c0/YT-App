@@ -1,6 +1,6 @@
 # AI workflow template: a working memory that checks itself
 
-A small set of files that gives AI coding sessions (Claude Code or similar) a reliable, cheap
+A small set of files that gives AI coding sessions a reliable, cheap
 memory of a project: every session starts with the current state, reads only the part of the code
 map it needs, and a check fails when the docs fall behind the code. Stdlib Python 3.8+, no
 packages, any language or framework.
