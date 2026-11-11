@@ -1,0 +1,53 @@
+{
+  "//": "Config of scripts/docs_sync.py. Paths are relative to the repository root; keys named // are comments. Edit the three values marked EDIT; everything else works as it is.",
+
+  "docs": ["CLAUDE.md", "docs/*.md"],
+
+  "//aliases": "Optional short forms you use in the map, e.g. {\"S/\": \"src/myapp/\"}; glob tokens in the map may use them.",
+  "aliases": {},
+
+  "map": {
+    "file": "docs/ARCHITECTURE.md",
+    "//": "EDIT 1: the files the code map must name (by file name, stem or a backticked glob like `user_*.py`).",
+    "sources": ["src/**/*.py"],
+    "exclude": ["**/test_*.py", "**/__init__.py"],
+    "match_stem": true,
+    "//search_roots": "Where names written in the map are looked up (a name that exists nowhere gives a warning).",
+    "search_roots": ["src", "scripts", "docs", ".github", ".claude", "release-notes", "CLAUDE.md"],
+    "extensions": [".py", ".ts", ".tsx", ".js", ".kt", ".go", ".rs", ".java", ".sh", ".yml", ".md"]
+  },
+
+  "//lists": "Optional: items taken from a source file by a regex, e.g. the values of an enum. Rendered by a 'list' block, compared by 'counts'. Example: {\"themes\": {\"file\": \"src/theme.py\", \"pattern\": \"^    ([A-Z_]+) = \", \"item\": \"`{0}`\"}}",
+  "lists": {},
+
+  "blocks": {
+    "toc": {"type": "toc", "skip": "Contents"},
+    "inventory": {"type": "inventory", "title": "All mapped source files by folder"}
+  },
+
+  "//counts": "Optional: numbers in a doc that must equal a list's length, e.g. {\"file\": \"docs/FEATURES.md\", \"pattern\": \"(\\\\d+) themes\", \"list\": \"themes\"}",
+  "counts": [],
+
+  "size_warnings": {"docs/HANDOFF.md": 400},
+
+  "//commands": "Optional external checks, e.g. {\"name\": \"lint\", \"run\": [\"npm\", \"run\", \"lint\"], \"hint\": \"fix the lint errors\"}",
+  "commands": [],
+
+  "copies": [],
+
+  "//base_branch": "EDIT 2: the branch that ships.",
+  "base_branch": "main",
+
+  "warn_if_changed": [
+    {
+      "//": "EDIT 3: the code that ships to users (its changes need release notes).",
+      "when": ["src/**"],
+      "file": "release-notes/next.md",
+      "need": "nonempty",
+      "message": "code changed but release-notes/next.md is empty: write the user-facing notes of this push"
+    }
+  ],
+
+  "state": {"file": "docs/HANDOFF.md", "heading": "Current state"},
+  "brief": {"max_lines": 15, "toc_file": "docs/ARCHITECTURE.md"}
+}

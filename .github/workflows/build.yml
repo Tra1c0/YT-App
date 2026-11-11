@@ -31,6 +31,19 @@ jobs:
       YT_BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          # the docs check compares with the previous commit for its warnings
+          fetch-depth: 2
+
+      # the docs check (scripts/docs_sync.py, rules in docs/HANDOFF.md → How to work): generated
+      # blocks current, every YT Kotlin file in the code map, design counts. Hard errors fail the
+      # build on main; on test branches they only show as annotations. String parity runs as its
+      # own step below.
+      - name: Check the docs
+        run: |
+          if python3 -I scripts/docs_sync.py --check --no-commands; then exit 0; fi
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then exit 1; fi
+          echo "::warning::The docs check failed (not blocking outside main)"
 
       - uses: gradle/actions/wrapper-validation@v5
 
@@ -89,30 +102,7 @@ jobs:
       # every YT string needs its German twin: a key only in values/ shows English in the German
       # app, one only in values-de/ crashes every other locale. Compared per file, by name.
       - name: Check English and German YT strings
-        run: |
-          res=app/src/main/res
-          # the names of the strings and plurals in one file, in file order (none if it is missing)
-          names() {
-            [ -f "$1" ] || return 0
-            grep -o -E '<(string|plurals) [^>]*name="[^"]+"[^>]*>' "$1" | grep -v 'translatable="false"' \
-              | sed -E 's/.*name="([^"]+)".*/\1/'
-          }
-          failed=0
-          for f in $(for p in "$res"/values/yt_*.xml "$res"/values-de/yt_*.xml; do [ -e "$p" ] && basename "$p"; done | sort -u); do
-            names "$res/values/$f" > en.txt
-            names "$res/values-de/$f" > de.txt
-            only_en=$(comm -23 <(sort -u en.txt) <(sort -u de.txt) | tr '\n' ' ')
-            only_de=$(comm -13 <(sort -u en.txt) <(sort -u de.txt) | tr '\n' ' ')
-            if [ -n "$only_en" ]; then failed=1; echo "::error file=$res/values-de/$f::$f: missing in values-de: $only_en"; fi
-            if [ -n "$only_de" ]; then failed=1; echo "::error file=$res/values/$f::$f: missing in values: $only_de"; fi
-            if [ -z "$only_en$only_de" ]; then
-              # the same order makes the two files easy to compare by eye; a different one is no error
-              cmp -s en.txt de.txt || echo "::warning file=$res/values-de/$f::$f: the same names, in another order"
-              echo "$f: $(wc -l < en.txt) names in both"
-            fi
-          done
-          rm -f en.txt de.txt
-          [ "$failed" = 0 ] || { echo "::error::The English and German YT strings differ (see above)"; exit 1; }
+        run: bash scripts/check-strings.sh
 
       # the YT unit tests (plain JVM, no Android): a failing test stops the build before anything
       # is published. The upstream tests are compiled but not run; they are not YT's to keep green.

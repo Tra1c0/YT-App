@@ -1,6 +1,7 @@
 # YT – Roadmap (noch nicht gebaute Funktionen)
 
-Alles, was es noch nicht in der App gibt. Du sortierst; die Agents bauen nur aus „Beschlossen“.
+Alles, was es noch nicht in der App gibt. Du sortierst; gebaut wird nur, was unter „Beschlossen“
+steht oder was du direkt verlangst.
 Nummern wie in den Vorschlägen im Chat. Aufwand geschätzt: S klein, M mittel, L groß.
 Gebautes steht in [FEATURES.md](FEATURES.md).
 
