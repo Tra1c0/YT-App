@@ -841,8 +841,9 @@ fun SynthwaveNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, 
                 .ytDockedBar(22.dp, stacks, SolidColor(SynthwaveBar), SynthwaveBarBorder)
                 .drawWithContent {
                     drawContent()
-                    // the neon edge along the top
-                    drawRect(edge, Offset(size.width * 0.06f, 0f), Size(size.width * 0.88f, 1.2.dp.toPx()))
+                    // the neon edge along the top; it gives way to the mini player's seam as it docks
+                    val shown = 1f - YtDock.progress.coerceIn(0f, 1f)
+                    if (shown > 0.01f) drawRect(edge, Offset(size.width * 0.06f, 0f), Size(size.width * 0.88f, 1.2.dp.toPx()), alpha = shown)
                 },
         ) {
             items.forEach { item ->
