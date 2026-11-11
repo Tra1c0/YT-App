@@ -8,7 +8,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 121+ (equalizer on the Frequency subscribe pill). 120: removed a one-off
+- Latest release: build 122 (feed topics + landscape fixes). 121: equalizer on the Frequency
+  subscribe pill. 120: removed a one-off
   device-gated behaviour again (119 still carries it as an old release). 118: Frequency rework. 117:
   Frequency + sound engine. 115: watched bar on hold everywhere. 114: mini player never
   parked half behind the bar. 111: no hard edge after
@@ -121,6 +122,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 122: feed topics with keyword suggestions; landscape stays windowed, back rebuilds on first try.
 
 - 121: Frequency subscribe pill shows a Deezer-style equalizer (heights only, label >= 4.5:1).
 

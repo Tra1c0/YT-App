@@ -272,7 +272,7 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
 - Landscape / fullscreen exit: MainActivity handles rotation itself (manifest `configChanges`), so a
   page that turned inside fullscreen keeps its old layout. `unsetFullscreen(rebuildAfter = true)`
   rebuilds it via `restartActivityIfNeeded`, decided by pure `Y/player/YtPageLayoutRules.kt` (uses
-  the orientation locked NOW, not the setting); `PlayerViewModel.ytLeftFullscreen` keeps it windowed.
+  the orientation locked NOW, not the setting); `PlayerViewModel.ytWindowed` keeps it windowed while landscape (set by every user exit, cleared by portrait or explicit fullscreen; `YtPageLayoutRules.windowedAfter`, `autoFullscreenOnChange` = only a real rotation). The fullscreen Dialog's back also rebuilds; no portrait request during a recreate (`BaseActivity` checks `lastNonConfigurationInstance`).
   Cutout strips painted by `Y/YtSideFill.kt`. Minimize drag: `YtMinimizeModule.onConfigurationChanged`
   (module hook) drops remembered places; `Y/mini/YtMinimizeGeometry.drivable` (docked ≥ 48 dp below
   open) guards every drag start, else the classic drag takes over.
@@ -340,6 +340,15 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
 - Subscribe pill equalizer: `Y/FrequencyPillBars.kt` (pure geometry, rest arch, band->bar via
   `FrequencyMotion.barLevel`, contrast-safe alpha 0.16 on coral), hooked in `FrequencySubscribe`
   (YtWatchDesigns) between fill and label; heights only, alpha constant.
+
+## Round 23 notes
+
+- Feed topics: `YtFeedTopic` in `YtFeedPersonal.feedTopics` (same `yt_feed_rules` JSON; holds for all
+  intents), session rule `Y/feed/YtFeedTopicsSession.kt` (30 min away), fetch `YtFeed.loadTopics`
+  via `searchVideos`, mixing `YtFeedTopics.mix` (share accumulator, spread, dedup) inside
+  `YtFeedEngine.rank`, keyword scorer `YtFeedTopicsWords.kt`, card chip in `ytSeenTop`
+  (`Y/YtTopicChip.kt`), suggestion pill `Y/YtTopicSuggest.kt` (from `YtWatch.attach`, after 10 s
+  played, 2nd video per topic per session). Old `YtTopic` searches renamed "Suchen" in strings only.
 
 ## Open points
 
