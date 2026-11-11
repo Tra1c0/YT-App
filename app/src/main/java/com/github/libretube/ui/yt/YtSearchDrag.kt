@@ -369,6 +369,8 @@ private fun lensLook(palette: YtPalette): YtLensLook {
         YtSignature.SHAPES -> YtLensLook(CookieShape(9), solid(palette.lime), null, 0.dp, palette.ink, true)
         // Frequency: the header's coral cookie lens with night ink
         YtSignature.FREQUENCY -> YtLensLook(CookieShape(9), solid(palette.accent), null, 0.dp, palette.ink, true)
+        // Synthwave: the header's night glass circle with its cyan neon ring
+        YtSignature.SYNTHWAVE -> YtLensLook(CircleShape, solid(palette.surface), palette.lime, 1.5.dp, palette.lime, true)
         YtSignature.EDITORIAL -> YtLensLook(RectangleShape, solid(ytDayNight(Color.Black, palette.text)), null, 0.dp, ytDayNight(Color.White, palette.background), false)
         YtSignature.POP -> YtLensLook(BlobShape(0.6f, 0.5f, 0.56f, 0.64f), solid(ytDayNight(Color(0xFFDCD6F5), Color(0xFF382548))), null, 0.dp, palette.text, true)
         YtSignature.CLAY -> YtLensLook(

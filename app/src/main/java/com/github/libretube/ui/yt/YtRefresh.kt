@@ -20,6 +20,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -45,7 +47,8 @@ import kotlin.math.sin
  * design: a red arc (YouTube neu), a stretching cobalt pill with a bouncing lime dot (Movo), a
  * film leader (After), an apricot dot that hops (Side), a drop of clay (Clay), a rule with
  * AKTUALISIEREN in mono (Editorial), a glass drop (Glas), a blob with a spinning star (Pop), a
- * turning cookie (Formen), a frost ring (Frost), a rolling pebble (Kiesel).
+ * turning cookie (Formen), a frost ring (Frost), a rolling pebble (Kiesel), a striped sun rising
+ * over a neon horizon (Synthwave).
  */
 
 /** The pull distance (in dp) at which a refresh starts; the indicator rests there while loading. */
@@ -208,6 +211,35 @@ private fun YtRefreshIndicator(palette: YtPalette, state: PullToRefreshState, re
                         val outline = CookieShape(7, 0.12f).createOutline(Size(c * 2, c * 2), layoutDirection, this)
                         translate(center.x - c, center.y - c) { drawOutline(outline, palette.lime) }
                     }
+                }
+                YtSignature.SYNTHWAVE -> {
+                    // a striped sun rises over a neon horizon with the pull; loading, its slits
+                    // scroll down (one turn of the spin = one slit)
+                    val r = 13.dp.toPx()
+                    val horizonY = center.y + 7.dp.toPx()
+                    val half = 26.dp.toPx()
+                    val sunY = horizonY + r * (1.15f - 1.35f * p)
+                    clipRect(0f, 0f, size.width, horizonY) {
+                        drawCircle(
+                            Brush.verticalGradient(
+                                listOf(SynthwaveColors.sunTop, SynthwaveColors.sunMid, SynthwaveColors.sunBottom),
+                                startY = sunY - r, endY = sunY + r,
+                            ),
+                            r,
+                            Offset(center.x, sunY),
+                        )
+                        val phase = if (refreshing) s / 360f else 0.4f
+                        for (i in 0 until 4) {
+                            val top = sunY + r * SynthwaveMath.slitTop(i, 4, phase)
+                            val tall = r * SynthwaveMath.slitHeight(i, 4, phase) * 1.4f
+                            // as wide as the disc at the slit's middle (no corners beside the sun)
+                            val mid = top + tall / 2f - sunY
+                            val chord = kotlin.math.sqrt((r * r - mid * mid).coerceAtLeast(0f))
+                            if (chord > 0f) drawRect(SynthwaveColors.skyTop, Offset(center.x - chord, top), Size(chord * 2f, tall))
+                        }
+                    }
+                    drawLine(palette.lime, Offset(center.x - half, horizonY), Offset(center.x + half, horizonY), strokeWidth = 1.6.dp.toPx(), cap = StrokeCap.Round, alpha = 0.4f + 0.6f * p)
+                    drawLine(palette.accent, Offset(center.x - half * 0.6f, horizonY + 4.dp.toPx()), Offset(center.x + half * 0.6f, horizonY + 4.dp.toPx()), strokeWidth = 1.dp.toPx(), cap = StrokeCap.Round, alpha = 0.5f * p)
                 }
                 YtSignature.FROST -> {
                     val breath = if (refreshing) 1f + 0.1f * sin(rad) else 1f

@@ -54,6 +54,8 @@ data class YtSentimentStyle(
             // Frequency: Formen's wave, a little flatter (the page is YouTube neu's)
             YtSignature.FREQUENCY -> YtSentimentStyle(YtSentimentPlacement.WAVE, 2f, 3f, 0.6f, roundCaps = true, amplitudeDp = 0.9f)
             YtSignature.KIESEL -> YtSentimentStyle(YtSentimentPlacement.UNDER, 4f, 5f, 0.5f, roundCaps = true)
+            // Synthwave: a thin neon strip under the button, square ends like a tube
+            YtSignature.SYNTHWAVE -> YtSentimentStyle(YtSentimentPlacement.UNDER, 2.5f, 4f, 0.6f, roundCaps = false)
             else -> YtSentimentStyle(YtSentimentPlacement.UNDER, 3f, 4f, 0.56f, roundCaps = true)
         }
     }
@@ -135,6 +137,8 @@ object YtSentiment {
         YtSignature.SHAPES -> 0xFFC6F36B.toInt() to 0xFFF28B82.toInt()
         // night with coral: aqua and the coral
         YtSignature.FREQUENCY -> 0xFF5BE7DA.toInt() to 0xFFFF4D6D.toInt()
+        // neon night: neon mint and the hot pink
+        YtSignature.SYNTHWAVE -> 0xFF4DFFB8.toInt() to 0xFFFF3F8E.toInt()
         // frosted sage: ice mint and coral
         YtSignature.FROST -> 0xFFD2F5DC.toInt() to 0xFFFF9E8A.toInt()
         // pebbles: pebble green and brick

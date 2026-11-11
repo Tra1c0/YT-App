@@ -58,7 +58,9 @@ import kotlin.math.sin
  *
  * - Every screen of the design holds the pulse while it is started ([FrequencyPulseHost]); with
  *   no holder (another design, the app in the background) the analysis is switched off
- *   (YtSound.setReactive(false)) and the frame loop stops.
+ *   (YtSound.setReactive(false)) and the frame loop stops. The design "Synthwave" holds it
+ *   too (its scene follows the same channels, SynthwaveScene): it listens only while one of
+ *   the sound-reactive designs (YtDesign.soundReactive) is chosen.
  * - The analysis also stays off while the player page is open but paused, and while the motion
  *   switch (or Android's "remove animations", animator duration scale 0) is off; then every
  *   channel rests, the look of silence. A reduced scale (0.5x, common on Xiaomi) counts as on.
@@ -198,7 +200,7 @@ object FrequencyPulse {
 
     /** Whether the analysis is wanted now. */
     private val wanted: Boolean
-        get() = holders > 0 && motionAllowed && !pageSaysPaused && YtDesign.current() == YtDesign.FREQUENCY
+        get() = holders > 0 && motionAllowed && !pageSaysPaused && YtDesign.current().soundReactive
 
     /**
      * [wanted] as last worked out (on every hold, release and change of the playback clock):
@@ -275,42 +277,10 @@ object FrequencyPulse {
 
     private const val DEVICE_POLL_S = 5f
     private var sinceDevice = 0f
-    private var lowRam = false
-    private var totalRamMb = 0L
-    private var cores = 0
 
     /** Reads what the tier depends on; [full] also what never changes (RAM, cores). */
     private fun readDevice(full: Boolean) {
-        val context: Context = runCatching { LibreTubeApp.instance }.getOrNull() ?: return
-        if (full || totalRamMb == 0L) {
-            runCatching {
-                val am = context.getSystemService(ActivityManager::class.java)
-                lowRam = am?.isLowRamDevice == true
-                val info = ActivityManager.MemoryInfo()
-                am?.getMemoryInfo(info)
-                totalRamMb = info.totalMem / (1024L * 1024L)
-            }
-            cores = Runtime.getRuntime().availableProcessors()
-        }
-        val refresh = runCatching {
-            context.getSystemService(DisplayManager::class.java)?.getDisplay(Display.DEFAULT_DISPLAY)?.refreshRate
-        }.getOrNull() ?: 60f
-        val thermal = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            runCatching { context.getSystemService(PowerManager::class.java)?.currentThermalStatus }.getOrNull() ?: 0
-        } else {
-            0
-        }
-        choice = FrequencyTiers.pick(
-            FrequencyDevice(
-                refreshHz = refresh,
-                sdk = Build.VERSION.SDK_INT,
-                lowRam = lowRam,
-                totalRamMb = totalRamMb,
-                cores = cores,
-                powerSave = YtBattery.powerSave(context),
-                thermal = thermal,
-            ),
-        )
+        choice = FrequencyDeviceProbe.choice(full) ?: return
     }
 
     // -- the channels -------------------------------------------------------------------------
@@ -472,6 +442,16 @@ object FrequencyPulse {
  */
 @Composable
 fun FrequencyPulseHost() {
+    YtHoldWhileStarted(FrequencyPulse::hold, FrequencyPulse::release)
+}
+
+/**
+ * Calls [hold] when the screen's lifecycle starts and [release] when it stops or leaves (each
+ * once, in pairs): how the parts of a design that run a frame loop or listen to the sound stop
+ * in the background.
+ */
+@Composable
+fun YtHoldWhileStarted(hold: () -> Unit, release: () -> Unit) {
     val owner = LocalLifecycleOwner.current
     DisposableEffect(owner) {
         var held = false
@@ -479,11 +459,11 @@ fun FrequencyPulseHost() {
             when (event) {
                 Lifecycle.Event.ON_START -> if (!held) {
                     held = true
-                    FrequencyPulse.hold()
+                    hold()
                 }
                 Lifecycle.Event.ON_STOP -> if (held) {
                     held = false
-                    FrequencyPulse.release()
+                    release()
                 }
                 else -> Unit
             }
@@ -491,8 +471,53 @@ fun FrequencyPulseHost() {
         owner.lifecycle.addObserver(observer)
         onDispose {
             owner.lifecycle.removeObserver(observer)
-            if (held) FrequencyPulse.release()
+            if (held) release()
         }
+    }
+}
+
+/**
+ * Reads what the tier of this phone depends on (FrequencyTiers): RAM and cores once, the
+ * display's rate, Android's version, the heat and the power saver on every call. Shared by the
+ * pulse and Synthwave's scene. Main thread.
+ */
+object FrequencyDeviceProbe {
+    private var lowRam = false
+    private var totalRamMb = 0L
+    private var cores = 0
+
+    /** The tier now, or null without a context; [full] also reads RAM and cores again. */
+    fun choice(full: Boolean): FrequencyTierChoice? {
+        val context: Context = runCatching { LibreTubeApp.instance }.getOrNull() ?: return null
+        if (full || totalRamMb == 0L) {
+            runCatching {
+                val am = context.getSystemService(ActivityManager::class.java)
+                lowRam = am?.isLowRamDevice == true
+                val info = ActivityManager.MemoryInfo()
+                am?.getMemoryInfo(info)
+                totalRamMb = info.totalMem / (1024L * 1024L)
+            }
+            cores = Runtime.getRuntime().availableProcessors()
+        }
+        val refresh = runCatching {
+            context.getSystemService(DisplayManager::class.java)?.getDisplay(Display.DEFAULT_DISPLAY)?.refreshRate
+        }.getOrNull() ?: 60f
+        val thermal = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            runCatching { context.getSystemService(PowerManager::class.java)?.currentThermalStatus }.getOrNull() ?: 0
+        } else {
+            0
+        }
+        return FrequencyTiers.pick(
+            FrequencyDevice(
+                refreshHz = refresh,
+                sdk = Build.VERSION.SDK_INT,
+                lowRam = lowRam,
+                totalRamMb = totalRamMb,
+                cores = cores,
+                powerSave = YtBattery.powerSave(context),
+                thermal = thermal,
+            ),
+        )
     }
 }
 

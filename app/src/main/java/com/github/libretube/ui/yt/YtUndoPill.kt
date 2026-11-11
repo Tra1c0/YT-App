@@ -529,6 +529,24 @@ private fun designPillLook(palette: YtPalette): PillLook {
             },
             tone = palette.raised,
         )
+        // Synthwave: a night pill with a neon edge (magenta to cyan) and a soft magenta glow,
+        // the action in cyan
+        YtSignature.SYNTHWAVE -> PillLook(
+            surface = { m ->
+                val shape = RoundedCornerShape(50)
+                m.synthwaveGlow(shape, palette.accent, 7.dp)
+                    .then(flat(shape, palette.raised, Color(0x66FF3FD8))(Modifier))
+                    .border(1.dp, SynthwaveGlass.edge(0.9f), shape)
+            },
+            text = palette.text, action = palette.lime, font = YtFonts.geist,
+            cardSurface = { m ->
+                val shape = RoundedCornerShape(18.dp)
+                m.synthwaveGlow(shape, palette.accent, 7.dp)
+                    .then(flat(shape, palette.raised, Color(0x66FF3FD8))(Modifier))
+                    .border(1.dp, SynthwaveGlass.edge(0.9f), shape)
+            },
+            tone = palette.raised,
+        )
         YtSignature.FROST -> PillLook(
             surface = flat(RoundedCornerShape(50), palette.ink, Color(0x661F2A26)),
             text = palette.text, action = palette.accent, font = YtFonts.jakarta,

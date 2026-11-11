@@ -47,6 +47,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -813,5 +815,95 @@ private fun FrequencyNavMark(color: Color, lobes: Int, index: Int, bloom: () -> 
         // a soft white veil on hits: guarded, never strobing
         val lift = FrequencyPulseMath.pulseLift(FrequencyPulse.punch.floatValue)
         if (lift > 0.003f) drawPath(path, Color.White, alpha = lift * alpha)
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Synthwave: a labelled bar of dark night glass (one surface with the mini player when it docks)
+// with a neon edge along its top, magenta to cyan; the active tab's icon turns cyan and a magenta
+// neon tube lights up under its label, glowing a little with the music (the scene's guarded
+// halo light, read while drawing). The tube grows in from its middle when a tab is chosen.
+
+@Composable
+fun SynthwaveNav(palette: YtPalette, items: List<YtNavItem>, state: YtNavState, onSelect: (Int) -> Unit) {
+    val stacks = remember { YtMiniPlayer.stacks(com.github.libretube.helpers.YtDesign.SYNTHWAVE) }
+    val edge = remember { SynthwaveGlass.edge(0.9f) }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .ytDockedBar(22.dp, stacks, SolidColor(SynthwaveBar), SynthwaveBarBorder)
+                .drawWithContent {
+                    drawContent()
+                    // the neon edge along the top
+                    drawRect(edge, Offset(size.width * 0.06f, 0f), Size(size.width * 0.88f, 1.2.dp.toPx()))
+                },
+        ) {
+            items.forEach { item ->
+                val active = item.id == state.selected
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .noRippleClick { onSelect(item.id) }
+                        .ytNavHoldTarget(item.id),
+                ) {
+                    val light = animateFloatAsState(
+                        if (active) 1f else 0f,
+                        ytSpec(spring(dampingRatio = 0.85f, stiffness = 300f)),
+                        label = "synthwaveTube",
+                    )
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(width = 52.dp, height = 30.dp)) {
+                        NavIcon(item, active, if (active) palette.lime else palette.textSecondary, 22.dp)
+                        Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopEnd).offset((-6).dp, 0.dp))
+                    }
+                    Text(
+                        text = stringResource(item.label),
+                        color = if (active) palette.text else palette.textSecondary,
+                        maxLines = 1,
+                        style = TextStyle(
+                            fontFamily = YtFonts.geist,
+                            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+                            fontSize = 11.sp,
+                        ),
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                    SynthwaveTube(palette.accent, { light.value }, Modifier.padding(top = 4.dp).size(width = 30.dp, height = 6.dp))
+                }
+            }
+        }
+    }
+}
+
+/** The bar of Synthwave: the night glass of the mini player's card, so both are one surface. */
+private val SynthwaveBar = Color(0xF5120A28)
+private val SynthwaveBarBorder = Color(0xFF33225C)
+
+/**
+ * A neon tube of [color]: a bright core line with a soft glow around it, as wide as [light]
+ * says (it grows in from its middle); the glow lifts a little with the scene's halo light
+ * (guarded, ≤ 3 swings a second). Nothing is drawn at 0.
+ */
+@Composable
+private fun SynthwaveTube(color: Color, light: () -> Float, modifier: Modifier) {
+    Canvas(modifier) {
+        val l = light().coerceIn(0f, 1.1f)
+        if (l <= 0.01f) return@Canvas
+        SynthwaveScene.tick.intValue
+        val w = size.width * l.coerceAtMost(1f)
+        val y = size.height / 2f
+        val from = Offset(center.x - w / 2f, y)
+        val to = Offset(center.x + w / 2f, y)
+        val glow = 0.22f + 0.18f * SynthwaveScene.glow
+        drawLine(color, from, to, strokeWidth = size.height, cap = StrokeCap.Round, alpha = glow * l.coerceAtMost(1f))
+        drawLine(color, from, to, strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round, alpha = l.coerceAtMost(1f))
     }
 }

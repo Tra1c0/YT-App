@@ -255,6 +255,15 @@ private fun choiceLook(palette: YtPalette): ChoiceLook {
             scrim = palette.background, grid = true, badge = CookieShape(9, 0.08f),
             minuteFill = palette.accent, minuteInk = palette.onAccent,
         )
+        // Synthwave: dark tiles on the night with a magenta neon edge, the retro face for the
+        // question, the words in Geist; magenta minute pills with dark ink
+        YtSignature.SYNTHWAVE -> ChoiceLook(
+            shape = RoundedCornerShape(14.dp), fills = four(palette.raised), inks = four(palette.text),
+            font = YtFonts.geist, titleFont = YtFonts.audiowide, titleSize = 28.sp, titleColor = palette.text,
+            scrim = palette.background, grid = true, letterSpacing = 0.2.sp,
+            border = palette.accent.copy(alpha = 0.7f),
+            minuteFill = palette.accent, minuteInk = palette.onAccent,
+        )
         YtSignature.FROST -> ChoiceLook(
             // the dark pill of the design as tiles: white on the frosted sage stayed under 4:1
             shape = RoundedCornerShape(24.dp), fills = four(palette.ink), inks = four(palette.text),

@@ -7,7 +7,7 @@ package com.github.libretube.ui.yt.search
  */
 
 /** The design search per design (the names of YtSignature). */
-enum class YtSearchKind { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL, FREQUENCY }
+enum class YtSearchKind { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL, FREQUENCY, SYNTHWAVE }
 
 /**
  * Colours of one design's search.
@@ -140,6 +140,15 @@ object YtSearchPalette {
             rowText = 0xFFF4F2FF.toInt(), rowSecondary = 0xFFB7B2D6.toInt(),
             chip = 0xFF231F3F.toInt(), chipText = 0xFFF4F2FF.toInt(), mark = 0xFFFF4D6D.toInt(),
             tiles = listOf(0xFFFF4D6D.toInt(), 0xFFB3A6FF.toInt(), 0xFFFFC46B.toInt(), 0xFF231F3F.toInt()),
+        )
+        // Synthwave: the night with a neon field (dark glass, cyan rim drawn by the UI), rows on
+        // the night, magenta marks, tiles in the neons and the sun's orange
+        YtSearchKind.SYNTHWAVE -> YtSearchInks(
+            scrim = 0xF50D0620.toInt(), panel = NONE,
+            field = 0xFF1A0F36.toInt(), fieldText = 0xFFFBF4FF.toInt(), fieldHint = 0xFFCDBDEB.toInt(),
+            rowText = 0xFFFBF4FF.toInt(), rowSecondary = 0xFFCDBDEB.toInt(),
+            chip = 0xFF271848.toInt(), chipText = 0xFFFBF4FF.toInt(), mark = 0xFFFF3FD8.toInt(),
+            tiles = listOf(0xFFFF3FD8.toInt(), 0xFF36E4FF.toInt(), 0xFFFFB04A.toInt(), 0xFFA98BFF.toInt()),
         )
         YtSearchKind.FROST -> YtSearchInks(
             scrim = 0x8C2E3B36.toInt(), panel = 0xE63A4A44.toInt(),

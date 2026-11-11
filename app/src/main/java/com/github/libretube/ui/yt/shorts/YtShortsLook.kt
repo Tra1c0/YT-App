@@ -199,6 +199,20 @@ data class YtShortsLook(
                 ),
                 second = tick("frequency", 0.3f),
             )
+            // Synthwave: night chips with a magenta bar, a square neon handle (a retro pixel),
+            // Geist with mono digits; a page lands like a synth stab rising in two ticks
+            YtDesign.SYNTHWAVE -> YtShortsLook(
+                accent = 0xFFFF3FD8.toInt(), track = WHITE_TRACK,
+                chip = 0xEB0D0620.toInt(), chipInk = 0xFFFBF4FF.toInt(),
+                radiusDp = 8, barDp = 6, knob = YtShortsKnob.SQUARE,
+                font = YtShortsFont.GEIST, timeFont = YtShortsFont.GEIST_MONO, upper = false,
+                motion = YtShortsMotion.FLUID, heart = 0xFFFF3FD8.toInt(),
+                page = YtHapticTexture.of(
+                    "shorts_page_synthwave", YtFeedback.SEGMENT_TICK,
+                    YtHapticStep(YtPrimitive.TICK, 0.3f), YtHapticStep(YtPrimitive.QUICK_RISE, 0.35f, 40),
+                ),
+                second = tick("synthwave", 0.28f),
+            )
             // dark frost on sage with an orange bar; the scroll lands with a crackle
             YtDesign.FROST -> YtShortsLook(
                 accent = 0xFFF08A3C.toInt(), track = WHITE_TRACK,

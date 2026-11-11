@@ -97,6 +97,7 @@ import com.github.libretube.ui.yt.feed.YtSwipePhysics
 import com.github.libretube.ui.yt.feed.YtSwipeTuningPrefs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.SolidColor
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -493,6 +494,12 @@ private fun commitTexture(name: String, vararg steps: YtHapticStep) =
 private val ShapesDetent = YtHapticTexture.of("swipe_detent_shapes", YtFeedback.SEGMENT_TICK, step(YtPrimitive.TICK, 0.5f))
 
 private val KieselLavenderField = Color(0xFFB4A7F5)
+
+/** Synthwave: the word next to the neon disc, on the tinted night (≥ 4.5:1, YtSynthwavePaletteTest). */
+internal val SynthwaveSwipeWord = Color(0xFFFBF4FF)
+
+/** Synthwave: the most the neon tints the night under the word. */
+internal const val SYNTHWAVE_SWIPE_TINT = 0.42f
 private val KieselPeachField = Color(0xFFF6C6A2)
 private val GlassRim: Color get() = ytDayNight(Color(0x405C8C85), Color(0x4DCFEDE7))
 
@@ -597,6 +604,16 @@ private fun swipeLook(palette: YtPalette): YtSwipeLook {
                 text = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
                 icon = 22f, popDamping = 0.5f, detents = true,
                 arm = armTexture(name, step(YtPrimitive.CLICK, 0.5f)), hide = hide, queue = queue,
+            )
+        }
+        // Synthwave: a neon disc on the night with speed lines; an arpeggio of rising ticks
+        YtSignature.SYNTHWAVE -> {
+            val (hide, queue) = pair(step(YtPrimitive.TICK, 0.35f), step(YtPrimitive.TICK, 0.5f, 45), step(YtPrimitive.CLICK, 0.65f, 45))
+            YtSwipeLook(
+                s, queueField = palette.lime, hideField = palette.accent, queueInk = palette.ink, hideInk = palette.ink,
+                text = TextStyle(fontFamily = YtFonts.audiowide, fontSize = 12.5.sp, letterSpacing = 0.6.sp),
+                uppercase = true, icon = 22f, popDamping = 0.6f,
+                arm = armTexture(name, step(YtPrimitive.QUICK_RISE, 0.45f)), hide = hide, queue = queue,
             )
         }
         YtSignature.FROST -> {
@@ -764,6 +781,25 @@ private fun DrawScope.drawUnderlay(
                 }
                 drawIcon(ink)
                 drawWord(Color.White, after = cookie / 2f + gap)
+            }
+            YtSignature.SYNTHWAVE -> {
+                // the night (opaque, so the scene's sun never shows behind the word), tinted with
+                // the neon, speed lines that stretch with the pull, a neon disc with the mark
+                drawField(1f, SolidColor(SynthwaveColors.skyTop))
+                drawField(0.12f + (SYNTHWAVE_SWIPE_TINT - 0.12f) * a)
+                val lineGap = 7.dp.toPx()
+                val reach = (area.width * 0.45f) * a
+                for (i in -2..2) {
+                    val y = anchor.y + i * lineGap
+                    val long = reach * (1f - 0.18f * abs(i.toFloat()))
+                    val from = if (queue) anchor.x else anchor.x - long
+                    drawLine(field, Offset(from, y), Offset(from + long, y), strokeWidth = 1.2.dp.toPx(), alpha = 0.55f * a)
+                }
+                val r = 20.dp.toPx() * (0.6f + 0.4f * a) * (1f + 0.12f * pop)
+                drawCircle(field, r * 1.6f, anchor, alpha = 0.18f * a)
+                drawCircle(field, r, anchor, alpha = a)
+                drawIcon(ink, px = min(iconSize, r * 1.1f))
+                drawWord(SynthwaveSwipeWord, after = r + gap)
             }
             YtSignature.FROST -> {
                 // frost that clears around the mark as the pull grows
@@ -986,6 +1022,7 @@ object YtFlightLayer {
         YtSignature.POP -> BlobShape(0.6f, 0.5f, 0.56f, 0.64f)
         YtSignature.SHAPES -> RoundedCornerShape(topStart = 22.dp, topEnd = 8.dp, bottomEnd = 22.dp, bottomStart = 8.dp)
         YtSignature.FREQUENCY -> RoundedCornerShape(topStart = 20.dp, topEnd = 10.dp, bottomEnd = 20.dp, bottomStart = 10.dp)
+        YtSignature.SYNTHWAVE -> RoundedCornerShape(11.dp)
         YtSignature.KIESEL -> RoundedCornerShape(50)
         YtSignature.CLAY -> RoundedCornerShape(18.dp)
         YtSignature.AFTER -> RoundedCornerShape(4.dp)

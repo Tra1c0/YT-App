@@ -750,6 +750,83 @@
         <item name="shapeAppearance">@style/ShapeAppearance.YT.Frequency.L</item>
     </style>
 
+    <!-- Synthwave: tight, slightly rounded retro corners (14 / 24), pill buttons -->
+    <style name="ShapeAppearance.YT.Synthwave.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">6dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Synthwave.S" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">10dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Synthwave.M" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Synthwave.L" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">18dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Synthwave.XL" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+    <style name="ShapeAppearance.YT.Synthwave.Button" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.YT.Synthwave.SheetTop" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">24dp</item>
+        <item name="cornerSizeTopRight">24dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style name="Widget.YT.Synthwave.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Synthwave.Button</item>
+    </style>
+    <style name="Widget.YT.Synthwave.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Synthwave.Button</item>
+        <item name="strokeColor">#FF36E4FF</item>
+    </style>
+    <style name="Widget.YT.Synthwave.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Synthwave.Button</item>
+    </style>
+    <style name="Widget.YT.Synthwave.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Synthwave.Button</item>
+    </style>
+    <style name="Widget.YT.Synthwave.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Synthwave.Button</item>
+    </style>
+    <style name="Widget.YT.Synthwave.Sheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Synthwave.SheetTop</item>
+    </style>
+    <style name="ThemeOverlay.YT.Synthwave.Sheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.YT.Synthwave.Sheet</item>
+    </style>
+    <style name="ThemeOverlay.YT.Synthwave.Dialog" parent="AlertDialogTheme">
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Synthwave.XL</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.YT.Synthwave.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.YT.Synthwave.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.YT.Synthwave.Button.Text</item>
+    </style>
+    <style name="Widget.YT.Synthwave.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/yt_popup_background</item>
+    </style>
+    <style name="Widget.YT.Synthwave.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.YT.Synthwave.ToolbarTitle</item>
+    </style>
+    <!-- the toolbar titles of the classic screens in the retro face, a little spaced -->
+    <style name="TextAppearance.YT.Synthwave.ToolbarTitle" parent="TextAppearance.YT.YouTube.TitleLarge">
+        <item name="fontFamily">@font/font_audiowide_400</item>
+        <item name="android:fontFamily">@font/font_audiowide_400</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:letterSpacing">0.04</item>
+    </style>
+    <style name="Widget.YT.Synthwave.Snackbar" parent="snackBarStyle">
+        <item name="shapeAppearance">@style/ShapeAppearance.YT.Synthwave.L</item>
+    </style>
+
     <!-- Frost -->
     <style name="ShapeAppearance.YT.Frost.XS" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
         <item name="cornerFamily">rounded</item>
