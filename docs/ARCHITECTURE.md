@@ -455,6 +455,16 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   Image cache via Coil's `diskCache.clear()`, WebView via `clearCache(true)` (cookies and
   `app_webview` never touched); `YtSelfUpdater.holdsApk()` protects a running update. LibreTube has
   no media or HTTP disk cache.
+- Update notification: periodic WorkManager job `J/workers/YtUpdateCheckWorker.kt` (unique name
+  `YtUpdateCheck`, network + battery-not-low, 3/6/12/24 h, default 6 h; scheduled on every app
+  start, KEEP unless the stored interval differs → UPDATE; off cancels it). Same check as the dialog
+  via `UpdateChecker.newerRelease()` / `installedBuild()`. Android side `J/util/YtUpdateNotifier.kt`
+  (channel `yt_update_available` "App-Updates", one notification per build, notified only once
+  posted, tap/"Jetzt laden" → MainActivity re-checks and shows `UpdateAvailableDialog`, Diagnose
+  line), pure rules `J/util/YtUpdateNotifyRules.kt`, settings binding
+  `J/ui/preferences/YtUpdateNotifyPrefs.kt` (switch `yt_update_notify`, interval, "allow" row with
+  the POST_NOTIFICATIONS request / system-page fallback). A build shown in the in-app dialog counts
+  as notified. Guide target `YtGuideTarget.SETTINGS` opens MainSettings on top.
 - Security: notes `docs/SICHERHEIT.md`; emulator-only switches guarded by `J/helpers/YtGuard.kt`.
 
 ## Build, CI, tests, docs system
@@ -536,7 +546,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (340 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (344 files; generated, do not edit)</summary>
 
 - `J/helpers/` (24): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDesign, YtDesignDark, YtGuard,
@@ -548,10 +558,12 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtPlaybackGuards, YtPositionLedger, YtPositionRules, YtResumeNotification, YtScrubModule,
   YtServiceModules, YtServiceSoftClose, YtSessionModule, YtSoundModule
 - `J/ui/activities/` (1): YtSignInActivity
-- `J/ui/preferences/` (2): YtChannelSpeedsPreference, YtInteractionSettings
+- `J/ui/preferences/` (3): YtChannelSpeedsPreference, YtInteractionSettings, YtUpdateNotifyPrefs
 - `J/ui/views/` (2): YtBottomNavigationView, YtEdgeScrollView
-- `J/util/` (13): YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules, YtQueueEdit, YtQueuePersist,
-  YtQueueStore, YtReleaseNotes, YtSelfUpdater, YtStorage, YtStorageRules, YtTitleCalm, YtUpdateRules
+- `J/util/` (15): YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules, YtQueueEdit, YtQueuePersist,
+  YtQueueStore, YtReleaseNotes, YtSelfUpdater, YtStorage, YtStorageRules, YtTitleCalm,
+  YtUpdateNotifier, YtUpdateNotifyRules, YtUpdateRules
+- `J/workers/` (1): YtUpdateCheckWorker
 - `Y/` (113): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
   FrequencyMotion, FrequencyPillBars, FrequencyPulse, FrequencyPulseMath, FrequencyTimeBar,
   FrequencyVisuals, FrostHome, GlassHome, KieselDiscover, KieselHome, MovoHome, MovoWatch, PopHome,
