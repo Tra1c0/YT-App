@@ -2,9 +2,8 @@ package com.github.libretube.ui.yt.news
 
 /*
  * YT: the data of the News overlay, free of Android so the rules run on the JVM. The overlay
- * renders a list of [YtNewsCard]s; a card leads with one [YtNewsItem] (one video). Stage 1 has
- * only single cards; a later stage groups the same story from several sources into one card
- * (a new [YtNewsCard] kind with several items and a timeline), without changing the pager.
+ * renders a list of [YtNewsCard]s; a card leads with one [YtNewsItem] (one video): a single
+ * video, or a [YtNewsCard.Story] of several sources with a timeline (grouped by YtNewsStory).
  */
 
 /** Where a news item comes from. */
@@ -54,5 +53,25 @@ sealed interface YtNewsCard {
     data class Single(override val lead: YtNewsItem) : YtNewsCard {
         override val key: String get() = lead.id
         override val items: List<YtNewsItem> get() = listOf(lead)
+    }
+
+    /**
+     * The same story from several videos (YtNewsStory groups them): [items] is its timeline,
+     * newest first, and the newest video leads (the latest state of the story; views are not
+     * compared, they favour older videos). [key] comes from the oldest video, so a story keeps
+     * its key and page when new reports join it.
+     */
+    data class Story(override val key: String, override val items: List<YtNewsItem>) : YtNewsCard {
+        init {
+            require(items.size >= 2) { "a story has two videos or more" }
+        }
+
+        override val lead: YtNewsItem get() = items.first()
+
+        /** The members newest first (the same list as [items]). */
+        val timeline: List<YtNewsItem> get() = items
+
+        /** How many channels report it (a video without a channel counts as one of its own). */
+        val sources: Int get() = items.map { it.channelKey?.lowercase() ?: ("\u0000" + it.id) }.distinct().size
     }
 }

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: stories in the News overlay (ui/yt/news, YtNewsStoryPage): the same story from several sources on one card. -->
+<resources>
+    <plurals name="yt_r28_news_story_sources">
+        <item quantity="one">%d source</item>
+        <item quantity="other">%d sources</item>
+    </plurals>
+    <plurals name="yt_r28_news_story_videos">
+        <item quantity="one">%d video</item>
+        <item quantity="other">%d videos</item>
+    </plurals>
+    <string name="yt_r28_news_story_new">New</string>
+    <string name="yt_r28_news_story_new_count">%1$d new</string>
+    <string name="yt_r28_news_story_queue_all">Queue all</string>
+    <string name="yt_r28_news_story_timeline">Timeline of the story</string>
+    <string name="yt_r28_news_story_detach">Take out of the story</string>
+    <string name="yt_r28_news_story_detach_named">Take out “%1$s”</string>
+    <string name="yt_r28_news_story_merge_next">Merge with the next card</string>
+    <string name="yt_r28_news_story_merge_previous">Merge with the previous card</string>
+    <string name="yt_r28_news_story_menu">Merge or split cards</string>
+</resources>

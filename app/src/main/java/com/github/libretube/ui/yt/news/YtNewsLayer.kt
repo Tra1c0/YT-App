@@ -352,6 +352,7 @@ object YtNewsLayer {
         val before = held[0]
         if (live.ready && (before == null || (before.cards.isEmpty() && live.cards.isNotEmpty()))) held[0] = live
         val deck = held[0] ?: live
+        androidx.compose.runtime.SideEffect { YtNewsStories.showing = deck }
 
         val actions = remember(context, haptics) {
             NewsActions(
@@ -609,6 +610,7 @@ object YtNewsLayer {
                 )
             }
             Spacer(Modifier.weight(1f))
+            YtNewsStoryMenu(pager, ink)
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -884,6 +886,7 @@ object YtNewsLayer {
                     )
                 }
             }
+            YtNewsStoryBlock(palette, card, actions.open, actions.queue)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 10.dp)) {
                 CardAction(palette, look, R.drawable.ic_play, watchLabel, "yt_news_watch") { actions.open(video) }
                 CardAction(palette, look, R.drawable.ic_queue, queueLabel, "yt_news_queue") { queue() }
