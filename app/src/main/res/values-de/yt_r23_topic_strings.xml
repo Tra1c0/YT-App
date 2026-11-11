@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the user's own topics in the Feed-Regler (keywords, share, duration) and the keyword suggestion while watching -->
+<resources>
+    <string name="yt_topic_section">Themen</string>
+    <string name="yt_topic_note">Ein Thema besteht aus Schlagwörtern. Sein Anteil bestimmt, wie viele Videos dazu (aus einer Suche nach den Schlagwörtern) gleichmäßig verteilt in die Startseite gemischt werden. Themen gelten für jede Absicht, die du beim Öffnen wählst.</string>
+    <string name="yt_topic_add_hint">Neues Thema, z. B. Raumfahrt</string>
+    <string name="yt_topic_add">Thema hinzufügen</string>
+    <string name="yt_topic_limit">Höchstens %1$d Themen.</string>
+    <string name="yt_topic_name_hint">Name des Themas</string>
+    <string name="yt_topic_keywords">Schlagwörter</string>
+    <string name="yt_topic_keywords_hint">Schlagwort, z. B. Mondlandung</string>
+    <string name="yt_topic_keyword_add">Schlagwort hinzufügen</string>
+    <string name="yt_topic_keyword_remove">Schlagwort %1$s entfernen</string>
+    <string name="yt_topic_keywords_none">Noch keine Schlagwörter: ohne sie findet das Thema nichts.</string>
+    <string name="yt_topic_keyword_count">Schlagwörter: %1$d</string>
+    <string name="yt_topic_share">Anteil</string>
+    <string name="yt_topic_share_value">%1$d %%</string>
+    <string name="yt_topic_share_preview">≈ %1$d von %2$d Videos</string>
+    <string name="yt_topic_share_zero">Anteil 0: nichts wird beigemischt, passende Videos werden nur markiert.</string>
+    <string name="yt_topic_share_capped">Alle Themen zusammen bekommen höchstens %1$d %% der Startseite, jedes also etwas weniger.</string>
+    <string name="yt_topic_expiry">Dauer</string>
+    <string name="yt_topic_expiry_session">Nur diese Sitzung</string>
+    <string name="yt_topic_expiry_day">24 Stunden</string>
+    <string name="yt_topic_expiry_week">7 Tage</string>
+    <string name="yt_topic_expiry_never">Unbegrenzt</string>
+    <string name="yt_topic_left_hours">Noch %1$d Std.</string>
+    <string name="yt_topic_left_days">Noch %1$d Tage</string>
+    <string name="yt_topic_left_session">Bis du die App 30 Minuten verlässt</string>
+    <string name="yt_topic_expired">Abgelaufen. Einschalten startet es neu.</string>
+    <string name="yt_topic_state_on">An</string>
+    <string name="yt_topic_state_off">Aus</string>
+    <string name="yt_topic_switch">Thema %1$s</string>
+    <string name="yt_topic_edit">Bearbeiten</string>
+    <string name="yt_topic_done">Fertig</string>
+    <string name="yt_topic_remove">Thema löschen</string>
+    <string name="yt_feed_reason_focus">Dein Thema „%1$s“ (Schlagwort „%2$s“)</string>
+    <string name="yt_topic_suggest">Schlagwort „%1$s“ zu %2$s hinzufügen?</string>
+    <string name="yt_topic_suggest_add">Hinzufügen</string>
+    <string name="yt_topic_suggest_dismiss">Nein danke</string>
+    <string name="yt_topic_suggest_added">„%1$s“ gehört jetzt zu %2$s</string>
+    <string name="yt_guide_topics_t">Eigene Themen</string>
+    <string name="yt_guide_topics_b">Ein Thema aus Schlagwörtern mit Anteil-Regler: passende Videos werden gleichmäßig in die Startseite gemischt, für diese Sitzung, 24 Stunden, 7 Tage oder unbegrenzt. Ab dem zweiten Video eines Themas schlägt die App beim Abspielen ein neues Schlagwort vor, ohne es anzuhalten.</string>
+</resources>

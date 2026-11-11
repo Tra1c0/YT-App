@@ -3,6 +3,9 @@ package com.github.libretube.ui.yt
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -34,7 +37,16 @@ object YtWatch {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 YtTheme(palette) {
+                    // YT: a keyword for the user's topic, offered while a topic video plays
+                    val videoId = controller.videoId
+                    val streams = controller.streams
+                    LaunchedEffect(videoId, streams) {
+                        if (videoId != null && streams != null) YtTopicSuggest.watch(controller, videoId, streams, actions.currentPosition)
+                    }
+                    DisposableEffect(Unit) { onDispose { YtTopicSuggest.leave(controller) } }
                     val enter = rememberYtEnterState()
+                    Column {
+                    YtTopicSuggestPill(palette)
                     Box(Modifier.ytEnter(enter, controller.videoId ?: "", 0)) {
                     if (design == YtDesign.MOVO) {
                         MovoWatchDetails(
@@ -59,6 +71,7 @@ object YtWatch {
                             controller = controller,
                             actions = actions,
                         )
+                    }
                     }
                     }
                 }

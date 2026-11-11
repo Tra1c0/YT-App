@@ -166,7 +166,8 @@ enum class YtPillSide { END, START }
  * chips marked with [ytHeldFade] fade meanwhile. Put it on the thumbnail's Box after its clip, so
  * it draws after the Box's children (duration chips, gradients, play buttons), or on a plain
  * thumbnail. [shape] clips the drawing where the Box itself is not clipped. Nothing for live
- * streams, unwatched or finished videos, unknown lengths or with the setting off.
+ * streams, unwatched or finished videos, unknown lengths or with the setting off. It also
+ * carries the chip of the user's topic ([ytTopicChip]) for a video the home counts for one.
  */
 @Composable
 fun Modifier.ytSeenTop(
@@ -174,6 +175,16 @@ fun Modifier.ytSeenTop(
     palette: YtPalette,
     shape: Shape = RectangleShape,
     pillSide: YtPillSide = YtPillSide.END,
+): Modifier =
+    // the chip of the user's topic rides along: every home card has this modifier on its thumbnail
+    seenTopBar(video, palette, shape, pillSide).ytTopicChip(video, palette, shape)
+
+@Composable
+private fun Modifier.seenTopBar(
+    video: StreamItem,
+    palette: YtPalette,
+    shape: Shape,
+    pillSide: YtPillSide,
 ): Modifier {
     if (video.isLive || !remember { YtSeenPrefs.enabled }) return this
     val id = remember(video.url) { video.url?.toID() } ?: return this

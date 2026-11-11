@@ -215,6 +215,9 @@ fun YtHomePills(palette: YtPalette, modifier: Modifier = Modifier, timeBox: (() 
             AnimatedVisibility(visible = draft > 0 && !hasPlayer, enter = enter, exit = exit) {
                 DraftPill(look, draft.coerceAtLeast(1))
             }
+            // YT: the keyword offer of a topic video, above the docked mini player (on the page
+            // it shows there itself)
+            if (YtDock.docked) YtTopicSuggestPill(palette)
         }
     }
 }
