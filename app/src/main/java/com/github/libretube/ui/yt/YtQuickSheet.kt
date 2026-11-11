@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +52,7 @@ import coil3.compose.AsyncImage
 import com.github.libretube.R
 import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.ui.yt.feed.YtPauseRules
+import com.github.libretube.ui.yt.news.YtNewsChannels
 
 /**
  * YT: quick actions for a video (save, share, channel, and since round 12 the end of the queue,
@@ -165,6 +167,13 @@ fun YtQuickSheet(
                         stringResource(R.string.yt_home_pause_end, YtPauseRules.daysLeft(pause.untilMillis, System.currentTimeMillis()))
                     }
                     QuickRow(palette, R.drawable.ic_yt_pause_week, label) { ytTogglePause(item); onDismiss() }
+                }
+                // YT: the channel's newest videos in the News overlay (YtNewsChannels)
+                if (item.uploaderUrl != null || !item.uploaderName.isNullOrBlank()) {
+                    val newsChannels by YtNewsChannels.list.collectAsState()
+                    val news = remember(newsChannels, item) { YtNewsChannels.isNews(item) }
+                    val newsLabel = stringResource(if (news) R.string.yt_r27_news_unmark else R.string.yt_r27_news_mark)
+                    QuickRow(palette, R.drawable.ic_yt_news, newsLabel) { YtNewsChannels.toggle(item); onDismiss() }
                 }
                 // "Warum sehe ich das?": the feed engine's reasons, and more or less of the channel
                 var why by remember(item) { mutableStateOf(false) }

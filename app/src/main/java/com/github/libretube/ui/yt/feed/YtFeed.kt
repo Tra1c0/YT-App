@@ -137,6 +137,9 @@ object YtFeed {
     /** The videos of [topicPools], by id. */
     private val topicVideos = HashMap<String, StreamItem>()
 
+    /** A video a topic search found ([topicPools]), by its id; null when it is no longer kept. */
+    fun topicVideo(id: String): StreamItem? = topicVideos[id]
+
     /** Per topic id: the keywords (folded) and the turn its pool was loaded for. */
     private val topicLoaded = HashMap<String, Pair<String, Int>>()
     private val topicJobs = HashMap<String, Job>()

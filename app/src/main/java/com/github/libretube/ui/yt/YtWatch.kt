@@ -1,5 +1,6 @@
 package com.github.libretube.ui.yt
 
+import com.github.libretube.ui.yt.news.YtNewsChannels
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.compose.foundation.layout.Box
@@ -42,6 +43,8 @@ object YtWatch {
                     val streams = controller.streams
                     LaunchedEffect(videoId, streams) {
                         if (videoId != null && streams != null) YtTopicSuggest.watch(controller, videoId, streams, actions.currentPosition)
+                        // YT: a video of the category "News & Politics" marks its channel for the News
+                        if (streams != null) YtNewsChannels.noteWatched(streams)
                     }
                     DisposableEffect(Unit) { onDispose { YtTopicSuggest.leave(controller) } }
                     val enter = rememberYtEnterState()

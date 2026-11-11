@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the News overlay (ui/yt/news): opened with two fingers spread apart on the home. -->
+<resources>
+    <string name="yt_r27_news_title">News</string>
+    <string name="yt_r27_news_position">%1$d / %2$d</string>
+    <string name="yt_r27_news_close">News schließen</string>
+    <string name="yt_r27_news_empty_title">Noch keine News</string>
+    <string name="yt_r27_news_empty_body">Markiere Nachrichtenkanäle: Videokarte lange drücken und „Als Nachrichtenkanal markieren“ wählen; ihre neuesten Videos erscheinen hier. Oder lege im Feed-Regler ein Thema an: seine neuesten Videos kommen auch.</string>
+    <string name="yt_r27_news_empty_feed">Feed-Regler öffnen</string>
+    <string name="yt_r27_news_mark">Als Nachrichtenkanal markieren</string>
+    <string name="yt_r27_news_unmark">Kein Nachrichtenkanal mehr</string>
+    <string name="yt_r27_news_feed_channel">Nachrichten</string>
+    <string name="yt_r27_news_watch">Ansehen</string>
+    <string name="yt_r27_news_queue">Ans Ende</string>
+    <string name="yt_r27_news_queued">Ans Ende der Warteschlange</string>
+    <string name="yt_r27_news_drafted">In der Warteschlange · %1$d</string>
+    <string name="yt_r27_news_rejected">Läuft gerade</string>
+    <string name="yt_r27_news_gestures">Tippen: ansehen · hoch: Warteschlange · runter: schließen</string>
+    <string name="yt_r27_news_topic">Thema: %1$s</string>
+    <string name="yt_r27_news_channel_tag">Nachrichtenkanal</string>
+    <string name="yt_r27_news_hint">Neu: Mit zwei Fingern auf der Startseite aufziehen für die News</string>
+    <string name="yt_r27_news_hint_open">Zeigen</string>
+    <string name="yt_r27_news_hint_dismiss">Hinweis ausblenden</string>
+    <string name="yt_r27_guide_news_t">News: mit zwei Fingern auf der Startseite aufziehen</string>
+    <string name="yt_r27_guide_news_b">Zieh auf der Startseite zwei Finger auseinander, und die News öffnen sich als Diashow: die neuesten Videos deiner Nachrichtenkanäle und deiner Themen, eine Karte pro Video. Seitlich wischen für die nächste, tippen zum Ansehen, nach oben wischen für das Ende der Warteschlange; zusammenziehen, nach unten wischen oder Zurück schließt. Einen Nachrichtenkanal markierst du, indem du eine Videokarte lange drückst.</string>
+</resources>

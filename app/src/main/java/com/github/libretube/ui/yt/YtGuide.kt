@@ -69,6 +69,7 @@ object YtGuide {
                 item("intent", R.string.yt_guide_intent_t, R.string.yt_guide_intent_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_intent_ask"),
                 item("feed", R.string.yt_guide_feed_t, R.string.yt_guide_feed_b, R.string.yt_guide_where_feed),
                 item("topics", R.string.yt_guide_topics_t, R.string.yt_guide_topics_b, R.string.yt_guide_where_feed),
+                item("news", R.string.yt_r27_guide_news_t, R.string.yt_r27_guide_news_b),
                 item("timebox", R.string.yt_guide_timebox_t, R.string.yt_guide_timebox_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_timebox_chip"),
                 item("swipe", R.string.yt_guide_swipe_t, R.string.yt_guide_swipe_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_card_swipe"),
                 item("pause", R.string.yt_guide_pause_t, R.string.yt_guide_pause_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_paused_channels_list"),

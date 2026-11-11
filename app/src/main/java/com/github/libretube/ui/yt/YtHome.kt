@@ -44,6 +44,9 @@ import com.github.libretube.ui.yt.feed.YtFeed
 import com.github.libretube.ui.yt.feed.YtFeedInput
 import com.github.libretube.ui.yt.feed.YtIntent
 import com.github.libretube.ui.yt.feed.rememberYtFeed
+import com.github.libretube.ui.yt.news.YtNewsLayer
+import com.github.libretube.ui.yt.news.YtNewsSource
+import com.github.libretube.ui.yt.news.ytNewsHome
 import com.github.libretube.util.TextUtils
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -68,11 +71,15 @@ object YtHome {
 
         // the queued cards' tokens fly above the player and the bar
         fragment.activity?.let(YtFlightLayer::attach)
+        // YT: the News overlay above everything, opened by two fingers spread on this home
+        fragment.activity?.let(YtNewsLayer::attach)
         val composeView = ComposeView(fragment.requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                Box(Modifier.fillMaxSize().ytTestRoot()) {
+                Box(Modifier.fillMaxSize().ytTestRoot().ytNewsHome()) {
                     Screen(fragment, design, viewModel, refresh)
+                    // the News overlay's cards, kept current from the subscription feed and the topics
+                    YtNewsSource(viewModel.feed.observeAsState().value)
                     design.palette?.let { palette ->
                         // the time box plans from what the home shows: continue watching first,
                         // then the feed as the current intent's rules rank it
