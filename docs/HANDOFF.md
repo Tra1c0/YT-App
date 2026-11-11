@@ -8,7 +8,8 @@ not here.
 
 ## Current state
 
-- Latest release: build 126 (queue survives restarts) on `main`. Build 125 = docs system only
+- Latest release: build 127 (Synthwave grid reaches the horizon) on `main`. 126: queue survives
+  restarts. Build 125 = docs system only
   (`scripts/docs_sync.py`, hooks, `templates/ai-workflow/`), app code identical to 124.
 - Next work: `docs/ROADMAP.md` → "Beschlossen", top to bottom. The music mode for the designs
   that do not react to sound yet is in that list but NOT released by the user: ask before
@@ -136,6 +137,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 127: Synthwave floor grid reaches the horizon (rows up to ROW_MIN, tier count = glow only).
 - 126: queue survives every restart (saved file, "Weiter" pill, mini restore uses the same copy).
 - 125: docs system: self-checking code map, generated blocks, session-start hook, template.
 - 124: Synthwave: slim feathered edge palms, calmer sky, home starts under the header.
