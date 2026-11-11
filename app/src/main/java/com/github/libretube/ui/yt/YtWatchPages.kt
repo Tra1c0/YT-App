@@ -104,6 +104,8 @@ import kotlinx.coroutines.withContext
  * - Formen: night page with a row of material shapes as buttons.
  * - Frequency: YouTube neu's page (meta with "more", creator, comments card) with Formen's shapes
  *   as the actions, breathing with the sound; Formen's wave under the tabs.
+ * - Synthwave: the title over a neon horizon with a small striped sun, the description and the
+ *   comments on night glass with a neon edge, neon tiles as the actions, a neon road of chapters.
  * - Frost: frosted cards and icon-only frost circles.
  * - Kiesel: a dashboard: three stat pebbles, the black channel capsule, a grid of pebbles.
  * Nothing is cut at the screen edge: the action sets are laid out in even rows instead of a
@@ -202,6 +204,7 @@ fun YtWatchPage(
         YtDesign.POP -> PopPage(palette, imageLoader, basics, controller, actions)
         YtDesign.SHAPES -> ShapesPage(palette, imageLoader, basics, controller, actions)
         YtDesign.FREQUENCY -> FrequencyPage(palette, imageLoader, basics, controller, actions)
+        YtDesign.SYNTHWAVE -> SynthwavePage(palette, imageLoader, basics, controller, actions)
         YtDesign.FROST -> FrostPage(palette, imageLoader, basics, controller, actions)
         YtDesign.KIESEL -> KieselPage(palette, imageLoader, basics, controller, actions)
         else -> YouTubePage(palette, imageLoader, basics, controller, actions)
@@ -596,6 +599,94 @@ private fun FrequencyPage(palette: YtPalette, imageLoader: ImageLoader, b: Watch
                 modifier = Modifier
                     .size(30.dp)
                     .frequencyCookie(palette.lavender, lobes = 6, rest = 0.1f, index = 5),
+            ) {
+                Icon(painterResource(R.drawable.ic_yt_chevron_right), contentDescription = null, tint = palette.ink, modifier = Modifier.size(14.dp))
+            }
+        }
+        if (streams.chapters.isNotEmpty()) WatchChapters(palette, imageLoader, streams, controller.chapterIndex, actions.onSeek)
+        WatchUpNextTitle(palette)
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Synthwave: neon chrome on the night
+
+@Composable
+private fun SynthwavePage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics, controller: YtWatchController, actions: YtWatchActions) {
+    // the subscribe pill's glow follows the level: the page holds the pulse while it is shown
+    FrequencyPulseHost()
+    val streams = b.streams
+    var open by remember(streams.title) { mutableStateOf(false) }
+    val horizon = remember(palette) { Brush.horizontalGradient(listOf(palette.accent, palette.lime.copy(alpha = 0.6f), Color.Transparent)) }
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            text = ytTitle(streams.title),
+            color = palette.text,
+            maxLines = if (open) Int.MAX_VALUE else 2,
+            overflow = TextOverflow.Ellipsis,
+            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Bold, fontSize = 19.sp, lineHeight = 24.sp),
+            modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp),
+        )
+        // a neon horizon under the title with a small striped sun on it
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp)) {
+            SynthwaveLogo(Modifier.size(18.dp))
+            Box(
+                Modifier
+                    .padding(start = 8.dp)
+                    .weight(1f)
+                    .height(1.5.dp)
+                    .background(horizon),
+            )
+        }
+        Text(
+            text = buildAnnotatedString {
+                append(b.meta)
+                append("  ")
+                withStyle(SpanStyle(color = palette.lime, fontWeight = FontWeight.SemiBold)) {
+                    append(stringResource(if (open) R.string.yt_watch_less else R.string.yt_watch_more))
+                }
+            },
+            color = palette.textSecondary,
+            style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp),
+            modifier = Modifier
+                .padding(start = 10.dp, end = 10.dp, top = 4.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { open = !open }
+                .padding(4.dp),
+        )
+        if (open) {
+            WatchDescription(
+                streams, actions.onLink, palette.text, palette.lime, R.font.font_geist_400, expanded = true,
+                modifier = Modifier
+                    .padding(start = 13.dp, end = 13.dp, top = 8.dp)
+                    .ytSurface(palette, RoundedCornerShape(14.dp))
+                    .padding(16.dp),
+            )
+        }
+        WatchCreator(palette, imageLoader, streams, b.hasChannel, b.subscribed, b.toggle, actions.onOpenChannel)
+        WatchActionRow(palette, listOf(b.like) + b.actions, Modifier.padding(top = 16.dp))
+        // the comments as a card of night glass with a neon edge and a cyan chevron
+        val shape = RoundedCornerShape(14.dp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(start = 13.dp, end = 13.dp, top = 16.dp)
+                .fillMaxWidth()
+                .ytPressable(shape) { actions.onComments() }
+                .ytSurface(palette, shape)
+                .padding(14.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.yt_watch_comments), style = synthwaveDisplay(14.sp, palette.text, spacing = 0.6.sp))
+                Text(stringResource(R.string.yt_watch_open_comments), color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp), modifier = Modifier.padding(top = 3.dp))
+            }
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(30.dp)
+                    .synthwaveGlow(CircleShape, palette.lime, 4.dp)
+                    .clip(CircleShape)
+                    .background(palette.lime),
             ) {
                 Icon(painterResource(R.drawable.ic_yt_chevron_right), contentDescription = null, tint = palette.ink, modifier = Modifier.size(14.dp))
             }

@@ -54,6 +54,7 @@ object YtLibrary {
             YtDesign.MOVO -> R.string.yt_movo_library_headline to R.string.yt_movo_library_subline
             YtDesign.AFTER -> R.string.yt_after_library_headline to R.string.yt_after_library_subline
             YtDesign.SIDE -> R.string.yt_side_library_headline to R.string.yt_side_library_subline
+            YtDesign.SYNTHWAVE -> R.string.yt_synthwave_library_headline to R.string.yt_library_subline
             else -> R.string.yt_library_headline to R.string.yt_library_subline
         }
 

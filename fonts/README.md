@@ -34,3 +34,11 @@ Dritte Runde (Clay, Editorial, Glas, Pop, Formen, Frost):
 | Plus Jakarta Sans (400–800) | „Frost“ | SIL OFL 1.1, `PlusJakartaSans-OFL.txt` |
 
 Google Sans und Inter sind auf lateinische Zeichen reduziert (fontTools subset), um die APK klein zu halten.
+
+Runde 24 (Synthwave):
+
+| Schrift | Einsatz | Lizenz |
+| --- | --- | --- |
+| Audiowide (400) | Retro-Überschriften und Wortmarke „SYNTHWAVE“ in „Synthwave“ (Fließtext bleibt Geist) | SIL OFL 1.1, `Audiowide-OFL.txt` |
+
+Audiowide ist der statische Schnitt von Google Fonts (`ofl/audiowide`, 70 KB, mit Umlauten).

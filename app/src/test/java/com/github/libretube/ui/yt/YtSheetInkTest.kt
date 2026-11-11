@@ -33,6 +33,7 @@ class YtSheetInkTest {
         Triple("Kiesel", YtPalettes.Kiesel, false),
         Triple("KieselDark", YtPalettes.KieselDark, true),
         Triple("Frequency", YtPalettes.Frequency, false),
+        Triple("Synthwave", YtPalettes.Synthwave, false),
     )
 
     @After

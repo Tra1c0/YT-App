@@ -304,6 +304,12 @@ object YtMiniSpecs {
         thumbWidth = 89, thumbHeight = 50, thumbStart = 7, thumbRadius = 14, peekGrowth = 2.2f,
     )
 
+    // Synthwave: a stacked card on the night bar, tight retro corners, a wide picture
+    val SYNTHWAVE = YtMiniSpec(
+        joint = YtMiniJoint.STACK, start = 12, height = 62, radius = 18,
+        thumbWidth = 86, thumbHeight = 48, thumbStart = 7, thumbRadius = 8, peekGrowth = 2.0f,
+    )
+
     /** Frost: the bar is as wide as its [tabs] (one wide active pill, the others round). */
     fun frost(tabs: Int) = YtMiniSpec(
         joint = YtMiniJoint.STACK, start = 0, width = 12 + 118 + 54 * (tabs - 1).coerceAtLeast(0), height = 60, radius = 30,

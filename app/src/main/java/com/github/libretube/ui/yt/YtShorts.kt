@@ -172,9 +172,11 @@ private fun YtShortsScreen(
     val backdrop = if (glass) rememberLayerBackdrop() else null
     val columns = if (signature == YtSignature.EDITORIAL) 3 else 2
     if (signature == YtSignature.FREQUENCY) FrequencyPulseHost()
+    if (signature == YtSignature.SYNTHWAVE) SynthwaveSceneHost()
     val gap = when (signature) {
         YtSignature.EDITORIAL -> 8.dp
         YtSignature.POP -> 14.dp
+        YtSignature.SYNTHWAVE -> 12.dp
         else -> 10.dp
     }
     Box(
@@ -185,12 +187,16 @@ private fun YtShortsScreen(
                     YtSignature.SHAPES -> Modifier.background(Brush.verticalGradient(ShapesNight))
                     // Frequency: the aura that drifts with the sound
                     YtSignature.FREQUENCY -> Modifier.background(palette.background)
+                    // Synthwave: the scene, dimmed under the night (SynthwaveBackdrop below)
+                    YtSignature.SYNTHWAVE -> Modifier.background(palette.background)
                     else -> Modifier.background(palette.background)
                 },
             ),
     ) {
         // Frequency: the aura, blobs and wave in their own layer behind the grid
         if (signature == YtSignature.FREQUENCY) FrequencyBackdrop(palette, Modifier.matchParentSize())
+        // Synthwave: the scene behind the grid, under the night veil (the titles stand on it)
+        if (signature == YtSignature.SYNTHWAVE) SynthwaveBackdrop(Modifier.matchParentSize(), horizon = 0.66f, veil = SynthwaveColors.TAB_VEIL)
         if (backdrop != null) {
             Box(
                 Modifier
@@ -237,6 +243,7 @@ private fun YtShortsScreen(
                                 tag = frequencyTag(palette, index), ink = palette.ink,
                             )
                             YtSignature.FROST -> FrostShort(palette, imageLoader, short, backdrop, onOpen)
+                            YtSignature.SYNTHWAVE -> SynthwaveShort(palette, imageLoader, short, index, onOpen)
                             else -> PlainShort(palette, imageLoader, short, onOpen)
                         }
                     }
@@ -370,6 +377,24 @@ private fun ShortsHeader(palette: YtPalette, count: Int?, backdrop: Backdrop?) {
                 modifier = Modifier.padding(start = 12.dp),
             )
         }
+        YtSignature.SYNTHWAVE -> Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp, bottom = 6.dp)) {
+            // a magenta disc with the Shorts mark and a soft glow, the title in the retro face
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(40.dp)
+                    .synthwaveGlow(CircleShape, palette.accent, 6.dp)
+                    .clip(CircleShape)
+                    .background(palette.accent),
+            ) {
+                YtShortsGlyph(palette.onAccent, filled = true, modifier = Modifier.size(20.dp))
+            }
+            Text(
+                text = title.uppercase(),
+                style = synthwaveDisplay(24.sp, palette.text, spacing = 1.5.sp),
+                modifier = Modifier.padding(start = 12.dp),
+            )
+        }
         YtSignature.FROST -> Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp, bottom = 6.dp)) {
             Text(
                 text = title,
@@ -454,6 +479,41 @@ private fun PlainShort(palette: YtPalette, imageLoader: ImageLoader, short: Stre
             ViewsBadge(short, Color.White, palette.font, Modifier.align(Alignment.BottomStart).padding(8.dp))
         }
         ShortTitle(palette, short)
+    }
+}
+
+/**
+ * Synthwave: a Short in a card of night glass with a neon edge (in turn magenta and cyan) and a
+ * soft glow, the title on the glass under the still.
+ */
+@Composable
+private fun SynthwaveShort(palette: YtPalette, imageLoader: ImageLoader, short: StreamItem, index: Int, onOpen: (StreamItem) -> Unit) {
+    val shape = RoundedCornerShape(12.dp)
+    val neon = if (index % 2 == 0) palette.accent else palette.lime
+    val longPress = LocalShortLongPress.current
+    Column(
+        Modifier
+            .synthwaveGlow(shape, neon, 5.dp, 0.7f)
+            .ytPressable(shape, onLongClick = { longPress(short) }) { onOpen(short) }
+            .synthwaveGlass(shape, edge = 0f)
+            .border(1.dp, neon.copy(alpha = 0.75f), shape)
+            .padding(5.dp),
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(9f / 16f)
+                .clip(RoundedCornerShape(8.dp)),
+        ) {
+            YtLargeThumbnail(short, imageLoader, Modifier.fillMaxSize())
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Brush.verticalGradient(0.6f to Color.Transparent, 1f to Color(0xB30D0620))),
+            )
+            ViewsBadge(short, Color.White, palette.font, Modifier.align(Alignment.BottomStart).padding(8.dp))
+        }
+        Column(Modifier.padding(start = 2.dp, end = 2.dp, bottom = 4.dp)) { ShortTitle(palette, short) }
     }
 }
 

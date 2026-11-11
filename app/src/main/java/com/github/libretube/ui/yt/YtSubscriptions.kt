@@ -318,6 +318,7 @@ private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels:
         YtSignature.POP -> BlobShape(0.6f, 0.5f, 0.56f, 0.64f)
         YtSignature.SHAPES -> CookieShape(8, 0.06f)
         YtSignature.FREQUENCY -> CookieShape(9, 0.07f)
+        YtSignature.SYNTHWAVE -> CircleShape
         YtSignature.EDITORIAL -> RectangleShape
         YtSignature.KIESEL, YtSignature.CLAY -> RoundedCornerShape(18.dp)
         YtSignature.AFTER -> RoundedCornerShape(4.dp)
@@ -326,6 +327,7 @@ private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels:
     val ink = when (palette.signature) {
         YtSignature.SHAPES, YtSignature.FROST -> Color.White
         YtSignature.KIESEL -> KieselInk
+        YtSignature.SYNTHWAVE -> palette.text
         else -> palette.text
     }
     // paused channels stay in the strip, faded, with the days left; a long press pauses or resumes
@@ -342,6 +344,8 @@ private fun ChannelStrip(palette: YtPalette, imageLoader: ImageLoader, channels:
                 YtSignature.POP -> PopFrames[i % PopFrames.size]
                 YtSignature.SHAPES -> ShapesTags[i % ShapesTags.size]
                 YtSignature.FREQUENCY -> frequencyTag(palette, i)
+                // Synthwave: a neon ring in turn magenta, cyan, orange and violet
+                YtSignature.SYNTHWAVE -> synthwaveTag(palette, i)
                 YtSignature.KIESEL -> if (i % 2 == 0) KieselLavender else KieselPeach
                 YtSignature.CLAY -> ClayLight
                 YtSignature.EDITORIAL -> palette.text
@@ -438,6 +442,8 @@ private fun SubsCard(
         YtSignature.CLAY -> ClayLight
         YtSignature.EDITORIAL -> palette.text
         YtSignature.FROST, YtSignature.GLASS -> ytDayNight(Color(0x80FFFFFF), Color(0x33A8E0D6))
+        // Synthwave: the neon cyan with dark ink
+        YtSignature.SYNTHWAVE -> palette.lime
         else -> palette.lime
     }
     val mark = when (palette.signature) {
@@ -835,6 +841,46 @@ private fun SubsCardFace(
                             )
                         }
                         Text(video.uploaderName.orEmpty(), color = KieselGrey, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.jakarta, fontSize = 11.5.sp), modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+        }
+        YtSignature.SYNTHWAVE -> {
+            // a card of night glass with a neon edge over the dimmed scene; the avatar in a neon
+            // ring of the card's tag colour, the duration on a pill of it (dark ink)
+            val shape = RoundedCornerShape(14.dp)
+            val tag = synthwaveTag(palette, index)
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .ytPressable(shape, onLongClick = onQuick, onClick = onOpen)
+                    .synthwaveGlass(shape)
+                    .padding(6.dp),
+            ) {
+                val thumb = RoundedCornerShape(10.dp)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(thumb)
+                        .ytSeenTop(video, palette, thumb),
+                ) {
+                    YtLargeThumbnail(video, imageLoader, Modifier.fillMaxSize().ytSeen(video, palette))
+                    DurationBadge(video, tag, palette.ink, palette.font, Modifier.align(Alignment.BottomEnd).ytHeldFade().padding(10.dp))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 6.dp, bottom = 4.dp)) {
+                    AsyncImage(
+                        model = video.uploaderAvatar, contentDescription = null, imageLoader = imageLoader, contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .border(1.5.dp, tag, CircleShape)
+                            .padding(3.dp)
+                            .clip(CircleShape)
+                            .background(palette.raised),
+                    )
+                    Column(Modifier.padding(start = 10.dp)) {
+                        Text(title, color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 19.sp))
+                        Meta(video, palette.textSecondary, TextStyle(fontFamily = palette.font, fontSize = 12.5.sp), Modifier.padding(top = 3.dp))
                     }
                 }
             }

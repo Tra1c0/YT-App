@@ -41,6 +41,9 @@ enum class YtSurfaceStyle {
 
     /** Frequency: raised night with a faint coral rim, the shapes of Formen. */
     FREQUENCY,
+
+    /** Synthwave: dark glass over the scene, a neon edge from magenta to cyan. */
+    SYNTHWAVE,
 }
 
 /** The shape of a pill in this design (square in Editorial, a blob in Pop). */
@@ -55,6 +58,8 @@ fun ytCardShape(palette: YtPalette, radius: Int = 16): Shape = when (palette.sur
     YtSurfaceStyle.EDITORIAL -> RectangleShape
     YtSurfaceStyle.CLAY -> RoundedCornerShape((radius * 1.4f).dp)
     YtSurfaceStyle.POP -> RoundedCornerShape((radius * 1.3f).dp)
+    // Synthwave: tight retro corners
+    YtSurfaceStyle.SYNTHWAVE -> RoundedCornerShape((radius * 0.8f).dp)
     // Frequency: Formen's widget corners, one of them tucked in
     YtSurfaceStyle.FREQUENCY -> RoundedCornerShape(
         topStart = (radius * 1.4f).dp,
@@ -91,6 +96,8 @@ fun Modifier.ytSurface(palette: YtPalette, shape: Shape): Modifier = when (palet
         .clip(shape)
         .background(palette.raised)
         .border(1.dp, palette.accent.copy(alpha = 0.22f), shape)
+    // Synthwave: dark glass over the scene, a neon edge from magenta to cyan
+    YtSurfaceStyle.SYNTHWAVE -> this.synthwaveGlass(shape)
     YtSurfaceStyle.FLAT -> this
         .clip(shape)
         .background(palette.surface)
@@ -108,6 +115,7 @@ fun ytSurfaceTones(palette: YtPalette, under: Int): IntArray {
         YtSurfaceStyle.GLASS -> on(ytDayNight(Color(0x9EFFFFFF), Color(0x4D6FB5AA)), ytDayNight(Color(0x5CFFFFFF), Color(0x296FB5AA)))
         YtSurfaceStyle.EDITORIAL -> on(palette.background)
         YtSurfaceStyle.POP, YtSurfaceStyle.SHAPES, YtSurfaceStyle.FREQUENCY -> on(palette.raised)
+        YtSurfaceStyle.SYNTHWAVE -> on(SynthwaveGlass.top, SynthwaveGlass.bottom)
         YtSurfaceStyle.FROST -> on(Color(0x40FFFFFF), Color(0x1FFFFFFF))
         YtSurfaceStyle.FLAT -> on(palette.surface)
     }

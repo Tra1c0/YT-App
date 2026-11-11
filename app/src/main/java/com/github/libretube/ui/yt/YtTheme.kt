@@ -77,6 +77,9 @@ object YtFonts {
         Font(R.font.font_google_sans_700, FontWeight.Bold),
     )
 
+    /** Synthwave: the retro display face for the wordmark and headlines (body stays Geist). */
+    val audiowide = FontFamily(Font(R.font.font_audiowide_400, FontWeight.Normal))
+
     /** Frost. */
     val jakarta = FontFamily(
         Font(R.font.font_jakarta_400, FontWeight.Normal),
@@ -114,7 +117,7 @@ data class YtPalette(
 )
 
 /** The designs, as the shared screens tell them apart. */
-enum class YtSignature { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL, FREQUENCY }
+enum class YtSignature { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL, FREQUENCY, SYNTHWAVE }
 
 object YtPalettes {
     /** "YouTube, neu gedacht": graphite, warm white, YouTube red, lime and lavender collections. */
@@ -367,6 +370,35 @@ val YtPalettes.Frequency: YtPalette
         surfaceStyle = YtSurfaceStyle.FREQUENCY,
     )
 
+/**
+ * "Synthwave": neon chrome over a retro night. A deep violet night, neon magenta as the accent
+ * (dark ink on it), neon cyan and violet as the second and third neon, the sun's orange as a
+ * warm tag. The scene behind the screens (SynthwaveScene) is bright in places (the sun), so the
+ * words sit on dark glass ([ytSurface], SynthwaveGlass) whose alpha keeps every text role at
+ * 4.5:1 even over the sun's core (YtSynthwavePaletteTest). The colours never move with the sound.
+ */
+val YtPalettes.Synthwave: YtPalette
+    get() = YtPalette(
+        signature = YtSignature.SYNTHWAVE,
+        background = Color(0xFF0D0620),
+        surface = Color(0xFF1A0F36),
+        raised = Color(0xFF271848),
+        text = Color(0xFFFBF4FF),
+        textSecondary = Color(0xFFCDBDEB),
+        accent = Color(0xFFFF3FD8),
+        onAccent = Color(0xFF14051F),
+        live = Color(0xFFD4145A),
+        // the neons: cyan and violet
+        lime = Color(0xFF36E4FF),
+        lavender = Color(0xFFA98BFF),
+        ink = Color(0xFF0D0620),
+        // the sun's orange as the warm tag
+        pink = Color(0xFFFFB04A),
+        font = YtFonts.geist,
+        motion = YtMotionStyle.CALM,
+        surfaceStyle = YtSurfaceStyle.SYNTHWAVE,
+    )
+
 /*
  * YT: the dark mode of the light designs (YtDesignDark). Same roles, same type, motion and
  * surfaces; only the colours move to a dark variant of the design's own palette. Every text
@@ -478,6 +510,7 @@ val YtDesign.palette: YtPalette?
             YtDesign.FROST -> YtPalettes.Frost
             YtDesign.KIESEL -> if (night) YtPalettes.KieselDark else YtPalettes.Kiesel
             YtDesign.FREQUENCY -> YtPalettes.Frequency
+            YtDesign.SYNTHWAVE -> YtPalettes.Synthwave
             YtDesign.STANDARD -> null
         }
     }

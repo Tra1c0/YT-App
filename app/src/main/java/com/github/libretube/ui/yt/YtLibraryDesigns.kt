@@ -81,17 +81,23 @@ fun YtScreenSurface(palette: YtPalette, modifier: Modifier = Modifier, content: 
     val backdrop = if (glass) rememberLayerBackdrop() else null
     // Frequency: the screen holds the pulse, and its aura moves with the sound
     if (palette.isFrequency) FrequencyPulseHost()
+    // Synthwave: the screen holds the scene (and the pulse it follows)
+    if (palette.isSynthwave) SynthwaveSceneHost()
     Box(
         modifier.then(
             when (palette.signature) {
                 YtSignature.SHAPES -> Modifier.background(Brush.verticalGradient(listOf(Color(0xFF12122A), Color(0xFF1C1A45), Color(0xFF3F3489), Color(0xFF6656C4))))
                 YtSignature.FREQUENCY -> Modifier.background(palette.background)
+                YtSignature.SYNTHWAVE -> Modifier.background(palette.background)
                 else -> Modifier.background(palette.background)
             },
         ),
     ) {
         // Frequency: the aura, blobs and wave in their own layer behind the content
         if (palette.isFrequency) FrequencyBackdrop(palette, Modifier.matchParentSize())
+        // Synthwave: the scene behind the content, under the night veil of the shared screens
+        // (their words stand on the background, so the scene stays dim: SynthwaveColors.TAB_VEIL)
+        if (palette.isSynthwave) SynthwaveBackdrop(Modifier.matchParentSize(), horizon = 0.66f, veil = SynthwaveColors.TAB_VEIL)
         if (backdrop != null) {
             val colors = ytGlassScreenColors(palette)
             Box(
@@ -126,6 +132,7 @@ private val KieselGrey: Color get() = ytDayNight(Color(0xFF7A7672), Color(0xFFAB
 private fun inkOf(palette: YtPalette): Color = when (palette.signature) {
     YtSignature.SHAPES, YtSignature.FROST -> Color.White
     YtSignature.KIESEL -> KieselInk
+    YtSignature.SYNTHWAVE -> palette.text
     else -> palette.text
 }
 
@@ -305,6 +312,18 @@ internal fun LibraryHeadline(palette: YtPalette, headline: String, subline: Stri
             )
             Text(text = subline, color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.geist, fontSize = 20.sp))
         }
+        YtSignature.SYNTHWAVE -> Column(padding) {
+            // the retro face with a magenta glow; a small striped sun beside it
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = headline,
+                    style = synthwaveDisplay(28.sp, palette.text).copy(lineHeight = 34.sp),
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                SynthwaveLogo(Modifier.padding(start = 12.dp).size(30.dp))
+            }
+            Text(text = subline, color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.geist, fontSize = 18.sp), modifier = Modifier.padding(top = 4.dp))
+        }
         YtSignature.FROST -> Column(padding) {
             Text(
                 text = headline,
@@ -348,6 +367,11 @@ internal fun LibraryTitle(palette: YtPalette, title: String, modifier: Modifier 
             text = title,
             color = KieselInk,
             style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp),
+            modifier = modifier,
+        )
+        YtSignature.SYNTHWAVE -> Text(
+            text = title,
+            style = synthwaveDisplay(16.sp, palette.text, spacing = 1.sp),
             modifier = modifier,
         )
         else -> Text(
@@ -651,6 +675,64 @@ internal fun LibraryContinue(
                 }
                 Text(title, color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 3.dp, top = 8.dp))
                 Text(channel, color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp), modifier = Modifier.padding(start = 3.dp, top = 1.dp))
+            }
+        }
+        YtSignature.SYNTHWAVE -> {
+            // a card of night glass with a neon edge and glow; a cyan play disc, the progress a
+            // neon line from magenta to cyan
+            val shape = RoundedCornerShape(14.dp)
+            Column(
+                Modifier
+                    .padding(horizontal = 12.dp)
+                    .synthwaveGlow(shape, palette.accent, 6.dp, 0.8f)
+                    .ytPressable(shape) { onOpen(item) }
+                    .synthwaveGlass(shape)
+                    .padding(8.dp),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(2.4f)
+                        .clip(RoundedCornerShape(9.dp)),
+                ) {
+                    AsyncImage(
+                        model = item.video.thumbnail, contentDescription = null, imageLoader = imageLoader, contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 12.dp, bottom = 12.dp)
+                            .size(42.dp)
+                            .synthwaveGlow(CircleShape, palette.lime, 5.dp)
+                            .clip(CircleShape)
+                            .background(palette.lime),
+                    ) {
+                        Icon(painterResource(R.drawable.ic_play), contentDescription = null, tint = palette.ink, modifier = Modifier.size(18.dp))
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 3.dp, end = 3.dp, top = 10.dp)) {
+                    val neon = remember(palette) { Brush.horizontalGradient(listOf(palette.accent, palette.lime)) }
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color(0x33FFFFFF))
+                            .drawBehind { drawRect(neon, size = size.copy(width = size.width * fill.value.coerceIn(0f, 1f))) },
+                    )
+                    remaining?.let {
+                        Text(
+                            text = stringResource(R.string.yt_library_remaining, it),
+                            color = palette.textSecondary,
+                            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 12.5.sp),
+                            modifier = Modifier.padding(start = 10.dp),
+                        )
+                    }
+                }
+                Text(title, color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, lineHeight = 19.sp), modifier = Modifier.padding(start = 3.dp, top = 6.dp))
+                Text(channel, color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp), modifier = Modifier.padding(start = 3.dp, top = 1.dp, bottom = 2.dp))
             }
         }
         YtSignature.FROST -> {
@@ -992,6 +1074,24 @@ internal fun LibraryCollection(
                 Previews(imageLoader, collection, CookieShape(8, 0.06f), Color(0x33000000))
             }
         }
+        YtSignature.SYNTHWAVE -> {
+            // night glass with a neon edge in turn magenta and cyan, the name in the retro face
+            val shape = RoundedCornerShape(14.dp)
+            val neon = if (index % 2 == 0) palette.accent else palette.lime
+            Column(
+                modifier
+                    .synthwaveGlow(shape, neon, 5.dp, 0.7f)
+                    .ytPressable(shape, onClick = onClick)
+                    .synthwaveGlass(shape, edge = 0f)
+                    .border(1.dp, neon.copy(alpha = 0.8f), shape)
+                    .padding(14.dp),
+            ) {
+                Text(name, maxLines = 2, overflow = TextOverflow.Ellipsis, style = synthwaveDisplay(18.sp, palette.text, glow = neon, spacing = 0.4.sp).copy(lineHeight = 22.sp))
+                Text(countOf(collection), color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.geist, fontSize = 12.5.sp), modifier = Modifier.padding(top = 4.dp))
+                Spacer(Modifier.weight(1f))
+                Previews(imageLoader, collection, RoundedCornerShape(6.dp), Color(0x33FFFFFF))
+            }
+        }
         YtSignature.FROST -> {
             val backdrop = LocalScreenBackdrop.current
             val press = remember { MutableInteractionSource() }
@@ -1155,6 +1255,7 @@ internal fun LibraryAdd(palette: YtPalette, onClick: () -> Unit) {
                 YtSignature.POP -> PopFrames[0]
                 YtSignature.SHAPES -> palette.lime
                 YtSignature.FREQUENCY -> palette.accent
+                YtSignature.SYNTHWAVE -> palette.accent
                 YtSignature.KIESEL -> KieselPanel
                 YtSignature.CLAY -> ClayLight
                 else -> palette.raised
@@ -1163,6 +1264,7 @@ internal fun LibraryAdd(palette: YtPalette, onClick: () -> Unit) {
                 YtSignature.POP -> PopInk
                 YtSignature.SHAPES -> ShapesInk
                 YtSignature.FREQUENCY -> palette.onAccent
+                YtSignature.SYNTHWAVE -> palette.onAccent
                 YtSignature.KIESEL -> KieselCream
                 YtSignature.CLAY -> ClayInk
                 YtSignature.FROST -> Color.White
@@ -1181,6 +1283,8 @@ internal fun LibraryAdd(palette: YtPalette, onClick: () -> Unit) {
                         when (palette.signature) {
                             YtSignature.GLASS, YtSignature.FROST -> if (palette.signature == YtSignature.FROST) Modifier.frostGlass(backdrop, CircleShape) else if (backdrop != null) Modifier.liquidGlass(backdrop, CircleShape, ytDayNight(Color(0x99FFFFFF), Color(0x336FB5AA)), GlassShadow) else Modifier.ytGlass(CircleShape)
                             YtSignature.CLAY -> Modifier.shadow(6.dp, CircleShape, ambientColor = ClayShadow, spotColor = ClayShadow).background(Brush.verticalGradient(listOf(ClayLight, ClayDeep))).border(1.dp, ytDayNight(Color(0x99FFFFFF), Color(0x26FFF0E4)), CircleShape)
+                            // Synthwave: a magenta disc with a soft neon glow
+                            YtSignature.SYNTHWAVE -> Modifier.synthwaveGlow(CircleShape, palette.accent, 5.dp).clip(CircleShape).background(fill)
                             else -> Modifier.background(fill)
                         },
                     ),

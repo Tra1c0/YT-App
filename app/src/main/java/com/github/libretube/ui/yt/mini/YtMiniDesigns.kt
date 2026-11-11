@@ -18,6 +18,7 @@ object YtMiniDesigns {
         YtDesign.FROST -> YtMiniFrost
         YtDesign.KIESEL -> YtMiniKiesel
         YtDesign.FREQUENCY -> YtMiniFrequency
+        YtDesign.SYNTHWAVE -> YtMiniSynthwave
     }
 
     /** The mini player of the selected design. */

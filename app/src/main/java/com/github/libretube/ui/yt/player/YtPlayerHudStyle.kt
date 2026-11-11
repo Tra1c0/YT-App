@@ -68,6 +68,8 @@ class YtPlayerHudStyle private constructor(
                 YtSignature.GLASS, YtSignature.SHAPES -> font(context, R.font.font_google_sans_500)
                 YtSignature.FROST, YtSignature.KIESEL -> font(context, R.font.font_jakarta_600)
                 YtSignature.SIDE -> font(context, R.font.font_figtree_600)
+                // Synthwave: Geist (the retro face is for headlines, the HUD is read)
+                YtSignature.SYNTHWAVE -> font(context, R.font.font_geist_600)
                 // YouTube neu, Movo, After and Frequency: Geist
                 else -> font(context, R.font.font_geist_600)
             }
@@ -116,6 +118,12 @@ class YtPlayerHudStyle private constructor(
                 YtSignature.FREQUENCY -> YtPlayerHudStyle(
                     accent, ColorUtils.setAlphaComponent(palette.background.toArgb(), 0xE6), text, secondary,
                     ColorUtils.setAlphaComponent(palette.accent.toArgb(), 0x66), 1f, 0.5f, textFont, mono, stiffness, damping,
+                )
+
+                // Synthwave: the night, a little see-through, with a cyan neon rim
+                YtSignature.SYNTHWAVE -> YtPlayerHudStyle(
+                    accent, ColorUtils.setAlphaComponent(palette.background.toArgb(), 0xE6), text, secondary,
+                    ColorUtils.setAlphaComponent(palette.lime.toArgb(), 0x8C), 1f, 0.5f, textFont, mono, stiffness, damping,
                 )
 
                 // the dark designs: their background, a little see-through

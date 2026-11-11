@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the design "Synthwave" (neon chrome, a retro sun over a neon grid, moves with the sound) -->
+<resources>
+    <string name="yt_design_synthwave">Synthwave: neon chrome, retro sun and grid</string>
+    <string name="yt_synthwave_headline">NIGHT DRIVE</string>
+    <string name="yt_synthwave_subline">Your videos, out on the neon road.</string>
+    <string name="yt_synthwave_continue">Continue</string>
+    <string name="yt_synthwave_more">More for you</string>
+    <string name="yt_synthwave_shorts">Shorts</string>
+    <string name="yt_synthwave_library_headline">Your mixtapes.</string>
+</resources>

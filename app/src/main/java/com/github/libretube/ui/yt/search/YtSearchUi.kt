@@ -101,6 +101,7 @@ import com.github.libretube.R
 import com.github.libretube.ui.yt.BlobShape
 import com.github.libretube.ui.yt.CookieShape
 import com.github.libretube.ui.yt.LocalYtMotion
+import com.github.libretube.ui.yt.SynthwaveGlass
 import com.github.libretube.ui.yt.YtEaseInOut
 import com.github.libretube.ui.yt.YtEaseOut
 import com.github.libretube.ui.yt.YtFonts
@@ -136,6 +137,8 @@ import kotlin.math.sin
  *   Kiesel       a black capsule grows out of the header, the past searches fall in as pebbles
  *   Frequency    Formen's cookie flies out of the button into an aqua field, YouTube neu's
  *                filters under it, the past searches as coral, violet and amber chips
+ *   Synthwave    the field switches on like an old screen (a neon line that opens up), a neon
+ *                edge from magenta to cyan, the past searches as night chips with neon rims
  */
 
 private enum class EntryLayout { ROWS, CHIPS, TILES }
@@ -187,6 +190,9 @@ private fun lookOf(kind: YtSearchKind, palette: YtPalette): SearchLook {
         // Frequency: YouTube neu's type, Formen's chips and spring
         YtSearchKind.FREQUENCY -> SearchLook(YtFonts.geist, FontWeight.Medium, 17.sp, 0.sp, 54.dp, YtFonts.geist, FontWeight.Medium, 15.sp, false,
             16.dp, EntryLayout.CHIPS, 0.dp, soft(0.66f, 230f), out, quickOut)
+        // Synthwave: Geist to read, a calm glide, neon chips
+        YtSearchKind.SYNTHWAVE -> SearchLook(YtFonts.geist, FontWeight.Medium, 17.sp, 0.sp, 52.dp, YtFonts.geist, FontWeight.Medium, 15.sp, false,
+            16.dp, EntryLayout.CHIPS, 0.dp, soft(0.86f, 240f), out, quickOut)
         YtSearchKind.FROST -> SearchLook(palette.font, FontWeight.Medium, 17.sp, 0.sp, 50.dp, palette.font, FontWeight.Normal, 15.sp, false,
             14.dp, EntryLayout.ROWS, 30.dp, tween(520, easing = YtEaseOut), tween(300, easing = FastOutLinearInEasing), quickOut)
         YtSearchKind.KIESEL -> SearchLook(palette.font, FontWeight.SemiBold, 17.sp, 0.sp, 52.dp, palette.font, FontWeight.Bold, 15.sp, false,
@@ -332,10 +338,12 @@ internal fun YtSearchLayer(session: YtSearchSession) {
                 startPx = startPx,
                 actions = actions,
             )
-            if (kind == YtSearchKind.YOUTUBE || kind == YtSearchKind.FREQUENCY) {
-                // Frequency: YouTube neu's filters, the chosen one on a coral pill
-                val on = if (kind == YtSearchKind.FREQUENCY) inks.mark else inks.fieldText
-                val onText = if (kind == YtSearchKind.FREQUENCY) YtSearchPalette.onFill(inks.mark) else inks.scrim
+            if (kind == YtSearchKind.YOUTUBE || kind == YtSearchKind.FREQUENCY || kind == YtSearchKind.SYNTHWAVE) {
+                // Frequency: YouTube neu's filters, the chosen one on a coral pill; Synthwave: on
+                // a magenta pill
+                val marked = kind == YtSearchKind.FREQUENCY || kind == YtSearchKind.SYNTHWAVE
+                val on = if (marked) inks.mark else inks.fieldText
+                val onText = if (marked) YtSearchPalette.onFill(inks.mark) else inks.scrim
                 Filters(inks, look, filter, k::value, Color(on), Color(onText).copy(alpha = 1f)) {
                     if (it != filter) haptics.tick()
                     filter = it
@@ -523,6 +531,7 @@ private fun Field(
         val content = Modifier.graphicsLayer {
             alpha = when (kind) {
                 YtSearchKind.SHAPES, YtSearchKind.FREQUENCY -> phase(progress(), 0.55f, 0.95f)
+                YtSearchKind.SYNTHWAVE -> phase(progress(), 0.4f, 0.85f)
                 YtSearchKind.GLASS, YtSearchKind.CLAY, YtSearchKind.POP, YtSearchKind.KIESEL -> phase(progress(), 0.35f, 0.85f)
                 else -> 1f
             }
@@ -539,7 +548,7 @@ private fun Field(
                 letterSpacing = look.fieldSpacing,
                 color = Color(inks.fieldText),
             ),
-            cursorBrush = SolidColor(Color(if (kind == YtSearchKind.MOVO || kind == YtSearchKind.SHAPES || kind == YtSearchKind.FREQUENCY || kind == YtSearchKind.SIDE || kind == YtSearchKind.POP) inks.fieldText else inks.mark)),
+            cursorBrush = SolidColor(Color(if (kind == YtSearchKind.MOVO || kind == YtSearchKind.SHAPES || kind == YtSearchKind.FREQUENCY || kind == YtSearchKind.SIDE || kind == YtSearchKind.POP || kind == YtSearchKind.SYNTHWAVE) inks.fieldText else inks.mark)),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { actions.submit(value.text) }),
             modifier = content
@@ -682,6 +691,13 @@ private fun Modifier.fieldMotion(kind: YtSearchKind, progress: () -> Float, orig
                 scaleX = lerp(YtSearchRules.startScale(h, w), 1f, t)
                 alpha = phase(t, 0f, 0.1f)
             }
+            YtSearchKind.SYNTHWAVE -> {
+                // an old screen switching on: a thin neon line opens sideways, then up and down
+                transformOrigin = TransformOrigin(0.5f, 0.5f)
+                scaleX = lerp(0.15f, 1f, phase(t, 0f, 0.55f))
+                scaleY = lerp(0.06f, 1f, phase(t, 0.4f, 1f))
+                alpha = phase(t, 0f, 0.1f)
+            }
         }
     }
 
@@ -738,6 +754,15 @@ private fun Modifier.fieldSurface(kind: YtSearchKind, inks: YtSearchInks, progre
         YtSearchKind.SHAPES, YtSearchKind.FREQUENCY -> {
             val outline = CookieMorphShape(t.coerceIn(0f, 1f)).createOutline(size, layoutDirection, this)
             drawOutline(outline, fill)
+        }
+        YtSearchKind.SYNTHWAVE -> {
+            // night glass with a neon edge from magenta to cyan and a soft glow around it
+            val r = CornerRadius(size.height / 2f)
+            val edge = Brush.horizontalGradient(listOf(SynthwaveGlass.edgeStart, SynthwaveGlass.edgeEnd))
+            drawRoundRect(edge, cornerRadius = r, style = Stroke(9.dp.toPx()), alpha = 0.1f)
+            drawRoundRect(edge, cornerRadius = r, style = Stroke(5.dp.toPx()), alpha = 0.16f)
+            drawRoundRect(fill, cornerRadius = r)
+            drawRoundRect(edge, cornerRadius = r, style = Stroke(1.5.dp.toPx()))
         }
     }
 }
@@ -825,6 +850,8 @@ private fun Modifier.entryMotion(kind: YtSearchKind, progress: () -> Float, inde
             scaleX = s
             scaleY = s
         }
+        // Synthwave: the entries glide in from the left, as along a neon road
+        YtSearchKind.SYNTHWAVE -> translationX = (1f - p) * -18.dp.toPx()
         YtSearchKind.SIDE -> {
             transformOrigin = TransformOrigin(0f, 1f)
             val s = lerp(0.8f, 1f, p)
@@ -975,6 +1002,14 @@ private fun EntryRow(
                     YtSearchKind.FROST -> Modifier.drawBehind {
                         drawRect(Color.White.copy(alpha = 0.12f), topLeft = Offset(0f, size.height - 1.dp.toPx()), size = Size(size.width, 1.dp.toPx()))
                     }
+                    // Synthwave: a faint neon line under each row, magenta to cyan
+                    YtSearchKind.SYNTHWAVE -> Modifier.drawBehind {
+                        drawRect(
+                            Brush.horizontalGradient(listOf(SynthwaveGlass.edgeStart.copy(alpha = 0.35f), SynthwaveGlass.edgeEnd.copy(alpha = 0.05f))),
+                            topLeft = Offset(0f, size.height - 1.dp.toPx()),
+                            size = Size(size.width, 1.dp.toPx()),
+                        )
+                    }
                     else -> Modifier
                 },
             )
@@ -1053,6 +1088,10 @@ private fun Chip(kind: YtSearchKind, look: SearchLook, inks: YtSearchInks, item:
             .shadow(4.dp, shape, clip = false, ambientColor = Color(0xFF9D6A6C), spotColor = Color(0xFF9D6A6C))
             .background(Brush.verticalGradient(listOf(ClayDoughTop, Color(fillInt), ClayDoughFoot)), shape)
         YtSearchKind.POP -> Modifier.shadow(3.dp, shape, clip = false).background(Color(fillInt), shape)
+        // Synthwave: night chips, each with a neon rim of its own (magenta, cyan, orange, violet)
+        YtSearchKind.SYNTHWAVE -> Modifier
+            .background(Color(fillInt), shape)
+            .border(1.dp, Color(YtSearchPalette.tile(kind, index)), shape)
         else -> Modifier.background(Color(fillInt), shape)
     }
     Row(

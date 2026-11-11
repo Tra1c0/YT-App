@@ -96,6 +96,8 @@ internal fun seenBadge(palette: YtPalette): SeenBadge = when (palette.signature)
     YtSignature.SHAPES -> SeenBadge(CircleShape, palette.accent, palette.onAccent, uppercase = false, iconOnly = true, cornerDp = -1f)
     // Frequency: Formen's round mark as a coral cookie, night ink
     YtSignature.FREQUENCY -> SeenBadge(CookieShape(8, 0.08f), palette.accent, palette.onAccent, uppercase = false, iconOnly = true, cornerDp = -1f)
+    // Synthwave: a small magenta tag in capitals, dark ink, as on an old cassette label
+    YtSignature.SYNTHWAVE -> SeenBadge(RoundedCornerShape(4.dp), palette.accent, palette.onAccent, uppercase = true, iconOnly = false, cornerDp = 4f)
     YtSignature.POP -> SeenBadge(RoundedCornerShape(8.dp), palette.accent, palette.onAccent, uppercase = false, iconOnly = false, cornerDp = 8f)
     YtSignature.GLASS, YtSignature.FROST -> SeenBadge(RoundedCornerShape(50), Color.White.copy(alpha = 0.24f), Color.White, uppercase = false, iconOnly = false, cornerDp = -1f)
     YtSignature.CLAY -> SeenBadge(RoundedCornerShape(50), palette.surface.copy(alpha = 0.9f), palette.text, uppercase = false, iconOnly = false, cornerDp = -1f)

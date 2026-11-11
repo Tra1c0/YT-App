@@ -278,7 +278,7 @@ class MainActivity : AbstractPlayerHostActivity() {
         com.github.libretube.ui.yt.YtDragLayer.attach(this)
         // YT: the design search ends in the same three steps as a search passed to the app
         com.github.libretube.ui.yt.search.YtSearchEntry.attach(this, searchFor)
-        com.github.libretube.ui.yt.YtHeader.overlayAfterHome(binding.appBarLayout, binding.fragment, navController)
+        com.github.libretube.ui.yt.YtHeader.overlayHome(binding.appBarLayout, binding.fragment, navController)
         // YT: a recreate (new design without a restart) attached the layout before the lines
         // above changed it; let the transition's states take the views as they are now
         if (androidx.constraintlayout.motion.widget.YtMotionAccess.takeViewsAgain(binding.mainMotionLayout, R.xml.activity_main_scene)) {

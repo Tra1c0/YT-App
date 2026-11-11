@@ -14,6 +14,7 @@
         <item>@string/yt_design_frost</item>
         <item>@string/yt_design_kiesel</item>
         <item>@string/yt_design_frequency</item>
+        <item>@string/yt_design_synthwave</item>
     </string-array>
     <string-array name="yt_designs_values" translatable="false">
         <item>standard</item>
@@ -29,6 +30,7 @@
         <item>frost</item>
         <item>kiesel</item>
         <item>frequency</item>
+        <item>synthwave</item>
     </string-array>
     <!-- YT: light or dark for the light designs; values as in themesValue -->
     <string-array name="yt_design_dark">

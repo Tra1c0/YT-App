@@ -1699,4 +1699,101 @@
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
     </style>
+
+    <!-- Synthwave: neon chrome over a retro night (YtPalettes.Synthwave): Audiowide for the
+         wordmark and headlines, Geist for everything that is read; neon magenta and cyan, the
+         sun's yellow and orange -->
+    <style name="TextAppearance.YT.Synthwave.Brand" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/font_audiowide_400</item>
+        <item name="android:fontFamily">@font/font_audiowide_400</item>
+        <item name="android:textSize">21sp</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="YtDesign.Synthwave" parent="">
+        <!-- classic screens in the shapes and manners of the design (yt_classic.xml) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.YT.Synthwave.XS</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.YT.Synthwave.S</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.YT.Synthwave.M</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.YT.Synthwave.L</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.YT.Synthwave.XL</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.YT.Synthwave.S</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.YT.Synthwave.M</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.YT.Synthwave.L</item>
+        <item name="materialButtonStyle">@style/Widget.YT.Synthwave.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.YT.Synthwave.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.YT.Synthwave.Button.Text</item>
+        <item name="tonalButtonStyleCustomAttr">@style/Widget.YT.Synthwave.Button.Tonal</item>
+        <item name="chipStyle">@style/Widget.YT.Synthwave.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.YT.Synthwave.Sheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.YT.Synthwave.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.YT.Synthwave.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.YT.Synthwave.Toolbar</item>
+        <item name="snackbarStyle">@style/Widget.YT.Synthwave.Snackbar</item>
+        <item name="ytCardCorner">14dp</item>
+        <item name="ytRowCorner">12dp</item>
+        <item name="ytThumbCorner">10dp</item>
+        <!-- a neon edge: the magenta at a little more than a third -->
+        <item name="ytOutlineColor">#66FF3FD8</item>
+        <item name="ytOutlineWidth">1dp</item>
+        <item name="ytIconHalo">@drawable/yt_icon_halo</item>
+        <item name="ytIconPadding">8dp</item>
+        <item name="ytIconTint">?attr/colorOnSecondaryContainer</item>
+        <item name="ytUppercase">false</item>
+        <item name="fontFamily">@font/geist</item>
+        <item name="android:fontFamily">@font/geist</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.YT.Synthwave.Display</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.YT.Synthwave.Display</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.YT.Synthwave.Display</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.YT.YouTube.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.YT.YouTube.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.YT.YouTube.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.YT.YouTube.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.YT.YouTube.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.YT.YouTube.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.YT.YouTube.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.YT.YouTube.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.YT.YouTube.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.YT.YouTube.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.YT.YouTube.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.YT.YouTube.LabelSmall</item>
+        <item name="colorPrimary">#FF3FD8</item>
+        <item name="colorOnPrimary">#14051F</item>
+        <item name="colorPrimaryContainer">#4C1050</item>
+        <item name="colorOnPrimaryContainer">#FFD6F6</item>
+        <item name="colorSecondary">#36E4FF</item>
+        <item name="colorOnSecondary">#0D0620</item>
+        <item name="colorSecondaryContainer">#36E4FF</item>
+        <item name="colorOnSecondaryContainer">#0D0620</item>
+        <item name="colorTertiary">#FFB04A</item>
+        <item name="colorOnTertiary">#0D0620</item>
+        <item name="colorTertiaryContainer">#A98BFF</item>
+        <item name="colorOnTertiaryContainer">#0D0620</item>
+        <item name="android:colorBackground">#0D0620</item>
+        <item name="colorOnBackground">#FBF4FF</item>
+        <item name="colorSurface">#0D0620</item>
+        <item name="colorOnSurface">#FBF4FF</item>
+        <item name="colorSurfaceVariant">#271848</item>
+        <item name="colorOnSurfaceVariant">#CDBDEB</item>
+        <item name="colorOutline">#5A4486</item>
+        <item name="colorOutlineVariant">#33225C</item>
+        <item name="colorSurfaceDim">#080414</item>
+        <item name="colorSurfaceBright">#271848</item>
+        <item name="colorSurfaceContainerLowest">#070312</item>
+        <item name="colorSurfaceContainerLow">#130A2B</item>
+        <item name="colorSurfaceContainer">#1A0F36</item>
+        <item name="colorSurfaceContainerHigh">#21143F</item>
+        <item name="colorSurfaceContainerHighest">#271848</item>
+        <item name="colorSurfaceInverse">#FBF4FF</item>
+        <item name="colorOnSurfaceInverse">#0D0620</item>
+        <item name="colorPrimaryInverse">#B0128F</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+    </style>
+    <!-- Synthwave: large display type of the classic screens in the retro face -->
+    <style name="TextAppearance.YT.Synthwave.Display" parent="TextAppearance.YT.YouTube.DisplaySmall">
+        <item name="fontFamily">@font/font_audiowide_400</item>
+        <item name="android:fontFamily">@font/font_audiowide_400</item>
+        <item name="android:letterSpacing">0.04</item>
+    </style>
 </resources>

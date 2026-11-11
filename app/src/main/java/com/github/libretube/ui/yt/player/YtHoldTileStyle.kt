@@ -46,6 +46,9 @@ enum class YtHoldTileShape {
 
     /** Kiesel: a black pebble capsule. */
     CAPSULE,
+
+    /** Synthwave: a dark night tile with a neon edge and a soft neon glow around it. */
+    NEON,
 }
 
 /**
@@ -185,6 +188,13 @@ class YtHoldTileStyle private constructor(
                 YtSignature.FREQUENCY -> style(
                     YtHoldTileShape.COOKIE, bg, intArrayOf(lime, lavender, paletteAccent, pink), armed = text,
                     stroke = raised, strokeDp = 1.5f, cornerDp = 20f, videoCorner = 16f,
+                )
+
+                // Synthwave: night tiles with a magenta neon edge and glow; armed, the neon cyan
+                // (dark ink on it, picked by on())
+                YtSignature.SYNTHWAVE -> style(
+                    YtHoldTileShape.NEON, bg, intArrayOf(raised), armed = lime,
+                    stroke = paletteAccent, strokeDp = 1.5f, cornerDp = 14f, videoCorner = 12f, light = text,
                 )
 
                 // Frost's own surfaces are see-through white on sage, too pale for white text: here

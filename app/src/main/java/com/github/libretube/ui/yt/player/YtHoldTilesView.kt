@@ -478,6 +478,16 @@ class YtHoldTilesView @JvmOverloads constructor(
             canvas.restoreToCount(save2)
         }
 
+        // Synthwave: a soft neon glow around the tile (wider while lit), under its fill
+        if (style.shape == YtHoldTileShape.NEON && style.stroke != 0) {
+            strokePaint.color = style.stroke
+            for (i in 0 until 3) {
+                strokePaint.strokeWidth = (NEON_GLOW_DP * density) * (3 - i) / 3f * (1f + 0.6f * lit)
+                strokePaint.alpha = (255 * alpha * (0.07f + 0.04f * i)).toInt()
+                canvas.drawPath(path, strokePaint)
+            }
+        }
+
         fillPaint.color = fill
         fillPaint.alpha = a
         canvas.drawPath(path, fillPaint)
@@ -703,6 +713,9 @@ class YtHoldTilesView @JvmOverloads constructor(
 
     private companion object {
         const val GAP_DP = 10f
+
+        /** Synthwave: how wide the neon glow around a tile reaches. */
+        const val NEON_GLOW_DP = 12f
         const val EDGE_PAD_DP = 8f
         const val ICON_DP = 20f
         const val ICON_GAP_DP = 8f
