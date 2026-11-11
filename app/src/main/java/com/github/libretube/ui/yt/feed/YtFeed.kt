@@ -27,6 +27,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.random.Random
@@ -49,8 +51,15 @@ data class YtFeedInput(
  */
 data class YtFeedFreshness(val seen: YtSeenMemory = YtSeenMemory(), val shuffle: Long = 0L)
 
-/** The ranked feed: the videos in order and, by video id, why each one is there. */
-data class YtFeedResult(val videos: List<StreamItem>, val reasons: Map<String, List<YtReason>>)
+/**
+ * The ranked feed: the videos in order and, by video id, why each one is there and which of the
+ * user's own topics it counts for.
+ */
+data class YtFeedResult(
+    val videos: List<StreamItem>,
+    val reasons: Map<String, List<YtReason>>,
+    val focus: Map<String, YtTopicMark> = emptyMap(),
+)
 
 /** What the feed knows locally, loaded in the background (watch positions, history, groups). */
 data class YtLocalSignals(
@@ -77,6 +86,12 @@ object YtFeed {
     private const val PER_RELATED = 10
     private const val EXTRAS_TTL_MS = 30L * 60 * 1000
     private const val LOAD_TIMEOUT_MS = 15_000L
+
+    // the user's own topics: results per keyword search, keywords searched per topic and load,
+    // and searches at a time over all topics
+    private const val PER_KEYWORD = 10
+    private const val SEARCHES_PER_TOPIC = 4
+    private const val PARALLEL_SEARCHES = 4
 
     private val scope = MainScope()
 
@@ -108,6 +123,24 @@ object YtFeed {
 
     /** The seen-on-top memory and the shuffle of the last pull to refresh. */
     val freshness: StateFlow<YtFeedFreshness> get() = freshFlow
+
+    private val focusFlow = MutableStateFlow<Map<String, YtTopicMark>>(emptyMap())
+
+    /** The videos of the last ranked feed that count for one of the user's topics (chip on the card, suggestion). */
+    val focus: StateFlow<Map<String, YtTopicMark>> get() = focusFlow
+
+    private val topicPoolsFlow = MutableStateFlow<Map<String, List<YtTopicCandidate>>>(emptyMap())
+
+    /** What the keyword searches found per topic id, kept for the session (until a pull or new keywords). */
+    val topicPools: StateFlow<Map<String, List<YtTopicCandidate>>> get() = topicPoolsFlow
+
+    /** The videos of [topicPools], by id. */
+    private val topicVideos = HashMap<String, StreamItem>()
+
+    /** Per topic id: the keywords (folded) and the turn its pool was loaded for. */
+    private val topicLoaded = HashMap<String, Pair<String, Int>>()
+    private val topicJobs = HashMap<String, Job>()
+    private val searchGate = Semaphore(PARALLEL_SEARCHES)
 
     /** The top of the feed as last ranked for the home: what a refresh remembers. */
     private var lastTop: List<YtSeen> = emptyList()
@@ -167,6 +200,21 @@ object YtFeed {
     /** How the per-channel rules know a channel: the id in its URL, else its name. */
     fun channelKey(video: StreamItem): String? =
         YtChannelPause.channelId(video.uploaderUrl) ?: video.uploaderName?.takeIf { it.isNotBlank() }
+
+    /** The user's topics that are on and not expired now. */
+    fun activeTopics(
+        personal: YtFeedPersonal = profileFlow.value.personal,
+        session: Long = YtTopicSession.current.value,
+        nowMs: Long = System.currentTimeMillis(),
+    ): List<YtFeedTopic> = personal.feedTopics.filter { YtFeedTopics.active(it, nowMs, session) }
+
+    /** Changes the topic [id] (nothing if it is gone). */
+    fun updateTopic(id: String, transform: (YtFeedTopic) -> YtFeedTopic) {
+        updatePersonal { personal -> personal.copy(feedTopics = personal.feedTopics.map { if (it.id == id) transform(it) else it }) }
+    }
+
+    /** The titles of the feed as last ranked, for how rare a suggested keyword is. */
+    fun recentTitles(): List<String> = lastTop.map { it.title }
 
     /** Whether videos open as audio now (music intent with "Musik als Audio"). */
     fun audioNow(): Boolean = current() == YtIntent.MUSIC && rules().musicAsAudio
@@ -238,6 +286,8 @@ object YtFeed {
         val live = rules.weight(YtFeedSource.LIVE) > 0
         val key = "${topics.joinToString("|") { it.query }}#$related#$live"
         val now = System.currentTimeMillis()
+        // the user's own topics keep their own cache: loaded again on a pull or new keywords
+        loadTopics(force)
         if (!force && key == extrasKey && now - extrasAt < EXTRAS_TTL_MS) return
         extrasKey = key
         extrasAt = now
@@ -304,21 +354,75 @@ object YtFeed {
      * ...) also loads the second page and takes the next [PER_TOPIC] of both, round by round, so
      * a pull brings other videos of the same topic instead of the same first page again.
      */
-    private suspend fun searchTopic(topic: YtTopic, round: Int): List<StreamItem> = runCatching {
+    private suspend fun searchTopic(topic: YtTopic, round: Int): List<StreamItem> = searchVideos(topic.query, round, PER_TOPIC)
+
+    /** [count] videos of a search for [query], part [round] of the first two pages (see [searchTopic]). */
+    private suspend fun searchVideos(query: String, round: Int, count: Int): List<StreamItem> = runCatching {
         val repo = MediaServiceRepository.instance
-        val first = repo.getSearchResults(topic.query, "videos")
+        val first = repo.getSearchResults(query, "videos")
         val next = first.nextpage
         val items = if (round > 0 && next != null) {
-            first.items + runCatching { repo.getSearchResultsNextPage(topic.query, "videos", next).items }.getOrDefault(emptyList())
+            first.items + runCatching { repo.getSearchResultsNextPage(query, "videos", next).items }.getOrDefault(emptyList())
         } else {
             first.items
         }
         YtRotation.window(
             items.filter { it.type == StreamItem.TYPE_STREAM }.map { it.toStreamItem() }.distinctBy { it.url },
             round,
-            PER_TOPIC,
+            count,
         )
     }.getOrDefault(emptyList())
+
+    /**
+     * Searches the keywords of each active topic with a share (at most [SEARCHES_PER_TOPIC] per
+     * load, other ones on each pull when there are more), [PARALLEL_SEARCHES] at a time over all
+     * topics. A topic's videos are kept for the session: loaded again only on [force] (a pull,
+     * with another part of each search) or when its keywords changed. The keywords' results come
+     * in turn, each video with the keyword its title names (else the one it was found by).
+     */
+    fun loadTopics(force: Boolean = false) {
+        val wanted = activeTopics().filter { it.share > 0 && it.keywords.isNotEmpty() }
+        for (topic in wanted) {
+            val words = topic.keywords.map { YtFeedTopics.fold(it) }.sorted().joinToString("|")
+            val loaded = topicLoaded[topic.id]
+            if (loaded != null && loaded.first == words && (!force || loaded.second == turn)) continue
+            val round = turn
+            topicLoaded[topic.id] = words to round
+            topicJobs[topic.id]?.cancel()
+            topicJobs[topic.id] = scope.launch {
+                val searched = YtRotation.window(topic.keywords, round, SEARCHES_PER_TOPIC)
+                val lists = withContext(Dispatchers.IO) {
+                    coroutineScope {
+                        searched.map { keyword ->
+                            async {
+                                keyword to searchGate.withPermit {
+                                    withTimeoutOrNull(LOAD_TIMEOUT_MS) { searchVideos(keyword, round, PER_KEYWORD) }.orEmpty()
+                                }
+                            }
+                        }.awaitAll()
+                    }
+                }
+                val candidates = ArrayList<YtTopicCandidate>()
+                val ids = HashSet<String>()
+                for (i in 0 until (lists.maxOfOrNull { it.second.size } ?: 0)) {
+                    for ((keyword, list) in lists) {
+                        val video = list.getOrNull(i) ?: continue
+                        val item = toItem(video, YtFeedSource.TOPICS, candidates.size, topic = topic.name) ?: continue
+                        if (!ids.add(item.id)) continue
+                        topicVideos[item.id] = video
+                        candidates += YtTopicCandidate(item, YtFeedTopics.keywordIn(item.title, topic.keywords) ?: keyword)
+                    }
+                }
+                // nothing found (offline, a failed search): the next load tries again
+                if (candidates.isEmpty()) topicLoaded.remove(topic.id)
+                val pools = topicPoolsFlow.value + (topic.id to candidates)
+                topicPoolsFlow.value = pools
+                val kept = pools.values.flatMapTo(HashSet()) { list -> list.map { it.item.id } }
+                topicVideos.keys.retainAll(kept)
+                YtTestHooks.log("YtFeed") { "topic ${topic.id} keywords=${searched.size} videos=${candidates.size}" }
+            }
+        }
+    }
 
     /**
      * The related videos of [RELATED_FROM] watched videos, with the title they belong to: the last
@@ -406,6 +510,8 @@ object YtFeed {
         extras: Map<YtFeedSource, List<YtFeedItem>> = extrasFlow.value,
         local: YtLocalSignals = signalsFlow.value,
         fresh: YtFeedFreshness = freshFlow.value,
+        pools: Map<String, List<YtTopicCandidate>> = topicPoolsFlow.value,
+        session: Long = YtTopicSession.current.value,
     ): YtFeedResult {
         val videos = HashMap<String, StreamItem>(256)
         val items = ArrayList<YtFeedItem>(256)
@@ -435,9 +541,22 @@ object YtFeed {
                 items += item
             }
         }
+        // the user's own topics: what their searches found (marks only with share 0)
+        val now = System.currentTimeMillis()
+        val topicPools = activeTopics(personal, session, now).map { topic ->
+            val found = if (topic.share > 0) pools[topic.id].orEmpty() else emptyList()
+            YtTopicPool(
+                topic,
+                found.filter { candidate ->
+                    val video = topicVideos[candidate.item.id] ?: return@filter false
+                    videos.putIfAbsent(candidate.item.id, video)
+                    true
+                },
+            )
+        }
         val watched = HashMap<String, Float>()
         val finished = HashSet<String>()
-        for (item in items) {
+        for (item in items + topicPools.flatMap { pool -> pool.candidates.map { it.item } }) {
             val position = local.positionsMs[item.id] ?: continue
             if (item.durationSec > 0) watched[item.id] = (position / 1000f / item.durationSec).coerceIn(0f, 1f)
             if (YtSeenHide.finished(position, item.durationSec)) finished += item.id
@@ -445,7 +564,6 @@ object YtFeed {
         val groupChannels = rules.groups.takeIf { it.isNotEmpty() }?.let { names ->
             names.flatMap { local.groups[it].orEmpty() }.toSet()
         }
-        val now = System.currentTimeMillis()
         val signals = YtFeedSignals(
             nowMs = now,
             watched = watched,
@@ -457,16 +575,18 @@ object YtFeed {
             shuffle = fresh.shuffle,
             finished = finished,
         )
-        val ranked = YtFeedEngine.rank(items, rules, personal, signals)
+        val ranked = YtFeedEngine.rank(items, rules, personal, signals, topicPools)
         return YtFeedResult(
             videos = ranked.mapNotNull { videos[it.item.id] },
             reasons = ranked.associate { it.item.id to it.reasons },
+            focus = ranked.mapNotNull { r -> r.focus?.let { r.item.id to it } }.toMap(),
         )
     }
 
     /** Remembers [result]'s reasons for "Warum sehe ich das?". */
     fun publish(result: YtFeedResult) {
         reasonsFlow.value = result.reasons
+        focusFlow.value = result.focus
         // read on every ranking, kept only in memory until a refresh remembers it
         lastTop = result.videos.asSequence()
             .mapNotNull { video -> video.url?.toID()?.let { YtSeen(it, video.uploaderName, video.title.orEmpty()) } }
@@ -488,13 +608,18 @@ fun rememberYtFeed(input: YtFeedInput): List<StreamItem>? {
     val extras by YtFeed.extras.collectAsState()
     val signals by YtFeed.signals.collectAsState()
     val fresh by YtFeed.freshness.collectAsState()
+    val pools by YtFeed.topicPools.collectAsState()
+    val session by YtTopicSession.current.collectAsState()
     val rules = profile.rulesFor(intent ?: YtIntent.BROWSE)
     LaunchedEffect(rules.topics, rules.weights) { YtFeed.loadExtras(context) }
+    // the user's own topics: a new topic, keyword, share or session loads what is missing
+    val topicKey = profile.personal.feedTopics.map { Triple(it.id, it.keywords, it.share > 0 && it.enabled) } to session
+    LaunchedEffect(topicKey) { YtFeed.loadTopics() }
     LaunchedEffect(Unit) { YtFeed.loadSignals() }
     if (input.subscriptions == null && input.charts.isEmpty() && input.trending == null) return null
     // ranked again at once on new rules (the Feed-Regler) and on a pull to refresh (fresh)
-    val result = remember(input, rules, profile.personal, extras, signals, fresh) {
-        YtFeed.rank(input, rules, profile.personal, extras, signals, fresh)
+    val result = remember(input, rules, profile.personal, extras, signals, fresh, pools, session) {
+        YtFeed.rank(input, rules, profile.personal, extras, signals, fresh, pools, session)
     }
     LaunchedEffect(result) { YtFeed.publish(result) }
     return result.videos

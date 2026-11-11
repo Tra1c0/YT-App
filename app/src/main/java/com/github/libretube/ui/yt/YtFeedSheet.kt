@@ -31,9 +31,11 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -107,6 +109,10 @@ import com.github.libretube.ui.yt.feed.YtIntent
 import com.github.libretube.ui.yt.feed.YtReason
 import com.github.libretube.ui.yt.feed.YtReasonKind
 import com.github.libretube.ui.yt.feed.YtTopic
+import com.github.libretube.ui.yt.feed.YtFeedTopic
+import com.github.libretube.ui.yt.feed.YtFeedTopics
+import com.github.libretube.ui.yt.feed.YtTopicExpiry
+import com.github.libretube.ui.yt.feed.YtTopicSession
 import com.github.libretube.ui.yt.feed.YtWatchedMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -163,6 +169,7 @@ fun ytReasonText(reason: YtReason): String {
         YtReasonKind.WATCHED_LAST -> stringResource(R.string.yt_feed_reason_watched_last)
         YtReasonKind.SPACED -> stringResource(R.string.yt_feed_reason_spaced, channel)
         YtReasonKind.NEW_ON_TOP -> stringResource(R.string.yt_feed_reason_new_on_top)
+        YtReasonKind.FOCUS -> stringResource(R.string.yt_feed_reason_focus, reason.detail.orEmpty(), reason.extra.orEmpty())
     }
 }
 
@@ -336,7 +343,14 @@ private fun SheetBody(palette: YtPalette, preview: () -> YtFeedInput, onClose: (
     LaunchedEffect(Unit) { YtFeed.loadSignals() }
     // the input is read once per opening: the strip follows the rules, not the lists loading below
     val input = remember { preview() }
-    val ranked = remember(input, rules, personal, extras, signals) { YtFeed.rank(input, rules, personal, extras, signals) }
+    val pools by YtFeed.topicPools.collectAsState()
+    val session by YtTopicSession.current.collectAsState()
+    val ranked = remember(input, rules, personal, extras, signals, pools, session) {
+        YtFeed.rank(input, rules, personal, extras, signals, pools = pools, session = session)
+    }
+    // a topic added or changed here loads its videos at once, so the strip shows them
+    val topicKey = personal.feedTopics.map { Triple(it.id, it.keywords, it.share > 0 && it.enabled) } to session
+    LaunchedEffect(topicKey) { YtFeed.loadTopics() }
 
     // the sheet's own fill decides the colour of the words on it (Formen: a light sheet in a dark
     // design; Frost: pale frosted glass), not the background the palette's roles are made for
@@ -445,6 +459,10 @@ private fun SheetBody(palette: YtPalette, preview: () -> YtFeedInput, onClose: (
                 }
             }
             Note(palette, stringResource(R.string.yt_feed_sources_note))
+
+            // YT: the user's own topics (keywords + share), for every intent
+            Section(palette, stringResource(R.string.yt_topic_section))
+            FeedTopics(palette)
 
             Section(palette, stringResource(R.string.yt_feed_region))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -675,7 +693,18 @@ private fun PreviewStrip(palette: YtPalette, videos: List<StreamItem>) {
  * use − and + (the way for screen readers).
  */
 @Composable
-private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: String, onChange: (Int) -> Unit) {
+private fun WeightRow(
+    palette: YtPalette,
+    label: String,
+    weight: Int,
+    tag: String,
+    max: Int = YtFeedRules.MAX_WEIGHT,
+    /** The value as shown and spoken; the plain step number when null. */
+    valueText: ((Int) -> String)? = null,
+    /** The step under the finger while dragging, null when the drag ends (for a live preview). */
+    onStep: ((Int?) -> Unit)? = null,
+    onChange: (Int) -> Unit,
+) {
     val ink = ytInk(palette)
     val haptics = rememberYtHaptics()
     val motion = LocalYtMotion.current
@@ -687,16 +716,17 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
         if (dragging) return@LaunchedEffect
         if (motion) fill.animateTo(weight.toFloat(), spring(dampingRatio = 0.8f, stiffness = 420f)) else fill.snapTo(weight.toFloat())
     }
-    val max = YtFeedRules.MAX_WEIGHT
     // the gesture lambdas outlive a composition: they read the weight and the callback through these
     val current by rememberUpdatedState(weight)
     val change by rememberUpdatedState(onChange)
+    val stepNow by rememberUpdatedState(onStep)
     fun set(next: Int) {
         val clamped = next.coerceIn(0, max)
         if (clamped != current) change(clamped)
     }
-    val spoken = stringResource(R.string.yt_feed_weight, label, weight)
     val off = stringResource(R.string.yt_feed_weight_off)
+    val shown = if (weight == 0) off else valueText?.invoke(weight) ?: weight.toString()
+    val spoken = if (valueText == null) stringResource(R.string.yt_feed_weight, label, weight) else "$label, $shown"
     val accent = palette.accent
     val track = ink.text.copy(alpha = 0.12f)
     Row(
@@ -726,7 +756,7 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
                 .onSizeChanged { width = it.width.coerceAtLeast(1) }
                 .semantics {
                     contentDescription = spoken
-                    stateDescription = if (weight == 0) off else weight.toString()
+                    stateDescription = shown
                 }
                 .pointerInput(max) {
                     detectTapGestures { offset ->
@@ -745,11 +775,13 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
                             dragging = true
                             last = current
                             pos = (offset.x / width * max).coerceIn(0f, max.toFloat())
+                            stepNow?.invoke(pos.roundToInt().coerceIn(0, max))
                             haptics.grab()
                             scope.launch { fill.snapTo(pos) }
                         },
                         onDragEnd = {
                             dragging = false
+                            stepNow?.invoke(null)
                             val step = pos.roundToInt().coerceIn(0, max)
                             haptics.release()
                             set(step)
@@ -757,6 +789,7 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
                         },
                         onDragCancel = {
                             dragging = false
+                            stepNow?.invoke(null)
                             scope.launch { fill.snapTo(current.toFloat()) }
                         },
                     ) { change, amount ->
@@ -774,6 +807,7 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
                         if (step != last) {
                             last = step
                             haptics.detent()
+                            stepNow?.invoke(step)
                         }
                     }
                 }
@@ -800,10 +834,11 @@ private fun WeightRow(palette: YtPalette, label: String, weight: Int, tag: Strin
             set(weight + 1)
         }
         Text(
-            text = if (weight == 0) off else weight.toString(),
+            text = shown,
             color = if (weight == 0) ink.textSecondary else ink.text,
+            maxLines = 1,
             style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 13.sp),
-            modifier = Modifier.width(30.dp).padding(start = 4.dp),
+            modifier = Modifier.width(if (valueText == null) 30.dp else 44.dp).padding(start = 4.dp),
         )
     }
 }
@@ -1152,5 +1187,338 @@ private fun ChannelList(palette: YtPalette) {
             }
             }
         }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// "Themen": the user's own topics (YtFeedTopic)
+
+/**
+ * The user's topics as cards (name, keywords, share, duration, on/off), one opened for editing
+ * at a time, and a field to add one; a new topic opens at once with its name as first keyword.
+ */
+@Composable
+private fun FeedTopics(palette: YtPalette) {
+    val profile by YtFeed.profile.collectAsState()
+    val session by YtTopicSession.current.collectAsState()
+    val haptics = rememberYtHaptics()
+    val topics = profile.personal.feedTopics
+    var open by remember { mutableStateOf<String?>(null) }
+    val now = remember(profile, session) { System.currentTimeMillis() }
+    val active = topics.filter { YtFeedTopics.active(it, now, session) }
+    val fractions = YtFeedTopics.fractions(active)
+    val activeShare = active.map { it.id }.zip(fractions).toMap()
+    val capped = active.sumOf { YtFeedTopics.snapShare(it.share) } > YtFeedTopics.MAX_TOTAL_SHARE
+    topics.forEach { topic ->
+        TopicCard(
+            palette = palette,
+            topic = topic,
+            now = now,
+            session = session,
+            fraction = activeShare[topic.id],
+            capped = capped,
+            open = open == topic.id,
+            onOpen = { open = if (open == topic.id) null else topic.id },
+        )
+    }
+    if (topics.size < YtFeedTopics.MAX_TOPICS) {
+        FeedField(palette, "", stringResource(R.string.yt_topic_add_hint), "yt_topic_new", addLabel = stringResource(R.string.yt_topic_add)) { typed ->
+            val id = "t" + System.currentTimeMillis().toString(36) + kotlin.random.Random.nextInt(1296).toString(36)
+            val created = YtFeedTopics.create(id, typed, System.currentTimeMillis(), YtTopicSession.current.value)
+            if (created == null || topics.any { YtFeedTopics.same(it.name, created.name) }) {
+                haptics.reject()
+                typed
+            } else {
+                haptics.confirm()
+                YtFeed.updatePersonal { it.copy(feedTopics = it.feedTopics + created) }
+                open = created.id
+                ""
+            }
+        }
+    } else {
+        Note(palette, stringResource(R.string.yt_topic_limit, YtFeedTopics.MAX_TOPICS))
+    }
+    Note(palette, stringResource(R.string.yt_topic_note))
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TopicCard(
+    palette: YtPalette,
+    topic: YtFeedTopic,
+    now: Long,
+    session: Long,
+    /** Its share of the home after the cap over all topics; null while off or expired. */
+    fraction: Double?,
+    capped: Boolean,
+    open: Boolean,
+    onOpen: () -> Unit,
+) {
+    val haptics = rememberYtHaptics()
+    val cardFill = palette.raised.copy(alpha = 0.6f)
+    val sheetBack = LocalYtInk.current?.back
+    val cardBack = remember(palette, sheetBack) { YtContrast.over(cardFill.toArgb(), sheetBack ?: palette.background.toArgb()) }
+    val expired = YtFeedTopics.expired(topic, now, session)
+    val on = topic.enabled && !expired
+    fun edit(transform: (YtFeedTopic) -> YtFeedTopic) = YtFeed.updateTopic(topic.id, transform)
+    // the share under the finger while the slider is dragged, for the live count
+    var dragging by remember { mutableStateOf<Int?>(null) }
+    Column(
+        Modifier
+            .testTag("yt_topic_card")
+            .padding(bottom = 8.dp)
+            .fillMaxWidth()
+            .clip(ytCardShape(palette, 14))
+            .background(cardFill)
+            .then(if (palette.surfaceStyle == YtSurfaceStyle.EDITORIAL) Modifier.border(1.dp, ytInk(palette).text, ytCardShape(palette, 14)) else Modifier),
+    ) {
+        ProvideYtInk(palette, cardBack) {
+            val ink = ytInk(palette)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClickLabel = stringResource(if (open) R.string.yt_topic_done else R.string.yt_topic_edit)) {
+                        haptics.tick()
+                        onOpen()
+                    }
+                    .padding(start = 12.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = topic.name,
+                        color = ink.text,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp),
+                    )
+                    val share = if (topic.share == 0) stringResource(R.string.yt_feed_weight_off) else stringResource(R.string.yt_topic_share_value, topic.share)
+                    Text(
+                        text = listOf(
+                            stringResource(R.string.yt_topic_keyword_count, topic.keywords.size),
+                            share,
+                            topicStatus(topic, now, expired),
+                        ).filter { it.isNotEmpty() }.joinToString(" · "),
+                        color = ink.textSecondary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        style = TextStyle(fontFamily = palette.font, fontSize = 12.sp, lineHeight = 16.sp),
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+                TopicSwitch(palette, on, stringResource(R.string.yt_topic_switch, topic.name)) { want ->
+                    haptics.threshold(want)
+                    edit { if (want) YtFeedTopics.switchedOn(it, System.currentTimeMillis(), YtTopicSession.current.value) else it.copy(enabled = false) }
+                }
+            }
+            AnimatedVisibility(visible = open, enter = ytEnterTransition(fadeIn(tween(160))), exit = ytExitTransition(fadeOut(tween(120)))) {
+                Column(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+                    FeedField(palette, topic.name, stringResource(R.string.yt_topic_name_hint), "yt_topic_name", onType = { typed ->
+                        val name = YtFeedTopics.cleanName(typed)
+                        if (name.isNotEmpty()) edit { it.copy(name = name) }
+                    }) { typed ->
+                        val name = YtFeedTopics.cleanName(typed)
+                        if (name.isEmpty()) {
+                            haptics.reject()
+                            topic.name
+                        } else {
+                            haptics.confirm()
+                            edit { it.copy(name = name) }
+                            name
+                        }
+                    }
+
+                    Label(palette, stringResource(R.string.yt_topic_keywords))
+                    if (topic.keywords.isEmpty()) {
+                        Note(palette, stringResource(R.string.yt_topic_keywords_none))
+                    } else {
+                        Chips {
+                            topic.keywords.forEach { keyword ->
+                                KeywordChip(palette, keyword) {
+                                    haptics.tick()
+                                    edit { YtFeedTopics.withoutKeyword(it, keyword) }
+                                }
+                            }
+                        }
+                    }
+                    if (topic.keywords.size < YtFeedTopics.MAX_KEYWORDS) {
+                        Spacer(Modifier.height(8.dp))
+                        FeedField(
+                            palette,
+                            "",
+                            stringResource(R.string.yt_topic_keywords_hint),
+                            "yt_topic_keyword",
+                            addLabel = stringResource(R.string.yt_topic_keyword_add),
+                        ) { typed ->
+                            if (YtFeedTopics.parseKeywords(typed).isEmpty()) {
+                                ""
+                            } else {
+                                haptics.confirm()
+                                edit { YtFeedTopics.withKeywords(it, typed) }
+                                ""
+                            }
+                        }
+                    }
+
+                    Label(palette, stringResource(R.string.yt_topic_share))
+                    val stepNow = YtFeedTopics.snapShare(topic.share) / YtFeedTopics.SHARE_STEP
+                    WeightRow(
+                        palette,
+                        stringResource(R.string.yt_topic_share),
+                        stepNow,
+                        "yt_topic_share",
+                        max = YtFeedTopics.MAX_SHARE / YtFeedTopics.SHARE_STEP,
+                        valueText = { step -> "${step * YtFeedTopics.SHARE_STEP} %" },
+                        onStep = { step -> dragging = step?.let { it * YtFeedTopics.SHARE_STEP } },
+                    ) { step ->
+                        edit { it.copy(share = YtFeedTopics.snapShare(step * YtFeedTopics.SHARE_STEP)) }
+                    }
+                    // the count follows the finger; with other topics on, the cap over all of them applies
+                    val shownShare = dragging ?: topic.share
+                    val shownFraction = if (dragging != null || fraction == null) {
+                        YtFeedTopics.fractions(listOf(topic.copy(share = shownShare))).first()
+                    } else {
+                        fraction
+                    }
+                    Text(
+                        text = if (shownShare == 0) {
+                            stringResource(R.string.yt_topic_share_zero)
+                        } else {
+                            stringResource(R.string.yt_topic_share_preview, YtFeedTopics.perPage(shownFraction), YtFeedTopics.PAGE)
+                        },
+                        color = ink.text,
+                        style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                        modifier = Modifier
+                            .testTag("yt_topic_preview")
+                            .semantics { liveRegion = LiveRegionMode.Polite },
+                    )
+                    if (capped && on && dragging == null) {
+                        Note(palette, stringResource(R.string.yt_topic_share_capped, YtFeedTopics.MAX_TOTAL_SHARE))
+                    }
+
+                    Label(palette, stringResource(R.string.yt_topic_expiry))
+                    Chips {
+                        TOPIC_EXPIRIES.forEach { (label, expiry) ->
+                            Choice(palette, stringResource(label), topic.expiry == expiry) {
+                                edit { YtFeedTopics.withExpiry(it, expiry, System.currentTimeMillis(), YtTopicSession.current.value) }
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    FeedChip(palette, stringResource(R.string.yt_topic_remove), false, "yt_topic_remove", icon = R.drawable.ic_close) {
+                        haptics.confirm()
+                        YtFeed.updatePersonal { personal -> personal.copy(feedTopics = personal.feedTopics.filterNot { it.id == topic.id }) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private val TOPIC_EXPIRIES = listOf(
+    R.string.yt_topic_expiry_session to YtTopicExpiry.SESSION,
+    R.string.yt_topic_expiry_day to YtTopicExpiry.DAY,
+    R.string.yt_topic_expiry_week to YtTopicExpiry.WEEK,
+    R.string.yt_topic_expiry_never to YtTopicExpiry.NEVER,
+)
+
+/** How long [topic] still runs, in words; empty when it has no end and is on. */
+@Composable
+private fun topicStatus(topic: YtFeedTopic, now: Long, expired: Boolean): String {
+    if (!topic.enabled) return stringResource(R.string.yt_topic_state_off)
+    if (expired) return stringResource(R.string.yt_topic_expired)
+    return when (topic.expiry) {
+        YtTopicExpiry.NEVER -> ""
+        YtTopicExpiry.SESSION -> stringResource(R.string.yt_topic_left_session)
+        YtTopicExpiry.DAY, YtTopicExpiry.WEEK -> {
+            val left = YtFeedTopics.remainingMs(topic, now) ?: return ""
+            val hours = ((left + 3_599_999L) / 3_600_000L).toInt()
+            if (hours > 48) stringResource(R.string.yt_topic_left_days, (hours + 23) / 24) else stringResource(R.string.yt_topic_left_hours, hours.coerceAtLeast(1))
+        }
+    }
+}
+
+/** A keyword as a chip with a cross that removes it. */
+@Composable
+private fun KeywordChip(palette: YtPalette, keyword: String, onRemove: () -> Unit) {
+    val shape = ytPillShape(palette)
+    val ink = ytInkOnFill(palette, palette.raised)?.text ?: palette.text
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .testTag("yt_topic_keyword_chip")
+            .heightIn(min = 40.dp)
+            .clip(shape)
+            .background(palette.raised)
+            .then(if (palette.surfaceStyle == YtSurfaceStyle.EDITORIAL) Modifier.border(1.dp, palette.text, shape) else Modifier)
+            .padding(start = 14.dp),
+    ) {
+        Text(
+            text = keyword,
+            color = ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Medium, fontSize = 13.5.sp),
+            modifier = Modifier.widthIn(max = 220.dp),
+        )
+        Icon(
+            painterResource(R.drawable.ic_close),
+            contentDescription = stringResource(R.string.yt_topic_keyword_remove, keyword),
+            tint = ink,
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable(onClick = onRemove)
+                .padding(12.dp)
+                .size(14.dp),
+        )
+    }
+}
+
+/**
+ * On/off in the design's colours: a track that fills with the accent and a knob that slides;
+ * a switch for screen readers. Editorial draws it square with a rule.
+ */
+@Composable
+private fun TopicSwitch(palette: YtPalette, on: Boolean, label: String, onChange: (Boolean) -> Unit) {
+    val ink = ytInk(palette)
+    val square = palette.surfaceStyle == YtSurfaceStyle.EDITORIAL
+    val track by animateColorAsState(if (on) palette.accent else ink.text.copy(alpha = 0.22f), ytStateSpec(), label = "topicTrack")
+    val knob by animateColorAsState(if (on) palette.onAccent else Color.White, ytStateSpec(), label = "topicKnob")
+    val shift = remember { Animatable(if (on) 1f else 0f) }
+    val motion = LocalYtMotion.current
+    LaunchedEffect(on) {
+        if (motion) shift.animateTo(if (on) 1f else 0f, spring(dampingRatio = 0.7f, stiffness = 520f)) else shift.snapTo(if (on) 1f else 0f)
+    }
+    val stateOn = stringResource(R.string.yt_topic_state_on)
+    val stateOff = stringResource(R.string.yt_topic_state_off)
+    val shape = if (square) RectangleShape else CircleShape
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .testTag("yt_topic_switch")
+            .size(56.dp, 48.dp)
+            .toggleable(value = on, role = Role.Switch, onValueChange = onChange)
+            .semantics {
+                contentDescription = label
+                stateDescription = if (on) stateOn else stateOff
+            },
+    ) {
+        Box(
+            Modifier
+                .size(44.dp, 26.dp)
+                .clip(shape)
+                .background(track)
+                .then(if (square) Modifier.border(1.dp, ink.text, shape) else Modifier)
+                .drawBehind {
+                    val r = size.height / 2f - 3.dp.toPx()
+                    val x = size.height / 2f + (size.width - size.height) * shift.value
+                    if (square) {
+                        drawRect(knob, Offset(x - r, size.height / 2f - r), Size(2 * r, 2 * r))
+                    } else {
+                        drawCircle(knob, radius = r, center = Offset(x, size.height / 2f))
+                    }
+                },
+        )
     }
 }

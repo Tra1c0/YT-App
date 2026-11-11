@@ -125,7 +125,7 @@
     <string name="yt_feed_source_trailers">Trailer</string>
     <string name="yt_feed_source_gaming">Gaming</string>
     <string name="yt_feed_source_live">Live</string>
-    <string name="yt_feed_source_topics">Deine Themen</string>
+    <string name="yt_feed_source_topics">Deine Suchen</string>
     <string name="yt_feed_source_related">Wie zuletzt gesehen</string>
     <string name="yt_feed_source_continue">Weiterschauen</string>
     <string name="yt_feed_weight_off">aus</string>
@@ -178,12 +178,12 @@
     <string name="yt_feed_only_included">Nur Videos mit diesen Wörtern</string>
     <string name="yt_feed_never">Nie mit diesen Wörtern, in jedem Modus</string>
     <string name="yt_feed_words_hint">Wörter, mit Komma getrennt</string>
-    <string name="yt_feed_topics">Themen</string>
-    <string name="yt_feed_topics_hint">Ein Thema, z. B. Astronomie</string>
-    <string name="yt_feed_topic_add">Thema hinzufügen</string>
+    <string name="yt_feed_topics">Suchen</string>
+    <string name="yt_feed_topics_hint">Eine Suche, z. B. Astronomie</string>
+    <string name="yt_feed_topic_add">Suche hinzufügen</string>
     <string name="yt_feed_topic_remove">%1$s entfernen</string>
     <string name="yt_feed_topic_weight">%1$s, Gewicht %2$d von 5. Tippen für mehr</string>
-    <string name="yt_feed_topics_note">Jedes Thema ist eine Videosuche, die nach ihrem Gewicht beigemischt wird.</string>
+    <string name="yt_feed_topics_note">Jede Suche wird nach ihrem Gewicht beigemischt. Für ein Thema mit mehreren Schlagwörtern und festem Anteil: Themen.</string>
     <string name="yt_feed_learn">Lernen</string>
     <string name="yt_feed_only_learning">Nur Videos, die etwas erklären</string>
     <string name="yt_feed_learn_min">Lang genug ab</string>
@@ -201,7 +201,7 @@
     <string name="yt_feed_more_of">Mehr von %1$s</string>
     <string name="yt_feed_less_of">Weniger von %1$s</string>
     <string name="yt_feed_reason_source">Aus: %1$s</string>
-    <string name="yt_feed_reason_topic">Dein Thema „%1$s“</string>
+    <string name="yt_feed_reason_topic">Deine Suche „%1$s“</string>
     <string name="yt_feed_reason_related">Passt zu „%1$s“, das du gesehen hast</string>
     <string name="yt_feed_reason_related_any">Passt zu dem, was du gesehen hast</string>
     <string name="yt_feed_reason_chosen_chart">Dein gewähltes Thema: %1$s</string>

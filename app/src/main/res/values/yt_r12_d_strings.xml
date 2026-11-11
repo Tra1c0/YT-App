@@ -125,7 +125,7 @@
     <string name="yt_feed_source_trailers">Trailers</string>
     <string name="yt_feed_source_gaming">Gaming</string>
     <string name="yt_feed_source_live">Live</string>
-    <string name="yt_feed_source_topics">Your topics</string>
+    <string name="yt_feed_source_topics">Your searches</string>
     <string name="yt_feed_source_related">Like what I watched</string>
     <string name="yt_feed_source_continue">Continue watching</string>
     <string name="yt_feed_weight_off">off</string>
@@ -178,12 +178,12 @@
     <string name="yt_feed_only_included">Only videos with these words</string>
     <string name="yt_feed_never">Never with these words, in every mode</string>
     <string name="yt_feed_words_hint">Words, separated by commas</string>
-    <string name="yt_feed_topics">Topics</string>
-    <string name="yt_feed_topics_hint">A topic, e.g. astronomy</string>
-    <string name="yt_feed_topic_add">Add topic</string>
+    <string name="yt_feed_topics">Searches</string>
+    <string name="yt_feed_topics_hint">A search, e.g. astronomy</string>
+    <string name="yt_feed_topic_add">Add search</string>
     <string name="yt_feed_topic_remove">Remove %1$s</string>
     <string name="yt_feed_topic_weight">%1$s, weight %2$d of 5. Tap for more</string>
-    <string name="yt_feed_topics_note">Each topic is a search for videos, mixed in by its weight.</string>
+    <string name="yt_feed_topics_note">Each search is mixed in by its weight. For a topic with several keywords and a fixed share: Topics.</string>
     <string name="yt_feed_learn">Learning</string>
     <string name="yt_feed_only_learning">Only videos that explain something</string>
     <string name="yt_feed_learn_min">Long enough from</string>
@@ -201,7 +201,7 @@
     <string name="yt_feed_more_of">More of %1$s</string>
     <string name="yt_feed_less_of">Less of %1$s</string>
     <string name="yt_feed_reason_source">From %1$s</string>
-    <string name="yt_feed_reason_topic">Your topic “%1$s”</string>
+    <string name="yt_feed_reason_topic">Your search “%1$s”</string>
     <string name="yt_feed_reason_related">Related to “%1$s”, which you watched</string>
     <string name="yt_feed_reason_related_any">Related to what you watched</string>
     <string name="yt_feed_reason_chosen_chart">The topic you picked: %1$s</string>

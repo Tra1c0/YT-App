@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: the user's own topics in the Feed-Regler (keywords, share, duration) and the keyword suggestion while watching -->
+<resources>
+    <string name="yt_topic_section">Topics</string>
+    <string name="yt_topic_note">A topic is a set of keywords. Its share decides how many videos about it (found by searching the keywords) are mixed into the home, spread evenly. Topics hold for every mood you pick on opening.</string>
+    <string name="yt_topic_add_hint">New topic, e.g. space travel</string>
+    <string name="yt_topic_add">Add topic</string>
+    <string name="yt_topic_limit">At most %1$d topics.</string>
+    <string name="yt_topic_name_hint">Name of the topic</string>
+    <string name="yt_topic_keywords">Keywords</string>
+    <string name="yt_topic_keywords_hint">Keyword, e.g. moon landing</string>
+    <string name="yt_topic_keyword_add">Add keyword</string>
+    <string name="yt_topic_keyword_remove">Remove keyword %1$s</string>
+    <string name="yt_topic_keywords_none">No keywords yet: without them the topic finds nothing.</string>
+    <string name="yt_topic_keyword_count">Keywords: %1$d</string>
+    <string name="yt_topic_share">Share</string>
+    <string name="yt_topic_share_value">%1$d %%</string>
+    <string name="yt_topic_share_preview">≈ %1$d of %2$d videos</string>
+    <string name="yt_topic_share_zero">Share 0: nothing is mixed in, matching videos are only marked.</string>
+    <string name="yt_topic_share_capped">All topics together get at most %1$d %% of the home, so each gets a little less.</string>
+    <string name="yt_topic_expiry">Duration</string>
+    <string name="yt_topic_expiry_session">This session only</string>
+    <string name="yt_topic_expiry_day">24 hours</string>
+    <string name="yt_topic_expiry_week">7 days</string>
+    <string name="yt_topic_expiry_never">No limit</string>
+    <string name="yt_topic_left_hours">%1$d h left</string>
+    <string name="yt_topic_left_days">%1$d days left</string>
+    <string name="yt_topic_left_session">Until you leave the app for 30 minutes</string>
+    <string name="yt_topic_expired">Expired. Switch it on to start again.</string>
+    <string name="yt_topic_state_on">On</string>
+    <string name="yt_topic_state_off">Off</string>
+    <string name="yt_topic_switch">Topic %1$s</string>
+    <string name="yt_topic_edit">Edit</string>
+    <string name="yt_topic_done">Done</string>
+    <string name="yt_topic_remove">Delete topic</string>
+    <string name="yt_feed_reason_focus">Your topic “%1$s” (keyword “%2$s”)</string>
+    <string name="yt_topic_suggest">Add keyword “%1$s” to %2$s?</string>
+    <string name="yt_topic_suggest_add">Add</string>
+    <string name="yt_topic_suggest_dismiss">No thanks</string>
+    <string name="yt_topic_suggest_added">“%1$s” now belongs to %2$s</string>
+    <string name="yt_guide_topics_t">Your own topics</string>
+    <string name="yt_guide_topics_b">A topic made of keywords, with a share slider: matching videos are spread through the home, for this session, 24 hours, 7 days or without limit. From the second video of a topic on, the app suggests a new keyword while it plays, without stopping it.</string>
+</resources>

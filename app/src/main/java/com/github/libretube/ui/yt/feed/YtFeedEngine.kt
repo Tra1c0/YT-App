@@ -69,12 +69,16 @@ enum class YtReasonKind {
     WATCHED_LAST,
     SPACED,
     NEW_ON_TOP,
+
+    /** One of the user's own topics (YtFeedTopic): [YtReason.detail] its name, [YtReason.extra] the keyword. */
+    FOCUS,
 }
 
-/** One reason; [detail] is the source name, topic, title or word it is about. */
-data class YtReason(val kind: YtReasonKind, val detail: String? = null)
+/** One reason; [detail] is the source name, topic, title or word it is about, [extra] a second word (FOCUS: the keyword). */
+data class YtReason(val kind: YtReasonKind, val detail: String? = null, val extra: String? = null)
 
-data class YtRanked(val item: YtFeedItem, val score: Double, val reasons: List<YtReason>)
+/** A ranked video; [focus] when it counts as a video of one of the user's own topics. */
+data class YtRanked(val item: YtFeedItem, val score: Double, val reasons: List<YtReason>, val focus: YtTopicMark? = null)
 
 /**
  * YT: the home feed, ranked on the phone from what the user set in the Feed-Regler. Pure, so it
@@ -93,6 +97,9 @@ data class YtRanked(val item: YtFeedItem, val score: Double, val reasons: List<Y
  *    one per channel among ten, the sources mixed ([YtFreshTop]); the order "newest" is kept as
  *    it is, it promises a date order. Each refresh also nudges near-equal scores a little
  *    ([YtFeedSignals.shuffle]), so the rest of the list moves too. All of it on the phone.
+ * 7. The user's own topics ([YtFeedTopics.mix]): the videos their keyword searches found are
+ *    mixed in by each topic's share, evenly spread, after the same filters; feed videos that
+ *    name a keyword are marked and count towards the share. Before the diversity pass.
  */
 object YtFeedEngine {
     private const val DAY_MS = 24L * 60 * 60 * 1000
@@ -123,7 +130,13 @@ object YtFeedEngine {
      * Ranks [items] (all sources in one list) by [rules] and [personal] with [signals]. The
      * result holds every video at most once, with its reasons.
      */
-    fun rank(items: List<YtFeedItem>, rules: YtFeedRules, personal: YtFeedPersonal, signals: YtFeedSignals): List<YtRanked> {
+    fun rank(
+        items: List<YtFeedItem>,
+        rules: YtFeedRules,
+        personal: YtFeedPersonal,
+        signals: YtFeedSignals,
+        topics: List<YtTopicPool> = emptyList(),
+    ): List<YtRanked> {
         val never = YtFeedRules.cleanWords(personal.neverWords).map { it.lowercase() }
         val wanted = YtFeedRules.cleanWords(rules.includeWords).map { it.lowercase() }
 
@@ -155,8 +168,29 @@ object YtFeedEngine {
         // 6. a new top after a refresh (before the diversity pass, which then keeps its rules)
         val renewed = if (rules.order == YtFeedOrder.NEWEST) fresh else YtFreshTop.apply(fresh, signals.seen)
 
+        // 7. the user's own topics, after the same filters; what is watched to the end, from a
+        // channel the user wants less of, or already further down stays out
+        val withTopics = if (topics.isEmpty()) {
+            renewed
+        } else {
+            val later = lastly.mapTo(HashSet()) { it.item.id }
+            val pools = topics.map { pool ->
+                pool.copy(
+                    candidates = pool.candidates.filter { candidate ->
+                        val item = candidate.item
+                        item.id !in later &&
+                            (signals.watched[item.id] ?: 0f) < WATCHED &&
+                            item.id !in signals.finished &&
+                            item.channelKey?.let { personal.channels[it] } != YtChannelRule.LESS &&
+                            passes(item, rules, personal, signals, never, wanted)
+                    },
+                )
+            }
+            YtFeedTopics.mix(renewed, pools)
+        }
+
         // 4. diversity
-        return spread(renewed, rules) + spread(lastly, rules)
+        return spread(withTopics, rules) + spread(lastly, rules)
     }
 
     // ---------------------------------------------------------------------------------------------

@@ -139,6 +139,38 @@ data class YtFeedRules(
     }
 }
 
+/** How long a [YtFeedTopic] stays on after it was switched on. */
+@Serializable
+enum class YtTopicExpiry {
+    /** Until the app was away for half an hour (YtTopicSession), like the intent chooser's visit. */
+    SESSION,
+    DAY,
+    WEEK,
+    NEVER,
+}
+
+/**
+ * A topic of the user's own ("Thema", Feed-Regler → Themen): a name and the keywords that make
+ * it. [share] percent of the home (0 to YtFeedTopics.MAX_SHARE) are videos found by searching
+ * the keywords, spread through the feed; videos of the feed that name a keyword count as well.
+ * Switched on it lasts as [expiry] says: until [expiresAt] (DAY, WEEK) or for the session
+ * [session] (SESSION, the start of that session). Words suggested from watched videos and turned
+ * down stay in [dismissed], so they are not offered again. Every field has a default, so an
+ * older or partial text still reads.
+ */
+@Serializable
+data class YtFeedTopic(
+    val id: String,
+    val name: String = "",
+    val keywords: List<String> = emptyList(),
+    val share: Int = YtFeedTopics.DEFAULT_SHARE,
+    val enabled: Boolean = true,
+    val expiry: YtTopicExpiry = YtTopicExpiry.NEVER,
+    val expiresAt: Long? = null,
+    val session: Long = 0L,
+    val dismissed: List<String> = emptyList(),
+)
+
 /**
  * What holds for every intent: the channels the user boosted or wants less of (by channel id,
  * else by name, as YtChannelPause), their names for the sheet, and the words never to show.
@@ -153,6 +185,11 @@ data class YtFeedPersonal(
     val learnChannels: Set<String> = emptySet(),
     /** "Gesehenes ausblenden": videos seen to the end (YtSeenHide) leave every home list and the Abos tab. */
     val hideSeen: Boolean = false,
+    /**
+     * The user's own topics (YtFeedTopic), for every intent: a focus that survives a preset or
+     * "Zurücksetzen" of the rules and keeps the keywords it learned.
+     */
+    val feedTopics: List<YtFeedTopic> = emptyList(),
 )
 
 /** Everything stored: the rules per intent (missing ones are the preset) and [personal]. */
