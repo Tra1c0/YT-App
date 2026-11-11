@@ -389,6 +389,32 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   (`Modifier.ytNewsPinch`, Initial pass, consumes only after claim, resets in `finally`, P2), home
   hook + hint pill `YtNewsHome`, overlay `YtNewsLayer` (activity layer at 23.5 dp like
   `YtTimeUpLayer`, touch only while `layerUp`). Attached in `Y/YtHome.kt`.
+- News stage 2 (grow out of the card, depth, haptics): `Y/YtCardFrames.kt` (registry of on-screen
+  card roots; every `ytHeldScope` node registers on attach; `at(point…)` picks the card at pinch
+  claim; the lent card records into a `GraphicsLayer` on API 29+ that `YtNewsLayer` draws, and hides
+  on the home while shown), pure motion `YtNewsMotion` (window rect card→full, return-into-card rule,
+  page depth, parallax, tilt, home sink/blur/scrim), haptics `YtNewsTextures` (`YtNewsHaptic` ×
+  every `YtDesign`, checked in `YtDesignRegistryTest`). Home blur API 31+ on non-weak phones
+  (`FrequencyDeviceProbe`); motion switch off = no depth/parallax.
+- News stage 3 (stories): pure clustering `YtNewsStory` (folded title words, stop words, light
+  stemmer, IDF, 48 h window, ≥ 2 shared words, key `story:<oldest id>`), user edits
+  `YtNewsStoryEdits` (links/apart, 8 days), seen list `YtNewsSeen` (per video id, 8 days), store
+  `YtNewsStories` (prefs `yt_news_story_edits`, `yt_news_seen`; `showing` deck), UI `YtNewsStoryPage`
+  (`YtNewsStoryBlock` timeline, `YtNewsStoryMenu` ⋮ merge/split). `YtNewsDeck.cards` groups `items`
+  with the current edits; `YtNewsMerge.cards` is test-only now. Hooks in `YtNewsLayer`: SideEffect
+  `showing`, menu in `Header`, story block in `NewsCardPage`.
+- News stage 4 (cited summaries, opt-in key): pure captions/transcript `YtNewsTranscript`
+  (TTML/VTT/SRT, track pick, `[m:ss]` document with offset→second index), pure model
+  `YtNewsSummaryModel` (citations→statements, cache rules), API `YtNewsSummaryApi` (official Java SDK
+  `anthropic-java`, model in `MODEL`, effort low, server-side fallbacks, citations on a text
+  document, typed errors; key test via models API), runner + disk cache `YtNewsSummary`
+  (`cacheDir/yt_newssum`, 7 days, one request, cancelled on close; `summarizeStory` ready for story
+  pages), key store `YtNewsSummaryKey` (Keystore AES/GCM, own prefs file yt_newssum, excluded from
+  backups, Diagnose shows set/not set only, `YtCrashText.scrub` masks `sk-ant-`), UI
+  `YtNewsSummaryUi` (block replaces the description box in `NewsCardPage`; statements play from the
+  cited second), settings row `YtNewsSummaryKeyPreference` (`R/xml/yt_r28_newssum_prefs.xml`, in
+  `YtInteractionSettings`). Network only on tapping "Kurzfassung"; R8 needs
+  `-dontwarn com.google.auto.value.AutoValue`.
 
 ## Sound, Frequency, Synthwave
 
@@ -558,7 +584,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (354 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (369 files; generated, do not edit)</summary>
 
 - `J/helpers/` (24): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDesign, YtDesignDark, YtGuard,
@@ -576,22 +602,22 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtQueueStore, YtReleaseNotes, YtSelfUpdater, YtStorage, YtStorageRules, YtTitleCalm,
   YtUpdateNotifier, YtUpdateNotifyRules, YtUpdateRules
 - `J/workers/` (1): YtUpdateCheckWorker
-- `Y/` (113): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
+- `Y/` (114): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
   FrequencyMotion, FrequencyPillBars, FrequencyPulse, FrequencyPulseMath, FrequencyTimeBar,
   FrequencyVisuals, FrostHome, GlassHome, KieselDiscover, KieselHome, MovoHome, MovoWatch, PopHome,
   ShapesHome, SideHome, SideWatch, SynthwaveChrome, SynthwaveHome, SynthwaveMath, SynthwaveScene,
   YouTubeHome, YouTubeLibrary, YouTubeWatch, YtActivityHooks, YtAge, YtBatteryPreview,
-  YtBatteryVibes, YtCardDrag, YtCardSwipe, YtClassic, YtContrast, YtCount, YtDiagnosisUi,
-  YtDiscovery, YtDock, YtDrag, YtFeedButtons, YtFeedSheet, YtFloatingPlayer, YtGestures, YtGuide,
-  YtGuideFragment, YtGuideRules, YtHapticTexture, YtHaptics, YtHeader, YtHeld, YtHome, YtHomeKit,
-  YtHomeRound2, YtImages, YtInk, YtIntentChooser, YtIntentTrigger, YtLibrary, YtLibraryDesigns,
-  YtLiquidKit, YtLiquidNav, YtLive, YtMaxHeightScrollView, YtMiniPlayer, YtMotion, YtNavBar,
-  YtNavDesigns, YtNavHold, YtNotesText, YtOverlays, YtPebbles, YtPipVisualizer, YtPlaybackClock,
-  YtQueue, YtQueueResume, YtQuickSheet, YtRateHold, YtRatings, YtRefresh, YtRooms, YtSearchDrag,
-  YtSearchMorph, YtSeen, YtSentiment, YtSettingJump, YtSettingJumpUi, YtShapes, YtShorts,
-  YtSideFill, YtSideInsets, YtStorageUi, YtSubscriptions, YtSurfaces, YtTestHooks, YtTestTag,
-  YtTheme, YtTiltSensor, YtTimeBoxUi, YtTimeUp, YtTitles, YtTopicChip, YtTopicSuggest, YtUndoPill,
-  YtVibes, YtWatch, YtWatchDesigns, YtWatchEdge, YtWatchPages, YtWaveShape, YtWaveView
+  YtBatteryVibes, YtCardDrag, YtCardFrames, YtCardSwipe, YtClassic, YtContrast, YtCount,
+  YtDiagnosisUi, YtDiscovery, YtDock, YtDrag, YtFeedButtons, YtFeedSheet, YtFloatingPlayer,
+  YtGestures, YtGuide, YtGuideFragment, YtGuideRules, YtHapticTexture, YtHaptics, YtHeader, YtHeld,
+  YtHome, YtHomeKit, YtHomeRound2, YtImages, YtInk, YtIntentChooser, YtIntentTrigger, YtLibrary,
+  YtLibraryDesigns, YtLiquidKit, YtLiquidNav, YtLive, YtMaxHeightScrollView, YtMiniPlayer, YtMotion,
+  YtNavBar, YtNavDesigns, YtNavHold, YtNotesText, YtOverlays, YtPebbles, YtPipVisualizer,
+  YtPlaybackClock, YtQueue, YtQueueResume, YtQuickSheet, YtRateHold, YtRatings, YtRefresh, YtRooms,
+  YtSearchDrag, YtSearchMorph, YtSeen, YtSentiment, YtSettingJump, YtSettingJumpUi, YtShapes,
+  YtShorts, YtSideFill, YtSideInsets, YtStorageUi, YtSubscriptions, YtSurfaces, YtTestHooks,
+  YtTestTag, YtTheme, YtTiltSensor, YtTimeBoxUi, YtTimeUp, YtTitles, YtTopicChip, YtTopicSuggest,
+  YtUndoPill, YtVibes, YtWatch, YtWatchDesigns, YtWatchEdge, YtWatchPages, YtWaveShape, YtWaveView
 - `Y/account/` (4): YtAccount, YtAccountSheet, YtImport, YtInnerTube
 - `Y/feed/` (22): YtDragRules, YtFeed, YtFeedEngine, YtFeedFresh, YtFeedRules, YtFeedTopics,
   YtFeedTopicsSession, YtFeedTopicsWords, YtHideRules, YtHomePreferences, YtHomeTestHooks,
@@ -614,8 +640,11 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtMiniTextures, YtMiniTouch, YtMiniYouTube, YtMiniYoutubeLayout, YtMiniYoutubeParts,
   YtMiniYoutubeTextures, YtMinimizeDrag, YtMinimizeGeometry, YtMinimizeModule, YtMinimizeTestHooks,
   YtPageStart, YtSoftClose, YtSoftCloseRules, YtUnderFinger
-- `Y/news/` (10): YtNews, YtNewsChannelRules, YtNewsChannels, YtNewsGestureRules, YtNewsGestures,
-  YtNewsHome, YtNewsLayer, YtNewsMerge, YtNewsModel, YtNewsText
+- `Y/news/` (24): YtNews, YtNewsChannelRules, YtNewsChannels, YtNewsGestureRules, YtNewsGestures,
+  YtNewsHome, YtNewsLayer, YtNewsMerge, YtNewsModel, YtNewsMotion, YtNewsSeen, YtNewsStories,
+  YtNewsStory, YtNewsStoryEdits, YtNewsStoryPage, YtNewsSummary, YtNewsSummaryApi, YtNewsSummaryKey,
+  YtNewsSummaryKeyPreference, YtNewsSummaryModel, YtNewsSummaryUi, YtNewsText, YtNewsTextures,
+  YtNewsTranscript
 - `Y/player/` (34): YtBatteryCapLabel, YtBatteryCueModule, YtBatteryCueView, YtChapterTap,
   YtChapterTapLabel, YtHoldDirection, YtHoldGesture, YtHoldLayout, YtHoldTileStyle, YtHoldTilesView,
   YtLoopChipView, YtLoopController, YtLoopPlan, YtLoopSheet, YtLoops, YtPageLayoutRules,

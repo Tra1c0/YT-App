@@ -1,4 +1,4 @@
 ## Neu
-- News: mit zwei Fingern auf der Startseite auseinanderziehen öffnet ein Fenster mit News-Karten, durch die du seitlich wischst. Quellen sind Nachrichtenkanäle aus deinen Abos und deine Themen.
-- Karte antippen = ansehen, nach oben wischen = ans Ende der Warteschlange, lange drücken = Halte-Menü. Schließen: zusammenziehen, nach unten wischen, Zurück oder ×.
-- Nachrichtenkanäle markierst du im Halte-Menü oder im Feed-Regler; Kanäle mit „News & Politics“-Videos werden beim Abspielen automatisch markiert.
+- News: Die Karte unter deinen Fingern wächst beim Aufziehen selbst zum Fenster und schrumpft beim Schließen wieder zurück. Beim Wischen gibt es Tiefe (Nachbarkarten treten zurück, Vorschaubild mit Parallaxe, Startseite dahinter rückt zurück und wird ab Android 12 weichgezeichnet) und eigene Haptik je Design.
+- News-Geschichten: Dieselbe Nachricht von mehreren Kanälen wird eine Karte mit „N Quellen“ und Verlauf; Neues seit deinem letzten Blick ist markiert. „Alle anhängen“ hängt die ganze Geschichte an. Zusammenlegen/Trennen über ⋮ oben oder Verlaufszeile lange drücken.
+- Belegte Kurzfassungen (optional): Mit eigenem Anthropic-API-Schlüssel (Einstellungen → Gesten & Interaktion → News) zeigt „Kurzfassung“ 3–5 Kernaussagen aus den Untertiteln, jede mit Sekunde zum Antippen. Nur auf Knopfdruck; ohne Schlüssel ändert sich nichts.

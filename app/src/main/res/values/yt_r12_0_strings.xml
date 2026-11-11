@@ -2,7 +2,7 @@
 <!-- YT: round 12, the base (package 0): the settings screen "Gesten & Interaktion" and its haptics. -->
 <resources>
     <string name="yt_interaction">Gestures &amp; interaction</string>
-    <string name="yt_interaction_summary">Mini player, minimizing, player gestures, home and comments</string>
+    <string name="yt_interaction_summary">Mini player, minimizing, player gestures, home, news and comments</string>
     <string name="yt_haptics">Custom haptics</string>
     <string name="yt_haptics_summary">Each design’s own vibration patterns</string>
 </resources>

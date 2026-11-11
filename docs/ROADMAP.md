@@ -25,11 +25,6 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
   eigener „Tanz-Sprache“ je Design. Klang-Motor ist fertig (mit Frequency gebaut); offen: noch nicht
   freigegeben (L)
 
-- **News, Etappen 2–4** (Etappe 1 ist gebaut): 2 Gesten-Feinschliff (Fenster wächst unter den
-  Fingern, Tiefenebenen, Haptik je Design); 3 Geschichten mit Zeitleiste (gleiche Meldung aus
-  mehreren Quellen bündeln, „neu seit letztem Mal“); 4 Zusammenfassungen aus Transkripten mit
-  Belegstellen, aus bis ein eigener API-Schlüssel eingetragen ist (je M)
-
 ## Eventuell / später (noch nicht entschieden)
 
 - **Startbildschirm beim ersten Öffnen** (optional, überspringbar): was anders ist als bei YouTube,
