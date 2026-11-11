@@ -5,7 +5,8 @@ import com.github.libretube.R
 
 /** YT: a place a guide entry can open: a settings screen, a page of the settings or an action. */
 enum class YtGuideTarget {
-    INTERACTION, PLAYER, AUDIO_VIDEO, SPONSORBLOCK, GENERAL, DIAGNOSIS, STORAGE, UPDATE;
+    // SETTINGS = the main settings page (its own rows, such as the update notification)
+    INTERACTION, PLAYER, AUDIO_VIDEO, SPONSORBLOCK, SETTINGS, GENERAL, DIAGNOSIS, STORAGE, UPDATE;
 
     /** Settings screens get "Go to setting"; pages and actions their own words. */
     val isScreen: Boolean get() = ordinal <= GENERAL.ordinal
@@ -130,6 +131,7 @@ object YtGuide {
                 item("crash", R.string.yt_guide_crash_t, R.string.yt_guide_crash_b),
                 item("storage", R.string.yt_guide_storage_t, R.string.yt_guide_storage_b, R.string.yt_guide_where_storage, YtGuideTarget.STORAGE),
                 item("updates", R.string.yt_guide_updates_t, R.string.yt_guide_updates_b, R.string.yt_guide_where_update, YtGuideTarget.UPDATE),
+                item("update_notify", R.string.yt_r27_guide_updnotify_t, R.string.yt_r27_guide_updnotify_b, R.string.yt_r27_guide_where_updnotify, YtGuideTarget.SETTINGS, "yt_update_notify"),
             )
         ),
     )
