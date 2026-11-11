@@ -21,7 +21,8 @@ import kotlin.math.sin
  * straight cut: Kiesel a rounded lip, Pop a wave, Formen scallops, Clay a puffy shelf with a
  * shadow, Glas and Frost a frosted strip with a light edge, After a long cinematic fade,
  * Editorial a printed rule (a deliberate line, as on a folded page), YouTube, Movo and Side a
- * soft fade with a hairline, Frequency small scallops with a coral hairline. The scroll bar is hidden; the page has no use for it.
+ * soft fade with a hairline, Frequency small scallops with a coral hairline, Synthwave a neon
+ * horizon (a line from magenta to cyan over a faint magenta glow). The scroll bar is hidden; the page has no use for it.
  */
 object YtWatchEdge {
     fun install(scroll: ScrollView) {
@@ -114,6 +115,17 @@ object YtWatchEdge {
                 }
                 fade(canvas, width, s * 0.6f, dp(3f) + r, dp(14f))
                 line(canvas, width, 0f, dp(1f), alpha(ColorUtils.setAlphaComponent(palette.accent.toArgb(), 140), s))
+            }
+            YtDesign.SYNTHWAVE -> { canvas, width, s ->
+                // a neon horizon: the soft fade, a magenta glow under a line from magenta to cyan
+                fade(canvas, width, s * 0.7f, 0f, dp(22f))
+                fade(canvas, width, s * 0.22f, dp(1.5f), dp(10f), palette.accent.toArgb())
+                paint.shader = LinearGradient(
+                    0f, 0f, width.toFloat(), 0f,
+                    alpha(palette.accent.toArgb(), s), alpha(palette.lime.toArgb(), s), Shader.TileMode.CLAMP,
+                )
+                canvas.drawRect(0f, 0f, width.toFloat(), dp(1.5f), paint)
+                paint.shader = null
             }
             YtDesign.CLAY -> { canvas, width, s ->
                 // a puffy shelf with a soft shadow below it

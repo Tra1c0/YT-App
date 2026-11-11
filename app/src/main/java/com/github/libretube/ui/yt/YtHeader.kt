@@ -161,12 +161,14 @@ object YtHeader {
     }
 
     /**
-     * "After": the home poster runs behind the header, as in the reference. The fragment area
-     * starts at the top of the screen; every other destination keeps the room for the header
-     * as top padding. Must run in onCreate, before MotionLayout reads the layout.
+     * "After": the home poster runs behind the header, as in the reference; "Synthwave": its
+     * scene is the full background of the home, behind the header too. The fragment area starts
+     * at the top of the screen; every other destination keeps the room for the header as top
+     * padding. Must run in onCreate, before MotionLayout reads the layout.
      */
-    fun overlayAfterHome(appBar: View, fragment: View, navController: NavController) {
-        if (YtDesign.current() != YtDesign.AFTER) return
+    fun overlayHome(appBar: View, fragment: View, navController: NavController) {
+        val design = YtDesign.current()
+        if (design != YtDesign.AFTER && design != YtDesign.SYNTHWAVE) return
         fragment.updateLayoutParams<ConstraintLayout.LayoutParams> {
             topToBottom = ConstraintLayout.LayoutParams.UNSET
             topToTop = ConstraintLayout.LayoutParams.PARENT_ID
@@ -259,6 +261,9 @@ private fun headerStyle(design: YtDesign, palette: YtPalette): HeaderStyle = whe
     // Frequency: its own mark (FrequencyLogo, drawn), the wordmark in Geist as YouTube neu's type
     YtDesign.FREQUENCY -> HeaderStyle(16.dp, 14.dp, 12.dp, null, 0.dp, 0.dp,
         "frequency", YtFonts.geist, FontWeight.ExtraBold, 22.sp, palette.text)
+    // Synthwave: its own mark (SynthwaveLogo, drawn) and the chrome wordmark (SynthwaveWordmark)
+    YtDesign.SYNTHWAVE -> HeaderStyle(14.dp, 14.dp, 12.dp, null, 0.dp, 0.dp,
+        "SYNTHWAVE", YtFonts.audiowide, FontWeight.Normal, 19.sp, palette.text)
     else -> HeaderStyle(15.dp, 14.dp, 14.dp, R.drawable.ic_yt_logo_youtube, 34.dp, 24.dp,
         "YouTube", YtFonts.robotoCondensed, FontWeight.Bold, 19.sp, palette.text)
 }
@@ -296,20 +301,27 @@ private fun YtHeaderBar(
             FrequencyLogo(palette, Modifier.size(32.dp))
             Spacer(Modifier.width(8.dp))
         }
-        Text(
-            text = buildAnnotatedString {
-                append(style.wordmark)
-                if (design == YtDesign.SIDE) withStyle(SpanStyle(color = palette.accent)) { append(".") }
-            },
-            color = style.wordmarkColor,
-            maxLines = 1,
-            style = TextStyle(
-                fontFamily = style.wordmarkFont,
-                fontWeight = style.wordmarkWeight,
-                fontSize = style.wordmarkSize,
-                letterSpacing = (style.wordmarkSize.value * -0.015f).sp,
-            ),
-        )
+        if (design == YtDesign.SYNTHWAVE) {
+            // the striped sun in a chrome ring, the wordmark in chrome with a magenta glow
+            SynthwaveLogo(Modifier.size(32.dp))
+            Spacer(Modifier.width(9.dp))
+            SynthwaveWordmark(style.wordmarkSize)
+        } else {
+            Text(
+                text = buildAnnotatedString {
+                    append(style.wordmark)
+                    if (design == YtDesign.SIDE) withStyle(SpanStyle(color = palette.accent)) { append(".") }
+                },
+                color = style.wordmarkColor,
+                maxLines = 1,
+                style = TextStyle(
+                    fontFamily = style.wordmarkFont,
+                    fontWeight = style.wordmarkWeight,
+                    fontSize = style.wordmarkSize,
+                    letterSpacing = (style.wordmarkSize.value * -0.015f).sp,
+                ),
+            )
+        }
         if (design == YtDesign.FREQUENCY) {
             // Frequency: a spectrum visualizer in the free space between the mark and the buttons
             FrequencySpectrum(
@@ -357,6 +369,14 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
         } else {
             Look(40.dp, RoundedCornerShape(13.dp), Brush.linearGradient(listOf(palette.pink, palette.pink)),
                 null, 0.dp, 0.dp, 22.dp, palette.ink, filled = true)
+        }
+        // Synthwave: round night glass with a neon ring (cyan for search, magenta for the profile)
+        YtDesign.SYNTHWAVE -> if (kind == HeaderButton.SEARCH) {
+            Look(38.dp, CircleShape, Brush.linearGradient(listOf(Color(0xE61A0F36), Color(0xE61A0F36))),
+                palette.lime, 1.5.dp, 0.dp, 20.dp, palette.lime)
+        } else {
+            Look(38.dp, CircleShape, Brush.linearGradient(listOf(Color(0xE61A0F36), Color(0xE61A0F36))),
+                palette.accent, 1.5.dp, 0.dp, 20.dp, palette.accent, filled = true)
         }
         // Frequency: Formen's shapes in its own colours, an aqua cookie and a violet squircle
         YtDesign.FREQUENCY -> if (kind == HeaderButton.SEARCH) {
@@ -434,6 +454,8 @@ private fun HeaderButtonView(design: YtDesign, palette: YtPalette, kind: HeaderB
                     )
                     .graphicsLayer { rotationZ = spin?.value ?: 0f }
                     .then(if (look.shadow > 0.dp) Modifier.shadow(look.shadow, look.shape, clip = false) else Modifier)
+                    // Synthwave: a soft neon glow around the ring
+                    .then(if (design == YtDesign.SYNTHWAVE && look.outline != null) Modifier.synthwaveGlow(look.shape, look.outline, 5.dp) else Modifier)
                     .clip(look.shape)
                     .then(if (look.fill != null) Modifier.background(look.fill) else Modifier)
                     .then(if (look.outline != null) Modifier.border(look.outlineWidth, look.outline, look.shape) else Modifier),

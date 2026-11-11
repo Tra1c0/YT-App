@@ -54,6 +54,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
@@ -188,7 +192,16 @@ internal fun WatchCreator(
                 contentDescription = streams.uploader,
                 imageLoader = imageLoader,
                 contentScale = ContentScale.Crop,
-                modifier = if (palette.isFrequency) {
+                modifier = if (palette.isSynthwave) {
+                    // Synthwave: the avatar in a cyan neon ring with a soft glow
+                    Modifier
+                        .size(46.dp)
+                        .synthwaveGlow(CircleShape, palette.lime, 4.dp)
+                        .border(1.5.dp, palette.lime, CircleShape)
+                        .padding(4.dp)
+                        .clip(CircleShape)
+                        .background(palette.surface)
+                } else if (palette.isFrequency) {
                     // Frequency: the avatar in an aqua cookie frame that breathes with the bass
                     Modifier
                         .size(46.dp)
@@ -244,6 +257,7 @@ internal fun WatchSubscribe(palette: YtPalette, subscribed: Boolean, onToggle: (
         YtSignature.POP -> PopSubscribe(subscribed, label, toggle)
         YtSignature.SHAPES -> ShapesSubscribe(palette, subscribed, label, toggle)
         YtSignature.FREQUENCY -> FrequencySubscribe(palette, subscribed, label, toggle)
+        YtSignature.SYNTHWAVE -> SynthwaveSubscribe(palette, subscribed, label, toggle)
         YtSignature.FROST -> FrostSubscribe(subscribed, label, toggle)
         YtSignature.KIESEL -> KieselSubscribe(subscribed, label, toggle)
         else -> PillSubscribe(palette, subscribed, label, toggle)
@@ -518,6 +532,7 @@ internal fun WatchActionRow(palette: YtPalette, actions: List<WatchAction>, modi
         YtSignature.POP -> PopActions(palette, actions, modifier)
         YtSignature.SHAPES -> ShapesActions(palette, actions, modifier)
         YtSignature.FREQUENCY -> FrequencyActions(palette, actions, modifier)
+        YtSignature.SYNTHWAVE -> SynthwaveActions(palette, actions, modifier)
         YtSignature.FROST -> FrostActions(palette, actions, modifier)
         YtSignature.KIESEL -> KieselActions(actions, modifier)
         else -> PillActions(palette, actions, modifier)
@@ -993,6 +1008,8 @@ internal fun WatchTabs(
         YtSignature.POP -> PopTabs(palette, labels, selected, pick, modifier)
         // Frequency: Formen's travelling wave under the tabs, in aqua
         YtSignature.SHAPES, YtSignature.FREQUENCY -> ShapesTabs(palette, labels, selected, pick, modifier)
+        // Synthwave: a magenta neon tube glides under the chosen tab, over a faint horizon
+        YtSignature.SYNTHWAVE -> SynthwaveTabs(palette, labels, selected, pick, modifier)
         YtSignature.FROST -> FrostTabs(labels, selected, pick, modifier)
         YtSignature.KIESEL -> KieselTabs(labels, selected, pick, modifier)
         else -> UnderlineTabs(palette, labels, selected, pick, modifier)
@@ -1345,6 +1362,8 @@ internal fun WatchChapters(palette: YtPalette, imageLoader: ImageLoader, streams
         YtSignature.POP -> PopChapters(palette, imageLoader, chapters, fallback, activeIndex, seek)
         // Frequency: Formen's cookie pictures, the current one turning in an aqua ring
         YtSignature.SHAPES, YtSignature.FREQUENCY -> ShapesChapters(palette, imageLoader, chapters, lengths, fallback, activeIndex, seek)
+        // Synthwave: a neon road of chapters, the current one lit in magenta
+        YtSignature.SYNTHWAVE -> SynthwaveChapters(palette, imageLoader, chapters, lengths, fallback, activeIndex, seek)
         YtSignature.FROST -> FrostChapters(palette, imageLoader, chapters, lengths, fallback, activeIndex, seek)
         YtSignature.KIESEL -> KieselChapters(imageLoader, chapters, lengths, fallback, activeIndex, seek)
         else -> ListChapters(palette, imageLoader, chapters, lengths, fallback, activeIndex, seek)
@@ -1957,11 +1976,220 @@ internal fun WatchUpNextTitle(palette: YtPalette) {
             style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp),
             modifier = padding,
         )
+        // Synthwave: the retro face with a magenta glow
+        YtSignature.SYNTHWAVE -> Text(
+            text.uppercase(),
+            style = synthwaveDisplay(15.sp, palette.text, spacing = 1.2.sp),
+            modifier = padding,
+        )
         else -> Text(
             text,
             color = palette.text,
             style = TextStyle(fontFamily = palette.font, fontWeight = FontWeight.Bold, fontSize = 16.sp),
             modifier = padding,
         )
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Synthwave: neon chrome on the night
+
+/**
+ * Synthwave: a magenta pill with dark ink and a soft neon glow that lifts a little with the
+ * level (the pulse's guarded light, ≤ 3 swings a second); subscribed it turns into night glass
+ * with a cyan neon edge and cyan words.
+ */
+@Composable
+private fun SynthwaveSubscribe(palette: YtPalette, subscribed: Boolean, label: String, toggle: () -> Unit) {
+    val fill by animateColorAsState(if (subscribed) palette.surface else palette.accent, ytStateSpec(), label = "synthwaveFill")
+    val ink by animateColorAsState(if (subscribed) palette.lime else palette.onAccent, ytStateSpec(), label = "synthwaveInk")
+    val shape = RoundedCornerShape(50)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .ytSelectBounce(subscribed)
+            .drawWithCache {
+                val r = size.height / 2f
+                val wide = Stroke(10.dp.toPx())
+                val near = Stroke(5.dp.toPx())
+                onDrawBehind {
+                    if (subscribed) return@onDrawBehind
+                    val light = 0.8f + 0.5f * FrequencyPulse.glow.floatValue
+                    drawRoundRect(palette.accent, cornerRadius = CornerRadius(r), style = wide, alpha = 0.07f * light)
+                    drawRoundRect(palette.accent, cornerRadius = CornerRadius(r), style = near, alpha = 0.13f * light)
+                }
+            }
+            .clip(shape)
+            .drawBehind { drawRect(fill) }
+            .then(if (subscribed) Modifier.border(1.dp, palette.lime, shape) else Modifier)
+            .clickable(onClick = toggle)
+            .height(36.dp)
+            .padding(horizontal = 20.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SubscribedCheck(subscribed, ink)
+            Text(label, color = ink, style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 13.sp))
+        }
+    }
+}
+
+/**
+ * Synthwave: the actions as neon tiles in one even row (nothing cut at the edge): night glass
+ * with an edge in the tile's neon (magenta, cyan, orange, violet) and its glow, the icon in the
+ * neon; pressed, the glow grows. The captions stay still under them.
+ */
+@Composable
+private fun SynthwaveActions(palette: YtPalette, actions: List<WatchAction>, modifier: Modifier) {
+    val haptics = rememberYtHaptics()
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 13.dp),
+    ) {
+        actions.forEachIndexed { i, action ->
+            val press = remember { MutableInteractionSource() }
+            val pressed by press.collectIsPressedAsState()
+            val glow by animateFloatAsState(if (pressed) 1.6f else 0.8f, ytSpec(spring(dampingRatio = 0.8f, stiffness = 500f)), label = "synthwaveGlow")
+            val neon = synthwaveTag(palette, i)
+            val shape = RoundedCornerShape(12.dp)
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .then(action.gesture)
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .ytPressScale(press)
+                        .drawWithCache {
+                            val r = 12.dp.toPx()
+                            val wide = Stroke(9.dp.toPx())
+                            val near = Stroke(4.dp.toPx())
+                            onDrawBehind {
+                                drawRoundRect(neon, cornerRadius = CornerRadius(r), style = wide, alpha = 0.05f * glow)
+                                drawRoundRect(neon, cornerRadius = CornerRadius(r), style = near, alpha = 0.1f * glow)
+                            }
+                        }
+                        .clip(shape)
+                        .background(palette.raised)
+                        .border(1.dp, neon.copy(alpha = 0.85f), shape)
+                        .clickable(interactionSource = press, indication = null) {
+                            haptics.tick()
+                            action.onClick()
+                        },
+                ) {
+                    Icon(painterResource(action.icon), contentDescription = null, tint = neon, modifier = Modifier.size(21.dp))
+                }
+                Text(
+                    text = action.label,
+                    color = palette.text,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.Medium, fontSize = 11.sp),
+                    modifier = Modifier.padding(top = 5.dp),
+                )
+            }
+        }
+    }
+}
+
+/** Synthwave: the labels in Geist, a magenta neon tube glides under the chosen one. */
+@Composable
+private fun SynthwaveTabs(palette: YtPalette, labels: List<String>, selected: Int, pick: (Int) -> Unit, modifier: Modifier) {
+    val pos by animateFloatAsState(selected.coerceAtLeast(0).toFloat(), ytSpec(spring(dampingRatio = 0.85f, stiffness = 380f)), label = "synthwaveTab")
+    val thickness = with(LocalDensity.current) { 6.dp.roundToPx() }
+    val horizon = remember(palette) { Brush.horizontalGradient(listOf(palette.accent.copy(alpha = 0f), palette.accent.copy(alpha = 0.5f), palette.lime.copy(alpha = 0.5f), palette.lime.copy(alpha = 0f))) }
+    Column(modifier.fillMaxWidth()) {
+        TabLabels(labels, selected, pick, Modifier.height(42.dp)) { label, active ->
+            val ink by animateColorAsState(if (active) palette.text else palette.textSecondary, ytStateSpec(), label = "synthwaveTabInk")
+            Text(label, color = ink, textAlign = TextAlign.Center, maxLines = 1, style = TextStyle(fontFamily = YtFonts.geist, fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium, fontSize = 14.sp))
+        }
+        Box(
+            Modifier
+                .glideTo({ pos }, labels.size, 0.6f, thickness)
+                .drawBehind {
+                    val y = size.height / 2f
+                    drawLine(palette.accent, Offset(0f, y), Offset(size.width, y), strokeWidth = size.height, cap = StrokeCap.Round, alpha = 0.25f)
+                    drawLine(palette.accent, Offset(0f, y), Offset(size.width, y), strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
+                },
+        )
+        Box(
+            Modifier
+                .padding(horizontal = 13.dp)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(horizon),
+        )
+    }
+}
+
+/**
+ * Synthwave: the chapters along a neon road: a cyan line runs down the left with a light at
+ * each chapter; the rows are night glass, the current one edged and lit in magenta. Times in
+ * Geist Mono.
+ */
+@Composable
+private fun SynthwaveChapters(palette: YtPalette, imageLoader: ImageLoader, chapters: List<ChapterSegment>, lengths: List<Long>, fallback: String?, activeIndex: Int, seek: (ChapterSegment) -> Unit) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .padding(start = 13.dp, end = 13.dp, top = 8.dp, bottom = 4.dp)
+            .drawBehind {
+                // the road: a cyan line down the left edge, fading out at both ends
+                val x = 4.dp.toPx()
+                drawLine(
+                    Brush.verticalGradient(listOf(palette.lime.copy(alpha = 0f), palette.lime.copy(alpha = 0.7f), palette.lime.copy(alpha = 0f))),
+                    Offset(x, 0f),
+                    Offset(x, size.height),
+                    strokeWidth = 1.5.dp.toPx(),
+                )
+            },
+    ) {
+        chapters.forEachIndexed { index, chapter ->
+            val active = index == activeIndex
+            val shape = RoundedCornerShape(12.dp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(9.dp)
+                        .then(if (active) Modifier.synthwaveGlow(CircleShape, palette.accent, 4.dp) else Modifier)
+                        .clip(CircleShape)
+                        .background(if (active) palette.accent else palette.lime),
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(start = 10.dp)
+                        .weight(1f)
+                        .then(if (active) Modifier.synthwaveGlow(shape, palette.accent, 5.dp) else Modifier)
+                        .clip(shape)
+                        .background(SynthwaveGlass.fill)
+                        .border(1.dp, if (active) palette.accent else palette.lime.copy(alpha = 0.3f), shape)
+                        .clickable { seek(chapter) }
+                        .padding(6.dp),
+                ) {
+                    ChapterImage(
+                        imageLoader, chapter, fallback,
+                        Modifier
+                            .width(92.dp)
+                            .height(52.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                    )
+                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                        Text(time(chapter.start), color = if (active) palette.accent else palette.lime, style = TextStyle(fontFamily = YtFonts.geistMono, fontWeight = FontWeight.Medium, fontSize = 12.sp))
+                        Text(
+                            chapter.title,
+                            color = palette.text,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            style = TextStyle(fontFamily = YtFonts.geist, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                        )
+                    }
+                    if (lengths[index] > 0) {
+                        Text(time(lengths[index]), color = palette.textSecondary, style = TextStyle(fontFamily = YtFonts.geistMono, fontSize = 12.sp), modifier = Modifier.padding(start = 8.dp, end = 4.dp))
+                    }
+                }
+            }
+        }
     }
 }

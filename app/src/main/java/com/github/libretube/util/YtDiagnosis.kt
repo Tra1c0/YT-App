@@ -32,6 +32,7 @@ object YtDiagnosis {
             add("Queue" to runCatching { PlayingQueue.size().toString() }.getOrNull())
             add("Sound" to sound())
             add("Frequency" to runCatching { com.github.libretube.ui.yt.FrequencyPulse.diagnosis() }.getOrNull())
+            add("Synthwave" to runCatching { com.github.libretube.ui.yt.SynthwaveScene.diagnosis() }.getOrNull())
             add("Mini restore" to runCatching { com.github.libretube.ui.yt.mini.YtMiniRestore.traceText() }.getOrNull())
             add("Crashes stored" to crashes.size.toString())
             add("Last crash" to crashes.firstOrNull()?.let(YtCrashText::summary))

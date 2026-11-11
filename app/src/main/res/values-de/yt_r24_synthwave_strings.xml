@@ -2,4 +2,9 @@
 <!-- YT: the design "Synthwave" (neon chrome, a retro sun over a neon grid, moves with the sound) -->
 <resources>
     <string name="yt_design_synthwave">Synthwave: Neon-Chrom, Retro-Sonne und Gitter</string>
+    <string name="yt_synthwave_headline">NACHTFAHRT</string>
+    <string name="yt_synthwave_subline">Deine Videos auf der Neon-Straße.</string>
+    <string name="yt_synthwave_continue">Weiterschauen</string>
+    <string name="yt_synthwave_more">Mehr für dich</string>
+    <string name="yt_synthwave_shorts">Shorts</string>
 </resources>

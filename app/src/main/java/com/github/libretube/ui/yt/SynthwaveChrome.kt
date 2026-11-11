@@ -162,3 +162,11 @@ fun SynthwaveLogo(modifier: Modifier = Modifier) {
         drawCircle(SynthwaveGlass.chrome, r - ring.width / 2f, c, style = ring)
     }
 }
+
+/** The neon tags of Synthwave in turn: magenta, cyan, the sun's orange, violet (dark ink on each). */
+fun synthwaveTag(palette: YtPalette, index: Int): Color = when (Math.floorMod(index, 4)) {
+    0 -> palette.accent
+    1 -> palette.lime
+    2 -> palette.pink
+    else -> palette.lavender
+}

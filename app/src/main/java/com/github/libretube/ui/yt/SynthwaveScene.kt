@@ -76,6 +76,13 @@ object SynthwaveColors {
     /** The haze band at the horizon at its strongest. */
     const val HAZE_PEAK = 0.42f
 
+    /**
+     * The night veil over the scene behind the shared screens (Du, Abos, Shorts): their words
+     * stand on the background itself, so the scene shows dimmed there; with this veil even the
+     * sun's top keeps every text role at 4.5:1 (YtSynthwavePaletteTest).
+     */
+    const val TAB_VEIL = 0.86f
+
     /** The brightest colour the scene shows anywhere (the sun's top), for the contrast test. */
     val brightest: Color get() = sunTop
 }
@@ -311,14 +318,21 @@ val YtPalette.isSynthwave: Boolean get() = signature == YtSignature.SYNTHWAVE
  * slowly) with a halo that glows with the level, wireframe mountains on the horizon whose lines
  * sway a little with the bands, a neon floor driving towards the viewer (faster with the bass),
  * a soft haze along the horizon and palm silhouettes left and right. [horizon] is where the
- * horizon lies (a fraction of the height); [scroll] (px the content above scrolled) lifts the
+ * horizon lies (a fraction of the height); [veil] dims the whole scene with the night (for screens
+ * whose words stand on it); [scroll] (px the content above scrolled) lifts the
  * scene a little, the near layers more than the far ones.
  *
  * It draws in its own layer: a step redraws the layer, never the list above it. Brushes, paths
  * and the stars are made once per size (and per detail); a frame only moves and draws them.
  */
 @Composable
-fun SynthwaveBackdrop(modifier: Modifier = Modifier, horizon: Float = 0.6f, scroll: (() -> Float)? = null) {
+fun SynthwaveBackdrop(
+    modifier: Modifier = Modifier,
+    horizon: Float = 0.6f,
+    /** A night veil over the whole scene (0: none), where words stand on it directly. */
+    veil: Float = 0f,
+    scroll: (() -> Float)? = null,
+) {
     Spacer(
         modifier
             .clearAndSetSemantics {}
@@ -482,6 +496,9 @@ fun SynthwaveBackdrop(modifier: Modifier = Modifier, horizon: Float = 0.6f, scro
 
                     // 6 the palms in front, lifted a little more than the rest
                     translate(0f, shift * 1.6f) { drawPath(palms, c.palm) }
+
+                    // 7 the veil of the shared screens
+                    if (veil > 0f) drawRect(c.skyTop, alpha = veil)
                 }
             },
     )
