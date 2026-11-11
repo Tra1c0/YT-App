@@ -1,0 +1,28 @@
+name: Docs check
+
+# Pushes to main that change only docs or scripts build nothing (build.yml ignores them), so the
+# docs check runs here for them. Rules: docs/HANDOFF.md → How to work → Docs check.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.md"
+      - "scripts/**"
+      - "templates/**"
+      - ".github/workflows/docs-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: Check the docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+      - name: Check the docs
+        run: python3 -I scripts/docs_sync.py --check

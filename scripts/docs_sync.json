@@ -1,0 +1,100 @@
+{
+  "//": "Config of scripts/docs_sync.py for YT. Paths are relative to the repository root. Keys named // are comments. The script is the same file as templates/ai-workflow/scripts/docs_sync.py (kept identical by the 'copies' rule).",
+
+  "docs": ["CLAUDE.md", "docs/*.md"],
+
+  "aliases": {
+    "J/": "app/src/main/java/com/github/libretube/",
+    "Y/": "app/src/main/java/com/github/libretube/ui/yt/",
+    "R/": "app/src/main/res/",
+    "T/": "app/src/test/java/com/github/libretube/"
+  },
+
+  "map": {
+    "file": "docs/ARCHITECTURE.md",
+    "//": "Every YT Kotlin file must be named in the map (outside generated blocks).",
+    "sources": [
+      "app/src/main/java/**/Yt*.kt",
+      "app/src/main/java/com/github/libretube/ui/yt/**/*.kt"
+    ],
+    "exclude": [],
+    "match_stem": true,
+    "search_roots": ["app/src", "scripts", ".github", ".claude/hooks", "docs", "third_party", "fonts", "release-notes", "templates", "CLAUDE.md", "MODIFICATIONS.md"],
+    "extensions": [".kt", ".kts", ".xml", ".sh", ".py", ".yml", ".md"]
+  },
+
+  "lists": {
+    "designs": {
+      "file": "app/src/main/java/com/github/libretube/helpers/YtDesign.kt",
+      "pattern": "^    ([A-Z][A-Z0-9_]*)\\(\"([a-z0-9_]+)\"",
+      "item": "`{0}`"
+    }
+  },
+
+  "blocks": {
+    "designs": {
+      "type": "list",
+      "list": "designs",
+      "template": "{count} designs (enum `YtDesign`, in picker order): {items}."
+    },
+    "designs-de": {
+      "type": "list",
+      "list": "designs",
+      "template": "**{count} Designs** (Einträge von `YtDesign`, in der Reihenfolge der Auswahl): {items}."
+    },
+    "toc": {"type": "toc", "skip": "Contents"},
+    "inventory": {
+      "type": "inventory",
+      "title": "All YT Kotlin files by package"
+    }
+  },
+
+  "counts": [
+    {"file": "docs/FEATURES.md", "pattern": "\\| (\\d+) Designs \\|", "list": "designs"}
+  ],
+
+  "size_warnings": {"docs/HANDOFF.md": 400, "CLAUDE.md": 120},
+
+  "commands": [
+    {
+      "name": "string parity (values/yt_*.xml vs values-de/yt_*.xml)",
+      "run": ["bash", "scripts/check-strings.sh"],
+      "hint": "add the missing keys to the other language's file of the same name"
+    }
+  ],
+
+  "copies": [
+    {"from": "scripts/docs_sync.py", "to": "templates/ai-workflow/scripts/docs_sync.py"}
+  ],
+
+  "base_branch": "main",
+
+  "warn_if_changed": [
+    {
+      "when": ["app/src/main/**"],
+      "file": "release-notes/next.md",
+      "need": "nonempty",
+      "message": "app code changed but release-notes/next.md is empty: write the German notes of this push (## Neu / ## Behoben / ## Geändert)"
+    },
+    {
+      "when": ["app/src/main/**", "app/build.gradle.kts", "build.gradle.kts", "gradle/libs.versions.toml"],
+      "unless": [
+        "**/Yt*.kt",
+        "app/src/main/java/com/github/libretube/ui/yt/**",
+        "app/src/main/java/com/kyant/**",
+        "app/src/main/res/**/yt_*",
+        "app/src/main/res/**/*_yt_*",
+        "app/src/main/res/font/**",
+        "app/src/main/java/com/github/libretube/ui/adapters/CommentRowBinder.kt",
+        "app/src/main/java/com/github/libretube/ui/adapters/CommentsSceneAdapter.kt",
+        "app/src/main/java/com/github/libretube/ui/models/CommentScene.kt"
+      ],
+      "file": "MODIFICATIONS.md",
+      "need": "changed",
+      "message": "upstream LibreTube files changed but MODIFICATIONS.md did not: add a row (date, change, **LibreTube:** files / **YT:** files)"
+    }
+  ],
+
+  "state": {"file": "docs/HANDOFF.md", "heading": "Current state"},
+  "brief": {"max_lines": 15, "toc_file": "docs/ARCHITECTURE.md"}
+}

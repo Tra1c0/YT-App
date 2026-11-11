@@ -7,7 +7,7 @@ im Einzelnen in [DESIGNS.md](DESIGNS.md).
 Status: **E** = im Emulator geprüft · **T** = durch Tests abgedeckt · **–** = noch nicht geprüft.
 Getestet auf einem echten Handy wurde bisher nur, was du selbst benutzt hast.
 
-Stand: Build 116.
+Die Liste beschreibt immer den Stand von `main` (den neuesten Build).
 
 ## Designs und Aussehen
 

@@ -1,8 +1,16 @@
 # Designs in YT
 
-Vorlagen: „YouTube neu gedacht“ (Design-Script) und die drei Konzepte „Movo“, „After“ und „Side“
-(Video-UI eigenständige Designs), Stand 29.10.2026. Umschaltbar unter
-Einstellungen → Design → Design. Alle vier Designs sind dunkel.
+<!-- gen:designs-de -->
+**14 Designs** (Einträge von `YtDesign`, in der Reihenfolge der Auswahl): `STANDARD`, `YOUTUBE`, `MOVO`, `AFTER`, `SIDE`, `CLAY`, `EDITORIAL`, `GLASS`, `POP`, `SHAPES`, `FROST`, `KIESEL`, `FREQUENCY`, `SYNTHWAVE`.
+<!-- /gen:designs-de -->
+
+Umschaltbar unter Einstellungen → Darstellung → Design. Die Abschnitte unten sind in der
+Reihenfolge entstanden (Runde für Runde); spätere Abschnitte ergänzen frühere. Welche Designs hell
+sein können, steht in FEATURES.md („Hell / Dunkel / System“).
+
+Die ersten vier Designs entstanden nach den Vorlagen „YouTube neu gedacht“ (Design-Script) und den
+drei Konzepten „Movo“, „After“ und „Side“ (Video-UI eigenständige Designs), Stand 29.10.2026; sie
+sind dunkel.
 
 ## Was gleich bleibt und was sich anpassen muss
 
