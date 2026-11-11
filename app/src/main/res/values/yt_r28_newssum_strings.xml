@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 28: the opt-in news summaries (cited key statements from the transcript). Same keys in values-de. -->
+<resources>
+    <!-- the card -->
+    <string name="yt_r28_newssum_button">Summary</string>
+    <string name="yt_r28_newssum_label">Summary · source seconds</string>
+    <string name="yt_r28_newssum_loading">Reading the transcript…</string>
+    <string name="yt_r28_newssum_cut">Only the start of a long transcript was read.</string>
+    <string name="yt_r28_newssum_open">Play from %1$s</string>
+    <string name="yt_r28_newssum_back">Description</string>
+    <string name="yt_r28_newssum_no_subtitles">No subtitles</string>
+    <string name="yt_r28_newssum_invalid_key">Key invalid</string>
+    <string name="yt_r28_newssum_rate_limited">Too many requests, try again later</string>
+    <string name="yt_r28_newssum_offline">Offline</string>
+    <string name="yt_r28_newssum_refused">No summary possible</string>
+    <string name="yt_r28_newssum_service">Service not reachable right now</string>
+
+    <!-- settings -->
+    <string name="yt_r28_newssum_category">News</string>
+    <string name="yt_r28_newssum_setting">Summaries with sources</string>
+    <string name="yt_r28_newssum_summary_off">Off. With your own Anthropic API key, News cards get a \"Summary\" button: 3 to 5 key statements from the subtitles, each with the second it was said. Everything else works without a key.</string>
+    <string name="yt_r28_newssum_summary_on">On · key set. Only when you tap \"Summary\" on a card; costs go to your key.</string>
+    <string name="yt_r28_newssum_dialog_title">API key for summaries</string>
+    <string name="yt_r28_newssum_dialog_message">Enter your own Anthropic API key. It is stored encrypted on this device only, is not part of backups and is sent only to the API. The subtitles of a video go there when you tap \"Summary\".</string>
+    <string name="yt_r28_newssum_dialog_hint">API key</string>
+    <string name="yt_r28_newssum_save">Save and test</string>
+    <string name="yt_r28_newssum_test">Test</string>
+    <string name="yt_r28_newssum_remove">Remove</string>
+    <string name="yt_r28_newssum_replace">Replace</string>
+    <string name="yt_r28_newssum_key_set">Key set</string>
+    <string name="yt_r28_newssum_testing">Testing the key…</string>
+    <string name="yt_r28_newssum_test_ok">Key works</string>
+    <string name="yt_r28_newssum_test_invalid">Key invalid, not saved</string>
+    <string name="yt_r28_newssum_test_invalid_set">Key invalid</string>
+    <string name="yt_r28_newssum_test_offline">Saved; test not possible offline</string>
+    <string name="yt_r28_newssum_test_offline_set">Test not possible offline</string>
+    <string name="yt_r28_newssum_test_busy">Saved; the service is busy, test later</string>
+    <string name="yt_r28_newssum_test_busy_set">The service is busy, test later</string>
+    <string name="yt_r28_newssum_removed">Key removed, summaries off</string>
+</resources>

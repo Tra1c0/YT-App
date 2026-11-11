@@ -136,3 +136,6 @@
 -dontwarn java.beans.IntrospectionException
 -dontwarn java.beans.Introspector
 -dontwarn java.beans.PropertyDescriptor
+# YT: the API SDK of the news summaries pulls in opentelemetry-api, whose AutoValue
+# annotation is compile-time only (the SDK ships its own keep rules for Jackson).
+-dontwarn com.google.auto.value.AutoValue

@@ -26,9 +26,13 @@ object YtCrashText {
     )
     private val bearer = Regex("(?i)\\bbearer\\s+[A-Za-z0-9._~+/=-]+")
 
+    // API keys of the news summaries ("sk-ant-…"), wherever they appear in a message
+    private val apiKey = Regex("\\bsk-ant-[A-Za-z0-9_-]+")
+
     /** Replaces values that look like secrets with "***". */
     fun scrub(text: String): String = text
         .replace(bearer, "Bearer ***")
+        .replace(apiKey, "sk-ant-***")
         .replace(secretPair) { "${it.groupValues[1]}${it.groupValues[2]}***" }
 
     /**

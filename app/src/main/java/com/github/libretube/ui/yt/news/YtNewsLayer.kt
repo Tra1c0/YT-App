@@ -704,7 +704,11 @@ object YtNewsLayer {
                 }
             }
             // the story's first lines; cut off where the card ends on a small screen
-            Box(Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp)) {
+            // (stage 4: with the user's key, the cited summary can take their place)
+            YtNewsSummaryBlock(
+                lead, video, YtNewsSummaryStyle(ink.text, ink.textSecondary, look.tagInk, look.tagFill, look.body),
+                Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp),
+            ) {
                 if (text.isNotEmpty()) {
                     Text(
                         text = text,

@@ -3,5 +3,6 @@
 <full-backup-content>
     <exclude domain="sharedpref" path="yt_account.xml" />
     <exclude domain="sharedpref" path="auth.xml" />
+    <exclude domain="sharedpref" path="yt_newssum.xml" />
     <exclude domain="root" path="app_webview/" />
 </full-backup-content>

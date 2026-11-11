@@ -73,6 +73,13 @@ class YtCrashTextTest {
     }
 
     @Test
+    fun summaryApiKeysAreScrubbed() {
+        val text = YtCrashText.scrub("request failed for sk-ant-api03-AbC_dEf-123 (x-api-key header)")
+        assertFalse(text.contains("AbC_dEf"))
+        assertTrue(text.contains("sk-ant-***"))
+    }
+
+    @Test
     fun updateResultIsNotScrubbed() {
         val line = "session 12 try 2: status 3 aborted"
         assertEquals(line, YtCrashText.scrub(line))
