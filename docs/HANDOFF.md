@@ -8,7 +8,7 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
 
 ## Current state
 
-- Latest release: build 123 (Synthwave design). 122: feed topics + landscape fixes. 121: equalizer on the Frequency
+- Latest release: build 124 (Synthwave palms + home offset). 123: Synthwave design. 122: feed topics + landscape fixes. 121: equalizer on the Frequency
   subscribe pill. 120: removed a one-off
   device-gated behaviour again (119 still carries it as an old release). 118: Frequency rework. 117:
   Frequency + sound engine. 115: watched bar on hold everywhere. 114: mini player never
@@ -122,6 +122,8 @@ longer true. Details live in ARCHITECTURE.md (code map, read the section you nee
   Parallel agents compile through one `flock` lock file (4 cores, 15 GB).
 
 ## Build log (one line per build, newest first)
+
+- 124: Synthwave: slim feathered edge palms, calmer sky, home starts under the header.
 
 - 123: Synthwave (14th design, animated retro scene, subtle music reaction). Check perf via Diagnose.
 

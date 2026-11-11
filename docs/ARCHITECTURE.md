@@ -358,7 +358,7 @@ as any change (see `/CLAUDE.md`). Short forms: `J` = `app/src/main/java/com/gith
   `Y/SynthwaveMath.kt`, `SynthwaveTiers` (reuses FrequencyTiers), `SynthwaveChrome.kt`,
   `SynthwaveHome.kt`, `Y/mini/YtMiniSynthwave*.kt`, font Audiowide (OFL, `fonts/`). Sound via the
   generalised `FrequencyPulse` (`FrequencyDeviceProbe`, `YtHoldWhileStarted`). `YtHeader.overlayAfterHome`
-  renamed `overlayHome`. Text over the scene: glass cards on home, `TAB_VEIL` 0.86 on Du/Abos/Shorts.
+  renamed `overlayHome`. Palms: `SynthwaveMath.palms`/`palm` (edge bands ≤ 27 % width, never within 0.6 sun radii, own layer each, sway ≤ 1.2°). Home headline is the first list item (no sun-reveal spacer). Text over the scene: glass cards on home, `TAB_VEIL` 0.86 on Du/Abos/Shorts.
 
 ## Open points
 
