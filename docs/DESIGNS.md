@@ -486,11 +486,11 @@ Neuzusammensetzung pro Bild, keine Allokation pro Bild (Pfade, Pinsel und Sterne
 | --- | --- | --- | --- |
 | Sternenhimmel | Sterne funkeln langsam (0,12–0,55 Hz je Stern) | Höhen (geschützt): tieferes Funkeln | Tiefe 0,30 → 0,65 |
 | Sonne mit Schlitzen | Schlitze wandern langsam nach unten, wachsen aus dem Nichts, verlassen die Sonne unten (nahtlos) | – (immer ruhig) | 0,11 Schlitze/s |
-| Halo und Ringe | Halo leuchtet sanft | Pegel (geschützt, ≤ 3 Wechsel/s) | Alpha 0,50 → 0,72 |
-| Drahtgitter-Berge | 5–9 Konturlinien, hinten violett, vorne elektrisch blau | Bänder (Bewegung): jede Linie wird etwas höher | bis 7 % |
+| Halo und ein feiner Ring | Halo leuchtet sanft | Pegel (geschützt, ≤ 3 Wechsel/s) | Alpha 0,50 → 0,72 |
+| Drahtgitter-Berge | 4–7 Konturlinien, hinten violett, vorne elektrisch blau | Bänder (Bewegung): jede Linie wird etwas höher | bis 7 % |
 | Neon-Boden | Gitter fährt endlos auf den Betrachter zu (Perspektive 1/Tiefe, nahtlos) | Bass (Bewegung): schneller | 0,55 → 1,3 Reihen/s |
 | Dunst am Horizont, Sonnenlicht auf dem Boden | Licht am Horizont | Pegel (geschützt) | leicht |
-| Palmen links und rechts | Silhouetten | – | – |
+| Palmen links und rechts | schlanke Silhouetten nur an den Rändern (je Seite ≤ 27 % der Breite, vom Rand angeschnitten, nie über der Sonnenmitte), leicht gebogener, sich verjüngender Stamm (≤ 44 % der Höhe), viele gefiederte, an den Spitzen hängende Wedel (Krone ≤ 40 % der Breite), fast schwarzes Violett mit feinem Magenta-Saum zur Sonne; wiegen sich sehr langsam (≤ 1,2°, ≤ 0,1 Hz) | – (nur mit Animationen) | – |
 | Parallaxe | Szene hebt sich beim Scrollen leicht, nahe Ebenen mehr | Scrollen | höchstens 40 dp |
 
 Ohne Ton fährt das Gitter ruhig weiter, die Sonne scrollt, die Sterne funkeln. Der Klang kommt
@@ -498,17 +498,20 @@ Ohne Ton fährt das Gitter ruhig weiter, die Sonne scrollt, die Sterne funkeln. 
 `YtDesign.soundReactive`): Helligkeit nur aus dem geschützten Kanal, Bewegung aus den schnellen.
 
 **Je nach Handy** (`FrequencyTiers` wie bei Frequency, alle 5 s neu; `SynthwaveTiers`): *hoch*
-alles in der Bildrate des Displays (96 Sterne, 15 Reihen, 21 Linien, 9 Bergkonturen, Leuchtlinien);
-*mittel* 52 Sterne, 11 Reihen, 15 Linien, 6 Konturen, ohne Leuchtlinien, höchstens 60 Bilder/s;
-*niedrig* / Energiesparmodus: stiller Himmel und stille Sonne, nur der Boden fährt (≈ 30 Bilder/s),
-kein Klang. Mit „Animationen der Designs“ aus oder Androids „Animationen entfernen“ steht ein
+alles in der Bildrate des Displays (64 Sterne, 15 Reihen, 21 Linien, 7 Bergkonturen, Leuchtlinien,
+2 Palmen je Seite: eine nahe, eine kleinere ferne); *mittel* 40 Sterne, 11 Reihen, 15 Linien,
+5 Konturen, 1 Palme je Seite, ohne Leuchtlinien, höchstens 60 Bilder/s; *niedrig* /
+Energiesparmodus: 28 Sterne, 4 Konturen, 1 Palme je Seite, stiller Himmel, stille Sonne und stille
+Palmen, nur der Boden fährt (≈ 30 Bilder/s), kein Klang. Jede Palme liegt in einer eigenen kleinen
+Ebene, die nur bei einer Größenänderung neu gezeichnet wird; Parallaxe und Wiegen verschieben bzw.
+drehen nur die Ebene. Mit „Animationen der Designs“ aus oder Androids „Animationen entfernen“ steht ein
 fertiges, ruhiges Bild (volle Szene, nichts bewegt sich). Im Hintergrund, in einem anderen Design
 und solange die Videoseite die Startseite ganz verdeckt, läuft keine Bildschleife. Diagnose zeigt
-eine Zeile „Synthwave“ (Halter, Schleife, Stufe, Sterne, Reihen).
+eine Zeile „Synthwave“ (Halter, Schleife, Stufe, Sterne, Reihen, Palmen).
 
 | Bereich | Synthwave |
 | --- | --- |
-| Startseite | Szene über den ganzen Bildschirm; oben ein Fenster auf die Sonne mit „NACHTFAHRT“ auf Glas, Filterreihe aus Glaspillen (gewählte Magenta mit Leuchten, Feed-Regler als Cyan-Scheibe), beim Anheften ein Glasband mit Neonkante; Weiterschauen, große Videokarten aus Glas (die erste leuchtet), „Gerade live“, Shorts, „Mehr für dich“; Abschnittstitel auf kleinen Glasplatten mit Neonröhre |
+| Startseite | Szene über den ganzen Bildschirm; die Liste beginnt direkt unter der Kopfzeile (kleiner Abstand) mit „NACHTFAHRT“ auf Glas, Filterreihe aus Glaspillen (gewählte Magenta mit Leuchten, Feed-Regler als Cyan-Scheibe), beim Anheften ein Glasband mit Neonkante; Weiterschauen, große Videokarten aus Glas (die erste leuchtet), „Gerade live“, Shorts, „Mehr für dich“; Abschnittstitel auf kleinen Glasplatten mit Neonröhre |
 | Kopfzeile | gestreifte Sonne im Chromring als Logo, Wortmarke „SYNTHWAVE“ in Chrom mit Magenta-Leuchten, runde Glasknöpfe mit Neonring (Suche Cyan, Profil Magenta) |
 | Leiste | Nachtglas wie der Miniplayer (eine Fläche beim Andocken), Neonkante oben, aktiver Reiter mit Cyan-Icon und Magenta-Neonröhre, die sanft mit dem Pegel leuchtet |
 | Videoseite | Titel über einem Neon-Horizont mit kleiner Sonne, Beschreibung und Kommentare auf Glas, Aktionen als Neonkacheln in einer Reihe (nichts abgeschnitten), Abo-Pille Magenta mit Leuchten (abonniert: Glas mit Cyan-Kante), Neonröhre unter den Reitern, Kapitel als Neon-Straße; Rand unter dem Video: Neon-Horizont |

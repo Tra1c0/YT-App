@@ -3,6 +3,7 @@ package com.github.libretube.ui.yt
 import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.pow
 import kotlin.math.sin
 
 /**
@@ -198,6 +199,208 @@ object SynthwaveMath {
     fun scrolled(firstIndex: Int, firstOffsetPx: Int, itemPx: Float): Float =
         firstIndex.coerceAtLeast(0) * itemPx + firstOffsetPx.coerceAtLeast(0)
 
+    // -- the sun's place -------------------------------------------------------------------------
+
+    /** The sun's radius in a scene of [w] x [h] px. */
+    fun sunRadius(w: Float, h: Float): Float = min(w * 0.38f, h * 0.22f)
+
+    /** The y of the sun's centre: a third of its radius above the horizon at [horizonY]. */
+    fun sunCenterY(horizonY: Float, radius: Float): Float = horizonY - radius * 0.32f
+
+    // -- the palms ------------------------------------------------------------------------------
+
+    /** Every palm stays within this fraction of the width from its own edge of the screen. */
+    const val PALM_BAND = 0.27f
+
+    /** No part of a palm comes closer to the sun's centre than this many sun radii. */
+    const val SUN_CORE = 0.6f
+
+    /** The tallest trunk, as a fraction of the scene's height. */
+    const val PALM_TRUNK_MAX = 0.44f
+
+    /** The widest crown (fronds from tip to tip), as a fraction of the width. */
+    const val PALM_SPREAD_MAX = 0.4f
+
+    /** How far a palm sways at most, in degrees (about its foot), and how slowly. */
+    const val PALM_SWAY_DEG = 1.2f
+    const val PALM_SWAY_MAX_HZ = 0.1f
+
+    /**
+     * The palms of a scene of [w] x [h] px with the horizon at [horizonY]: [perSide] on the
+     * left and on the right (at most 2), the far ones first (they are drawn behind). Each stands
+     * on the floor at its edge, partly cut off by it, and leans a little; the near one is
+     * taller, its crown a little higher on the screen (perspective). Deterministic.
+     */
+    fun palms(w: Float, h: Float, horizonY: Float, perSide: Int): List<SynthwavePalmSpec> {
+        val n = perSide.coerceIn(0, 2)
+        if (n == 0 || w <= 0f || h <= 0f) return emptyList()
+        val floor = h - horizonY
+        fun near(left: Boolean, seed: Int, scale: Float): SynthwavePalmSpec {
+            val footY = horizonY + floor * 0.55f
+            val height = min(footY - (horizonY - h * 0.085f), h * PALM_TRUNK_MAX) * scale
+            val frond = min(height * 0.42f, w * 0.2f)
+            return SynthwavePalmSpec(
+                footX = edgeX(-0.035f, left, w), footY = footY, height = height,
+                crownX = edgeX(0.04f, left, w), frond = frond, fronds = 13, leaflets = 22,
+                left = left, seed = seed,
+            )
+        }
+        fun far(left: Boolean, seed: Int, scale: Float): SynthwavePalmSpec {
+            val footY = horizonY + floor * 0.16f
+            val height = min(footY - (horizonY - h * 0.035f), h * PALM_TRUNK_MAX) * scale
+            val frond = min(height * 0.45f, w * 0.075f)
+            return SynthwavePalmSpec(
+                footX = edgeX(0.175f, left, w), footY = footY, height = height,
+                crownX = edgeX(0.165f, left, w), frond = frond, fronds = 10, leaflets = 15,
+                left = left, seed = seed,
+            )
+        }
+        val nearOnes = listOf(near(true, 1, 1f), near(false, 2, 0.95f))
+        return if (n == 1) nearOnes else listOf(far(true, 3, 1f), far(false, 4, 0.9f)) + nearOnes
+    }
+
+    private fun edgeX(fraction: Float, left: Boolean, w: Float) = if (left) w * fraction else w * (1f - fraction)
+
+    /**
+     * Traces palm [p] into [sink] as filled polygons, all wound the same way (so a non-zero
+     * fill makes one silhouette of them): a slightly curved trunk tapering from a flared foot to
+     * the crown, a knob at the crown, and [SynthwavePalmSpec.fronds] fronds, each a curved spine
+     * that arches out and droops at its tip, feathered with thin leaflets on both sides (the
+     * lower ones hang, the upper ones lie flatter). Coordinates are the scene's px.
+     */
+    fun palm(p: SynthwavePalmSpec, sink: PalmSink) {
+        val poly = PalmPolygon(sink)
+        val crownY = p.footY - p.height
+        // the trunk: a quadratic curve, straight at the foot, bending towards the crown
+        val dir = if (p.left) 1f else -1f
+        val kx = p.footX + (p.crownX - p.footX) * 0.15f - dir * p.height * 0.035f
+        val ky = p.footY - p.height * 0.6f
+        val foot = p.height * 0.026f
+        val neck = p.height * 0.012f
+        val n = 16
+        for (side in 0..1) {
+            for (s in 0..n) {
+                val t = if (side == 0) s.toFloat() / n else 1f - s.toFloat() / n
+                val bx = quad(p.footX, kx, p.crownX, t)
+                val by = quad(p.footY, ky, crownY, t)
+                var tx = quadSlope(p.footX, kx, p.crownX, t)
+                var ty = quadSlope(p.footY, ky, crownY, t)
+                val len = kotlin.math.sqrt(tx * tx + ty * ty).coerceAtLeast(1e-4f)
+                tx /= len
+                ty /= len
+                val flare = 1f + 0.5f * (1f - t) * (1f - t) * (1f - t) * (1f - t)
+                val half = (foot + (neck - foot) * t) * flare * (if (side == 0) 1f else -1f)
+                poly.add(bx - ty * half, by + tx * half)
+            }
+        }
+        poly.close()
+        // the knob the fronds grow from
+        val knob = neck * 2.1f
+        for (k in 0 until 10) {
+            val a = TAU * k / 10f
+            poly.add(p.crownX + kotlin.math.cos(a) * knob, crownY + sin(a) * knob * 0.8f)
+        }
+        poly.close()
+        // the fronds, around the upper half and a little below the sides
+        for (f in 0 until p.fronds) {
+            // more fronds to the sides than straight up, a few hanging below the crown
+            val u = 2f * (f + 0.5f) / p.fronds - 1f
+            val spread = kotlin.math.sign(u) * kotlin.math.abs(u).pow(0.75f)
+            val theta = kotlin.math.PI.toFloat() * (1.5f + 0.6f * spread) + (hash(p.seed * 31 + f, 8) - 0.5f) * 0.14f
+            val dx = kotlin.math.cos(theta)
+            val dy = sin(theta)
+            val side = kotlin.math.abs(dx)
+            val length = p.frond * (0.72f + 0.28f * side) * (0.92f + 0.16f * hash(p.seed * 31 + f, 9))
+            val droop = length * (0.15f + 0.55f * side)
+            val x1 = p.crownX + length * dx * 0.55f
+            val y1 = crownY + length * dy * 0.7f
+            val x2 = p.crownX + length * dx * 0.9f
+            val y2 = crownY + length * dy * 0.55f + droop
+            frond(poly, p.crownX, crownY, x1, y1, x2, y2, length, p.leaflets)
+        }
+    }
+
+    private fun frond(poly: PalmPolygon, x0: Float, y0: Float, x1: Float, y1: Float, x2: Float, y2: Float, length: Float, leaflets: Int) {
+        // the spine: a thin strip, tapering to the tip
+        val m = 10
+        for (side in 0..1) {
+            for (s in 0..m) {
+                val t = if (side == 0) s.toFloat() / m else 1f - s.toFloat() / m
+                val bx = quad(x0, x1, x2, t)
+                val by = quad(y0, y1, y2, t)
+                var tx = quadSlope(x0, x1, x2, t)
+                var ty = quadSlope(y0, y1, y2, t)
+                val len = kotlin.math.sqrt(tx * tx + ty * ty).coerceAtLeast(1e-4f)
+                tx /= len
+                ty /= len
+                val half = length * (0.013f * (1f - t) + 0.002f) * (if (side == 0) 1f else -1f)
+                poly.add(bx - ty * half, by + tx * half)
+            }
+        }
+        poly.close()
+        // the leaflets: slim blades along the spine, longest in its middle, pointing to the tip
+        val count = leaflets.coerceAtLeast(2)
+        for (k in 0 until count) {
+            val t = 0.1f + 0.86f * k / (count - 1)
+            val bx = quad(x0, x1, x2, t)
+            val by = quad(y0, y1, y2, t)
+            var tx = quadSlope(x0, x1, x2, t)
+            var ty = quadSlope(y0, y1, y2, t)
+            val len = kotlin.math.sqrt(tx * tx + ty * ty).coerceAtLeast(1e-4f)
+            tx /= len
+            ty /= len
+            val blade = length * 0.25f * (4f * t * (1f - t)).coerceIn(0.25f, 1f)
+            val base = blade * 0.06f
+            for (s in -1..1 step 2) {
+                // swept towards the tip, out to the spine's side, and hanging
+                var ex = tx * 0.75f - ty * s * 0.5f
+                var ey = ty * 0.75f + tx * s * 0.5f + 0.6f
+                val el = kotlin.math.sqrt(ex * ex + ey * ey).coerceAtLeast(1e-4f)
+                ex /= el
+                ey /= el
+                poly.add(bx - tx * base, by - ty * base)
+                poly.add(bx + tx * base, by + ty * base)
+                poly.add(bx + ex * blade, by + ey * blade)
+                poly.close()
+            }
+        }
+    }
+
+    /** The box of palm [p] (left, top, right, bottom in the scene's px), without any margin. */
+    fun palmBounds(p: SynthwavePalmSpec): FloatArray {
+        val box = floatArrayOf(Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE)
+        palm(
+            p,
+            object : PalmSink {
+                override fun moveTo(x: Float, y: Float) = lineTo(x, y)
+                override fun lineTo(x: Float, y: Float) {
+                    box[0] = min(box[0], x)
+                    box[1] = min(box[1], y)
+                    box[2] = max(box[2], x)
+                    box[3] = max(box[3], y)
+                }
+                override fun close() = Unit
+            },
+        )
+        return box
+    }
+
+    /**
+     * How far palm [i] leans now, in degrees about its foot, at [time] seconds: a very slow,
+     * gentle sway of its own rate and phase, at most [PALM_SWAY_DEG].
+     */
+    fun palmSway(i: Int, time: Float): Float {
+        val hz = 0.055f + (PALM_SWAY_MAX_HZ - 0.055f) * hash(i, 11)
+        return PALM_SWAY_DEG * sin(time * hz * TAU + hash(i, 12) * TAU)
+    }
+
+    private fun quad(a: Float, b: Float, c: Float, t: Float): Float {
+        val u = 1f - t
+        return u * u * a + 2f * u * t * b + t * t * c
+    }
+
+    private fun quadSlope(a: Float, b: Float, c: Float, t: Float): Float = 2f * (1f - t) * (b - a) + 2f * t * (c - b)
+
     // -- helpers --------------------------------------------------------------------------------
 
     fun clamp01(x: Float): Float = if (x.isNaN()) 0f else x.coerceIn(0f, 1f)
@@ -214,6 +417,68 @@ object SynthwaveMath {
 }
 
 /**
+ * One palm of Synthwave's scene, in the scene's px: its foot on the floor, how tall its trunk
+ * is, where its crown is (the trunk curves from the foot to it), how long its fronds are, how
+ * many fronds and leaflets per frond side, on which edge it stands, and a seed for the small
+ * differences between palms.
+ */
+data class SynthwavePalmSpec(
+    val footX: Float,
+    val footY: Float,
+    val height: Float,
+    val crownX: Float,
+    val frond: Float,
+    val fronds: Int,
+    val leaflets: Int,
+    val left: Boolean,
+    val seed: Int,
+)
+
+/** Where a palm's polygons go (a Path in the scene, a box or a check in the tests). */
+interface PalmSink {
+    fun moveTo(x: Float, y: Float)
+    fun lineTo(x: Float, y: Float)
+    fun close()
+}
+
+/**
+ * Collects one polygon at a time and hands it to the sink wound clockwise on the screen
+ * (y down), so overlapping polygons fill as one shape under the non-zero rule.
+ */
+private class PalmPolygon(private val sink: PalmSink) {
+    private var xs = FloatArray(64)
+    private var ys = FloatArray(64)
+    private var count = 0
+
+    fun add(x: Float, y: Float) {
+        if (count == xs.size) {
+            xs = xs.copyOf(count * 2)
+            ys = ys.copyOf(count * 2)
+        }
+        xs[count] = x
+        ys[count] = y
+        count++
+    }
+
+    fun close() {
+        if (count >= 3) {
+            var area = 0f
+            for (i in 0 until count) {
+                val j = (i + 1) % count
+                area += xs[i] * ys[j] - xs[j] * ys[i]
+            }
+            val forward = area >= 0f
+            for (k in 0 until count) {
+                val i = if (forward) k else count - 1 - k
+                if (k == 0) sink.moveTo(xs[i], ys[i]) else sink.lineTo(xs[i], ys[i])
+            }
+            sink.close()
+        }
+        count = 0
+    }
+}
+
+/**
  * How much of the scene a phone gets ([SynthwaveTiers.of], from FrequencyTiers' tier): the
  * number of stars, rows, lines, ridge lines and slits, and which parts move.
  */
@@ -223,9 +488,11 @@ data class SynthwaveDetail(
     val columns: Int,
     val ridges: Int,
     val slits: Int,
+    /** Palms on each side (the near one; with 2 also a smaller far one). */
+    val palms: Int,
     /** A soft wide stroke under every neon line. */
     val glowLines: Boolean,
-    /** The sun's slits scroll and the stars twinkle. */
+    /** The sun's slits scroll, the stars twinkle and the palms sway. */
     val sky: Boolean,
     /** The sound moves the scene (else: the calm drive only). */
     val sound: Boolean,
@@ -233,20 +500,20 @@ data class SynthwaveDetail(
 
 object SynthwaveTiers {
     /** The most stars and ridge lines any tier draws (arrays are sized for them once). */
-    const val MAX_STARS = 96
-    const val MAX_RIDGES = 9
+    const val MAX_STARS = 64
+    const val MAX_RIDGES = 7
 
     fun of(tier: FrequencyTier): SynthwaveDetail = when (tier) {
         // everything at the display's rate
-        FrequencyTier.HIGH -> SynthwaveDetail(stars = MAX_STARS, rows = 15, columns = 10, ridges = MAX_RIDGES, slits = 7, glowLines = true, sky = true, sound = true)
+        FrequencyTier.HIGH -> SynthwaveDetail(stars = MAX_STARS, rows = 15, columns = 10, ridges = MAX_RIDGES, slits = 7, palms = 2, glowLines = true, sky = true, sound = true)
         // fewer stars and lines, at most 60 frames a second
-        FrequencyTier.MID -> SynthwaveDetail(stars = 52, rows = 11, columns = 7, ridges = 6, slits = 6, glowLines = false, sky = true, sound = true)
+        FrequencyTier.MID -> SynthwaveDetail(stars = 40, rows = 11, columns = 7, ridges = 5, slits = 6, palms = 1, glowLines = false, sky = true, sound = true)
         // power saver, hot or small phones: a still scene, only the floor drives (≈ 30 a second)
-        FrequencyTier.LOW -> SynthwaveDetail(stars = 34, rows = 9, columns = 6, ridges = 5, slits = 6, glowLines = false, sky = false, sound = false)
+        FrequencyTier.LOW -> SynthwaveDetail(stars = 28, rows = 9, columns = 6, ridges = 4, slits = 6, palms = 1, glowLines = false, sky = false, sound = false)
     }
 
     /** The scene when nothing may move (animations off): the full picture, standing still. */
-    val STILL = SynthwaveDetail(stars = 72, rows = 13, columns = 9, ridges = 7, slits = 7, glowLines = true, sky = false, sound = false)
+    val STILL = SynthwaveDetail(stars = 52, rows = 13, columns = 9, ridges = 6, slits = 7, palms = 2, glowLines = true, sky = false, sound = false)
 
     /** The moment the still scene shows: the floor and the slits between two steps, calm stars. */
     const val STILL_DRIVE = 0.4f

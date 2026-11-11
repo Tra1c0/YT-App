@@ -10,7 +10,7 @@ import com.github.libretube.ui.yt.SynthwaveMath as S
 /**
  * YT: the pure maths of Synthwave's scene: the floor's perspective and its seamless drive, the
  * sun's slits, the ridges, the stars (twinkle well under 3 Hz), how the sound moves the scene,
- * the parallax, the mini player's landing and the detail per tier.
+ * the parallax, the mini player's landing, the palms and the detail per tier.
  */
 class SynthwaveMathTest {
     private val eps = 1e-4f
@@ -207,7 +207,12 @@ class SynthwaveMathTest {
             assertTrue(d.stars <= SynthwaveTiers.MAX_STARS)
             assertTrue(d.ridges <= SynthwaveTiers.MAX_RIDGES)
             assertTrue(d.slits in 3..9)
+            assertTrue(d.palms in 0..2)
         }
+        // at most two palms a side, the slower phones one
+        assertEquals(2, high.palms)
+        assertEquals(1, mid.palms)
+        assertTrue(low.palms <= 1)
         // the still picture (animations off) is complete but moves nothing
         assertFalse(SynthwaveTiers.STILL.sky)
         assertFalse(SynthwaveTiers.STILL.sound)
@@ -228,5 +233,135 @@ class SynthwaveMathTest {
         assertEquals(FrequencyTier.LOW, saver.tier)
         assertEquals(30f, saver.stepsPerSecond(120f), 0.5f)
         assertFalse(SynthwaveTiers.of(saver.tier).sky)
+    }
+
+    /** Phones, a foldable and landscape, in px. */
+    private val sizes = listOf(1080 to 2400, 1200 to 2670, 720 to 1600, 1440 to 3200, 1080 to 1920, 1800 to 2000, 2400 to 1080)
+
+    /** Every point of [palm], as the scene would draw it. */
+    private fun points(palm: SynthwavePalmSpec): List<Pair<Float, Float>> {
+        val out = ArrayList<Pair<Float, Float>>()
+        S.palm(
+            palm,
+            object : PalmSink {
+                override fun moveTo(x: Float, y: Float) { out += x to y }
+                override fun lineTo(x: Float, y: Float) { out += x to y }
+                override fun close() = Unit
+            },
+        )
+        return out
+    }
+
+    @Test
+    fun `the palms stand at the edges, never over the sun's centre`() {
+        for ((wi, hi) in sizes) for (horizon in listOf(0.5f, 0.66f)) for (perSide in 1..2) {
+            val w = wi.toFloat()
+            val h = hi.toFloat()
+            val horizonY = h * horizon
+            val sunR = S.sunRadius(w, h)
+            val sunX = w / 2f
+            val sunY = S.sunCenterY(horizonY, sunR)
+            // the palms lift up to 1.6 x 40 dp with the scroll, the sun 0.7 x: the palms may
+            // rise up to 0.9 x 40 dp past it (density from the short side, 360 dp wide)
+            val density = minOf(w, h) / 360f
+            val lift = 0.9f * 40f * density
+            val palms = S.palms(w, h, horizonY, perSide)
+            assertEquals(perSide * 2, palms.size)
+            for (palm in palms) {
+                val at = "${wi}x$hi h$horizon n$perSide $palm"
+                for ((x, y) in points(palm)) {
+                    // inside the band at its own edge
+                    if (palm.left) assertTrue("x $x $at", x <= w * S.PALM_BAND) else assertTrue("x $x $at", x >= w * (1f - S.PALM_BAND))
+                    // away from the sun's centre, also when swaying either way and lifted
+                    for (deg in listOf(-S.PALM_SWAY_DEG, 0f, S.PALM_SWAY_DEG)) for (up in listOf(0f, lift)) {
+                        val a = Math.toRadians(deg.toDouble())
+                        val rx = palm.footX + ((x - palm.footX) * kotlin.math.cos(a) - (y - palm.footY) * kotlin.math.sin(a)).toFloat()
+                        val ry = palm.footY + ((x - palm.footX) * kotlin.math.sin(a) + (y - palm.footY) * kotlin.math.cos(a)).toFloat() - up
+                        val dist = kotlin.math.hypot(rx - sunX, ry - sunY)
+                        assertTrue("$dist from the sun ($sunR) $at", dist >= sunR * S.SUN_CORE)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `the palms are proportionate and cut by the edge`() {
+        for ((wi, hi) in sizes) for (horizon in listOf(0.5f, 0.66f)) {
+            val w = wi.toFloat()
+            val h = hi.toFloat()
+            val palms = S.palms(w, h, h * horizon, 2)
+            for (palm in palms) {
+                assertTrue("trunk ${palm.height / h} of the height", palm.height <= h * S.PALM_TRUNK_MAX + 0.5f)
+                assertTrue(palm.height > h * 0.08f)
+                val box = S.palmBounds(palm)
+                // the crown (fronds tip to tip) at most 40 % of the width
+                assertTrue("crown ${(box[2] - box[0]) / w} of the width", box[2] - box[0] <= w * S.PALM_SPREAD_MAX)
+                // the foot stands on the floor, below the horizon
+                assertTrue(palm.footY > h * horizon)
+                assertTrue(palm.fronds >= 8)
+            }
+            // far ones first, smaller; the near ones partly cut off by their edge
+            val (farLeft, farRight, nearLeft, nearRight) = palms
+            assertTrue(farLeft.height < nearLeft.height && farRight.height < nearRight.height)
+            assertTrue(S.palmBounds(nearLeft)[0] < 0f)
+            assertTrue(S.palmBounds(nearRight)[2] > w)
+            assertTrue(nearLeft.left && !nearRight.left)
+            // the near crown is higher on the screen than the far one (perspective)
+            assertTrue(nearLeft.footY - nearLeft.height < farLeft.footY - farLeft.height)
+        }
+        assertTrue(S.palms(1080f, 2400f, 1200f, 0).isEmpty())
+        assertEquals(S.palms(1080f, 2400f, 1200f, 2), S.palms(1080f, 2400f, 1200f, 2))
+    }
+
+    @Test
+    fun `a palm's polygons are wound one way, so they fill as one silhouette`() {
+        val palm = S.palms(1080f, 2400f, 1200f, 2).last()
+        var x0 = 0f
+        var y0 = 0f
+        var px = 0f
+        var py = 0f
+        var area = 0f
+        var polygons = 0
+        val areas = ArrayList<Float>()
+        S.palm(
+            palm,
+            object : PalmSink {
+                override fun moveTo(x: Float, y: Float) {
+                    x0 = x; y0 = y; px = x; py = y; area = 0f
+                }
+                override fun lineTo(x: Float, y: Float) {
+                    area += px * y - x * py
+                    px = x; py = y
+                }
+                override fun close() {
+                    area += px * y0 - x0 * py
+                    areas += area
+                    polygons++
+                }
+            },
+        )
+        // trunk, knob, and per frond a spine and two leaflets per step
+        assertEquals(2 + palm.fronds * (1 + 2 * palm.leaflets), polygons)
+        assertTrue(areas.all { it >= 0f })
+    }
+
+    @Test
+    fun `the palms sway very gently and slowly`() {
+        for (i in 0 until 4) {
+            var most = 0f
+            var crossings = 0
+            var last = S.palmSway(i, 0f)
+            for (step in 1..6000) {
+                val now = S.palmSway(i, step * 0.01f)
+                most = maxOf(most, abs(now))
+                if ((now > 0f) != (last > 0f)) crossings++
+                last = now
+            }
+            assertTrue(most <= S.PALM_SWAY_DEG + eps)
+            assertTrue(S.PALM_SWAY_DEG <= 2f)
+            // over 60 s at most 2 crossings per cycle at the fastest rate
+            assertTrue("$crossings", crossings <= (60f * S.PALM_SWAY_MAX_HZ * 2f).toInt() + 1)
+        }
     }
 }

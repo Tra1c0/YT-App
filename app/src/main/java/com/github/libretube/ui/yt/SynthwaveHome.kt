@@ -44,7 +44,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -69,11 +68,11 @@ import com.github.libretube.extensions.formatShort
 /*
  * YT: the home of the design "Synthwave": the scene (SynthwaveScene: striped sun, wireframe
  * ridges, palms, stars, the neon floor driving towards you) is the full background of the screen,
- * also behind the header. The top of the list is a window onto the sun with the headline on a
- * plate of night glass; below it the topic filters (they stay at the top), then cards of dark
- * glass with neon edges: continue watching, the videos, "Gerade live", Shorts. Every word stands
- * on glass, never on the scene itself, so it reads 4.5:1 even over the sun
- * (YtSynthwavePaletteTest). The scene moves in the draw phase only; the list never recomposes
+ * also behind the header. The list starts right under the header, as on the other homes: the
+ * headline on a plate of night glass, the topic filters (they stay at the top), then cards of
+ * dark glass with neon edges: continue watching, the videos, "Gerade live", Shorts; the scene
+ * shows around and faintly through them. Every word stands on glass, never on the scene itself,
+ * so it reads 4.5:1 even over the sun (YtSynthwavePaletteTest). The scene moves in the draw phase only; the list never recomposes
  * for it. It lifts a little as the list scrolls (parallax).
  */
 
@@ -116,9 +115,10 @@ fun SynthwaveHomeScreen(
     val itemPx = with(density) { ParallaxItem.toPx() }
     // the header lies over the scene (YtHeader.overlayHome): the list starts below it
     val headerOverlap = with(density) { YtChrome.headerOverlapPx.toDp() }
-    val screen = LocalConfiguration.current.screenHeightDp.dp
-    // the window onto the sun: down to a little above the horizon
-    val window = (screen * HORIZON - headerOverlap - screen * 0.12f).coerceAtLeast(96.dp)
+    // a list brought back scrolled down (back from another tab) shows its cards at once: they
+    // entered when they were first seen, and fading them in again would leave only the scene
+    // and the pinned filters on screen for a moment
+    val restored = remember { list.firstVisibleItemIndex > 0 || list.firstVisibleItemScrollOffset > 0 }
     Box(Modifier.fillMaxSize()) {
         // the scene in its own layer, read while drawing: a frame redraws it, not the list
         // read while drawing: scrolling redraws the scene's layer, it never recomposes
@@ -137,7 +137,7 @@ fun SynthwaveHomeScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 24.dp + ytNavPadding()),
             ) {
-                item(key = "window") { Headline(palette, Modifier.height(window)) }
+                item(key = "headline") { Headline(palette) }
                 stickyHeader(key = "filters") {
                     Filters(palette, categories, category, onSelectCategory, pinned)
                 }
@@ -162,14 +162,14 @@ fun SynthwaveHomeScreen(
                 }
                 continueItem?.let { video ->
                     item(key = "continue-" + video.url) {
-                        Box(Modifier.ytEnter(enter, "continue" + video.url, 0)) {
+                        Box(Modifier.synthwaveEnter(restored, enter, "continue" + video.url, 0)) {
                             Continue(palette, imageLoader, video, progress(video), actions)
                         }
                     }
                 }
                 hero?.let { video ->
                     item(key = "hero-" + video.url) {
-                        VideoCard(palette, imageLoader, video, 0, actions, ytItemMotion().ytEnter(enter, "hero" + video.url, 1))
+                        VideoCard(palette, imageLoader, video, 0, actions, ytItemMotion().synthwaveEnter(restored, enter, "hero" + video.url, 1))
                     }
                 }
                 if (live.isNotEmpty()) {
@@ -180,7 +180,7 @@ fun SynthwaveHomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             items(live, key = { it.url!! }) { video ->
-                                LiveCard(palette, imageLoader, video, actions, Modifier.ytEnter(enter, "live" + video.url, 2 + live.indexOf(video)))
+                                LiveCard(palette, imageLoader, video, actions, Modifier.synthwaveEnter(restored, enter, "live" + video.url, 2 + live.indexOf(video)))
                             }
                         }
                     }
@@ -201,7 +201,7 @@ fun SynthwaveHomeScreen(
                 if (rest.isNotEmpty()) {
                     item { SectionTitle(palette, stringResource(R.string.yt_synthwave_more)) }
                     itemsIndexed(rest, key = { _, video -> "v-" + video.url }) { index, video ->
-                        VideoCard(palette, imageLoader, video, index + 1, actions, ytItemMotion().ytEnter(enter, "rest" + video.url, 3 + index))
+                        VideoCard(palette, imageLoader, video, index + 1, actions, ytItemMotion().synthwaveEnter(restored, enter, "rest" + video.url, 3 + index))
                     }
                 }
             }
@@ -209,20 +209,28 @@ fun SynthwaveHomeScreen(
     }
 }
 
+/** The design's entrance (ytEnter), skipped for a list brought back scrolled down. */
+@Composable
+private fun Modifier.synthwaveEnter(restored: Boolean, enter: YtEnterState, key: Any, index: Int): Modifier =
+    if (restored) this else ytEnter(enter, key, index)
+
 /** Where the home's horizon lies, as a fraction of the screen (the scene is behind the header too). */
 private const val HORIZON = 0.5f
 
+/** The breathing gap between the header and the headline. */
+private val HEADLINE_GAP = 6.dp
+
 /**
- * The window onto the sun: empty, so the scene shows; at its foot the headline in the retro face
- * on a plate of night glass with a neon edge (the words never stand on the scene itself).
+ * The headline right under the header (a small breathing gap above it), in the retro face on a
+ * plate of night glass with a neon edge (the words never stand on the scene itself).
  */
 @Composable
-private fun Headline(palette: YtPalette, modifier: Modifier) {
-    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.BottomStart) {
+private fun Headline(palette: YtPalette) {
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomStart) {
         val shape = RoundedCornerShape(14.dp)
         Column(
             Modifier
-                .padding(start = 14.dp, end = 14.dp, bottom = 10.dp)
+                .padding(start = 14.dp, end = 14.dp, top = HEADLINE_GAP, bottom = 10.dp)
                 .synthwaveGlow(shape, palette.accent, 6.dp, 0.8f)
                 .synthwaveGlass(shape)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
