@@ -39,7 +39,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -311,7 +310,7 @@ private fun GlassVideo(
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         if (YtDrag.session != null) return@awaitEachGesture
-                        val hold = awaitLongPressOrCancellation(down.id) ?: return@awaitEachGesture
+                        val hold = ytSoleLongPress(down.id) ?: return@awaitEachGesture
                         if (!motion && !dragOn) {
                             // no loupe and no drag: only the watched bar grows while the finger
                             // stays; nothing is consumed, so the click acts as before

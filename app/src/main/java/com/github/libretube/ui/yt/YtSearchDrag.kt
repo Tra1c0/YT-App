@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
@@ -212,7 +211,7 @@ fun Modifier.ytSearchDragSource(palette: YtPalette, label: String? = null): Modi
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
             if (YtDrag.session != null) return@awaitEachGesture
-            val hold = awaitLongPressOrCancellation(down.id) ?: return@awaitEachGesture
+            val hold = ytSoleLongPress(down.id) ?: return@awaitEachGesture
             val coords = holder.coords?.takeIf { it.isAttached } ?: return@awaitEachGesture
             hold.consume()
             haptics.grab()
@@ -221,6 +220,8 @@ fun Modifier.ytSearchDragSource(palette: YtPalette, label: String? = null): Modi
             try {
                 while (true) {
                     val event = awaitPointerEvent(PointerEventPass.Initial)
+                    // a second finger: cancelled, the pinch takes over
+                    if (event.ytSeveral()) break
                     val change = event.changes.firstOrNull { it.id == hold.id }
                     // the lens owns the finger: the button's click must not fire on letting go
                     event.changes.forEach { it.consume() }

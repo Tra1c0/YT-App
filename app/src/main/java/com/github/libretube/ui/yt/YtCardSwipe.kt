@@ -341,7 +341,10 @@ fun Modifier.ytCardSwipe(
             val origin = down.position
             var claimed: PointerInputChange? = null
             while (true) {
-                val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                val first = awaitPointerEvent()
+                // a second finger: the card steps aside for the two-finger news pinch
+                if (first.ytSeveral()) break
+                val change = first.changes.firstOrNull { it.id == down.id } ?: break
                 if (!change.pressed || change.isConsumed) break
                 tracker.addPointerInputChange(change)
                 val moved = change.position - origin
@@ -372,7 +375,13 @@ fun Modifier.ytCardSwipe(
             var lifted = false
             var drifted = false
             while (true) {
-                val change = awaitPointerEvent().changes.firstOrNull { it.id == start.id } ?: break
+                val event = awaitPointerEvent()
+                // a second finger mid-swipe: dropped, never committed (it is a pinch, not a swipe)
+                if (event.ytSeveral()) {
+                    drifted = true
+                    break
+                }
+                val change = event.changes.firstOrNull { it.id == start.id } ?: break
                 tracker.addPointerInputChange(change)
                 // turned into a scroll after all (too far down, or too steep): dropped, never committed
                 val moved = change.position - origin

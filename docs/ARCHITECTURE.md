@@ -353,6 +353,9 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   `YtSwipeCalibrationScreen.kt`, `YtSwipeSettings.kt` (keys `yt_swipe_*`). Drag `Y/YtCardDrag.kt`
   (`held` = set of tokens), magnifier drag `Y/YtSearchDrag.kt`, pure drop rules
   `Y/feed/YtDragRules.kt`, undo `Y/YtUndoPill.kt`, hold menu `Y/YtQuickSheet.kt`.
+  Two fingers: `ytSeveral()` / `ytSoleLongPress()` (in `YtCardDrag.kt`) make swipe, hold, drag and
+  the search lens step aside as soon as a second finger is down, so the news pinch never commits
+  a card action.
 - Hidden videos and paused channels: `J/helpers/YtHidden.kt`, `J/helpers/YtChannelPause.kt`, pure
   `Y/feed/YtHideRules.kt` (`YtHiddenRules`, `YtPauseRules`, `YtVisibility`), settings list
   `Y/feed/YtHomePreferences.kt`. Hide watched: `Y/feed/YtSeenHide.kt`, flag `hideSeen`, checked in

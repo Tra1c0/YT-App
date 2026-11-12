@@ -40,8 +40,10 @@ import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -343,7 +345,7 @@ fun Modifier.ytLiftToQueue(
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
             if (YtDrag.session != null) return@awaitEachGesture
-            val hold = awaitLongPressOrCancellation(down.id) ?: return@awaitEachGesture
+            val hold = ytSoleLongPress(down.id) ?: return@awaitEachGesture
             hold.consume()
             haptics.grab()
             if (!dragOn) {
@@ -368,6 +370,8 @@ fun Modifier.ytLiftToQueue(
             try {
                 while (true) {
                     val event = awaitPointerEvent(PointerEventPass.Initial)
+                    // a second finger: cancelled (no drop, no menu), the pinch takes over
+                    if (event.ytSeveral()) break
                     val change = event.changes.firstOrNull { it.id == hold.id }
                     // the card owns the finger now: no scroll, no swipe, no click
                     event.changes.forEach { it.consume() }
@@ -432,6 +436,18 @@ fun Modifier.ytLiftToQueue(
         .then(actions)
         .then(gesture)
         .then(visuals)
+}
+
+/** More than one finger is down: card gestures step aside for the two-finger news pinch. */
+internal fun PointerEvent.ytSeveral(): Boolean = changes.count { it.pressed } > 1
+
+/**
+ * The long press of [id], or null when it was cancelled or a second finger is down when it fires
+ * (two resting fingers are the start of a pinch, not a hold).
+ */
+internal suspend fun AwaitPointerEventScope.ytSoleLongPress(id: PointerId): PointerInputChange? {
+    val hold = awaitLongPressOrCancellation(id) ?: return null
+    return if (currentEvent.ytSeveral()) null else hold
 }
 
 /** Consumes the pointer [id] until it is lifted, so nothing below acts on it. */
