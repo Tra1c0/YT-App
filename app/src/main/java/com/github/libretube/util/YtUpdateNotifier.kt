@@ -8,9 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.provider.Settings
 import android.util.Log
-import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -37,8 +35,11 @@ import java.util.concurrent.TimeUnit
 /**
  * YT: "tell me when there is a new build". A periodic WorkManager job ([YtUpdateCheckWorker])
  * asks GitHub for the latest release, the same call and rule as the in-app check
- * ([UpdateChecker.newerRelease]), and posts one notification per newer build. No server push:
- * the job runs only with a network and while the battery is not low, every 3 to 24 hours.
+ * ([UpdateChecker.newerRelease]), and posts one notification per newer build. The job runs only
+ * with a network and while the battery is not low, every 3 to 24 hours. Faster, both optional
+ * and only as triggers for the same check: the instant push ([YtPush]) and the attention mode
+ * while a build runs on GitHub ([YtUpdateWatch]). The channel "YT-Updates" is YT's own, apart
+ * from LibreTube's "Neue Videos" ([YtNotifyChannels]).
  *
  * WorkManager keeps the job over reboots (its own boot receiver) and app updates (JobScheduler
  * keeps jobs; every process start, also the one for MY_PACKAGE_REPLACED, calls [schedule]).
@@ -49,7 +50,7 @@ import java.util.concurrent.TimeUnit
 object YtUpdateNotifier {
     private const val TAG = "YtUpdateNotifier"
     private const val WORK_NAME = "YtUpdateCheck"
-    private const val CHANNEL_ID = "yt_update_available"
+    private const val CHANNEL_ID = YtNotifyChannels.UPDATES
     private const val NOTIFICATION_ID = 0x7956
 
     /** Extra of the notification's intent: the build it told about. */
@@ -58,6 +59,7 @@ object YtUpdateNotifier {
     private const val PREFS = "yt_update_notify"
     private const val KEY_LAST_RUN = "last_run"
     private const val KEY_LAST_RESULT = "last_result"
+    private const val KEY_LAST_VIA = "last_via"
     private const val KEY_LAST_NOTIFIED = "last_notified"
     private const val KEY_SCHEDULED_HOURS = "scheduled_hours"
     private const val KEY_SCHEDULED_AT = "scheduled_at"
@@ -102,10 +104,15 @@ object YtUpdateNotifier {
             val prefs = prefs(app)
             if (!on) {
                 work.cancelUniqueWork(WORK_NAME)
+                YtUpdateWatch.stop(app)
                 NotificationManagerCompat.from(app).cancel(NOTIFICATION_ID)
                 prefs.edit { remove(KEY_SCHEDULED_HOURS).remove(KEY_SCHEDULED_AT) }
                 return
             }
+            // is a build under way on GitHub? (in the background, at most every 10 min)
+            YtUpdateWatch.probeSoon(app)
+            // the instant push renews its registration on every start, as UnifiedPush advises
+            YtPush.refresh(app)
             val scheduled = prefs.getInt(KEY_SCHEDULED_HOURS, 0).takeIf { it > 0 }
             val replace = YtUpdateNotifyRules.mustReplace(scheduled, hours)
             val constraints = Constraints.Builder()
@@ -132,14 +139,7 @@ object YtUpdateNotifier {
         }.onFailure { Log.w(TAG, "could not schedule the update check", it) }
     }
 
-    private fun ensureChannel(context: Context) {
-        NotificationManagerCompat.from(context).createNotificationChannel(
-            NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_DEFAULT)
-                .setName(context.getString(R.string.yt_r27_updnotify_channel_name))
-                .setDescription(context.getString(R.string.yt_r27_updnotify_channel_description))
-                .build()
-        )
-    }
+    private fun ensureChannel(context: Context) = YtNotifyChannels.ensureUpdates(context)
 
     /** Why YT cannot show the notification now; [Block.NONE] when it can. */
     fun block(context: Context): Block {
@@ -165,16 +165,9 @@ object YtUpdateNotifier {
     fun markAskedForPermission(context: Context) =
         prefs(context).edit { putBoolean(KEY_ASKED_PERMISSION, true) }
 
-    /** The system page for YT's notifications, or for the "App-Updates" category alone. */
+    /** The system page for YT's notifications, or for the "YT-Updates" category alone. */
     fun settingsIntent(context: Context, channel: Boolean): Intent =
-        if (channel) {
-            Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
-                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                .putExtra(Settings.EXTRA_CHANNEL_ID, CHANNEL_ID)
-        } else {
-            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-        }
+        if (channel) YtNotifyChannels.channelPage(context, CHANNEL_ID) else YtNotifyChannels.appPage(context)
 
     /**
      * A run found the newer [build] (installed: [installed]); posts its notification when this
@@ -243,12 +236,16 @@ object YtUpdateNotifier {
         }
     }
 
-    /** Called by the worker after every run, for the diagnosis page. */
-    fun record(context: Context, at: Long, outcome: Outcome) {
+    /**
+     * Called by the worker after every run, for the diagnosis page; [via] says what started a
+     * run outside the schedule ("push", "watch").
+     */
+    fun record(context: Context, at: Long, outcome: Outcome, via: String? = null) {
         clearOutdated(context)
         prefs(context).edit {
             putLong(KEY_LAST_RUN, at)
             putString(KEY_LAST_RESULT, YtUpdateNotifyRules.outcomeText(outcome))
+            if (via != null) putString(KEY_LAST_VIA, via) else remove(KEY_LAST_VIA)
         }
     }
 
@@ -281,7 +278,8 @@ object YtUpdateNotifier {
         if (!enabled()) return "off"
         val prefs = prefs(context)
         val lastRun = prefs.getLong(KEY_LAST_RUN, 0).takeIf { it > 0 }
-        val result = prefs.getString(KEY_LAST_RESULT, null) ?: "-"
+        val result = (prefs.getString(KEY_LAST_RESULT, null) ?: "-") +
+            prefs.getString(KEY_LAST_VIA, null)?.let { " via $it" }.orEmpty()
         val hours = intervalHours()
         val info = runCatching {
             WorkManager.getInstance(context).getWorkInfosForUniqueWork(WORK_NAME)

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: instant push for new builds (YtPush) and the two notification groups (NotificationSettings). Same keys in the same order in values and values-de. -->
+<resources>
+    <string name="yt_r30_notify_entry_summary">App updates and new videos of channels – set separately</string>
+    <string name="yt_r30_group_updates">App updates</string>
+    <string name="yt_r30_group_updates_summary">New YT builds. Independent of the video notifications further down.</string>
+    <string name="yt_r30_group_videos">New videos of channels</string>
+    <string name="yt_r30_group_videos_summary">New videos of your subscriptions. Off stops this check completely; app updates are not affected.</string>
+    <string name="yt_r30_group_videos_time">Time window for new videos</string>
+    <string name="yt_r30_channel_videos_name">New videos</string>
+    <string name="yt_r30_channel_videos_description">Tells you about new videos of subscribed channels</string>
+    <string name="yt_r30_channel_open_title">Open Android setting</string>
+    <string name="yt_r30_channel_updates_open_summary">Sound, vibration and display of the category “YT updates”</string>
+    <string name="yt_r30_channel_videos_open_summary">Sound, vibration and display of the category “New videos”</string>
+    <string name="yt_r30_push_registration_label">YT updates</string>
+    <string name="yt_r30_push_title">Instant push for new builds (UnifiedPush/ntfy)</string>
+    <string name="yt_r30_push_summary">Tells you about a new build right after it is out, through the ntfy app instead of Google. The push only starts the normal check.</string>
+    <string name="yt_r30_push_status_title">Push status</string>
+    <string name="yt_r30_push_status_none">No push distributor – tap to get ntfy</string>
+    <string name="yt_r30_push_status_found">Distributor found (%1$s), not registered yet – tap to try again</string>
+    <string name="yt_r30_push_status_failed">Registration failed – tap to try again</string>
+    <string name="yt_r30_push_status_registered">Registered with %1$s</string>
+    <string name="yt_r30_push_status_changed">Registered with %1$s – the push address changed: copy it again and replace the GitHub secret</string>
+    <string name="yt_r30_push_copy_title">Copy push address</string>
+    <string name="yt_r30_push_copy_summary">Store it once as the GitHub secret YT_PUSH_URL, then every build reports itself. Keep the address secret.</string>
+    <string name="yt_r30_push_copied_title">Push address copied</string>
+    <string name="yt_r30_push_copied_message">Next steps (only once):\n\n1. On github.com, open the repository Tra1c0/YT-App.\n2. Settings → Secrets and variables → Actions → “New repository secret”.\n3. Name: YT_PUSH_URL, Secret: paste the copied address, tap “Add secret”.\n\nFrom the next build on, the notification comes at once. The address works like a key: do not share it.</string>
+    <string name="yt_r30_push_none_title">No push distributor</string>
+    <string name="yt_r30_push_none_message">For the instant push, YT needs a UnifiedPush distributor app, for example ntfy (free, without Google). After installing it, come back here: YT then registers.\n\nOn Xiaomi phones, allow autostart for ntfy and set its battery saver to “No restrictions”, or pushes arrive late.</string>
+    <string name="yt_r30_push_none_get">Get ntfy</string>
+    <string name="yt_r30_guide_push_t">Instant push for new builds</string>
+    <string name="yt_r30_guide_push_b">With the ntfy app, a new build reports itself at once instead of at the next check. Copy the push address once and store it as the GitHub secret YT_PUSH_URL. Without push, YT checks a few extra times while a build is running.</string>
+    <string name="yt_r30_guide_where_push">Settings → Notifications → App updates</string>
+    <string name="yt_r30_guide_videos_t">Notifications for new videos</string>
+    <string name="yt_r30_guide_videos_b">Separate from the app updates: own switch, own category “New videos” in Android. Off stops checking the subscriptions completely.</string>
+    <string name="yt_r30_guide_where_videos">Settings → Notifications → New videos of channels</string>
+</resources>

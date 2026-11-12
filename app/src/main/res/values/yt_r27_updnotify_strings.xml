@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- YT: notification when a new build is out (YtUpdateNotifier). Same keys in the same order in values and values-de. -->
 <resources>
-    <string name="yt_r27_updnotify_channel_name">App updates</string>
+    <string name="yt_r27_updnotify_channel_name">YT updates</string>
     <string name="yt_r27_updnotify_channel_description">Tells you once when a new YT build is out</string>
     <string name="yt_r27_updnotify_title">YT build %1$d is out</string>
     <string name="yt_r27_updnotify_action">Download now</string>
@@ -11,7 +11,7 @@
     <string name="yt_r27_updnotify_allow_title">Allow notifications</string>
     <string name="yt_r27_updnotify_allow_permission">YT may not show notifications yet. Tap to allow.</string>
     <string name="yt_r27_updnotify_allow_app">Notifications of YT are off in Android. Tap to open the setting.</string>
-    <string name="yt_r27_updnotify_allow_channel">The category “App updates” is off in Android. Tap to open it.</string>
+    <string name="yt_r27_updnotify_allow_channel">The category “YT updates” is off in Android. Tap to open it.</string>
     <string name="yt_r27_updnotify_interval_title">How often to check</string>
     <string name="yt_r27_updnotify_every_3">Every 3 hours</string>
     <string name="yt_r27_updnotify_every_6">Every 6 hours</string>
@@ -20,5 +20,5 @@
     <string name="yt_r27_updnotify_check_failed">The update check failed. Please try again later.</string>
     <string name="yt_r27_guide_updnotify_t">Notification for new versions</string>
     <string name="yt_r27_guide_updnotify_b">Every few hours YT looks for a new build in the background and tells you once with a notification. Tapping it opens the update window. No Google service needed.</string>
-    <string name="yt_r27_guide_where_updnotify">Settings → Notify about new versions</string>
+    <string name="yt_r27_guide_where_updnotify">Settings → Notifications → Notify about new versions</string>
 </resources>

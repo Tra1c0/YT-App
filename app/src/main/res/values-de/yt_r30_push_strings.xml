@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: instant push for new builds (YtPush) and the two notification groups (NotificationSettings). Same keys in the same order in values and values-de. -->
+<resources>
+    <string name="yt_r30_notify_entry_summary">App-Updates und neue Videos von Kanälen – getrennt einstellbar</string>
+    <string name="yt_r30_group_updates">App-Updates</string>
+    <string name="yt_r30_group_updates_summary">Neue YT-Builds. Unabhängig von den Video-Benachrichtigungen weiter unten.</string>
+    <string name="yt_r30_group_videos">Neue Videos von Kanälen</string>
+    <string name="yt_r30_group_videos_summary">Neue Videos deiner Abos. Ausschalten stoppt diese Prüfung ganz; die App-Updates bleiben davon unberührt.</string>
+    <string name="yt_r30_group_videos_time">Zeitfenster für neue Videos</string>
+    <string name="yt_r30_channel_videos_name">Neue Videos</string>
+    <string name="yt_r30_channel_videos_description">Meldet neue Videos von abonnierten Kanälen</string>
+    <string name="yt_r30_channel_open_title">Android-Einstellung öffnen</string>
+    <string name="yt_r30_channel_updates_open_summary">Ton, Vibration und Anzeige der Kategorie „YT-Updates“</string>
+    <string name="yt_r30_channel_videos_open_summary">Ton, Vibration und Anzeige der Kategorie „Neue Videos“</string>
+    <string name="yt_r30_push_registration_label">YT-Updates</string>
+    <string name="yt_r30_push_title">Sofort-Push bei neuen Builds (UnifiedPush/ntfy)</string>
+    <string name="yt_r30_push_summary">Meldet einen neuen Build kurz nach dem Erscheinen, über die App ntfy statt Google. Der Push löst nur die normale Prüfung aus.</string>
+    <string name="yt_r30_push_status_title">Push-Status</string>
+    <string name="yt_r30_push_status_none">Push-Verteiler fehlt – tippen, um ntfy zu holen</string>
+    <string name="yt_r30_push_status_found">Verteiler gefunden (%1$s), noch nicht registriert – tippen für einen neuen Versuch</string>
+    <string name="yt_r30_push_status_failed">Registrierung fehlgeschlagen – tippen für einen neuen Versuch</string>
+    <string name="yt_r30_push_status_registered">Registriert bei %1$s</string>
+    <string name="yt_r30_push_status_changed">Registriert bei %1$s – die Push-Adresse hat sich geändert: neu kopieren und das GitHub-Secret ersetzen</string>
+    <string name="yt_r30_push_copy_title">Push-Adresse kopieren</string>
+    <string name="yt_r30_push_copy_summary">Einmal als GitHub-Secret YT_PUSH_URL speichern, dann meldet sich jeder Build selbst. Die Adresse geheim halten.</string>
+    <string name="yt_r30_push_copied_title">Push-Adresse kopiert</string>
+    <string name="yt_r30_push_copied_message">So geht es weiter (nur einmal):\n\n1. Auf github.com das Repository Tra1c0/YT-App öffnen.\n2. Settings → Secrets and variables → Actions → „New repository secret“.\n3. Name: YT_PUSH_URL, Secret: die kopierte Adresse einfügen, „Add secret“ tippen.\n\nAb dem nächsten Build kommt die Meldung sofort. Die Adresse ist wie ein Schlüssel: nicht weitergeben.</string>
+    <string name="yt_r30_push_none_title">Push-Verteiler fehlt</string>
+    <string name="yt_r30_push_none_message">Für den Sofort-Push braucht YT eine Verteiler-App für UnifiedPush, zum Beispiel ntfy (kostenlos, ohne Google). Nach der Installation hierher zurückkommen: YT registriert sich dann.\n\nAuf Xiaomi-Handys in ntfy Autostart erlauben und die Akku-Beschränkung auf „Keine Einschränkungen“ stellen, sonst kommen Pushes verspätet.</string>
+    <string name="yt_r30_push_none_get">ntfy holen</string>
+    <string name="yt_r30_guide_push_t">Sofort-Push bei neuen Builds</string>
+    <string name="yt_r30_guide_push_b">Mit der App ntfy meldet sich ein neuer Build sofort statt erst bei der nächsten Prüfung. Einmal die Push-Adresse kopieren und als GitHub-Secret YT_PUSH_URL speichern. Ohne Push prüft YT während eines laufenden Builds ein paar Mal zusätzlich.</string>
+    <string name="yt_r30_guide_where_push">Einstellungen → Benachrichtigungen → App-Updates</string>
+    <string name="yt_r30_guide_videos_t">Benachrichtigungen bei neuen Videos</string>
+    <string name="yt_r30_guide_videos_b">Getrennt von den App-Updates: eigener Schalter, eigene Kategorie „Neue Videos“ in Android. Ausschalten stoppt die Prüfung der Abos ganz.</string>
+    <string name="yt_r30_guide_where_videos">Einstellungen → Benachrichtigungen → Neue Videos von Kanälen</string>
+</resources>

@@ -204,6 +204,14 @@ dependencies {
     /* YT: official API SDK for the opt-in news summaries (off until the user enters a key) */
     implementation(libs.anthropic.java)
 
+    /* YT: instant push for new builds (UnifiedPush, e.g. ntfy; no Google services). The connector
+       pulls Tink for the JVM, which brings the full protobuf-java next to the app's protobuf-lite;
+       Tink's Android build has the same classes without that */
+    implementation(libs.unifiedpush.connector) {
+        exclude(group = "com.google.crypto.tink", module = "tink")
+    }
+    implementation(libs.tink.android)
+
 
     /* Coil */
     coreLibraryDesugaring(libs.desugaring)

@@ -30,6 +30,21 @@ jobs:
       # Becomes part of the version code, so every build installs over the previous one.
       YT_BUILD_NUMBER: ${{ github.run_number }}
     steps:
+      # the instant push to the app (UnifiedPush, e.g. ntfy): "a build is under way". The address
+      # is the secret YT_PUSH_URL (copied in the app: Settings → Benachrichtigungen → App-Updates);
+      # without it nothing happens. Never printed (GitHub masks it as well); a failed push never
+      # fails the build. The app treats the message only as a trigger for its own check.
+      - name: Push "build started" to the app
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          YT_PUSH_URL: ${{ secrets.YT_PUSH_URL }}
+        run: |
+          if [ -z "$YT_PUSH_URL" ]; then echo "No push address (secret YT_PUSH_URL): skipped"; exit 0; fi
+          printf '{"event":"started","build":%s}' "$GITHUB_RUN_NUMBER" \
+            | curl -fsS --max-time 10 -d @- "$YT_PUSH_URL" > /dev/null \
+            || echo "::warning::The push to the app failed (the build goes on)"
+
       - uses: actions/checkout@v6
         with:
           # the docs check compares with the previous commit for its warnings
@@ -189,6 +204,19 @@ jobs:
             app/build/outputs/mapping/release/mapping.txt
           fail_on_unmatched_files: false
           body_path: ${{ runner.temp }}/release-body.md
+
+      # the instant push: "the release is out" (only for the latest build of main; a throwaway-key
+      # build is a pre-release the app does not offer). Same rules as the "started" push above.
+      - name: Push "build published" to the app
+        if: github.ref == 'refs/heads/main' && steps.release.outputs.latest == 'true'
+        continue-on-error: true
+        env:
+          YT_PUSH_URL: ${{ secrets.YT_PUSH_URL }}
+        run: |
+          if [ -z "$YT_PUSH_URL" ]; then echo "No push address (secret YT_PUSH_URL): skipped"; exit 0; fi
+          printf '{"event":"published","build":%s}' "$GITHUB_RUN_NUMBER" \
+            | curl -fsS --max-time 10 -d @- "$YT_PUSH_URL" > /dev/null \
+            || echo "::warning::The push to the app failed (the release is out all the same)"
 
       # a branch keeps its last three test builds; older ones go with their tags, so the many
       # pushes of the round-12 branches do not pile up releases (crash-check fetches its build

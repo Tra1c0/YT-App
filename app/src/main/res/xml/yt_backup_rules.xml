@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- YT: backups (Android 11 and lower) never carry the YouTube session or the sign-in window's store -->
+<!-- YT: backups (Android 11 and lower) never carry the YouTube session, the sign-in window's store or the update push address -->
 <full-backup-content>
     <exclude domain="sharedpref" path="yt_account.xml" />
     <exclude domain="sharedpref" path="auth.xml" />
     <exclude domain="sharedpref" path="yt_newssum.xml" />
+    <!-- the update push address belongs to this install only (YtPush, UnifiedPush connector) -->
+    <exclude domain="sharedpref" path="yt_push.xml" />
+    <exclude domain="database" path="unifiedpush-connector" />
     <exclude domain="root" path="app_webview/" />
 </full-backup-content>
