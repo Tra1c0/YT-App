@@ -8,8 +8,9 @@ not here.
 
 ## Current state
 
-- Latest release: build 132 (a second finger cancels card swipe/hold/drag, for the news pinch).
-  131: (summary provider choice: OpenAI, Anthropic, Gemini, Mistral,
+- Latest release: build 133 (update push via UnifiedPush/ntfy + watch mode; notifications split
+  into app updates and new videos). The user still has to add the secret `YT_PUSH_URL`. 132: second
+  finger cancels card gestures. 131: (summary provider choice: OpenAI, Anthropic, Gemini, Mistral,
   OpenAI-compatible; default models from web search, unverified by a real call). 130: (News stages 2–4: card grows into the window, stories with timeline,
   cited summaries with the user's own API key) on `main`. 129: News stage 1. 128: update
   notification. 127: Synthwave grid reaches the horizon. Summaries are untested at runtime after R8
@@ -142,6 +143,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 133: update push (UnifiedPush/ntfy, CI secret `YT_PUSH_URL`), watch mode, notification split; CI runs util/services YT tests too.
 - 132: second finger cancels card swipe, hold menu, drag and search lens.
 - 131: news summaries: provider choice with quote verification for non-Anthropic providers.
 - 130: News stages 2–4 (grow out of the card, depth, design haptics; stories; cited summaries).

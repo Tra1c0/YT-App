@@ -127,7 +127,7 @@ jobs:
       - name: Run the YT unit tests
         run: |
           set -o pipefail
-          filter=(--tests 'com.github.libretube.helpers.Yt*' --tests 'com.github.libretube.ui.yt.*')
+          filter=(--tests 'com.github.libretube.helpers.Yt*' --tests 'com.github.libretube.ui.yt.*' --tests 'com.github.libretube.util.Yt*' --tests 'com.github.libretube.services.Yt*')
           if ! ./gradlew :app:testReleaseUnitTest --no-daemon "${filter[@]}" 2>&1 | tee unit-tests.log; then
             grep -q "testReleaseUnitTest' not found" unit-tests.log || exit 1
             echo "::warning::No release unit test task; testing the debug variant"

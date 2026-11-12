@@ -518,6 +518,20 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   `J/ui/preferences/YtUpdateNotifyPrefs.kt` (switch `yt_update_notify`, interval, "allow" row with
   the POST_NOTIFICATIONS request / system-page fallback). A build shown in the in-app dialog counts
   as notified. Guide target `YtGuideTarget.SETTINGS` opens MainSettings on top.
+- Update push and watch: UnifiedPush connector (`org.unifiedpush.android:connector`, its JVM tink
+  swapped for `tink-android` to avoid protobuf-java vs javalite), `J/util/YtPush.kt` (register /
+  re-register every 6 h, endpoint stored outside backups, masked in `YtCrashText`, Diagnose shows
+  registered or not), `J/services/YtPushService.kt` (connector `PushService`, not exported), pure
+  `J/util/YtPushRules.kt` (message `{"event":"started|published","build":N}` ≤ 512 chars; a push is
+  only a trigger, the normal `UpdateChecker` check decides; ≥ 30 s apart, ≤ 10/h). Watch mode
+  `J/util/YtUpdateWatch.kt` + pure `J/util/YtUpdateWatchRules.kt` (one-time work `YtUpdateWatch`
+  at +12/16/20/30/45 min from the run start; started by a "started" push, a check that finds
+  nothing, or app start via `YtUpdateProbe`, ≤ 1 Actions request per 10 min;
+  `ExternalApi.getBuildRuns`, model `J/obj/update/YtWorkflowRuns.kt`). Channels
+  `J/util/YtNotifyChannels.kt` ("YT-Updates" `yt_update_available` vs LibreTube's "Neue Videos"
+  `notification_worker`). Settings → Benachrichtigungen holds both groups (guide target
+  `NOTIFICATIONS`). CI `build.yml` posts "started" and "published" to secret `YT_PUSH_URL`
+  (main only, never fails the build).
 - Security: notes `docs/SICHERHEIT.md`; emulator-only switches guarded by `J/helpers/YtGuard.kt`.
 
 ## Build, CI, tests, docs system
@@ -538,7 +552,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   the JVM.
 - `.github/workflows/build.yml`: push to `main` → release `build-N` (latest); push to `r12/**` →
   pre-release `check-N-<sha>` (last three kept). Steps: docs check (fails only on `main`), string
-  parity (`scripts/check-strings.sh`), YT unit tests (`helpers.Yt*`, `ui.yt.*`), release APK,
+  parity (`scripts/check-strings.sh`), YT unit tests (`helpers.Yt*`, `ui.yt.*`, `util.Yt*`, `services.Yt*`), release APK,
   release body. Pushes that change only `**.md`, `scripts/**`, `fastlane/**`, `assets/**` build
   nothing; `.github/workflows/docs-check.yml` runs the docs check for those.
   A newer push to the same branch cancels a running build (its release never exists).
@@ -599,23 +613,25 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (375 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (382 files; generated, do not edit)</summary>
 
 - `J/helpers/` (24): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDesign, YtDesignDark, YtGuard,
   YtHidden, YtLeveller, YtLoudness, YtLoudnessMeter, YtMusicPlayback, YtNotes, YtPeakLimiter,
   YtSceneUnlock, YtSoundFeatures, YtSpectrum, YtSpeedRules, YtThemeRefresh, YtVideoColors
+- `J/obj/update/` (1): YtWorkflowRuns
 - `J/receivers/` (1): YtUpdateReceiver
 - `J/repo/` (1): YtFeedFlight
-- `J/services/` (13): YtBatteryQualityModule, YtLoopModule, YtOfflineAudio, YtPlayRecovery,
-  YtPlaybackGuards, YtPositionLedger, YtPositionRules, YtResumeNotification, YtScrubModule,
-  YtServiceModules, YtServiceSoftClose, YtSessionModule, YtSoundModule
+- `J/services/` (14): YtBatteryQualityModule, YtLoopModule, YtOfflineAudio, YtPlayRecovery,
+  YtPlaybackGuards, YtPositionLedger, YtPositionRules, YtPushService, YtResumeNotification,
+  YtScrubModule, YtServiceModules, YtServiceSoftClose, YtSessionModule, YtSoundModule
 - `J/ui/activities/` (1): YtSignInActivity
 - `J/ui/preferences/` (3): YtChannelSpeedsPreference, YtInteractionSettings, YtUpdateNotifyPrefs
 - `J/ui/views/` (2): YtBottomNavigationView, YtEdgeScrollView
-- `J/util/` (15): YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules, YtQueueEdit, YtQueuePersist,
-  YtQueueStore, YtReleaseNotes, YtSelfUpdater, YtStorage, YtStorageRules, YtTitleCalm,
-  YtUpdateNotifier, YtUpdateNotifyRules, YtUpdateRules
+- `J/util/` (20): YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules, YtNotifyChannels, YtPush,
+  YtPushRules, YtQueueEdit, YtQueuePersist, YtQueueStore, YtReleaseNotes, YtSelfUpdater, YtStorage,
+  YtStorageRules, YtTitleCalm, YtUpdateNotifier, YtUpdateNotifyRules, YtUpdateRules, YtUpdateWatch,
+  YtUpdateWatchRules
 - `J/workers/` (1): YtUpdateCheckWorker
 - `Y/` (114): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
   FrequencyMotion, FrequencyPillBars, FrequencyPulse, FrequencyPulseMath, FrequencyTimeBar,
