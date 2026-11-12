@@ -93,8 +93,9 @@ class LibreTubeApp : Application() {
             PUSH_CHANNEL_NAME,
             NotificationManagerCompat.IMPORTANCE_DEFAULT
         )
-            .setName(getString(R.string.push_channel_name))
-            .setDescription(getString(R.string.push_channel_description))
+            // YT: named "Neue Videos", apart from YT's own "YT-Updates" (YtNotifyChannels)
+            .setName(getString(R.string.yt_r30_channel_videos_name))
+            .setDescription(getString(R.string.yt_r30_channel_videos_description))
             .build()
 
         val notificationManager = NotificationManagerCompat.from(this)

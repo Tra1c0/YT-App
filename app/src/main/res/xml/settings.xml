@@ -60,12 +60,6 @@
             app:title="@string/audio_video" />
 
         <Preference
-            android:icon="@drawable/ic_notification"
-            android:summary="@string/notify_new_streams"
-            app:key="notifications"
-            app:title="@string/notifications" />
-
-        <Preference
             android:icon="@drawable/ic_server"
             app:key="account"
             app:summary="@string/instance_summary"
@@ -81,31 +75,13 @@
             app:summary="@string/version"
             app:title="@string/update_summary" />
 
-        <!-- YT: a notification when a new build is out (YtUpdateNotifyPrefs, YtUpdateCheckWorker) -->
-        <SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:icon="@drawable/ic_notification"
-            app:key="yt_update_notify"
-            app:summary="@string/yt_r27_updnotify_summary"
-            app:title="@string/yt_r27_updnotify_title_setting" />
-
-        <!-- YT: shown only while Android does not let YT notify -->
+        <!-- YT: one page for both kinds of notifications (YT builds, new videos), next to the
+             update check; the update rows that were here live there now (NotificationSettings) -->
         <Preference
-            android:icon="@drawable/ic_bell"
-            app:isPreferenceVisible="false"
-            app:key="yt_update_notify_allow"
-            app:summary="@string/yt_r27_updnotify_allow_permission"
-            app:title="@string/yt_r27_updnotify_allow_title" />
-
-        <ListPreference
-            android:defaultValue="6"
-            android:entries="@array/yt_update_notify_interval_entries"
-            android:entryValues="@array/yt_update_notify_interval_values"
-            android:icon="@drawable/ic_time"
-            app:dependency="yt_update_notify"
-            app:key="yt_update_notify_interval"
-            app:title="@string/yt_r27_updnotify_interval_title"
-            app:useSimpleSummaryProvider="true" />
+            android:icon="@drawable/ic_notification"
+            app:key="notifications"
+            app:summary="@string/yt_r30_notify_entry_summary"
+            app:title="@string/notifications" />
 
         <Preference
             android:icon="@drawable/ic_info"

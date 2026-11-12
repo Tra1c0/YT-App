@@ -36,6 +36,10 @@ object YtDiagnosis {
             add("Network" to network(context))
             add("Last update" to runCatching { YtSelfUpdater.lastResult(context) }.getOrNull())
             add("Update check" to runCatching { YtUpdateNotifier.diagnosis(context) }.getOrNull())
+            // only "registered" or not, never the push address
+            add("Update push" to runCatching { YtPush.diagnosis(context) }.getOrNull())
+            add("Update watch" to runCatching { YtUpdateWatch.diagnosis(context) }.getOrNull())
+            add("New videos" to runCatching { newVideos(context) }.getOrNull())
             // only whether a key is set, never the key
             add("News summaries" to runCatching { com.github.libretube.ui.yt.news.YtNewsSummaryKey.diagnosis() }.getOrNull())
             add("YouTube account" to if (runCatching { YtAccount.signedIn }.getOrDefault(false)) "yes" else "no")
@@ -58,6 +62,30 @@ object YtDiagnosis {
      */
     fun sound(): String =
         runCatching { com.github.libretube.ui.yt.sound.YtSoundEngine.diagnosis() }.getOrDefault("?")
+
+    /**
+     * LibreTube's new-video notifications: the switch, whether its worker is scheduled, and
+     * whether Android shows its channel; apart from the update check above.
+     */
+    private fun newVideos(context: Context): String {
+        val on = PreferenceHelper.getBoolean(PreferenceKeys.NOTIFICATION_ENABLED, true)
+        val scheduled = runCatching {
+            androidx.work.WorkManager.getInstance(context).getWorkInfosForUniqueWork("NotificationService")
+                .get(300, java.util.concurrent.TimeUnit.MILLISECONDS)
+                .any { !it.state.isFinished }
+        }.getOrNull()
+        val channel = when (YtNotifyChannels.isBlocked(context, YtNotifyChannels.VIDEOS)) {
+            true -> "blocked in Android"
+            false -> "shown"
+            null -> "no channel"
+        }
+        val job = when (scheduled) {
+            true -> "scheduled"
+            false -> "not scheduled"
+            null -> "?"
+        }
+        return "${if (on) "on" else "off"}, worker $job, channel $channel"
+    }
 
     /** Which sync server is used, and its host; the full URL could carry a path with an id. */
     private fun sync(): String = runCatching {

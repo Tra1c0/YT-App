@@ -7,6 +7,7 @@ import com.github.libretube.api.obj.SubmitSegmentResponse
 import com.github.libretube.api.obj.VideoLabelData
 import com.github.libretube.api.obj.VoteInfo
 import com.github.libretube.obj.update.UpdateInfo
+import com.github.libretube.obj.update.YtWorkflowRuns
 import kotlinx.serialization.json.JsonElement
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -31,6 +32,14 @@ interface ExternalApi {
     // YT: one release by its tag ("build-106"), for the notes of the builds in between
     @GET("https://api.github.com/repos/Tra1c0/YT-App/releases/tags/{tag}")
     suspend fun getReleaseByTag(@Path("tag") tag: String): UpdateInfo
+
+    // YT: the latest runs of the build workflow on main, to see a build that is under way
+    @GET("https://api.github.com/repos/Tra1c0/YT-App/actions/workflows/build.yml/runs")
+    suspend fun getBuildRuns(
+        @Query("branch") branch: String = "main",
+        @Query("per_page") perPage: Int = 3,
+        @Query("exclude_pull_requests") excludePullRequests: Boolean = true
+    ): YtWorkflowRuns
 
     @GET("$RYD_API_URL/votes")
     suspend fun getVotes(@Query("videoId") videoId: String): VoteInfo

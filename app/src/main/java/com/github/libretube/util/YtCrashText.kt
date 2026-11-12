@@ -17,6 +17,9 @@ object YtCrashText {
 
     private const val SUMMARY_CHARS = 160
 
+    /** What a push address becomes in a report. */
+    const val PUSH_ADDRESS = "<push address>"
+
     // key=value pairs and headers whose value may be a secret (query strings in exception messages,
     // cookie headers from a failed request); only the value is replaced so the key stays readable
     private val secretPair = Regex(
@@ -33,8 +36,17 @@ object YtCrashText {
     private val googleKey = Regex("\\bAIza[A-Za-z0-9_-]{20,}")
     private val keyHeader = Regex("(?i)\\b(x-goog-api-key|x-api-key)(\\s*[=:]\\s*)([^\\s&;,\"']+)")
 
-    /** Replaces values that look like secrets with "***". */
+    // push addresses (UnifiedPush endpoints) are capabilities: whoever has one can send pushes.
+    // ntfy's look like https://ntfy.sh/upAbC123xyz?up=1, NextPush's .../uppush/..., Web Push's
+    // .../wpush/...; the whole URL goes
+    private val url = Regex("(?i)\\bhttps?://[^\\s\"'<>]+")
+    private val pushHint = Regex(
+        "(?i)[?&](up|unifiedpush|x-unifiedpush)=1\\b|(?-i:/up[A-Za-z0-9]{10,})(?![A-Za-z0-9_-])|/(uppush|wpush)/|/push/[A-Za-z0-9_-]{16,}"
+    )
+
+    /** Replaces values that look like secrets with "***" and push addresses with a mark. */
     fun scrub(text: String): String = text
+        .replace(url) { if (pushHint.containsMatchIn(it.value)) PUSH_ADDRESS else it.value }
         .replace(bearer, "Bearer ***")
         .replace(apiKey, "sk-ant-***")
         .replace(skKey, "sk-***")

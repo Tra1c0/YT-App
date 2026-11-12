@@ -225,6 +225,7 @@ class YtGuideFragment : Fragment() {
             YtGuideTarget.AUDIO_VIDEO -> R.id.action_global_audioVideoSettings
             YtGuideTarget.SPONSORBLOCK -> R.id.action_global_sponsorBlockSettings
             YtGuideTarget.GENERAL -> R.id.action_global_generalSettings
+            YtGuideTarget.NOTIFICATIONS -> R.id.action_global_notificationSettings
             YtGuideTarget.SETTINGS -> {
                 // the main page is below the guide: a fresh copy on top, so back returns here
                 val args = setting?.let { androidx.core.os.bundleOf(YtSettingJump.ARG_KEY to it) }

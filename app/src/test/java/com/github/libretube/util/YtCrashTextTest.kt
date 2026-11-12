@@ -114,4 +114,22 @@ class YtCrashTextTest {
         val block = YtCrashText.block("YT diagnosis", listOf("Last update" to null, "Queue" to "4"))
         assertEquals("YT diagnosis\nLast update: -\nQueue: 4", block)
     }
+    @Test
+    fun pushAddressesAreMasked() {
+        val ntfy = "https://ntfy.sh/upAbC123xyZ789q?up=1"
+        val text = "IOException: 404 for $ntfy at x\nself-hosted https://push.example.org/upK2mN8pQ4rS6t, " +
+            "nextpush https://cloud.example.org/index.php/apps/uppush/push/0123456789abcdef0123 " +
+            "and web push https://updates.push.services.mozilla.com/wpush/v2/gAAAAABk"
+        val scrubbed = YtCrashText.scrub(text)
+        assertFalse(scrubbed, scrubbed.contains("upAbC123"))
+        assertFalse(scrubbed, scrubbed.contains("upK2mN8"))
+        assertFalse(scrubbed, scrubbed.contains("0123456789abcdef"))
+        assertFalse(scrubbed, scrubbed.contains("gAAAAABk"))
+        assertTrue(scrubbed.startsWith("IOException: 404 for ${YtCrashText.PUSH_ADDRESS} at x"))
+        // ordinary addresses stay readable
+        val github = "https://api.github.com/repos/Tra1c0/YT-App/releases/latest and https://example.com/uploads/a"
+        assertEquals(github, YtCrashText.scrub(github))
+        // the report keeps it out as well
+        assertFalse(YtCrashText.report(header, "main", "java.io.IOException: $ntfy").contains("upAbC123"))
+    }
 }

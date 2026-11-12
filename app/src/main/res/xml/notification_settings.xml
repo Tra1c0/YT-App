@@ -1,8 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- YT: two independent groups: YT builds ("App-Updates", YtUpdateNotifyPrefs) and LibreTube's new
+     videos of subscribed channels; each with its own Android channel and a row that opens it -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/notifications">
+    <PreferenceCategory
+        app:key="yt_notify_group_updates"
+        app:summary="@string/yt_r30_group_updates_summary"
+        app:title="@string/yt_r30_group_updates">
+
+        <!-- YT: a notification when a new build is out (YtUpdateNotifyPrefs, YtUpdateCheckWorker) -->
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:icon="@drawable/ic_update"
+            app:key="yt_update_notify"
+            app:summary="@string/yt_r27_updnotify_summary"
+            app:title="@string/yt_r27_updnotify_title_setting" />
+
+        <!-- YT: shown only while Android does not let YT notify -->
+        <Preference
+            android:icon="@drawable/ic_bell"
+            app:isPreferenceVisible="false"
+            app:key="yt_update_notify_allow"
+            app:summary="@string/yt_r27_updnotify_allow_permission"
+            app:title="@string/yt_r27_updnotify_allow_title" />
+
+        <ListPreference
+            android:defaultValue="6"
+            android:entries="@array/yt_update_notify_interval_entries"
+            android:entryValues="@array/yt_update_notify_interval_values"
+            android:icon="@drawable/ic_time"
+            app:dependency="yt_update_notify"
+            app:key="yt_update_notify_interval"
+            app:title="@string/yt_r27_updnotify_interval_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <!-- YT: instant push over UnifiedPush (YtPush); status and "copy" rows follow its state -->
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:icon="@drawable/ic_signal"
+            app:dependency="yt_update_notify"
+            app:key="yt_update_push"
+            app:summary="@string/yt_r30_push_summary"
+            app:title="@string/yt_r30_push_title" />
+
+        <Preference
+            android:icon="@drawable/ic_info"
+            app:dependency="yt_update_notify"
+            app:isPreferenceVisible="false"
+            app:key="yt_update_push_status"
+            app:title="@string/yt_r30_push_status_title" />
+
+        <Preference
+            android:icon="@drawable/ic_copy"
+            app:dependency="yt_update_notify"
+            app:isPreferenceVisible="false"
+            app:key="yt_update_push_copy"
+            app:summary="@string/yt_r30_push_copy_summary"
+            app:title="@string/yt_r30_push_copy_title" />
+
+        <Preference
+            android:icon="@drawable/ic_open"
+            app:key="yt_notify_channel_updates"
+            app:summary="@string/yt_r30_channel_updates_open_summary"
+            app:title="@string/yt_r30_channel_open_title" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="yt_notify_group_videos"
+        app:summary="@string/yt_r30_group_videos_summary"
+        app:title="@string/yt_r30_group_videos">
 
         <SwitchPreferenceCompat
             android:icon="@drawable/ic_notification"
@@ -38,11 +106,19 @@
             app:title="@string/required_network"
             app:useSimpleSummaryProvider="true" />
 
+        <Preference
+            android:icon="@drawable/ic_open"
+            app:key="yt_notify_channel_videos"
+            app:summary="@string/yt_r30_channel_videos_open_summary"
+            app:title="@string/yt_r30_channel_open_title" />
+
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/time">
+    <!-- YT: the time window belongs to the new videos only (NotificationWorker.checkTime) -->
+    <PreferenceCategory app:title="@string/yt_r30_group_videos_time">
 
         <SwitchPreferenceCompat
+            android:dependency="notification_toggle"
             android:summary="@string/notification_time_summary"
             app:key="notification_time"
             app:title="@string/notification_time" />

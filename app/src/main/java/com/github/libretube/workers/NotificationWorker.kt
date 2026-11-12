@@ -42,6 +42,8 @@ class NotificationWorker(appContext: Context, parameters: WorkerParameters) :
     private val notificationManager = NotificationManagerCompat.from(appContext)
 
     override suspend fun doWork(): Result {
+        // YT: switched off ("Neue Videos von Kanälen"): a run that was already due does nothing
+        if (!PreferenceHelper.getBoolean(PreferenceKeys.NOTIFICATION_ENABLED, true)) return Result.success()
         if (!checkTime()) return Result.success()
         // check whether there are new streams and notify if there are some
         val result = checkForNewStreams()

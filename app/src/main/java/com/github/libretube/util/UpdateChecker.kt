@@ -36,8 +36,10 @@ class UpdateChecker(private val context: Context) {
                     showUpdateAvailableDialog(response.body, response.htmlUrl, apk, notes, update)
                 }
                 Log.i(TAG(), response.toString())
-            } else if (isManualCheck) {
-                context.toastFromMainDispatcher(R.string.app_uptodate)
+            } else {
+                if (isManualCheck) context.toastFromMainDispatcher(R.string.app_uptodate)
+                // YT: nothing new: is a build under way? Then a few extra checks soon (YtUpdateWatch)
+                YtUpdateWatch.probe(context)
             }
         } catch (e: Exception) {
             e.printStackTrace()

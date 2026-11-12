@@ -41,8 +41,13 @@ protobuf = "4.33.5"
 protobufPlugin = "0.9.6"
 # YT: official SDK for the opt-in news summaries (user's own key)
 anthropicJava = "3.8.0"
+# YT: instant push for new builds over UnifiedPush (no Google services); its crypto as the Android build
+unifiedpushConnector = "3.3.5"
+tinkAndroid = "1.23.0"
 
 [libraries]
+unifiedpush-connector = { module = "org.unifiedpush.android:connector", version.ref = "unifiedpushConnector" }
+tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "tinkAndroid" }
 androidx-activity = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-core = { group = "androidx.core", name = "core", version.ref = "core" }

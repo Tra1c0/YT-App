@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- YT: backups and device transfers (Android 12 and later) never carry the YouTube session -->
+<!-- YT: backups and device transfers (Android 12 and later) never carry the YouTube session or the update push address -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="yt_account.xml" />
         <exclude domain="sharedpref" path="auth.xml" />
         <exclude domain="sharedpref" path="yt_newssum.xml" />
+        <exclude domain="sharedpref" path="yt_push.xml" />
+        <exclude domain="database" path="unifiedpush-connector" />
         <exclude domain="root" path="app_webview/" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="yt_account.xml" />
         <exclude domain="sharedpref" path="auth.xml" />
         <exclude domain="sharedpref" path="yt_newssum.xml" />
+        <exclude domain="sharedpref" path="yt_push.xml" />
+        <exclude domain="database" path="unifiedpush-connector" />
         <exclude domain="root" path="app_webview/" />
     </device-transfer>
 </data-extraction-rules>

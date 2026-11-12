@@ -475,6 +475,15 @@
             </intent-filter>
         </receiver>
 
+        <!-- YT: the update push over UnifiedPush (ntfy etc.); only the connector library binds it -->
+        <service
+            android:name=".services.YtPushService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
+            </intent-filter>
+        </service>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:exported="false"
