@@ -111,6 +111,14 @@
             app:persistent="false"
             app:title="@string/yt_home_paused_channels" />
 
+        <!-- YT round 29: subscribed channels without an upload for over a year -->
+        <com.github.libretube.ui.yt.feed.YtDeadSubsPreference
+            android:icon="@drawable/ic_subscriptions"
+            android:summary="@string/yt_dead_subs_summary"
+            app:key="yt_dead_subs"
+            app:persistent="false"
+            app:title="@string/yt_dead_subs_title" />
+
         <com.github.libretube.ui.yt.feed.YtHiddenVideosPreference
             android:icon="@drawable/ic_yt_hide"
             app:key="yt_hidden_videos_list"
