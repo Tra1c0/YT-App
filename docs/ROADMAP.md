@@ -36,6 +36,14 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
 
 ## Noch nicht sortiert
 
+### Tastatur-Anbindung (eigene KI-Tastatur)
+- **Befehle von der Tastatur:** abspielen, ans Ende der Warteschlange, suchen, Pause/Weiter, News
+  öffnen; abgesichert, sodass nur Apps mit deiner Signatur sie nutzen dürfen (S–M)
+- **Kurzfassung für eingefügte YouTube-Links:** Kernaussagen + Link mit Sekunde in den Chat (M)
+- **Markierter Text → „In YT suchen“ / „In YT-Warteschlange“** im Markier-Menü (S)
+- **Aktuelles Video teilen:** Titel + Link mit aktueller Sekunde einfügen (S)
+- **Feed-Thema per Diktat anlegen** (S)
+
 ### Wiedergabe
 - **2** Kurzer Rücksprung beim Fortsetzen nach langer Pause (S)
 - **4** Einschlaf-Timer „Am Ende dieses Videos“ und sanftes Ausblenden (S)

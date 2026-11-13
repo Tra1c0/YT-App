@@ -28,6 +28,14 @@ not here.
 
 ## Open points
 
+- Update push (build 133): the user must add the GitHub secret `YT_PUSH_URL` (steps in FEATURES
+  "Sofort-Push bei Updates"); until then CI skips both push steps. No real push has run yet.
+- News (builds 129–131): untested on the phone. Check first: the card picture during the grow
+  (shared GraphicsLayer, API 29+), summary key test with a dummy key (R8 runtime), caption
+  download on the phone, default models per provider (from web search only).
+- Keyboard integration (YT command interface, deep links, PROCESS_TEXT, summary for pasted links)
+  is only an idea in ROADMAP "Unsortiert"; ask the user what their keyboard app can call and
+  whether it is signed with the same key (signature permission) before building.
 - Not verified on a real phone: most features of rounds 12–15 (FEATURES.md status column).
 - Shorts: swiping to the next short did not react in the emulator.
 - Like/dislike InnerTube calls are untested against YouTube.
