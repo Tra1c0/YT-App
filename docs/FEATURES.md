@@ -41,6 +41,7 @@ Die Liste beschreibt immer den Stand von `main` (den neuesten Build).
 | Echtes Neuladen | Runterziehen lädt wirklich neu. Die ersten 50 Videos werden gemerkt, damit oben bis zu 20 neue stehen, höchstens eins pro Kanal unter den ersten zehn. | T |
 | Karten wischen | Links = ausblenden (90 Tage, mit „Rückgängig“), rechts = ans Ende der Warteschlange. Spielt nichts, entsteht eine Warteschlange zum Abspielen. Reagiert nur auf klar seitliche Bewegungen: schräges Scrollen nach unten bricht ab und löst nichts aus. | E T |
 | Kanal 1 Woche pausieren | Blendet einen Kanal 7 Tage auf den Startseiten aus, ohne ihn zu blockieren. Über die Rückgängig-Pille, das Halte-Menü oder den Feed-Regler. | T |
+| Tote Abos finden | Einstellungen → Gesten & Interaktion: listet abonnierte Kanäle ohne Upload seit über einem Jahr (mit Alter des letzten Uploads, „keine Videos“ oder „Kanal gibt es nicht mehr“). Prüft per RSS, 3 Kanäle gleichzeitig, abbrechbar, Ergebnisse 7 Tage gemerkt. Ankreuzen, deabonnieren, Rückgängig. | T |
 | Karte auf den Miniplayer ziehen | Karte gedrückt halten und auf den Miniplayer ziehen: „Als Nächstes“, oder ans Ende, wenn schon etwas wartet. | E T |
 | Lupe auf eine Karte ziehen | Such-Symbol gedrückt halten und auf eine Karte ziehen: sucht nach dem Kanalnamen. | E T |
 | Halte-Menü auf Karten | Speichern, Teilen, Kanal, Ans Ende, Ausblenden, Kanal pausieren, Warum sehe ich das. | E |
@@ -69,6 +70,7 @@ Die Liste beschreibt immer den Stand von `main` (den neuesten Build).
 | Funktion | Was sie macht | Status |
 | --- | --- | --- |
 | Videoseite je Design | Eigener Aufbau unter dem Video mit Titel, Kanal, Aktionen, Beschreibung, Kapiteln. | E |
+| Links in der Beschreibung | Unter der aufgeklappten Beschreibung: Links gruppiert nach Zeitmarken (springen), Kanälen, Videos & Playlists (öffnen in der App) und externen Links. Werbe- und Affiliate-Links (Sponsor, Rabattcode, Affiliate-Adressen) sind markiert und eingeklappt, auch im Beschreibungstext. Alle Designs inkl. Standard. | T |
 | Mag ich / Mag ich nicht | Like-Knopf gedrückt halten → zwei Kacheln. Mit YouTube-Anmeldung wird die Bewertung gesendet (ungetestet gegen den Server), sonst nur auf dem Handy gespeichert. | – |
 | Zeit unter der Lupe | Beim Spulen den Finger nach oben ziehen: ½×, ¼×, ⅛×, dann einzelne Bilder. Optional zeigt das Video live die Stelle. | E T |
 | Zurückspulen mit Gedächtnis | Nach einem Rücksprung bringt ein Chip dich zurück an die alte Stelle. | E T |
@@ -89,6 +91,7 @@ Die Liste beschreibt immer den Stand von `main` (den neuesten Build).
 
 | Funktion | Was sie macht | Status |
 | --- | --- | --- |
+| Nahtlos in die Leiste (Formen) | Beim Runterziehen nimmt das Video Breite, Ecken und Farbe der Leiste an und geht in sie über; die Seite darunter blendet weich aus; keine Abschneide-Kante mehr beim Ziehen (nur beim Wegwerfen und Zurückholen). Andere Designs folgen. | T |
 | Miniplayer je Design | Dockt an der Leiste an, jedes Design mit eigener Form, Animation und Haptik (Glas nach deiner Mint-Vorlage). | E T |
 | Video folgt dem Finger | Video nach unten ziehen → schrumpft unter dem Finger in den Miniplayer; hochziehen öffnet es; Miniplayer runterziehen schließt. | E T |
 | Miniplayer im Querformat | Dockt nach dem Drehen (in beide Richtungen) sauber an der Leiste an; Leiste und Miniplayer weichen seitlichen Systemleisten und der Kamera aus. | – |

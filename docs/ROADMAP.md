@@ -12,14 +12,12 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
 - **9** Outro je Kanal früher beenden, abschaltbar, mit Toleranzreglern (S–M)
 - **12** Gesten-Randabstand, damit Wischgesten nicht mit der Zurück-Geste kollidieren (S)
 - **18** Sammelseite für ausgeblendete Videos und pausierte Kanäle, mit Rückgängig und Ablaufdatum (S)
-- **22** Tote Abos finden (kein Upload seit über einem Jahr), zum Aufräumen (S)
-- **25** Beschreibung: Links nach Typ gruppieren (Zeitmarken, Kanäle, Videos, externe Links) (M)
-- **26** Sponsoren-Links in der Beschreibung markieren und einklappen (S)
 
 - **Minimieren nahtlos in die Navi-Leiste:** beim Runterziehen nimmt das Fenster Breite, Ecken und
   Farbe der Leiste an und geht nahtlos in sie über; die Seite darunter blendet weich aus statt als
   Platte mit harter Kante; keine „unsichtbare Wand“ (Abschneide-Linie nur beim Wegwerfen/Zurückholen).
-  Gemeinsamer Teil + Feinschliff je Design (12), am besten mit 2 Pilot-Designs zuerst (L, 3–4 Runden)
+  Gemeinsamer Teil + Formen gebaut (Build nach 133); offen: die übrigen Designs, als Nächstes
+  Frequency und Synthwave (L, 2–3 Runden)
 
 - **Musikmodus für die übrigen Designs:** die Oberfläche jedes Designs reagiert auf die Musik, mit
   eigener „Tanz-Sprache“ je Design. Klang-Motor ist fertig (mit Frequency gebaut); offen: noch nicht

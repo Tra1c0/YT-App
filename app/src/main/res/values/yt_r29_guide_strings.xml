@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_r29_guide_dead_subs_t">Find dead subscriptions</string>
+    <string name="yt_r29_guide_dead_subs_b">Lists subscribed channels without an upload for over a year, with the age of their last upload. Tick and unsubscribe, with undo.</string>
+    <string name="yt_r29_guide_desc_links_t">Links in the description, sorted</string>
+    <string name="yt_r29_guide_desc_links_b">Under an opened description the links are grouped: timestamps, channels, videos, external links. Ad and affiliate links are marked and folded, also in the text.</string>
+    <string name="yt_r29_guide_merge_t">Minimize into the bar</string>
+    <string name="yt_r29_guide_merge_b">In Formen the video takes the bar\'s width, corners and colour while you drag it down and merges into it; the page fades out softly.</string>
+</resources>

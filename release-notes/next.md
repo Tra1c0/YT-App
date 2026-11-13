@@ -1,7 +1,7 @@
 ## Neu
-- Sofort-Push bei neuen Builds über ntfy (UnifiedPush, ohne Google): Einstellungen → Benachrichtigungen → App-Updates. Einmal die Push-Adresse kopieren und als GitHub-Secret speichern.
-- Läuft gerade ein Build, schaut YT kurz danach ein paar Mal zusätzlich nach, auch ohne Push.
-- Einstellungen → Benachrichtigungen trennt „App-Updates“ und „Neue Videos von Kanälen“, jeweils mit eigenem Schalter und eigener Android-Kategorie („YT-Updates“, „Neue Videos“).
+- Formen: Minimieren geht nahtlos in die Leiste über. Das Video nimmt beim Runterziehen Breite, Ecken und Farbe der Leiste an, die Seite darunter blendet weich aus, keine unsichtbare Wand mehr.
+- Beschreibung: Links nach Typ gruppiert (Zeitmarken, Kanäle, Videos & Playlists, externe Links). Werbe- und Affiliate-Links sind markiert und eingeklappt, auch im Text.
+- „Tote Abos finden“ (Einstellungen → Gesten & Interaktion): Kanäle ohne Upload seit über einem Jahr, ankreuzen und deabonnieren, mit Rückgängig.
 
-## Behoben
-- „Benachrichtigungen bei neuen Videos“ ausschalten wirkt sofort, nicht erst nach einem Neustart.
+## Geändert
+- Kanal- und Playlist-Links in Beschreibung und Kommentaren öffnen direkt in der App.

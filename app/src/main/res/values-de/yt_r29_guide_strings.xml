@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_r29_guide_dead_subs_t">Tote Abos finden</string>
+    <string name="yt_r29_guide_dead_subs_b">Zeigt abonnierte Kanäle ohne Upload seit über einem Jahr, mit dem Alter des letzten Uploads. Ankreuzen und deabonnieren, mit Rückgängig.</string>
+    <string name="yt_r29_guide_desc_links_t">Links in der Beschreibung, sortiert</string>
+    <string name="yt_r29_guide_desc_links_b">Unter der aufgeklappten Beschreibung sind die Links gruppiert: Zeitmarken, Kanäle, Videos, externe Links. Werbe- und Affiliate-Links sind markiert und eingeklappt, auch im Text.</string>
+    <string name="yt_r29_guide_merge_t">Minimieren in die Leiste</string>
+    <string name="yt_r29_guide_merge_b">In Formen nimmt das Video beim Runterziehen Breite, Ecken und Farbe der Leiste an und geht in sie über; die Seite blendet weich aus.</string>
+</resources>

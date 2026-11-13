@@ -13,6 +13,9 @@ not here.
   Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
 - The user still has to add the GitHub secret `YT_PUSH_URL`; until then CI skips both push steps.
+- Round 29 built: seamless minimize (shared part + Formen pilot), description link groups with ad
+  folding (25/26), dead subscriptions finder (22). User priority: seamless minimize for the other
+  designs next, Frequency and Synthwave first (the user uses Formen, Frequency, Synthwave most).
 - Next work: `docs/ROADMAP.md` → "Beschlossen", top to bottom. The music mode for the designs
   that do not react to sound yet is in that list but NOT released by the user: ask before
   starting it.
@@ -24,6 +27,11 @@ not here.
 
 ## Open points
 
+- Round 29 (untested on the phone): Formen minimize (window shape/colour during the drag, picture
+  corners inside the window, overshoot over the bar without cut, page fade timing: constants
+  `FADE_*`, `APPROACH_TO`, `NARROW_FROM` in `YtMiniMerge.kt`); description overview layout per
+  design and the ad detection on real descriptions (false positives); dead subs scan duration on
+  big lists and in account mode; `@handle` channel opening via NewPipe.
 - Update push (build 133): the user must add the GitHub secret `YT_PUSH_URL` (steps in FEATURES
   "Sofort-Push bei Updates"); until then CI skips both push steps. No real push has run yet.
 - News (builds 129–131): untested on the phone. Check first: the card picture during the grow

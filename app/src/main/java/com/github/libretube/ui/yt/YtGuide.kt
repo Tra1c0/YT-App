@@ -74,6 +74,7 @@ object YtGuide {
                 item("timebox", R.string.yt_guide_timebox_t, R.string.yt_guide_timebox_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_timebox_chip"),
                 item("swipe", R.string.yt_guide_swipe_t, R.string.yt_guide_swipe_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_card_swipe"),
                 item("pause", R.string.yt_guide_pause_t, R.string.yt_guide_pause_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_paused_channels_list"),
+                item("dead_subs", R.string.yt_r29_guide_dead_subs_t, R.string.yt_r29_guide_dead_subs_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_dead_subs"),
                 item("drag_mini", R.string.yt_guide_drag_mini_t, R.string.yt_guide_drag_mini_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_home_drag"),
                 item("lens", R.string.yt_guide_lens_t, R.string.yt_guide_lens_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_home_drag"),
                 item("hold_menu", R.string.yt_guide_hold_menu_t, R.string.yt_guide_hold_menu_b),
@@ -98,6 +99,7 @@ object YtGuide {
                 item("chapter", R.string.yt_guide_chapter_t, R.string.yt_guide_chapter_b, R.string.yt_guide_where_gestures, YtGuideTarget.INTERACTION, "yt_double_tap_chapter"),
                 item("share", R.string.yt_guide_share_t, R.string.yt_guide_share_b, R.string.yt_guide_where_gestures, YtGuideTarget.INTERACTION, "yt_share_drag"),
                 item("like", R.string.yt_guide_like_t, R.string.yt_guide_like_b),
+                item("desc_links", R.string.yt_r29_guide_desc_links_t, R.string.yt_r29_guide_desc_links_b),
                 item("comments", R.string.yt_guide_comments_t, R.string.yt_guide_comments_b, R.string.yt_guide_where_comments, YtGuideTarget.INTERACTION, "yt_comments_scene"),
                 item("speed", R.string.yt_guide_speed_t, R.string.yt_guide_speed_b, R.string.yt_guide_where_speed, YtGuideTarget.PLAYER, "yt_channel_speeds_list"),
             )
@@ -105,6 +107,7 @@ object YtGuide {
         YtGuideSection(
             "mini", R.string.yt_guide_s_mini, listOf(
                 item("follow", R.string.yt_guide_follow_t, R.string.yt_guide_follow_b, R.string.yt_guide_where_minimize, YtGuideTarget.INTERACTION, "yt_minimize_follow"),
+                item("merge", R.string.yt_r29_guide_merge_t, R.string.yt_r29_guide_merge_b),
                 item("peek", R.string.yt_guide_peek_t, R.string.yt_guide_peek_b, R.string.yt_guide_where_mini, YtGuideTarget.INTERACTION, "yt_mini_peek"),
                 item("restore", R.string.yt_guide_restore_t, R.string.yt_guide_restore_b),
                 item("soft_close", R.string.yt_guide_soft_close_t, R.string.yt_guide_soft_close_b),

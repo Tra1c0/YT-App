@@ -139,6 +139,15 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   - Glas: `YtMiniGlass.kt` (slab shared with the Glas bar), `YtGlassLayout.kt`, `YtGlassOver.kt`,
     `YtGlassSlabShape.kt`; soft edges copy video frames with PixelCopy: `YtMiniBleed.kt` +
     pure `YtBleedMath.kt`.
+- Seamless minimize (opt-in per design, round 29; pilot Formen): `YtMiniDesign.merge(palette)`
+  returns a `YtMiniMerge` (bar radius, body inset/radius, fillet, bar and page colour, dp/ARGB);
+  pure `Y/mini/YtMiniMerge.kt` (`YtMiniMergeMath`: `window` per progress, `color`, `pageAlpha`,
+  `underAlpha`, `clipAllowed`, `pictureCorner`, motion-off steps). With a merge the host fades
+  `player_scrollView`, rounds the picture's outline to stay inside the window (P5) and cuts at
+  the bar only for throw/rise/docked drags (`YtMinimizeModule.fromPage` = drag from the open page
+  → no cut). `YtMiniScene.pageProgress` = the page's own progress (stays 1 while thrown). Opt in:
+  override `merge`, draw the body in `Under` from `YtMiniMergeMath.window` (Formen:
+  `shapesWindowPath` in `YtMiniShapesUnder.kt`).
 - Video limits: the SurfaceView is clipped by an outline only (round rect; path on newer APIs);
   shapes like the Formen cookie are drawn over the video in the body colour (Pitfall P5).
 - Touch on the player page: `J/ui/views/SingleViewTouchableMotionLayout.kt`, a state machine (IDLE,
@@ -223,6 +232,14 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   - `YtPlayerTouch` tracks finger + long press for `PlayerGestureController`; `abort()` ends a
     gesture when `useController` turns off mid-gesture (the minimize drag disables the controller
     before the parent's CANCEL arrives).
+- Description links: pure `Y/YtDescriptionLinkRules.kt` (HTML/plain description → lines and links,
+  type: timestamp/channel/video/external, ad + affiliate detection with heading reach, fold ranges;
+  tests in `T/ui/yt/YtDescriptionLinkRulesTest.kt`), UI `Y/YtDescriptionLinks.kt` (overview
+  composable `YtDescriptionLinks` inside `WatchDescription` of `Y/YtWatchPages.kt`, seek via
+  `LocalYtDescriptionSeek` from `YtWatch`, `YtSponsorFold` folds ad blocks in the text,
+  `YtDescriptionClassic.bind` for STANDARD's `DescriptionLayout`, `YtDescriptionNav.openInApp`
+  opens channel/playlist links in the app from `PlayerFragment.handleLink`). `@handle` channels
+  resolve via `getChannelByName` → `youtube.com/@name`.
 - Chapter double tap: pure `Y/player/YtChapterTap.kt` (reuses `YtHoldDirection` chapter maths),
   label `Y/player/YtChapterTapLabel.kt`, pref `yt_double_tap_chapter`; `CustomExoPlayerView`
   rewind/forward take an optional chapter target, `PlayerGestureController.ytDoubleTapFraction`.
@@ -360,6 +377,11 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   `Y/feed/YtHideRules.kt` (`YtHiddenRules`, `YtPauseRules`, `YtVisibility`), settings list
   `Y/feed/YtHomePreferences.kt`. Hide watched: `Y/feed/YtSeenHide.kt`, flag `hideSeen`, checked in
   `YtFeedEngine.passes` and `rememberYtVisible`.
+- Dead subscriptions (no upload > 1 year): pure `Y/feed/YtDeadSubsRules.kt` (threshold, verdict,
+  sort, 7-day check cache), runner `J/helpers/YtDeadSubs.kt` (channels in the cached feed count as
+  alive; others via RSS, 3 at a time with 200–600 ms jitter, channel page only if RSS fails; cache
+  pref `yt_dead_subs_checks`; unsubscribe/undo through `SubscriptionHelper`), settings row and
+  dialogs `Y/feed/YtDeadSubsPreference.kt` (key `yt_dead_subs` in `R/xml/yt_r12_d_prefs.xml`).
 - Watched marks: `Y/YtSeen.kt` (one shared `WatchPositionDao.observeAll()` flow, `Modifier.ytSeen`
   dim + badge, pref `yt_seen_marks`; `ytSeenTop` = bar + time-left pill, a Modifier.Node placed on
   the thumbnail Box AFTER its children, grow animated in the node, read in draw only; Pitfall P12),
@@ -613,12 +635,13 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (382 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (388 files; generated, do not edit)</summary>
 
-- `J/helpers/` (24): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
-  YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDesign, YtDesignDark, YtGuard,
-  YtHidden, YtLeveller, YtLoudness, YtLoudnessMeter, YtMusicPlayback, YtNotes, YtPeakLimiter,
-  YtSceneUnlock, YtSoundFeatures, YtSpectrum, YtSpeedRules, YtThemeRefresh, YtVideoColors
+- `J/helpers/` (25): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
+  YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDeadSubs, YtDesign,
+  YtDesignDark, YtGuard, YtHidden, YtLeveller, YtLoudness, YtLoudnessMeter, YtMusicPlayback,
+  YtNotes, YtPeakLimiter, YtSceneUnlock, YtSoundFeatures, YtSpectrum, YtSpeedRules, YtThemeRefresh,
+  YtVideoColors
 - `J/obj/update/` (1): YtWorkflowRuns
 - `J/receivers/` (1): YtUpdateReceiver
 - `J/repo/` (1): YtFeedFlight
@@ -633,38 +656,40 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtStorageRules, YtTitleCalm, YtUpdateNotifier, YtUpdateNotifyRules, YtUpdateRules, YtUpdateWatch,
   YtUpdateWatchRules
 - `J/workers/` (1): YtUpdateCheckWorker
-- `Y/` (114): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
+- `Y/` (116): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
   FrequencyMotion, FrequencyPillBars, FrequencyPulse, FrequencyPulseMath, FrequencyTimeBar,
   FrequencyVisuals, FrostHome, GlassHome, KieselDiscover, KieselHome, MovoHome, MovoWatch, PopHome,
   ShapesHome, SideHome, SideWatch, SynthwaveChrome, SynthwaveHome, SynthwaveMath, SynthwaveScene,
   YouTubeHome, YouTubeLibrary, YouTubeWatch, YtActivityHooks, YtAge, YtBatteryPreview,
   YtBatteryVibes, YtCardDrag, YtCardFrames, YtCardSwipe, YtClassic, YtContrast, YtCount,
-  YtDiagnosisUi, YtDiscovery, YtDock, YtDrag, YtFeedButtons, YtFeedSheet, YtFloatingPlayer,
-  YtGestures, YtGuide, YtGuideFragment, YtGuideRules, YtHapticTexture, YtHaptics, YtHeader, YtHeld,
-  YtHome, YtHomeKit, YtHomeRound2, YtImages, YtInk, YtIntentChooser, YtIntentTrigger, YtLibrary,
-  YtLibraryDesigns, YtLiquidKit, YtLiquidNav, YtLive, YtMaxHeightScrollView, YtMiniPlayer, YtMotion,
-  YtNavBar, YtNavDesigns, YtNavHold, YtNotesText, YtOverlays, YtPebbles, YtPipVisualizer,
-  YtPlaybackClock, YtQueue, YtQueueResume, YtQuickSheet, YtRateHold, YtRatings, YtRefresh, YtRooms,
-  YtSearchDrag, YtSearchMorph, YtSeen, YtSentiment, YtSettingJump, YtSettingJumpUi, YtShapes,
-  YtShorts, YtSideFill, YtSideInsets, YtStorageUi, YtSubscriptions, YtSurfaces, YtTestHooks,
-  YtTestTag, YtTheme, YtTiltSensor, YtTimeBoxUi, YtTimeUp, YtTitles, YtTopicChip, YtTopicSuggest,
-  YtUndoPill, YtVibes, YtWatch, YtWatchDesigns, YtWatchEdge, YtWatchPages, YtWaveShape, YtWaveView
+  YtDescriptionLinkRules, YtDescriptionLinks, YtDiagnosisUi, YtDiscovery, YtDock, YtDrag,
+  YtFeedButtons, YtFeedSheet, YtFloatingPlayer, YtGestures, YtGuide, YtGuideFragment, YtGuideRules,
+  YtHapticTexture, YtHaptics, YtHeader, YtHeld, YtHome, YtHomeKit, YtHomeRound2, YtImages, YtInk,
+  YtIntentChooser, YtIntentTrigger, YtLibrary, YtLibraryDesigns, YtLiquidKit, YtLiquidNav, YtLive,
+  YtMaxHeightScrollView, YtMiniPlayer, YtMotion, YtNavBar, YtNavDesigns, YtNavHold, YtNotesText,
+  YtOverlays, YtPebbles, YtPipVisualizer, YtPlaybackClock, YtQueue, YtQueueResume, YtQuickSheet,
+  YtRateHold, YtRatings, YtRefresh, YtRooms, YtSearchDrag, YtSearchMorph, YtSeen, YtSentiment,
+  YtSettingJump, YtSettingJumpUi, YtShapes, YtShorts, YtSideFill, YtSideInsets, YtStorageUi,
+  YtSubscriptions, YtSurfaces, YtTestHooks, YtTestTag, YtTheme, YtTiltSensor, YtTimeBoxUi, YtTimeUp,
+  YtTitles, YtTopicChip, YtTopicSuggest, YtUndoPill, YtVibes, YtWatch, YtWatchDesigns, YtWatchEdge,
+  YtWatchPages, YtWaveShape, YtWaveView
 - `Y/account/` (4): YtAccount, YtAccountSheet, YtImport, YtInnerTube
-- `Y/feed/` (22): YtDragRules, YtFeed, YtFeedEngine, YtFeedFresh, YtFeedRules, YtFeedTopics,
-  YtFeedTopicsSession, YtFeedTopicsWords, YtHideRules, YtHomePreferences, YtHomeTestHooks,
-  YtQueueRule, YtSeenHide, YtSeenMark, YtSession, YtSubsOrder, YtSwipeCalibration,
-  YtSwipeCalibrationScreen, YtSwipePhysics, YtSwipeSettings, YtSwipeTuning, YtTimeBox
+- `Y/feed/` (24): YtDeadSubsPreference, YtDeadSubsRules, YtDragRules, YtFeed, YtFeedEngine,
+  YtFeedFresh, YtFeedRules, YtFeedTopics, YtFeedTopicsSession, YtFeedTopicsWords, YtHideRules,
+  YtHomePreferences, YtHomeTestHooks, YtQueueRule, YtSeenHide, YtSeenMark, YtSession, YtSubsOrder,
+  YtSwipeCalibration, YtSwipeCalibrationScreen, YtSwipePhysics, YtSwipeSettings, YtSwipeTuning,
+  YtTimeBox
 - `Y/liquid/` (4): DampedDragAnimation, InteractiveHighlight, LiquidGestures, YtViewBackdrop
-- `Y/mini/` (82): YtBleedMath, YtDockMath, YtGlassLayout, YtGlassOver, YtGlassSlabShape,
+- `Y/mini/` (83): YtBleedMath, YtDockMath, YtGlassLayout, YtGlassOver, YtGlassSlabShape,
   YtMiniAfter, YtMiniAfterLayout, YtMiniAfterOver, YtMiniAfterTextures, YtMiniAfterUnder,
   YtMiniBleed, YtMiniClay, YtMiniClayLayout, YtMiniClayOver, YtMiniClayTextures, YtMiniClayUnder,
   YtMiniDesign, YtMiniDesigns, YtMiniDockBar, YtMiniEditorial, YtMiniEditorialLayout,
   YtMiniEditorialOver, YtMiniEditorialTextures, YtMiniEditorialUnder, YtMiniFrequency,
   YtMiniFrequencyTextures, YtMiniFrost, YtMiniFrostLayout, YtMiniFrostOver, YtMiniFrostTextures,
   YtMiniFrostUnder, YtMiniGeometry, YtMiniGlass, YtMiniHost, YtMiniKiesel, YtMiniKieselLayout,
-  YtMiniKieselOver, YtMiniKieselTextures, YtMiniKieselUnder, YtMiniLook, YtMiniModule, YtMiniMovo,
-  YtMiniMovoLayout, YtMiniMovoOver, YtMiniMovoTextures, YtMiniMovoUnder, YtMiniParts, YtMiniPop,
-  YtMiniPopLayout, YtMiniPopOver, YtMiniPopTextures, YtMiniPopUnder, YtMiniRestore,
+  YtMiniKieselOver, YtMiniKieselTextures, YtMiniKieselUnder, YtMiniLook, YtMiniMerge, YtMiniModule,
+  YtMiniMovo, YtMiniMovoLayout, YtMiniMovoOver, YtMiniMovoTextures, YtMiniMovoUnder, YtMiniParts,
+  YtMiniPop, YtMiniPopLayout, YtMiniPopOver, YtMiniPopTextures, YtMiniPopUnder, YtMiniRestore,
   YtMiniRestoreRules, YtMiniRiseRules, YtMiniShapes, YtMiniShapesMath, YtMiniShapesOver,
   YtMiniShapesTextures, YtMiniShapesUnder, YtMiniSide, YtMiniSideLayout, YtMiniSideParts,
   YtMiniSideTextures, YtMiniStandard, YtMiniSynthwave, YtMiniSynthwaveTextures, YtMiniTestHooks,
