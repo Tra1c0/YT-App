@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -38,6 +39,8 @@ object YtWatch {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 YtTheme(palette) {
+                    // round 29: timestamps of the description's link overview seek the player
+                    CompositionLocalProvider(LocalYtDescriptionSeek provides actions.onSeek) {
                     // YT: a keyword for the user's topic, offered while a topic video plays
                     val videoId = controller.videoId
                     val streams = controller.streams
@@ -74,6 +77,7 @@ object YtWatch {
                             controller = controller,
                             actions = actions,
                         )
+                    }
                     }
                     }
                     }

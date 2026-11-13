@@ -473,7 +473,8 @@ class NewPipeMediaServiceRepository : MediaServiceRepository {
     }
 
     override suspend fun getChannelByName(channelName: String): Channel {
-        val channelUrl = "$YOUTUBE_FRONTEND_URL/c/${channelName}"
+        // YT: a handle ("@name") has its own address
+        val channelUrl = if (channelName.startsWith("@")) "$YOUTUBE_FRONTEND_URL/$channelName" else "$YOUTUBE_FRONTEND_URL/c/${channelName}"
         val channelInfo = ChannelInfo.getInfo(NewPipeExtractorInstance.extractor, channelUrl)
 
         val channel = channelInfo.toChannel()
