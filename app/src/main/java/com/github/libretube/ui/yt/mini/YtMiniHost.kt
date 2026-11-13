@@ -92,6 +92,9 @@ class YtMiniHost private constructor(
 
     val scene = YtMiniScene(design, palette, backdrop, density)
 
+    /** The seamless minimize of the design (round 29), or null where it minimizes as before. */
+    private val merge: YtMiniMerge? = if (palette != null && !design.classic) design.merge(palette) else null
+
     /** The composable behind the picture, inside the box; the composable over the picture. */
     private val under = ComposeView(context)
     private var over: ComposeView? = null
@@ -279,19 +282,56 @@ class YtMiniHost private constructor(
         // the picture rounds its corners as the player shrinks (where the video surface allows
         // it); minimize progress, not the transition's, which the preview reuses
         val thumbRadius = design.spec.thumbRadius * density
-        if (thumbRadius > 0f) {
+        if (thumbRadius > 0f || merge != null) {
             binding.player.outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
                     // only on the page: moved into the fullscreen or picture-in-picture window,
                     // the video keeps square corners
-                    val radius = if (view.parent === motion) thumbRadius * YtDock.progress else 0f
+                    val radius = if (view.parent === motion) mergedCorner(view, thumbRadius * YtDock.progress) else 0f
                     // top corners only: the rect reaches past the foot, so the foot stays square
                     val below = if (design.roundsTopOnly) radius.roundToInt() + 1 else 0
                     outline.setRoundRect(0, 0, view.width, view.height + below, radius)
                 }
             }
             binding.player.clipToOutline = true
+            if (merge != null) {
+                // the picture's place in the box changes without its size changing too
+                val relayout = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> binding.player.invalidateOutline() }
+                binding.player.addOnLayoutChangeListener(relayout)
+                binding.mainContainer.addOnLayoutChangeListener(relayout)
+            }
         }
+    }
+
+    /**
+     * The seamless minimize: the picture (a SurfaceView, clipped by its outline only) is rounded
+     * at least as much as the window's corners it lies near, so it never sticks out of the window
+     * as that rounds towards the bar's corners (Pitfall P5). [base] is its corner otherwise.
+     */
+    private fun mergedCorner(picture: View, base: Float): Float {
+        val m = merge ?: return base
+        val box = binding.mainContainer
+        if (box.width <= 0 || box.height <= 0) return base
+        val window = YtMiniMergeMath.window(m, scene.pageProgress, box.width.toFloat(), box.height.toFloat(), density, YtMotionPrefs.enabled)
+        return YtMiniMergeMath.pictureCorner(
+            base,
+            window,
+            box.width.toFloat(),
+            box.height.toFloat(),
+            left = (picture.left - box.left).toFloat(),
+            top = (picture.top - box.top).toFloat(),
+            right = (box.right - picture.right).toFloat(),
+            bottom = (box.bottom - picture.bottom).toFloat(),
+        )
+    }
+
+    /**
+     * The seamless minimize: the page below the video fades out softly as the window leaves it
+     * (and in again as it rises), instead of moving down as a slab with a hard edge.
+     */
+    private fun fadePage(progress: Float) {
+        if (merge == null) return
+        binding.playerScrollView.alpha = YtMiniMergeMath.pageAlpha(progress, YtMotionPrefs.enabled)
     }
 
     /** The picture fills its shape (cropped) while minimized and fits again when it grows. */
@@ -453,8 +493,11 @@ class YtMiniHost private constructor(
         if (design.classic && rise == null) return
         val shift = motion.translationY
         val box = binding.mainContainer
-        // docked by the page's own transition too: a throw releases the bar's progress at once
-        if (YtDockMath.clipsToBar(shift, YtDock.progress, motion.progress, motion.peeking, box.height, motion.width)) {
+        // docked by the page's own transition too: a throw releases the bar's progress at once;
+        // the seamless minimize never cuts a drag from the open page (no invisible wall)
+        if (YtDockMath.clipsToBar(shift, YtDock.progress, motion.progress, motion.peeking, box.height, motion.width) &&
+            YtMiniMergeMath.clipAllowed(merge != null, YtMinimizeModule.fromPage)
+        ) {
             val line = (box.bottom - shift).roundToInt().coerceAtLeast(0)
             if (motion.clipBounds?.let { it.bottom == line && it.right == motion.width } != true) {
                 barClip.set(0, 0, motion.width, line)
@@ -518,10 +561,12 @@ class YtMiniHost private constructor(
                 }
                 YtMiniPlayer.keepDock()
                 val p = progress.coerceIn(0f, 1f)
-                under.alpha = design.underAlpha(p)
+                under.alpha = if (merge != null) YtMiniMergeMath.underAlpha(p) else design.underAlpha(p)
                 over?.alpha = design.overAlpha(p)
                 YtDock.docked = progress > 0.02f
                 YtDock.progress = p
+                scene.pageProgress = p
+                fadePage(p)
                 // a page that will rise keeps the bar's slab down until it rises with it
                 YtDock.slabPx = if (risePending) 0f else extentPx * p
                 binding.player.invalidateOutline()
@@ -536,6 +581,8 @@ class YtMiniHost private constructor(
                 over?.alpha = if (mini) 1f else 0f
                 YtDock.docked = mini
                 YtDock.progress = if (mini) 1f else 0f
+                scene.pageProgress = if (mini) 1f else 0f
+                fadePage(if (mini) 1f else 0f)
                 YtDock.slabPx = if (mini) extentPx else 0f
                 binding.player.invalidateOutline()
                 publishBounds()

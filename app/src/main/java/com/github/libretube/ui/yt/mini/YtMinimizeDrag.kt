@@ -347,6 +347,7 @@ internal class YtMinimizeDrag(
         session = s
         haptics.grab()
         YtMinimizeModule.dragging = true
+        YtMinimizeModule.fromPage = !fromMini
         log {
             "minimize grab from=${if (fromMini) "mini" else "full"} p0=${r3(p)} u=${r2(u)} v=${r2(v)} " +
                 "start=${boxText(g.start)} end=${boxText(g.end)} endFrom=${g.endFrom} curve=${r1(g.curve.end)}"
@@ -629,6 +630,7 @@ internal class YtMinimizeDrag(
         if (reset) setOffsets(0f, 0f)
         session = null
         YtMinimizeModule.dragging = false
+        YtMinimizeModule.fromPage = false
     }
 
     // --- geometry

@@ -2,6 +2,7 @@ package com.github.libretube.ui.yt.mini
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -57,6 +58,20 @@ object YtMiniShapes : YtMiniLookDesign(YtDesign.SHAPES) {
 
     /** The night blue of the body and the bar: the window's frame is painted in it. */
     val body = Color(0xFF1E1D44)
+
+    /**
+     * The seamless minimize (round 29, Formen is its pilot): on the way down the window rounds to
+     * the bar's 32 dp corners and takes its night blue while it is as wide as the bar, then its
+     * sides draw in and the foot turns into the fillets of the bulge that grows out of the bar.
+     */
+    override fun merge(palette: YtPalette): YtMiniMerge = YtMiniMerge(
+        barRadius = spec.navRadius.toFloat(),
+        bodyInset = spec.body.toFloat(),
+        bodyRadius = spec.radius.toFloat(),
+        fillet = spec.fillet.toFloat(),
+        barColor = body.toArgb(),
+        pageColor = palette.background.toArgb(),
+    )
 
     override fun look(palette: YtPalette): YtMiniLook = YtMiniLook(
         spec = spec,

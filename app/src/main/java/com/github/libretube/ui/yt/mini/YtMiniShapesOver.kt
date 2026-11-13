@@ -144,6 +144,7 @@ internal fun ShapesOver(design: YtMiniShapes, scene: YtMiniScene) {
     val ink = palette?.ink ?: Color(0xFF17132B)
     val body = design.body
     val track = Color(0x26FFFFFF)
+    val merging = remember(palette) { palette != null && design.merge(palette) != null }
 
     val playing by remember { derivedStateOf { scene.info.playing } }
     val clock = rememberShapesClock(motion && playing && YtDock.docked)
@@ -226,7 +227,9 @@ internal fun ShapesOver(design: YtMiniShapes, scene: YtMiniScene) {
         val w = size.width
         val h = size.height
         if (w <= 0f || h <= 0f) return@Canvas
-        val progress = YtDock.progress
+        // the seamless minimize shapes the window by the page's own progress: a thrown player
+        // keeps its cookie while it falls (the bar lets go of YtDock.progress at once)
+        val progress = if (merging) scene.pageProgress else YtDock.progress
         val peek = YtDock.peek
         val a = w / 2f
         val b = h / 2f
