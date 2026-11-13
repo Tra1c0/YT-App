@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 29: find subscribed channels without an upload for over a year. -->
+<resources>
+    <string name="yt_dead_subs_title">Find dead subscriptions</string>
+    <string name="yt_dead_subs_summary">Channels without an upload for over a year, to tidy up</string>
+    <string name="yt_dead_subs_loading">Loading subscriptions…</string>
+    <plurals name="yt_dead_subs_progress">
+        <item quantity="one">%1$d of %2$d channel checked</item>
+        <item quantity="other">%1$d of %2$d channels checked</item>
+    </plurals>
+    <string name="yt_dead_subs_no_subs">You have no subscriptions.</string>
+    <string name="yt_dead_subs_none">Every subscribed channel uploaded something within the last year.</string>
+    <string name="yt_dead_subs_none_checked">None of the checked channels has been silent for over a year.</string>
+    <plurals name="yt_dead_subs_unknown">
+        <item quantity="one">%d channel could not be checked.</item>
+        <item quantity="other">%d channels could not be checked.</item>
+    </plurals>
+    <plurals name="yt_dead_subs_found">
+        <item quantity="one">%d channel silent for over a year</item>
+        <item quantity="other">%d channels silent for over a year</item>
+    </plurals>
+    <string name="yt_dead_subs_last">last upload %s</string>
+    <string name="yt_dead_subs_no_videos">no videos</string>
+    <string name="yt_dead_subs_gone">channel no longer exists</string>
+    <string name="yt_dead_subs_select_all">Select all</string>
+    <string name="yt_dead_subs_select_none">Select none</string>
+    <string name="yt_dead_subs_unsubscribe_count">%1$s (%2$d)</string>
+    <plurals name="yt_dead_subs_done">
+        <item quantity="one">%d channel unsubscribed</item>
+        <item quantity="other">%d channels unsubscribed</item>
+    </plurals>
+</resources>
