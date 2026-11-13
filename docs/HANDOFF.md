@@ -8,7 +8,7 @@ not here.
 
 ## Current state
 
-- Latest release: build 133 on `main` (per-build details: Build log below). Recent rounds built:
+- Latest release: build 134 on `main` (per-build details: Build log below). Recent rounds built:
   News overlay (pinch on the home; stories; cited summaries with a provider choice: OpenAI,
   Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
@@ -164,6 +164,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 134: seamless minimize (shared part, Formen pilot), description link groups + ad folding, dead subscriptions finder.
 - 133: update push (UnifiedPush/ntfy, CI secret `YT_PUSH_URL`), watch mode, notification split; CI runs util/services YT tests too.
 - 132: second finger cancels card swipe, hold menu, drag and search lens.
 - 131: news summaries: provider choice with quote verification for non-Anthropic providers.

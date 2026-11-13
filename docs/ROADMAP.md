@@ -16,7 +16,7 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
 - **Minimieren nahtlos in die Navi-Leiste:** beim Runterziehen nimmt das Fenster Breite, Ecken und
   Farbe der Leiste an und geht nahtlos in sie über; die Seite darunter blendet weich aus statt als
   Platte mit harter Kante; keine „unsichtbare Wand“ (Abschneide-Linie nur beim Wegwerfen/Zurückholen).
-  Gemeinsamer Teil + Formen gebaut (Build nach 133); offen: die übrigen Designs, als Nächstes
+  Gemeinsamer Teil + Formen gebaut (Build 134); offen: die übrigen Designs, als Nächstes
   Frequency und Synthwave (L, 2–3 Runden)
 
 - **Musikmodus für die übrigen Designs:** die Oberfläche jedes Designs reagiert auf die Musik, mit
