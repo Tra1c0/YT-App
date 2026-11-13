@@ -62,6 +62,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -236,6 +237,14 @@ internal fun WatchDescription(
     if (description.isBlank()) return
     // the size in the page's own units (scaled with the screen width, like the text around it)
     val textPx = with(LocalDensity.current) { sizeSp.sp.toPx() }
+    // YT (round 29): links sorted by type, ad blocks folded in the text (YtDescriptionLinks.kt)
+    val context = LocalContext.current
+    val overview = remember(description, streams.duration) {
+        runCatching { YtDescriptionLinkRules.overview(description, streams.duration) }.getOrNull()
+    }
+    var adsOpen by remember(description) { mutableStateOf(false) }
+    val textKey = "$adsOpen|$description"
+    Column(modifier.fillMaxWidth()) {
     AndroidView(
         factory = { context ->
             TextView(context).apply {
@@ -250,20 +259,25 @@ internal fun WatchDescription(
             view.typeface = runCatching { ResourcesCompat.getFont(view.context, font) }.getOrNull() ?: Typeface.DEFAULT
             view.setLineSpacing(0f, 1.3f)
             view.maxLines = if (expanded) Int.MAX_VALUE else collapsedLines
-            if (view.tag != description) {
-                view.tag = description
-                val text: CharSequence = if (description.contains("<") && description.contains(">")) {
+            if (view.tag != textKey) {
+                view.tag = textKey
+                val linked: CharSequence = if (description.contains("<") && description.contains(">")) {
                     description.replace("</a>", "</a> ").parseAsHtml(tagHandler = HtmlParser(LinkHandler(onLink)))
                 } else {
                     plainLinks(description, onLink)
                 }
+                val text = if (overview == null) linked else YtSponsorFold.apply(context, linked, overview, adsOpen, linkColor.toArgb()) { adsOpen = !adsOpen }
                 view.text = if (dropCap) withDropCap(text) else text
             }
             // collapsed, the text always starts at its first line
             if (!expanded) view.scrollTo(0, 0)
         },
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
     )
+    if (expanded && overview != null) {
+        YtDescriptionLinks(overview, onLink, color, linkColor, remember(font) { FontFamily(Font(font)) }, sizeSp = sizeSp)
+    }
+    }
 }
 
 /** Web addresses in a plain description as links that go the same way as the others. */

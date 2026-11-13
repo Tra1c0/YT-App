@@ -1392,6 +1392,10 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         }
 
         binding.descriptionLayout.setStreams(streams)
+        // YT: classic page: link overview and folded ads under the description
+        if (ytWatch == null) com.github.libretube.ui.yt.YtDescriptionClassic.bind(binding.descriptionLayout, streams) { millis ->
+            if (::playerController.isInitialized) playerController.seekTo(millis)
+        }
 
         // YT: video page details of the selected design
         ytWatch?.videoId = videoId
@@ -1516,6 +1520,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
      * Handle a link clicked in the description
      */
     private fun handleLink(link: String) {
+        // YT: channel and playlist links open in the app
+        if (context?.let { com.github.libretube.ui.yt.YtDescriptionNav.openInApp(it, link) } == true) return
         // get video id if the link is a valid youtube video link
         val uri = link.toUri()
         val videoId = TextUtils.getVideoIdFromUri(uri)

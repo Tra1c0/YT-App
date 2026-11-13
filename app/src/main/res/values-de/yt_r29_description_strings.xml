@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the link overview below the video description -->
+    <string name="yt_r29_desc_links_title">Links in der Beschreibung</string>
+    <string name="yt_r29_desc_group_timestamps">Zeitmarken</string>
+    <string name="yt_r29_desc_group_channels">Kanäle</string>
+    <string name="yt_r29_desc_group_videos">Videos &amp; Playlists</string>
+    <string name="yt_r29_desc_group_external">Externe Links</string>
+    <string name="yt_r29_desc_group_sponsored">Werbung &amp; Affiliate-Links</string>
+    <!-- below the group title of the ads, while it is folded -->
+    <string name="yt_r29_desc_sponsored_hint">Sponsoren, Rabattcodes und Affiliate-Links, eingeklappt</string>
+    <!-- in the description text: an ad block folded away / unfolded -->
+    <string name="yt_r29_desc_ads_folded">Werbe- &amp; Affiliate-Links ausgeblendet · anzeigen</string>
+    <string name="yt_r29_desc_ads_open">Werbe- &amp; Affiliate-Links · einklappen</string>
+    <string name="yt_r29_desc_playlist">Playlist</string>
+</resources>
