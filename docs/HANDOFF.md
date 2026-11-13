@@ -8,15 +8,11 @@ not here.
 
 ## Current state
 
-- Latest release: build 133 (update push via UnifiedPush/ntfy + watch mode; notifications split
-  into app updates and new videos). The user still has to add the secret `YT_PUSH_URL`. 132: second
-  finger cancels card gestures. 131: (summary provider choice: OpenAI, Anthropic, Gemini, Mistral,
-  OpenAI-compatible; default models from web search, unverified by a real call). 130: (News stages 2–4: card grows into the window, stories with timeline,
-  cited summaries with the user's own API key) on `main`. 129: News stage 1. 128: update
-  notification. 127: Synthwave grid reaches the horizon. Summaries are untested at runtime after R8
-  (no key; check "Testen" with a dummy key ⇒ "Schlüssel ungültig", no crash). 126: queue survives
-  restarts. Build 125 = docs system only
-  (`scripts/docs_sync.py`, hooks, `templates/ai-workflow/`), app code identical to 124.
+- Latest release: build 133 on `main` (per-build details: Build log below). Recent rounds built:
+  News overlay (pinch on the home; stories; cited summaries with a provider choice: OpenAI,
+  Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
+  watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
+- The user still has to add the GitHub secret `YT_PUSH_URL`; until then CI skips both push steps.
 - Next work: `docs/ROADMAP.md` → "Beschlossen", top to bottom. The music mode for the designs
   that do not react to sound yet is in that list but NOT released by the user: ask before
   starting it.
@@ -142,10 +138,19 @@ release `screens-<run>`.
 - Hidden error dialogs (`hide_error_dialogs 1`) make Android kill a not-responding app at once.
 - uiautomator cannot read the screen while the app hangs; find dialog buttons from window frames.
 - Signing locally: the release key exists only in the GitHub secret; never ask for it in chat.
+- WebFetch of platform.openai.com, developers.openai.com, unifiedpush.org, codeberg.org and
+  github.com pages is blocked here: use WebSearch summaries or artifacts on repo1.maven.org, and say
+  that the source was not opened.
+- Deleting a remote branch (`git push --delete`) is refused by the proxy (403); leave merged
+  helper branches (e.g. `r28/round`) for the user to delete.
 
 ## Repeated mistakes (process; code pitfalls: ARCHITECTURE.md → Pitfalls)
 
 - Agents guessed APIs when they could not compile: always compile locally.
+- Integrating a third-party service without asking which one (the summaries were built on
+  Anthropic; the user wanted ChatGPT): ask the provider/vendor before building.
+- Pushing an unfinished round to `main` because a stop hook nagged: keep the round on a local
+  branch (`rNN/round`) and back it up to the session branch instead; `main` only gets merged work.
 - A fresh container has no Android SDK: install it first (ARCHITECTURE.md → Build) and write
   `local.properties` per worktree.
 
