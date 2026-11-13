@@ -119,6 +119,7 @@ internal fun ShapesUnder(design: YtMiniShapes, scene: YtMiniScene) {
     val lime = palette.lime
     val pink = palette.pink
     val ink = palette.ink
+    val merge = remember(palette) { design.merge(palette) }
 
     // what changes rarely (not the position, which the poll renews every time)
     val text by remember { derivedStateOf { scene.info.let { Triple(it.title, it.channel, it.playing) } } }
@@ -238,10 +239,28 @@ internal fun ShapesUnder(design: YtMiniShapes, scene: YtMiniScene) {
                     // page and bar while minimizing or dragged (a rest-sized body at the top of a
                     // taller box left the screen behind visible between body and bar)
                     val grow = YtShapesLayout.grow(size.height, s.restHeight)
-                    val body = design.bodyPath(look, size.width, size.height, density, open = false, grow = grow)
-                    drawPath(body, look.fill)
-                    val rim = design.bodyPath(look, size.width, size.height, density, open = true, grow = grow)
-                    look.border?.let { drawPath(rim, it, style = Stroke(look.borderWidth * density)) }
+                    // the seamless minimize: between page and bar the body is the window that
+                    // takes on the bar's width, corners and colour (docked and in the preview it
+                    // is the bulge as before, which the window ends in)
+                    val window = merge?.takeIf { YtDock.peek <= 0f && scene.pageProgress < 1f }?.let {
+                        YtMiniMergeMath.window(it, scene.pageProgress, size.width, size.height, density, motion)
+                    }
+                    val content = look.height * density + grow
+                    val body = if (window != null) {
+                        shapesWindowPath(window, size.width, size.height, content, open = false)
+                    } else {
+                        design.bodyPath(look, size.width, size.height, density, open = false, grow = grow)
+                    }
+                    drawPath(body, if (window != null && merge != null) Color(YtMiniMergeMath.color(merge, window.tint)) else look.fill)
+                    val rim = if (window != null) {
+                        shapesWindowPath(window, size.width, size.height, content, open = true, inset = look.borderWidth * density / 2f)
+                    } else {
+                        design.bodyPath(look, size.width, size.height, density, open = true, grow = grow)
+                    }
+                    look.border?.let { border ->
+                        val tint = window?.tint ?: 1f
+                        if (tint > 0f) drawPath(rim, border.copy(alpha = border.alpha * tint), style = Stroke(look.borderWidth * density))
+                    }
                     val hover = scene.hover()
                     if (hover > 0f && YtDock.peek <= 0f) drawPath(rim, lime.copy(alpha = hover), style = Stroke(2f * density))
                     val r = reject.value
@@ -438,4 +457,51 @@ internal fun ShapesUnder(design: YtMiniShapes, scene: YtMiniScene) {
             }
         }
     }
+}
+
+/**
+ * The Formen window of the seamless minimize ([YtMiniMergeMath.window]) in a box [width] ×
+ * [height] px whose body stands [content] px above the bar: a rounded rectangle with the bar's
+ * convex corners at its foot while it approaches, or (once it narrows) the bulge's body with its
+ * fillets curving out into the bar, as [YtMiniLookDesign.bodyPath] draws it docked. [open]: the
+ * rim, inside the edge by [inset], without the foot that lies on the bar.
+ */
+internal fun shapesWindowPath(window: YtMiniWindow, width: Float, height: Float, content: Float, open: Boolean, inset: Float = 0f): Path {
+    val path = Path()
+    val b = window.inset
+    val r = window.top
+    val f = window.fillet
+    if (f <= 0f) {
+        val i = if (open) inset else 0f
+        path.addRoundRect(
+            androidx.compose.ui.geometry.RoundRect(
+                left = b + i,
+                top = i,
+                right = width - b - i,
+                bottom = height - i,
+                topLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius((r - i).coerceAtLeast(0f)),
+                topRightCornerRadius = androidx.compose.ui.geometry.CornerRadius((r - i).coerceAtLeast(0f)),
+                bottomRightCornerRadius = androidx.compose.ui.geometry.CornerRadius((window.foot - i).coerceAtLeast(0f)),
+                bottomLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius((window.foot - i).coerceAtLeast(0f)),
+            ),
+        )
+        return path
+    }
+    // the bulge: from the bar's surface, curving up into the body and down again
+    val i = if (open) inset else 0f
+    val foot = if (open) content + i else content
+    path.moveTo(b - f, foot)
+    path.arcTo(androidx.compose.ui.geometry.Rect(b - 2 * f, content - 2 * f, b, content), 90f, -90f, false)
+    path.lineTo(b + i, r)
+    path.arcTo(androidx.compose.ui.geometry.Rect(b + i, i, b + i + 2 * r, i + 2 * r), 180f, 90f, false)
+    path.lineTo(width - b - i - r, i)
+    path.arcTo(androidx.compose.ui.geometry.Rect(width - b - i - 2 * r, i, width - b - i, i + 2 * r), 270f, 90f, false)
+    path.lineTo(width - b - i, content - f)
+    path.arcTo(androidx.compose.ui.geometry.Rect(width - b, content - 2 * f, width - b + 2 * f, content), 180f, -90f, false)
+    if (!open) {
+        path.lineTo(width - b + f, height)
+        path.lineTo(b - f, height)
+        path.close()
+    }
+    return path
 }

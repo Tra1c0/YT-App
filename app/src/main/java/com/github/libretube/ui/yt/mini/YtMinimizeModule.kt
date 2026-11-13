@@ -17,6 +17,8 @@ import com.github.libretube.ui.yt.player.YtPlayerModule
  *   landing the drag already plays the haptic of.
  * - [closing]: the docked player is being thrown away (the page closes right after).
  * - [dragging]: a drag or its release runs on the page.
+ * - [fromPage]: that drag began on the open page (not on the docked player): the seamless
+ *   minimize does not cut it at the bar's edge.
  */
 object YtMinimizeModule : YtPlayerModule {
     /** "Video folgt dem Finger", read per gesture. */
@@ -34,6 +36,9 @@ object YtMinimizeModule : YtPlayerModule {
     var dragging = false
         internal set
 
+    var fromPage = false
+        internal set
+
     private var drag: YtMinimizeDrag? = null
     private var dragHost: YtPlayerHost? = null
 
@@ -45,6 +50,7 @@ object YtMinimizeModule : YtPlayerModule {
         landingFromDrag = false
         closing = false
         dragging = false
+        fromPage = false
     }
 
     // a back swipe or back takes the transition: a release still running lets go of it
@@ -71,5 +77,6 @@ object YtMinimizeModule : YtPlayerModule {
         landingFromDrag = false
         closing = false
         dragging = false
+        fromPage = false
     }
 }

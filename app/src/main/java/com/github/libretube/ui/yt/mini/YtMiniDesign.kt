@@ -7,6 +7,7 @@ import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -114,6 +115,14 @@ class YtMiniScene(
     /** Minimized, 0 (the page) to 1 (docked). */
     val progress: () -> Float = { YtDock.progress }
 
+    /**
+     * Minimized as the page's own transition has it, 0 to 1. Unlike [progress] it stays at 1
+     * while a thrown player falls (the bar lets go of [progress] at once) and while the preview
+     * runs; the seamless minimize ([YtMiniDesign.merge]) shapes the window by it. Read it in draw
+     * and layout lambdas.
+     */
+    var pageProgress by mutableFloatStateOf(0f)
+
     /** The long-press preview, 0 to 1 (a spring may swing a little past 1). */
     val peek: () -> Float = { YtDock.peek }
 
@@ -220,6 +229,14 @@ abstract class YtMiniDesign(val design: YtDesign) {
      * the mask's shape itself, or the picture's rectangle would show through it.
      */
     open fun overAlpha(progress: Float): Float = progress
+
+    /**
+     * The seamless minimize (YtMiniMerge): while it minimizes, the window takes on the bar's
+     * width, corners and colour and flows into it, the page below fades out, and a drag from the
+     * open page is never cut at the bar's edge. Null (the default) keeps the minimize as it was.
+     * A design that returns one draws its body by YtMiniMergeMath.window at [YtMiniScene.pageProgress].
+     */
+    open fun merge(palette: YtPalette): YtMiniMerge? = null
 
     /** Whether a long press on the picture opens the preview. */
     open val peeks: Boolean get() = true
