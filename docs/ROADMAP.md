@@ -31,8 +31,12 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
   Stufe zurück statt zu verschwinden. **Smarter Risiko-Schätzer** entscheidet, was welche Stufe
   bekommt: lernt lokal aus Videos, die tatsächlich verschwunden sind (Rate je Kanal und Thema), plus
   optional eine Einschätzung über die KI-Schnittstelle der News-Kurzfassungen (gebündelt, nur Titel,
-  Kanal, Beschreibungsanfang; eigener Schlüssel, Kosten pro Abruf). Verschwundene Videos werden
-  geschützt, Bereich „Archiv“ in den Einstellungen (abspielen, exportieren, löschen), Schild auf der
+  Kanal, Beschreibungsanfang; eigener Schlüssel, Kosten pro Abruf). Erkennt der Schätzer ein hohes
+  Risiko: Benachrichtigung („könnte verschwinden – gesichert“), Ton wird sofort mitgespeichert und
+  analysiert: Skript mit Sprechern, die Stimmen werden innerhalb des Videos unterschieden
+  (Sprecher A/B …, Namen nur aus Gesagtem/Beschreibung; keine Stimmabdruck-Datenbank); per Audio-KI
+  des gewählten Anbieters, wo er Ton annimmt (Gemini, OpenAI, Mistral; Anthropic nur Text).
+  Verschwundene Videos werden geschützt, Bereich „Archiv“ in den Einstellungen (abspielen, exportieren, löschen), Schild auf der
   Videoseite „privatisiert • alte Version abspielen“ (L, ca. 2–3 Runden)
 
 - **Musikmodus für die übrigen Designs:** die Oberfläche jedes Designs reagiert auf die Musik, mit
