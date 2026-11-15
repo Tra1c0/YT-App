@@ -27,6 +27,7 @@ not here.
 
 ## Open points
 
+- APK clean-up (round 32, untested on the phone): all-files access return + rescan, `createDeleteRequest`, uninstall dialogs, install from `local.apk`, the quiet start-of-build clean-up. Next asked by the user: theme builder ("Eigenes Design"; ask what "fluent in YouTube" means), Ambilight, then a local search/classification framework (index, on-device embeddings, own classifier) with supercut + memory search.
 - Archive (round 31, build 136, untested on the phone and against live YouTube/AI): oEmbed codes for private/deleted, raw stream and SABR downloads, storyboard fetch, player/export/badge/slider UI, all three audio AI paths (endpoints from search summaries; OpenAI's diarize model reportedly retires 2027-02-26), risk weights hand-set. Known gaps: two jobs at once may fetch twice; a half-failed text save is not retried; the list shows the newest 150.
 - Stream error card (build 135, untested on the phone): look per design, open-in-YouTube intent, toast vs card. YouTube answers private videos with LOGIN_REQUIRED "Please sign in" (seen with KyUjsUuM8Gk).
 - Round 29 (untested on the phone): Formen minimize (window shape/colour during the drag, picture

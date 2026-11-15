@@ -142,6 +142,7 @@ Bekannt: Wischen zum nächsten Short hat im Emulator nicht reagiert; auf dem Han
 | Absturz-Report | Nach einem Absturz beim nächsten Start einmal „YT ist beim letzten Mal abgestürzt“ mit „Bericht kopieren“ / „Teilen“; die letzten 3 Berichte bleiben nur auf dem Gerät, Tokens werden geschwärzt. | T |
 | Diagnose | Einstellungen → „Diagnose“: Build, Android/Gerät, Design, Sync-Server, Netz, letztes Update-Ergebnis, Konto ja/nein, Warteschlange, letzter Absturz, Zeiten der letzten 3 Miniplayer-Rückholungen – als Text zum Kopieren, ohne Konto- oder Tokendaten. | T |
 | Speicher | Einstellungen → „Speicher“: Gesamtgröße, dazu Vorschaubilder, Web-Cache (Anmeldung bleibt), alte Update-Dateien, sonstiger Cache, Absturzberichte – je „Leeren“ oder „Alles Überflüssige leeren“; Downloads nur angezeigt. Abos, Verlauf, Einstellungen und Anmeldung bleiben immer. | T |
+| Alte YT-Installationsdateien | Speicher-Seite: findet alte YT-APKs und CI-ZIPs (Download, Documents, Browser-/Telegram-Ordner, App-Cache) anhand von Paket, Build und Signatur, und alte installierte YT-Builds. Liste mit Häkchen, „Alle alten löschen“, Zusammenfassung. Neuere APKs werden nie gelöscht (YT-signiert: „Installieren“). LibreTube (Original) getrennt, nicht vorausgewählt. „Zugriff auf alle Dateien“ nur auf Tippen. „Automatisch aufräumen“ (an): nach einem Update still löschen, was YT ohne Nachfrage darf. | T |
 | Sicherheit | 22 Befunde geschlossen, Anmeldung verschlüsselt gespeichert und nicht im Backup, nur HTTPS. Details in [SICHERHEIT.md](SICHERHEIT.md). | T |
 
 ## Ideen (noch nicht gebaut)

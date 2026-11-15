@@ -534,6 +534,14 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   `J/util/YtCrashText.kt`. Dialogs (crash on next start, Settings → Diagnose) in
   `Y/YtDiagnosisUi.kt`, text in `J/util/YtDiagnosis.kt`. Showing the YT crash dialog clears
   upstream `error_log` (no double dialog).
+- Old YT installation files (section of the storage page): pure `J/util/YtApkCleanRules.kt` (name
+  pre-filter, build from version code, verdict OLD/CURRENT/NEWER…, zip central-directory peek,
+  installed-app kinds), `J/util/YtApkClean.kt` (scan cache/update, Download, Documents, browser and
+  Telegram folders, MediaStore; identity via `getPackageArchiveInfo` package + signer; delete by
+  path → MediaStore → `createDeleteRequest`; `ACTION_DELETE` for old installed builds; quiet
+  start-of-build clean-up from `YtActivityHooks.onCreate`), View section `Y/YtApkCleanUi.kt`.
+  Manifest: storage permissions ≤ API 29, `MANAGE_EXTERNAL_STORAGE` (asked only on tap),
+  `REQUEST_DELETE_PACKAGES`, `<queries>` (LibreTube packages + youtube.com VIEW intent).
 - Storage page: pure `J/util/YtStorageRules.kt`, `J/util/YtStorage.kt`, dialog `Y/YtStorageUi.kt`.
   Image cache via Coil's `diskCache.clear()`, WebView via `clearCache(true)` (cookies and
   `app_webview` never touched); `YtSelfUpdater.holdsApk()` protects a running update. LibreTube has
@@ -677,7 +685,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (422 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (425 files; generated, do not edit)</summary>
 
 - `J/helpers/` (25): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDeadSubs, YtDesign,
@@ -695,16 +703,16 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - `J/ui/preferences/` (5): YtArchiveCapacityPreference, YtArchiveSettings,
   YtChannelSpeedsPreference, YtInteractionSettings, YtUpdateNotifyPrefs
 - `J/ui/views/` (2): YtBottomNavigationView, YtEdgeScrollView
-- `J/util/` (21): YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules, YtNotifyChannels, YtPush,
-  YtPushRules, YtQueueEdit, YtQueuePersist, YtQueueStore, YtReleaseNotes, YtSelfUpdater, YtStorage,
-  YtStorageRules, YtStreamError, YtTitleCalm, YtUpdateNotifier, YtUpdateNotifyRules, YtUpdateRules,
-  YtUpdateWatch, YtUpdateWatchRules
+- `J/util/` (23): YtApkClean, YtApkCleanRules, YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules,
+  YtNotifyChannels, YtPush, YtPushRules, YtQueueEdit, YtQueuePersist, YtQueueStore, YtReleaseNotes,
+  YtSelfUpdater, YtStorage, YtStorageRules, YtStreamError, YtTitleCalm, YtUpdateNotifier,
+  YtUpdateNotifyRules, YtUpdateRules, YtUpdateWatch, YtUpdateWatchRules
 - `J/workers/` (2): YtArchiveWorker, YtUpdateCheckWorker
-- `Y/` (116): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
+- `Y/` (117): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
   FrequencyMotion, FrequencyPillBars, FrequencyPulse, FrequencyPulseMath, FrequencyTimeBar,
   FrequencyVisuals, FrostHome, GlassHome, KieselDiscover, KieselHome, MovoHome, MovoWatch, PopHome,
   ShapesHome, SideHome, SideWatch, SynthwaveChrome, SynthwaveHome, SynthwaveMath, SynthwaveScene,
-  YouTubeHome, YouTubeLibrary, YouTubeWatch, YtActivityHooks, YtAge, YtBatteryPreview,
+  YouTubeHome, YouTubeLibrary, YouTubeWatch, YtActivityHooks, YtAge, YtApkCleanUi, YtBatteryPreview,
   YtBatteryVibes, YtCardDrag, YtCardFrames, YtCardSwipe, YtClassic, YtContrast, YtCount,
   YtDescriptionLinkRules, YtDescriptionLinks, YtDiagnosisUi, YtDiscovery, YtDock, YtDrag,
   YtFeedButtons, YtFeedSheet, YtFloatingPlayer, YtGestures, YtGuide, YtGuideFragment, YtGuideRules,
