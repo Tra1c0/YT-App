@@ -19,6 +19,19 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
   Gemeinsamer Teil + Formen gebaut (Build 134); offen: die übrigen Designs, als Nächstes
   Frequency und Synthwave (L, 2–3 Runden)
 
+- **Archiv für verschwundene Videos** (eigene „Wayback Machine“): YT speichert Videos aus dem Feed
+  vorsorglich, damit sie nach Privatisieren oder Löschen noch abspielbar sind. Stufen: 1 = Titel,
+  Beschreibung, Vorschaubild, Kapitel, Untertitel (~50 KB, für alle); 2 = Zeitleisten-Standbilder +
+  Ton in niedriger Bitrate (~3–6 MB); 3 = 144p mit Ton (~15 MB). Nur im WLAN und beim Laden,
+  gedrosselt (Bot-Sperre vermeiden), Gesehenes und Shorts ausgenommen. **Schieberegler für die
+  Kapazität** von wenigen MB (nur Stufe 1) bis 15 GB; wird es knapp, fallen alte Einträge eine
+  Stufe zurück statt zu verschwinden. **Smarter Risiko-Schätzer** entscheidet, was welche Stufe
+  bekommt: lernt lokal aus Videos, die tatsächlich verschwunden sind (Rate je Kanal und Thema), plus
+  optional eine Einschätzung über die KI-Schnittstelle der News-Kurzfassungen (gebündelt, nur Titel,
+  Kanal, Beschreibungsanfang; eigener Schlüssel, Kosten pro Abruf). Verschwundene Videos werden
+  geschützt, Bereich „Archiv“ in den Einstellungen (abspielen, exportieren, löschen), Schild auf der
+  Videoseite „privatisiert • alte Version abspielen“ (L, ca. 2–3 Runden)
+
 - **Musikmodus für die übrigen Designs:** die Oberfläche jedes Designs reagiert auf die Musik, mit
   eigener „Tanz-Sprache“ je Design. Klang-Motor ist fertig (mit Frequency gebaut); offen: noch nicht
   freigegeben (L)

@@ -27,7 +27,7 @@ not here.
 
 ## Open points
 
-- Stream error card (build after 134, untested on the phone): look per design, open-in-YouTube intent, toast vs card. YouTube answers private videos with LOGIN_REQUIRED "Please sign in" (seen with KyUjsUuM8Gk). The user's idea of a local archive of vanished videos (tiers: metadata for all, storyboard + low audio, 144p; budget, Wi-Fi + charging, throttled) is discussed, not yet decided.
+- Stream error card (build after 134, untested on the phone): look per design, open-in-YouTube intent, toast vs card. YouTube answers private videos with LOGIN_REQUIRED "Please sign in" (seen with KyUjsUuM8Gk). Archive of vanished videos is now decided (ROADMAP), with a capacity slider (few MB to 15 GB) and a risk estimator (local learning + optional AI via the news summary providers).
 - Round 29 (untested on the phone): Formen minimize (window shape/colour during the drag, picture
   corners inside the window, overshoot over the bar without cut, page fade timing: constants
   `FADE_*`, `APPROACH_TO`, `NARROW_FROM` in `YtMiniMerge.kt`); description overview layout per
