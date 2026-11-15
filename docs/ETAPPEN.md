@@ -18,10 +18,10 @@ Builder“), wie im Chat bewertet und angepasst. Sie sind Ideen, keine Vorgaben:
 
 | Etappe | Status |
 | --- | --- |
-| SSI-1 Kern | gebaut (Build 138, Fix in 140), wartet auf Prüfung und Abnahme durch den Nutzer |
-| TB-1 Fundament | gebaut (Build 138, Fix in 140), wartet auf Prüfung und Abnahme durch den Nutzer |
-| SSI-2 Präzision | wartet auf SSI-1 + TB-1 |
-| TB-2 Animator | wartet auf SSI-1 + TB-1 |
+| SSI-1 Kern | abgenommen (Nutzer, 2026-11-15, Build 140; Messwerte nicht gemeldet) |
+| TB-1 Fundament | abgenommen (Nutzer, 2026-11-15, Build 140; Messwerte nicht gemeldet) |
+| SSI-2 Präzision | in Arbeit (Runde 35) |
+| TB-2 Animator | in Arbeit (Runde 35) |
 | SSI-3 Belege | wartet auf Etappe 2 |
 | TB-3 Vektor | wartet auf Etappe 2 |
 | SSI-4 Ultra & Bild | wartet auf Etappe 3 |
