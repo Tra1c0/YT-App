@@ -15,6 +15,8 @@ object YtActivityHooks {
         YtTimeUpLayer.attach(activity)
         // the ambilight around the docked mini player and on the screens' edges
         com.github.libretube.ui.yt.ambilight.YtAmbilightLayer.attach(activity)
+        // the own design was turned off after a crash: say so, with repair and reset
+        com.github.libretube.ui.yt.builder.YtBuilderSafeMode.showNotice(activity)
         // the queue kept over a restart goes back (with its resume pill) if nothing else plays
         YtQueueResume.onActivityCreated(activity, savedInstanceState)
         // first start of a new build: old YT APKs YT may delete without asking go quietly

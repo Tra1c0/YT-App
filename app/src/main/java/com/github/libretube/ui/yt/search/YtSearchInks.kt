@@ -7,7 +7,7 @@ package com.github.libretube.ui.yt.search
  */
 
 /** The design search per design (the names of YtSignature). */
-enum class YtSearchKind { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL, FREQUENCY, SYNTHWAVE }
+enum class YtSearchKind { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL, FREQUENCY, SYNTHWAVE, CUSTOM }
 
 /**
  * Colours of one design's search.
@@ -75,6 +75,8 @@ object YtSearchPalette {
     }
 
     private fun dayInks(kind: YtSearchKind): YtSearchInks = when (kind) {
+        // the user's own design: from its theme's colours, each text made to read (YtBuilderInks)
+        YtSearchKind.CUSTOM -> com.github.libretube.ui.yt.builder.YtBuilderInks.search()
         YtSearchKind.YOUTUBE -> YtSearchInks(
             scrim = 0xF5101014.toInt(), panel = NONE,
             field = 0xFF282830.toInt(), fieldText = 0xFFF6F4F2.toInt(), fieldHint = 0xFFB8B8C5.toInt(),

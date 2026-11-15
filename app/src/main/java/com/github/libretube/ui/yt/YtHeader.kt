@@ -279,6 +279,11 @@ private fun YtHeaderBar(
         KieselHeaderBar(palette, onSearch, onProfile)
         return
     }
+    // the user's own design: the header component of its theme
+    if (design == YtDesign.CUSTOM) {
+        com.github.libretube.ui.yt.builder.YtCustomHeader(onSearch, onProfile)
+        return
+    }
     val style = headerStyle(design, palette)
     // Frequency: the header holds the sound pulse while it is shown
     if (design == YtDesign.FREQUENCY) FrequencyPulseHost()

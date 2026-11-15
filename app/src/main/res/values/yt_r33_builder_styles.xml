@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- YT: "Eigenes" (theme builder). The classic screens take the overlay of the design the
+         theme started from (YtBuilderMode.classicOverlay); this one only names the design. -->
+    <style name="YtDesign.Custom" parent="YtDesign.YouTube" />
+</resources>

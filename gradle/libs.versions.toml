@@ -45,11 +45,14 @@ anthropicJava = "3.8.0"
 unifiedpushConnector = "3.3.5"
 onnxruntime = "1.31.1"
 tinkAndroid = "1.23.0"
+# YT: frame timing of the theme editor (JankStats), shown in its overlay and in Diagnose
+metricsPerformance = "1.0.0"
 
 [libraries]
 onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntime" }
 unifiedpush-connector = { module = "org.unifiedpush.android:connector", version.ref = "unifiedpushConnector" }
 tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "tinkAndroid" }
+androidx-metrics-performance = { group = "androidx.metrics", name = "metrics-performance", version.ref = "metricsPerformance" }
 androidx-activity = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-core = { group = "androidx.core", name = "core", version.ref = "core" }

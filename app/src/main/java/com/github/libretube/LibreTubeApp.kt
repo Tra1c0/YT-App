@@ -28,6 +28,8 @@ class LibreTubeApp : Application() {
          */
         PreferenceHelper.initialize(applicationContext)
         PreferenceHelper.migrate()
+        // YT: the own design's theme (or, after a crash in it, back to the design before)
+        com.github.libretube.ui.yt.builder.YtBuilderSafeMode.onAppStart(this)
 
         /**
          * Set the api and the auth api url

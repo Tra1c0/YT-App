@@ -43,6 +43,8 @@ object YtCrashLog {
 
     /** Stores one crash. Never throws: a failing crash log must not hide the real crash. */
     fun record(context: Context, thread: Thread, error: Throwable) {
+        // a crash while the own design is shown turns it off at the next start (safe mode)
+        com.github.libretube.ui.yt.builder.YtBuilderSafeMode.onCrash(context, error)
         runCatching {
             val now = System.currentTimeMillis()
             val header = listOf("Time" to formatTime(now)) + buildLines()

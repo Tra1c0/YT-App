@@ -501,7 +501,7 @@ private class YtLiftLook(
 )
 
 private fun liftLook(palette: YtPalette): YtLiftLook = when (palette.signature) {
-    YtSignature.YOUTUBE -> YtLiftLook(1.03f, 0f, 0.7f, 520f, 14.dp, null, 0.dp, true)
+    YtSignature.YOUTUBE, YtSignature.CUSTOM -> YtLiftLook(1.03f, 0f, 0.7f, 520f, 14.dp, null, 0.dp, true)
     // Movo: a quick tilt and a lime edge, as if picked off the mosaic
     YtSignature.MOVO -> YtLiftLook(1.04f, -1.2f, 0.5f, 520f, 16.dp, palette.lime, 2.dp, true)
     // After: slow and cinematic, the poster lit by a thin accent frame

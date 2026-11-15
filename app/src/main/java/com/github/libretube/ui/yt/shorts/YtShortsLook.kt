@@ -66,6 +66,12 @@ data class YtShortsLook(
         }
 
         private fun ofDay(design: YtDesign): YtShortsLook = when (design) {
+            // the user's own design: the Shorts of the design its theme started from, in the theme's accent
+            YtDesign.CUSTOM -> ofDay(com.github.libretube.helpers.YtBuilderMode.base).copy(
+                accent = com.github.libretube.ui.yt.builder.YtBuilderInks.accent(),
+                page = YtHapticTexture.of("shorts_page_custom", YtFeedback.SEGMENT_TICK, YtHapticStep(YtPrimitive.TICK, 0.5f)),
+                second = tick("custom", 0.3f),
+            )
             YtDesign.STANDARD -> YtShortsLook(
                 accent = 0xFFFF4E45.toInt(), track = WHITE_TRACK,
                 chip = 0xD9101014.toInt(), chipInk = 0xFFFFFFFF.toInt(),

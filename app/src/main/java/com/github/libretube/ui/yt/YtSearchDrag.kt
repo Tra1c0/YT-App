@@ -383,7 +383,7 @@ private fun lensLook(palette: YtPalette): YtLensLook {
         YtSignature.KIESEL -> YtLensLook(CircleShape, solid(palette.lavender), null, 0.dp, palette.ink, true)
         YtSignature.AFTER -> YtLensLook(CircleShape, solid(palette.surface), palette.accent, 2.dp, palette.text, true)
         YtSignature.SIDE -> YtLensLook(CircleShape, solid(palette.raised), palette.accent, 1.5.dp, palette.text, true)
-        YtSignature.YOUTUBE -> YtLensLook(CircleShape, solid(palette.raised), null, 0.dp, palette.text, true)
+        YtSignature.YOUTUBE, YtSignature.CUSTOM -> YtLensLook(CircleShape, solid(palette.raised), null, 0.dp, palette.text, true)
     }
 }
 

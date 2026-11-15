@@ -119,6 +119,15 @@
             android:screenOrientation="locked" />
 
         <!-- YT: plays a copy from the archive of vanished videos (round 31) -->
+        <!-- YT: the theme builder's editor (design "Eigenes") -->
+        <activity
+            android:name=".ui.yt.builder.YtThemeEditorActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout|uiMode"
+            android:exported="false"
+            android:label="@string/yt_builder_title"
+            android:theme="@style/Theme.Material3.Dark.NoActionBar"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity
             android:name=".ui.activities.YtArchivePlayerActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout"

@@ -15,7 +15,7 @@ enum class YtDesign(
     @StyleRes val brandTextAppearance: Int,
     val labeledNavigation: Boolean,
     /** Light designs run in the light theme, or dark by choice (YtDesignDark); all others dark. */
-    val light: Boolean = false,
+    open val light: Boolean = false,
 ) {
     STANDARD("standard", null, R.style.TextAppearance_YT_Brand, false),
     YOUTUBE("youtube", R.style.YtDesign_YouTube, R.style.TextAppearance_YT_YouTube_Brand, true),
@@ -41,12 +41,20 @@ enum class YtDesign(
      * a neon grid that drives towards the viewer run as one scene behind the screens
      * (ui/yt/SynthwaveScene.kt) and follow the sound subtly.
      */
-    SYNTHWAVE("synthwave", R.style.YtDesign_Synthwave, R.style.TextAppearance_YT_Synthwave_Brand, true);
+    SYNTHWAVE("synthwave", R.style.YtDesign_Synthwave, R.style.TextAppearance_YT_Synthwave_Brand, true),
+
+    /**
+     * "Eigenes": the user's own design, made in the theme builder (ui/yt/builder). Its surfaces
+     * are rendered from a theme document; light or dark as that document says (YtBuilderMode).
+     */
+    CUSTOM("custom", R.style.YtDesign_Custom, R.style.TextAppearance_YT_YouTube_Brand, true) {
+        override val light: Boolean get() = YtBuilderMode.light
+    };
 
     /** Designs with a Shorts tab (in place of the trends tab) and the tabs Home, Shorts, Abos, Du. */
     val hasShortsTab: Boolean
         get() = this == CLAY || this == EDITORIAL || this == GLASS || this == POP || this == SHAPES || this == FROST ||
-            this == FREQUENCY || this == SYNTHWAVE
+            this == FREQUENCY || this == SYNTHWAVE || this == CUSTOM
 
     /**
      * Designs whose UI follows the sound (the pulse in ui/yt/FrequencyPulse.kt listens only while
@@ -64,6 +72,7 @@ enum class YtDesign(
         SIDE -> "side<span style='color:$accentHex';>.</span>"
         FREQUENCY -> "frequency"
         SYNTHWAVE -> "SYNTHWAVE"
+        CUSTOM -> YtBuilderMode.wordmark
         else -> "YouTube"
     }
 
@@ -84,6 +93,7 @@ enum class YtDesign(
             KIESEL -> 0xFFB4A7F5.toInt()
             FREQUENCY -> 0xFFFF4D6D.toInt()
             SYNTHWAVE -> 0xFFFF3FD8.toInt()
+            CUSTOM -> YtBuilderMode.timeline
         }
 
     /** The label of a bottom navigation destination in this design, or null to keep the default. */
@@ -121,7 +131,7 @@ enum class YtDesign(
             R.id.libraryFragment -> R.string.yt_nav_you
             else -> null
         }
-        // Frequency, Synthwave, Clay, Editorial, Glas, Pop, Formen, Frost: Home, Shorts, Abos, Du
+        // Frequency, Synthwave, Eigenes, Clay, Editorial, Glas, Pop, Formen, Frost: Home, Shorts, Abos, Du
         else -> when (itemId) {
             R.id.homeFragment -> R.string.yt_nav_home
             R.id.trendsFragment -> R.string.yt_nav_shorts

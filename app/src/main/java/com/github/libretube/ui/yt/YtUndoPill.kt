@@ -479,7 +479,7 @@ private fun designPillLook(palette: YtPalette): PillLook {
         m.shadow(10.dp, shape, ambientColor = shadow, spotColor = shadow).clip(shape).background(color)
     }
     return when (palette.signature) {
-        YtSignature.YOUTUBE -> PillLook(
+        YtSignature.YOUTUBE, YtSignature.CUSTOM -> PillLook(
             surface = flat(RoundedCornerShape(14.dp), palette.raised),
             text = palette.text, action = palette.text, font = YtFonts.geist, tone = palette.raised,
         )

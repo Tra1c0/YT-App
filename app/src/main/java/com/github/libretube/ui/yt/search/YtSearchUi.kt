@@ -170,7 +170,7 @@ private fun lookOf(kind: YtSearchKind, palette: YtPalette): SearchLook {
     val quickOut = tween<Float>(170, easing = FastOutLinearInEasing)
     val out = tween<Float>(230, easing = FastOutLinearInEasing)
     return when (kind) {
-        YtSearchKind.YOUTUBE -> SearchLook(palette.font, FontWeight.Medium, 17.sp, 0.sp, 48.dp, palette.font, FontWeight.Normal, 16.sp, false,
+        YtSearchKind.YOUTUBE, YtSearchKind.CUSTOM -> SearchLook(palette.font, FontWeight.Medium, 17.sp, 0.sp, 48.dp, palette.font, FontWeight.Normal, 16.sp, false,
             12.dp, EntryLayout.ROWS, 0.dp, tween(260, easing = YtEaseOut), out, quickOut)
         YtSearchKind.MOVO -> SearchLook(YtFonts.geist, FontWeight.ExtraBold, 19.sp, 0.sp, 56.dp, YtFonts.geist, FontWeight.Bold, 15.sp, false,
             14.dp, EntryLayout.TILES, 0.dp, soft(0.62f, 420f), out, quickOut)
@@ -627,7 +627,7 @@ private fun Modifier.fieldMotion(kind: YtSearchKind, progress: () -> Float, orig
             }
         }
         when (kind) {
-            YtSearchKind.YOUTUBE -> {
+            YtSearchKind.YOUTUBE, YtSearchKind.CUSTOM -> {
                 translationY = -(1f - t) * (h + 16.dp.toPx())
                 alpha = phase(t, 0f, 0.6f)
             }
@@ -717,7 +717,7 @@ private fun Modifier.fieldSurface(kind: YtSearchKind, inks: YtSearchInks, progre
     val t = progress()
     val fill = Color(inks.field)
     when (kind) {
-        YtSearchKind.YOUTUBE, YtSearchKind.FROST, YtSearchKind.KIESEL -> drawRoundRect(fill, cornerRadius = CornerRadius(size.height / 2f))
+        YtSearchKind.YOUTUBE, YtSearchKind.FROST, YtSearchKind.KIESEL, YtSearchKind.CUSTOM -> drawRoundRect(fill, cornerRadius = CornerRadius(size.height / 2f))
         YtSearchKind.MOVO -> drawRoundRect(fill, cornerRadius = CornerRadius(16.dp.toPx()))
         YtSearchKind.AFTER -> {
             // a thin tangerine rule that opens from the middle

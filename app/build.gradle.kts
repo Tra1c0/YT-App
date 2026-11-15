@@ -223,6 +223,8 @@ dependencies {
 
     /* YT: on-device sentence embeddings for SSI (the model itself is downloaded on request) */
     implementation(libs.onnxruntime.android)
+    /* YT: frame timing of the theme editor (JankStats), only while the editor is open */
+    implementation(libs.androidx.metrics.performance)
 
 
     /* Coil */

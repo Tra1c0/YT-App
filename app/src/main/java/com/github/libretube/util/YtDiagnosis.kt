@@ -57,6 +57,8 @@ object YtDiagnosis {
             // source (PixelCopy/storyboard/thumbnail), rate, cost per sample, last failure
             add("Ambilight" to runCatching { com.github.libretube.ui.yt.ambilight.YtAmbilight.diagnosis() }.getOrNull())
             add("Mini restore" to runCatching { com.github.libretube.ui.yt.mini.YtMiniRestore.traceText() }.getOrNull())
+            // the theme builder: the last editor session's frame times (JankStats) and the active theme
+            add("Theme-Editor" to runCatching { com.github.libretube.ui.yt.builder.YtEditorMetrics.diagnosis() }.getOrNull())
             add("Crashes stored" to crashes.size.toString())
             add("Last crash" to crashes.firstOrNull()?.let(YtCrashText::summary))
         }

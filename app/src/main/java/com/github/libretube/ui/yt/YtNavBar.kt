@@ -146,7 +146,7 @@ object YtNav {
             YtNavItem(R.id.libraryFragment, R.string.yt_nav_mine, R.drawable.ic_yt_person, R.drawable.ic_yt_nav_person_fill),
         )
         YtDesign.CLAY, YtDesign.EDITORIAL, YtDesign.GLASS, YtDesign.POP, YtDesign.SHAPES, YtDesign.FROST,
-        YtDesign.FREQUENCY, YtDesign.SYNTHWAVE -> listOf(
+        YtDesign.FREQUENCY, YtDesign.SYNTHWAVE, YtDesign.CUSTOM -> listOf(
             YtNavItem(R.id.homeFragment, R.string.yt_nav_home, R.drawable.ic_yt_nav_home, R.drawable.ic_yt_nav_home_fill),
             // Shorts draws its own glyph (YtShortsGlyph)
             YtNavItem(R.id.trendsFragment, R.string.yt_nav_shorts, null),
@@ -404,6 +404,7 @@ private fun YtNavBarOf(
         YtDesign.FREQUENCY -> FrequencyNav(palette, items, state, onSelect)
         YtDesign.SYNTHWAVE -> SynthwaveNav(palette, items, state, onSelect)
         YtDesign.KIESEL -> KieselNav(palette, items, state, onSelect)
+        YtDesign.CUSTOM -> com.github.libretube.ui.yt.builder.YtCustomNav(palette, items, state, onSelect)
         YtDesign.FROST -> if (backdrop != null) LiquidNav(design, palette, items, state, backdrop, onSelect) else FrostNav(palette, items, state, onSelect)
         else -> FloatingNav(design, palette, items, state, onSelect)
     }
