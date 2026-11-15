@@ -8,7 +8,7 @@ not here.
 
 ## Current state
 
-- Latest release: build 140 on `main` (per-build details: Build log below). Recent rounds built:
+- Latest release: build 141 on `main` (per-build details: Build log below). Recent rounds built:
   News overlay (pinch on the home; stories; cited summaries with a provider choice: OpenAI,
   Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
@@ -175,6 +175,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 141: SSI-2 (AI re-rank, meaning-based passages, checked spans, feedback learning, in-app benchmark), TB-2 (animator).
 - 140: SSI model checksum from the hub's file listing (139 failed: stale generated docs block; 140 started by hand).
 - 138: SSI-1 (moment search), TB-1 (own design "Eigenes" + theme editor), Ambilight; APK 29.4 MB.
 - 137: old YT APK / old build clean-up on the storage page, quiet clean-up after updates.
