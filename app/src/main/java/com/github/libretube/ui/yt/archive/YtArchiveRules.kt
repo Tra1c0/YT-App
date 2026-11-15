@@ -262,6 +262,15 @@ object YtArchiveRules {
         return null
     }
 
+    /** An entry whose audio/video save failed is tried again after 1, 2, 4, 8 days, then no more. */
+    const val MAX_MEDIA_FAILURES = 5
+
+    fun retryDue(failures: Int, failedAt: Long?, now: Long): Boolean {
+        if (failures <= 0 || failedAt == null) return true
+        if (failures >= MAX_MEDIA_FAILURES) return false
+        return now - failedAt >= DAY_MS shl (failures - 1)
+    }
+
     // ---- light checks and labels ----
 
     /** An entry as the check planner sees it. */

@@ -276,4 +276,14 @@ class YtArchiveRulesTest {
         assertNull(YtArchiveRules.frameAt(0, 0, 5, 5, 60, 3))
         assertNotNull(YtArchiveRules.frameAt(0, 2000, 5, 5, 0, 1))
     }
+
+    @Test
+    fun mediaRetriesBackOff() {
+        assertTrue(YtArchiveRules.retryDue(0, null, now))
+        assertFalse(YtArchiveRules.retryDue(1, now - day / 2, now))
+        assertTrue(YtArchiveRules.retryDue(1, now - day, now))
+        assertFalse(YtArchiveRules.retryDue(3, now - 3 * day, now))
+        assertTrue(YtArchiveRules.retryDue(3, now - 4 * day, now))
+        assertFalse(YtArchiveRules.retryDue(5, now - 100 * day, now))
+    }
 }

@@ -50,6 +50,9 @@ data class YtArchiveMeta(
     val chapters: List<YtArchiveChapter> = emptyList(),
     val transcriptLanguage: String? = null,
     val transcriptAuto: Boolean? = null,
+    /** Failed audio/video saves in a row and the last one ([YtArchiveRules.retryDue]). */
+    val mediaFailures: Int = 0,
+    val mediaFailedAt: Long? = null,
     /** Script state: null none, [SCRIPT_DONE], [SCRIPT_FAILED]; set by the core after asking the script part. */
     val scriptState: String? = null,
     val scriptAt: Long? = null,
@@ -84,3 +87,15 @@ data class YtArchiveMeta(
 /** A chapter of a kept video: start in seconds. */
 @Serializable
 data class YtArchiveChapter(val start: Long, val title: String)
+
+/** The kept storyboard (`storyboard/index.json`): sheets `0.jpg`, `1.jpg`, … of [perX] × [perY] frames. */
+@Serializable
+data class YtArchiveBoardIndex(
+    val frameWidth: Int,
+    val frameHeight: Int,
+    val perX: Int,
+    val perY: Int,
+    val durationPerFrameMs: Long,
+    val total: Int,
+    val sheets: Int,
+)

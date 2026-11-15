@@ -97,7 +97,7 @@ object YtStreamFailure {
      * A video gone for everyone ([YtStreamError.removesFromFeed]) leaves the cached subscription
      * feed (home, Abos, News read it), and its later copies leave the queue; the current item
      * stays while its page shows the error and goes with [leave]. Watch history and positions
-     * stay. Main thread.
+     * stay; an archived copy is marked vanished and kept (YtArchive.onVanished). Main thread.
      */
     fun forget(videoId: String, kind: Kind) {
         if (!YtStreamError.removesFromFeed(kind)) return
@@ -108,6 +108,8 @@ object YtStreamFailure {
             runCatching { DatabaseHolder.Database.feedDao().ytDeleteVideo(videoId) }
                 .onFailure { Log.w("YtStreamFailure", "feed cleanup failed: $it") }
         }
+        // an archived copy is kept for good from now on (round 31)
+        com.github.libretube.ui.yt.archive.YtArchive.onVanished(com.github.libretube.LibreTubeApp.instance, videoId, kind)
     }
 
     /** The failed video that leaves the queue once another one is picked. */

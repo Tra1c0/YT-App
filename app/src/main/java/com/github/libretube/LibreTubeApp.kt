@@ -42,6 +42,8 @@ class LibreTubeApp : Application() {
 
         // YT: the background check for a new YT build (kept as scheduled; off cancels it)
         com.github.libretube.util.YtUpdateNotifier.schedule(this)
+        // YT: the archive of vanished videos (its jobs only while switched on)
+        com.github.libretube.ui.yt.archive.YtArchive.schedule(this)
 
         /**
          * Handler for uncaught exceptions

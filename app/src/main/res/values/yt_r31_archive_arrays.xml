@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- YT: what tier 3 of the archive keeps (YtArchivePrefs.KEY_TOP) -->
+    <string-array name="yt_archive_top_entries">
+        <item>@string/yt_r31_archive_top_video</item>
+        <item>@string/yt_r31_archive_top_audio</item>
+    </string-array>
+    <string-array name="yt_archive_top_values" translatable="false">
+        <item>video</item>
+        <item>audio</item>
+    </string-array>
+</resources>
