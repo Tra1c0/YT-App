@@ -735,7 +735,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (487 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (488 files; generated, do not edit)</summary>
 
 - `J/helpers/` (26): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtBuilderMode, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDeadSubs,
@@ -830,10 +830,10 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - `Y/shorts/` (10): YtShortsLook, YtShortsMath, YtShortsPlayer, YtShortsPrefs, YtShortsScreen,
   YtShortsSource, YtShortsStyle, YtShortsTestHooks, YtShortsTimeline, YtShortsView
 - `Y/sound/` (3): YtSound, YtSoundEngine, YtSoundShaping
-- `Y/ssi/` (22): YtSsi, YtSsiAiPlan, YtSsiCaptions, YtSsiClipModule, YtSsiDb, YtSsiEmbedder,
-  YtSsiFusion, YtSsiIndexer, YtSsiIntent, YtSsiLayer, YtSsiModel, YtSsiModels, YtSsiPlayRules,
-  YtSsiPrefs, YtSsiRanker, YtSsiSearch, YtSsiSegmenter, YtSsiSettings, YtSsiText, YtSsiTokenizer,
-  YtSsiVectors, YtSsiVoice
+- `Y/ssi/` (23): YtSsi, YtSsiAiPlan, YtSsiCaptions, YtSsiClipModule, YtSsiDb, YtSsiEmbedder,
+  YtSsiFusion, YtSsiHfChecksum, YtSsiIndexer, YtSsiIntent, YtSsiLayer, YtSsiModel, YtSsiModels,
+  YtSsiPlayRules, YtSsiPrefs, YtSsiRanker, YtSsiSearch, YtSsiSegmenter, YtSsiSettings, YtSsiText,
+  YtSsiTokenizer, YtSsiVectors, YtSsiVoice
 - `app/src/main/java/androidx/constraintlayout/motion/widget/` (1): YtMotionAccess
 
 </details>
