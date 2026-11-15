@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- YT round 33: ambilight (ui/yt/ambilight) -->
+    <string name="yt_ambilight">Ambilight</string>
+    <string name="yt_ambilight_summary">Edges, bar and background glow softly in the colours of the playing video</string>
+    <string name="yt_ambilight_intensity">Ambilight strength</string>
+    <string name="yt_ambilight_chrome">Also bar &amp; background</string>
+    <string name="yt_ambilight_chrome_summary">The navigation bar, the screen edges and the page background glow too (not in the standard design)</string>
+    <string name="yt_ambilight_bars">Black bars glow too</string>
+    <string name="yt_ambilight_bars_summary">Bars beside or above the video, also in fullscreen</string>
+    <string name="yt_ambilight_beat">In time with the music</string>
+    <string name="yt_ambilight_beat_summary">Synthwave and Frequency: the glow pulses gently with the sound</string>
+</resources>

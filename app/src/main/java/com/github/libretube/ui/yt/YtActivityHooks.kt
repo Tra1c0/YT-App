@@ -13,6 +13,8 @@ object YtActivityHooks {
     fun onCreate(activity: MainActivity, savedInstanceState: Bundle?) {
         // the time box's end card, over every screen
         YtTimeUpLayer.attach(activity)
+        // the ambilight around the docked mini player and on the screens' edges
+        com.github.libretube.ui.yt.ambilight.YtAmbilightLayer.attach(activity)
         // the queue kept over a restart goes back (with its resume pill) if nothing else plays
         YtQueueResume.onActivityCreated(activity, savedInstanceState)
         // first start of a new build: old YT APKs YT may delete without asking go quietly

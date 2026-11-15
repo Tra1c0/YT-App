@@ -23,6 +23,26 @@ class YtEdgeScrollView @JvmOverloads constructor(
 
     var edgeLength = 1
 
+    /**
+     * Drawn under the content, into a canvas [width] x [height] at the top of the visible area
+     * (the ambilight's glow below the video): over the background, behind every child.
+     */
+    var under: ((canvas: Canvas, width: Int, height: Int) -> Unit)? = null
+        set(value) {
+            field = value
+            if (value != null) setWillNotDraw(false)
+            invalidate()
+        }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        val under = under ?: return
+        val save = canvas.save()
+        canvas.translate(scrollX.toFloat(), scrollY.toFloat())
+        under(canvas, width, height)
+        canvas.restoreToCount(save)
+    }
+
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
         val edge = edge ?: return

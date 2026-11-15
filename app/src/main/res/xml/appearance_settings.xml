@@ -48,6 +48,48 @@
             app:key="yt_dynamic_player_colors"
             app:title="@string/yt_dynamic_player_colors" />
 
+        <!-- YT: ambilight (ui/yt/ambilight) -->
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_color"
+            android:summary="@string/yt_ambilight_summary"
+            app:defaultValue="false"
+            app:key="yt_ambilight"
+            app:title="@string/yt_ambilight" />
+
+        <com.github.libretube.ui.views.SliderPreference
+            android:icon="@drawable/ic_color"
+            android:dependency="yt_ambilight"
+            app:defValue="60"
+            app:key="yt_ambilight_intensity"
+            app:stepSize="10"
+            app:title="@string/yt_ambilight_intensity"
+            app:valueFrom="10"
+            app:valueTo="100" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_color"
+            android:dependency="yt_ambilight"
+            android:summary="@string/yt_ambilight_chrome_summary"
+            app:defaultValue="true"
+            app:key="yt_ambilight_chrome"
+            app:title="@string/yt_ambilight_chrome" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_color"
+            android:dependency="yt_ambilight"
+            android:summary="@string/yt_ambilight_bars_summary"
+            app:defaultValue="true"
+            app:key="yt_ambilight_bars"
+            app:title="@string/yt_ambilight_bars" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_color"
+            android:dependency="yt_ambilight"
+            android:summary="@string/yt_ambilight_beat_summary"
+            app:defaultValue="true"
+            app:key="yt_ambilight_beat"
+            app:title="@string/yt_ambilight_beat" />
+
         <SwitchPreferenceCompat
             android:icon="@drawable/ic_speed"
             android:summary="@string/yt_design_motion_summary"
