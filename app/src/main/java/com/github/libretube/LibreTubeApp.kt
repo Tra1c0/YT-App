@@ -62,6 +62,9 @@ class LibreTubeApp : Application() {
 
         // YT: the playing queue is saved on every change and put back after a restart
         com.github.libretube.util.YtQueueStore.start(this)
+
+        // YT: the archive's risk estimator (learns from vanished videos; reads its file on first use)
+        com.github.libretube.ui.yt.archive.risk.YtArchiveRisk.install()
         com.github.libretube.ui.yt.archive.YtArchive.schedule(this) // YT: archive jobs (round 31), only while switched on
     }
 

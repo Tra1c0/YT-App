@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Parts of the archive's risk reason, joined with " · " -->
+    <plurals name="yt_archive_risk_channel">
+        <item quantity="one">Channel deleted %1$d of %2$d video</item>
+        <item quantity="other">Channel deleted %1$d of %2$d videos</item>
+    </plurals>
+    <string name="yt_archive_risk_topic">Topic: %1$s</string>
+    <string name="yt_archive_risk_keywords">Keywords: %1$s</string>
+    <string name="yt_archive_risk_ai">AI: %1$s</string>
+    <string name="yt_archive_risk_ai_percent">AI estimates %1$d %%</string>
+</resources>
