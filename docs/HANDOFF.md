@@ -19,6 +19,9 @@ not here.
   (not a copy of Formen). The user uses Formen, Frequency, Synthwave most.
 - SSI and theme builder (TB) follow `docs/ETAPPEN.md` strictly: stage N+1 of either starts only after
   the user wrote "SSI-N abgenommen" AND "TB-N abgenommen"; no report is NOT acceptance there.
+- Focus (user, 2026-11-15): the SSI/TB stages only; roadmap items are paused. Unfinished, unpushed
+  agent branches exist for items 1 (Rest), 8/9, 12, 18 (`r34/miniresume`, `r34/introoutro`,
+  `r34/edgemargin`, `r34/hiddenpage`, local worktrees only; restart them fresh when resumed).
 - Next work: `docs/ROADMAP.md` → "Beschlossen", top to bottom. The music mode for the designs
   that do not react to sound yet is in that list but NOT released by the user: ask before
   starting it.
