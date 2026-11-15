@@ -21,7 +21,10 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
 
 - **Archiv für verschwundene Videos** (eigene „Wayback Machine“): YT speichert Videos aus dem Feed
   vorsorglich, damit sie nach Privatisieren oder Löschen noch abspielbar sind. Stufen: 1 = Titel,
-  Beschreibung, Vorschaubild, Kapitel, Untertitel (~50 KB, für alle); 2 = Zeitleisten-Standbilder +
+  Beschreibung, Vorschaubild, Kapitel und das Skript (Untertitel/Auto-Untertitel als Text mit
+  Zeitmarken, gepackt ~5–15 KB; ~50 KB je Video, für alle). Verschwindet ein Video, macht die
+  KI-Schnittstelle auf Wunsch daraus ein lesbares Skript mit Dialogen (Sprecherwechsel, Absätze,
+  Kapitel), nur für verschwundene Videos, also wenige Abrufe; Videos ohne Untertitel nur über Stufe 2; 2 = Zeitleisten-Standbilder +
   Ton in niedriger Bitrate (~3–6 MB); 3 = 144p mit Ton (~15 MB). Nur im WLAN und beim Laden,
   gedrosselt (Bot-Sperre vermeiden), Gesehenes und Shorts ausgenommen. **Schieberegler für die
   Kapazität** von wenigen MB (nur Stufe 1) bis 15 GB; wird es knapp, fallen alte Einträge eine
