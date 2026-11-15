@@ -76,6 +76,7 @@ object YtGuide {
                 item("pause", R.string.yt_guide_pause_t, R.string.yt_guide_pause_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_paused_channels_list"),
                 item("dead_subs", R.string.yt_r29_guide_dead_subs_t, R.string.yt_r29_guide_dead_subs_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_dead_subs"),
                 item("builder", R.string.yt_r33_guide_builder_t, R.string.yt_r33_guide_builder_b),
+                item("animator", R.string.yt_r35_guide_animator_t, R.string.yt_r35_guide_animator_b),
                 item("ambilight", R.string.yt_r33_guide_ambilight_t, R.string.yt_r33_guide_ambilight_b),
                 item("archive", R.string.yt_r31_guide_archive_t, R.string.yt_r31_guide_archive_b),
                 item("drag_mini", R.string.yt_guide_drag_mini_t, R.string.yt_guide_drag_mini_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_home_drag"),
@@ -92,6 +93,7 @@ object YtGuide {
                 item("search_seen", R.string.yt_guide_search_seen_t, R.string.yt_guide_search_seen_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_seen_marks"),
                 item("search_morph", R.string.yt_guide_search_morph_t, R.string.yt_guide_search_morph_b),
                 item("ssi", R.string.yt_r33_guide_ssi_t, R.string.yt_r33_guide_ssi_b),
+                item("ssi_bench", R.string.yt_r35_guide_ssi_bench_t, R.string.yt_r35_guide_ssi_bench_b),
             )
         ),
         YtGuideSection(

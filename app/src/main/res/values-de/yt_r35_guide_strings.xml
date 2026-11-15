@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_r35_guide_ssi_bench_t">SSI: Treffer bewerten und messen</string>
+    <string name="yt_r35_guide_ssi_bench_b">Mit „Bewerten“ an einem Treffer lernt SSI lokal dazu (zurücksetzbar). Unter Einstellungen → SSI-Suche → Benchmark importierst du eigene Testbeispiele und misst, wie oft die richtige Stelle unter den ersten Treffern ist.</string>
+    <string name="yt_r35_guide_animator_t">Eigenes Design animieren</string>
+    <string name="yt_r35_guide_animator_b">Im Editor von „Eigenes“ ein Element wählen und den Tab „Animation“ öffnen: Vorlagen mit wenigen Tipps, im erweiterten Modus alle Parameter und Federn, im Profi-Modus Timeline und Kurveneditor, dazu Zustände wie gedrückt oder lädt.</string>
+</resources>

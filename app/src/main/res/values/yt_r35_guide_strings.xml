@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_r35_guide_ssi_bench_t">SSI: rate hits and measure</string>
+    <string name="yt_r35_guide_ssi_bench_b">Rate a hit with "Bewerten" and SSI learns locally (resettable). Under Settings → SSI-Suche → Benchmark you import your own test examples and measure how often the right moment is among the first hits.</string>
+    <string name="yt_r35_guide_animator_t">Animate your own design</string>
+    <string name="yt_r35_guide_animator_b">In the editor of "Eigenes", select an element and open the tab "Animation": presets in a few taps, all parameters and springs in advanced mode, timeline and curve editor in pro mode, plus states such as pressed or loading.</string>
+</resources>
