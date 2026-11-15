@@ -8,7 +8,7 @@ not here.
 
 ## Current state
 
-- Latest release: build 138 on `main` (per-build details: Build log below). Recent rounds built:
+- Latest release: build 140 on `main` (per-build details: Build log below). Recent rounds built:
   News overlay (pinch on the home; stories; cited summaries with a provider choice: OpenAI,
   Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
@@ -30,7 +30,7 @@ not here.
 
 ## Open points
 
-- Round 33 (SSI-1, TB-1, Ambilight), untested on the phone. SSI: json3 caption URLs through NewPipe, ORT speed, semantic cut-off 0.78/0.08 untuned, model SHA-256 not pinned (huggingface.co is now allowed in the environment, but direct fetches were refused by this session's permission check; the build-139 fix reads the checksum from the hub's file listing), no entry in STANDARD, APK +13 MB (ORT arm64 only; emulator = words only). TB: mini player draws only part of the mini component, no animated reorder in flows, no image import UI, pressed-state patch not drawn. Ambilight: PixelCopy on the phone, Glas docked copies frames twice. For SSI-1 acceptance the user must give 10 test queries with expected moments.
+- Round 33 (SSI-1, TB-1, Ambilight), untested on the phone. SSI: json3 caption URLs through NewPipe, ORT speed, semantic cut-off 0.78/0.08 untuned, model SHA-256 not pinned (huggingface.co is now allowed in the environment, but direct fetches were refused by this session's permission check; the build-140 fix reads the checksum from the hub's file listing), no entry in STANDARD, APK +13 MB (ORT arm64 only; emulator = words only). TB: mini player draws only part of the mini component, no animated reorder in flows, no image import UI, pressed-state patch not drawn. Ambilight: PixelCopy on the phone, Glas docked copies frames twice. For SSI-1 acceptance the user must give 10 test queries with expected moments.
 - APK clean-up (round 32, build 137, untested on the phone): all-files access return + rescan, `createDeleteRequest`, uninstall dialogs, install from `local.apk`, the quiet start-of-build clean-up. Next asked by the user: theme builder ("Eigenes Design"; ask what "fluent in YouTube" means), Ambilight, then SSI (search framework; user's requirement file was assessed in chat: phase 1 = local index from archive + fetched captions with word timings from YouTube's ASR json3, FTS + on-device ONNX embeddings + RRF, intent rules + AI, moments with context, clip collection; WhisperX/PySceneDetect/Qdrant/ML Kit/Data API/IFrame replaced; visual search only via Gemini later).
 - Archive (round 31, build 136, untested on the phone and against live YouTube/AI): oEmbed codes for private/deleted, raw stream and SABR downloads, storyboard fetch, player/export/badge/slider UI, all three audio AI paths (endpoints from search summaries; OpenAI's diarize model reportedly retires 2027-02-26), risk weights hand-set. Known gaps: two jobs at once may fetch twice; a half-failed text save is not retried; the list shows the newest 150.
 - Stream error card (build 135, untested on the phone): look per design, open-in-YouTube intent, toast vs card. YouTube answers private videos with LOGIN_REQUIRED "Please sign in" (seen with KyUjsUuM8Gk).
@@ -171,6 +171,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 140: SSI model checksum from the hub's file listing (139 failed: stale generated docs block; 140 started by hand).
 - 138: SSI-1 (moment search), TB-1 (own design "Eigenes" + theme editor), Ambilight; APK 29.4 MB.
 - 137: old YT APK / old build clean-up on the storage page, quiet clean-up after updates.
 - 136: archive of vanished videos (tiers, capacity slider, risk estimator with local learning + optional AI, script with speakers, settings, player, badge).
