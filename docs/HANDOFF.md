@@ -14,8 +14,9 @@ not here.
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
 - The user still has to add the GitHub secret `YT_PUSH_URL`; until then CI skips both push steps.
 - Round 29 built: seamless minimize (shared part + Formen pilot), description link groups with ad
-  folding (25/26), dead subscriptions finder (22). User priority: seamless minimize for the other
-  designs next, Frequency and Synthwave first (the user uses Formen, Frequency, Synthwave most).
+  folding (25/26), dead subscriptions finder (22). Seamless minimize for the other designs is PAUSED by the
+  user ("gerade unwichtig"); when resumed: Frequency and Synthwave first, each with its own character
+  (not a copy of Formen). The user uses Formen, Frequency, Synthwave most.
 - SSI and theme builder (TB) follow `docs/ETAPPEN.md` strictly: stage N+1 of either starts only after
   the user wrote "SSI-N abgenommen" AND "TB-N abgenommen"; no report is NOT acceptance there.
 - Next work: `docs/ROADMAP.md` → "Beschlossen", top to bottom. The music mode for the designs
