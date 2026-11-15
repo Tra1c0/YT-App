@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 32: old YT installation files and apps on the storage page. -->
+<resources>
+    <string name="yt_apkclean_title">Alte YT-Installationsdateien</string>
+    <string name="yt_apkclean_searching">Wird gesucht…</string>
+    <string name="yt_apkclean_access_line">Für APKs aus dem Browser braucht YT „Zugriff auf alle Dateien“.</string>
+    <string name="yt_apkclean_access_line_legacy">Für APKs im Download-Ordner braucht YT Zugriff auf den Speicher.</string>
+    <string name="yt_apkclean_access_button">Zugriff erlauben</string>
+    <string name="yt_apkclean_none">Keine alten YT-Dateien gefunden</string>
+    <string name="yt_apkclean_build">Build %1$d</string>
+    <string name="yt_apkclean_version_unknown">Version unbekannt</string>
+    <string name="yt_apkclean_current">installierte Version</string>
+    <string name="yt_apkclean_newer">neuer als installiert</string>
+    <string name="yt_apkclean_newer_foreign">neuer, anderer Schlüssel · bleibt</string>
+    <string name="yt_apkclean_newer_zip">neuer (ZIP) · bleibt, zum Installieren entpacken</string>
+    <string name="yt_apkclean_install">Installieren</string>
+    <string name="yt_apkclean_install_failed">Die Installation konnte nicht geöffnet werden</string>
+    <string name="yt_apkclean_app_cache">App-Cache</string>
+    <string name="yt_apkclean_apps_title">Alte YT-Apps</string>
+    <string name="yt_apkclean_libretube">LibreTube (Original)</string>
+    <string name="yt_apkclean_libretube_note">nicht von YT · nur wenn du es ankreuzt</string>
+    <string name="yt_apkclean_selected">Ausgewählt: %1$s</string>
+    <plurals name="yt_apkclean_files">
+        <item quantity="one">%1$d Datei</item>
+        <item quantity="other">%1$d Dateien</item>
+    </plurals>
+    <plurals name="yt_apkclean_apps">
+        <item quantity="one">%1$d App</item>
+        <item quantity="other">%1$d Apps</item>
+    </plurals>
+    <string name="yt_apkclean_delete_all">Alle alten löschen</string>
+    <string name="yt_apkclean_confirm">%1$s löschen? Vor jeder Deinstallation fragt Android nach.</string>
+    <plurals name="yt_apkclean_files_deleted">
+        <item quantity="one">%1$d Datei gelöscht</item>
+        <item quantity="other">%1$d Dateien gelöscht</item>
+    </plurals>
+    <string name="yt_apkclean_freed">%1$s frei</string>
+    <plurals name="yt_apkclean_apps_removed">
+        <item quantity="one">%1$d alte App deinstalliert</item>
+        <item quantity="other">%1$d alte Apps deinstalliert</item>
+    </plurals>
+    <plurals name="yt_apkclean_files_failed">
+        <item quantity="one">%1$d Datei nicht gelöscht</item>
+        <item quantity="other">%1$d Dateien nicht gelöscht</item>
+    </plurals>
+    <plurals name="yt_apkclean_apps_kept">
+        <item quantity="one">%1$d App behalten</item>
+        <item quantity="other">%1$d Apps behalten</item>
+    </plurals>
+    <string name="yt_apkclean_nothing">Nichts gelöscht</string>
+    <string name="yt_apkclean_auto">Automatisch aufräumen</string>
+    <string name="yt_apkclean_auto_detail">Nach einem Update alte YT-APKs still löschen, auf die YT zugreifen darf</string>
+    <string name="yt_apkclean_keep_current">APK der installierten Version behalten</string>
+</resources>

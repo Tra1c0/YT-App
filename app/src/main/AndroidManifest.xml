@@ -28,6 +28,19 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- YT: lets Android 12+ update YT without asking again where it allows that (no prompt) -->
     <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+    <!-- YT: storage page, old YT APKs in Download: storage access on Android 8-10 (asked on tap) -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
+    <!-- YT: the same on Android 11+ ("All files access"); only opened on the user's tap -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+    <!-- YT: Android's uninstall dialog for old YT builds (Android asks for every package) -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
     <application
         android:name=".LibreTubeApp"
@@ -507,6 +520,17 @@
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="*" />
+        </intent>
+        <!-- YT: old YT builds and LibreTube (storage page): the known packages, and every app
+             that opens YouTube links (where old YT builds with other package names show up) -->
+        <package android:name="com.github.libretube" />
+        <package android:name="com.github.libretube.debug" />
+        <package android:name="app.tra1c0.yt.debug" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data
+                android:host="www.youtube.com"
+                android:scheme="https" />
         </intent>
     </queries>
 </manifest>

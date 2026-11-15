@@ -43,12 +43,17 @@ object YtStorageUi {
             val pad = dp(themed, 24)
             setPadding(pad, dp(themed, 8), dp(themed, 12), 0)
         }
+        // old YT APKs and apps, at the end of the page (YtApkCleanUi)
+        val apks = YtApkCleanSection(themed, context, scope)
         val dialog = builder
             .setTitle(R.string.yt_storage_title)
             .setView(ScrollView(themed).apply { addView(content) })
             .setPositiveButton(R.string.yt_storage_clear_all, null)
             .setNegativeButton(R.string.yt_diag_close, null)
-            .setOnDismissListener { scope.cancel() }
+            .setOnDismissListener {
+                apks.dispose()
+                scope.cancel()
+            }
             .create()
 
         var report: YtStorage.Report? = null
@@ -78,6 +83,8 @@ object YtStorageUi {
                 }
                 report = after
                 refresh()
+                // "old update files" may have held an old YT APK
+                if (Row.UPDATE in rows) apks.refresh()
             }
         }
 
@@ -112,6 +119,7 @@ object YtStorageUi {
                     }
                 })
             }
+            content.addView(apks.view)
             dialog.getButton(DialogInterface.BUTTON_POSITIVE)?.isEnabled =
                 now != null && YtStorageRules.clearAllRows.any { now.usage(it).clearableBytes > 0 }
         }
@@ -129,6 +137,7 @@ object YtStorageUi {
             render()
         }
         dialog.show()
+        apks.refresh()
         scope.launch {
             report = YtStorage.scan(themed)
             render()

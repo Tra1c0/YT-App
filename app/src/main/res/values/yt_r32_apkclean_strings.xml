@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 32: old YT installation files and apps on the storage page. -->
+<resources>
+    <string name="yt_apkclean_title">Old YT installation files</string>
+    <string name="yt_apkclean_searching">Searching…</string>
+    <string name="yt_apkclean_access_line">To find APKs saved by the browser, YT needs “All files access”.</string>
+    <string name="yt_apkclean_access_line_legacy">To find APKs in the Download folder, YT needs access to storage.</string>
+    <string name="yt_apkclean_access_button">Allow access</string>
+    <string name="yt_apkclean_none">No old YT files found</string>
+    <string name="yt_apkclean_build">Build %1$d</string>
+    <string name="yt_apkclean_version_unknown">version unknown</string>
+    <string name="yt_apkclean_current">installed version</string>
+    <string name="yt_apkclean_newer">newer than installed</string>
+    <string name="yt_apkclean_newer_foreign">newer, other signing key · stays</string>
+    <string name="yt_apkclean_newer_zip">newer (ZIP) · stays, unzip to install</string>
+    <string name="yt_apkclean_install">Install</string>
+    <string name="yt_apkclean_install_failed">The installer could not be opened</string>
+    <string name="yt_apkclean_app_cache">App cache</string>
+    <string name="yt_apkclean_apps_title">Old YT apps</string>
+    <string name="yt_apkclean_libretube">LibreTube (original)</string>
+    <string name="yt_apkclean_libretube_note">not from YT · only if you tick it</string>
+    <string name="yt_apkclean_selected">Selected: %1$s</string>
+    <plurals name="yt_apkclean_files">
+        <item quantity="one">%1$d file</item>
+        <item quantity="other">%1$d files</item>
+    </plurals>
+    <plurals name="yt_apkclean_apps">
+        <item quantity="one">%1$d app</item>
+        <item quantity="other">%1$d apps</item>
+    </plurals>
+    <string name="yt_apkclean_delete_all">Delete all old</string>
+    <string name="yt_apkclean_confirm">Delete %1$s? Android asks before each app is uninstalled.</string>
+    <plurals name="yt_apkclean_files_deleted">
+        <item quantity="one">%1$d file deleted</item>
+        <item quantity="other">%1$d files deleted</item>
+    </plurals>
+    <string name="yt_apkclean_freed">%1$s freed</string>
+    <plurals name="yt_apkclean_apps_removed">
+        <item quantity="one">%1$d old app uninstalled</item>
+        <item quantity="other">%1$d old apps uninstalled</item>
+    </plurals>
+    <plurals name="yt_apkclean_files_failed">
+        <item quantity="one">%1$d file not deleted</item>
+        <item quantity="other">%1$d files not deleted</item>
+    </plurals>
+    <plurals name="yt_apkclean_apps_kept">
+        <item quantity="one">%1$d app kept</item>
+        <item quantity="other">%1$d apps kept</item>
+    </plurals>
+    <string name="yt_apkclean_nothing">Nothing deleted</string>
+    <string name="yt_apkclean_auto">Clean up automatically</string>
+    <string name="yt_apkclean_auto_detail">After an update, quietly delete old YT APKs that YT may access</string>
+    <string name="yt_apkclean_keep_current">Keep the APK of the installed version</string>
+</resources>
