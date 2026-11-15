@@ -267,7 +267,10 @@ object YtSsiSearch {
         if (YtSsiModels.state.value == YtSsiModelState.Ready && intent.semanticText.isNotBlank()) {
             val index = YtSsi.vectors()
             if (index != null) {
-                val query = YtSsiModels.use(context) { it.embed(listOf(intent.semanticText), query = true).first() }
+                // the same query is embedded once per search, not on every refresh of Deep
+                val query = queryVector?.takeIf { it.first == intent.semanticText }?.second
+                    ?: YtSsiModels.use(context) { it.embed(listOf(intent.semanticText), query = true).first() }
+                        ?.also { queryVector = intent.semanticText to it }
                 if (query != null) {
                     semantic = YtSsiVectorIndex.cut(withContext(Dispatchers.Default) { index.search(query, SEMANTIC_K) }).map { it.first }
                     model = YtSsiModels.spec.version
@@ -294,6 +297,9 @@ object YtSsiSearch {
         val hits = withContext(Dispatchers.IO) { YtSsiRanker.rank(intent, lists, source) }
         return hits to notes
     }
+
+    @Volatile
+    private var queryVector: Pair<String, FloatArray>? = null
 
     private const val SEMANTIC_K = 200
     private const val AI_TIMEOUT_MS = 25_000L

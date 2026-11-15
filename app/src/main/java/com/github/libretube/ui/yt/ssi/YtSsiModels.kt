@@ -81,11 +81,19 @@ object YtSsiModels {
 
     fun bytes(context: Context): Long = dir(context).listFiles()?.sumOf { it.length() } ?: 0L
 
+    /**
+     * Whether ONNX Runtime can run here: its library is packed for 64-bit ARM only
+     * (app/build.gradle.kts) and unpacked at install (legacy packaging), so it is a file in the
+     * app's native library folder exactly where it can be loaded.
+     */
+    fun runtimeAvailable(context: Context): Boolean =
+        runCatching { File(context.applicationInfo.nativeLibraryDir, "libonnxruntime.so").isFile }.getOrDefault(false)
+
     /** Brings [state] in line with the disk (call before showing it). */
     fun refresh(context: Context) {
         if (_state.value is YtSsiModelState.Downloading) return
         _state.value = when {
-            loadFailed == UNSUPPORTED -> YtSsiModelState.Unsupported
+            loadFailed == UNSUPPORTED || !runtimeAvailable(context) -> YtSsiModelState.Unsupported
             installed(context) -> YtSsiModelState.Ready
             _state.value is YtSsiModelState.Failed -> _state.value
             else -> YtSsiModelState.Missing
@@ -96,6 +104,10 @@ object YtSsiModels {
     fun download(context: Context) {
         val app = context.applicationContext
         if (download?.isActive == true) return
+        if (!runtimeAvailable(app)) {
+            _state.value = YtSsiModelState.Unsupported
+            return
+        }
         download = scope.launch {
             _state.value = YtSsiModelState.Downloading(0, null)
             try {
@@ -215,6 +227,11 @@ object YtSsiModels {
 
     private fun load(context: Context): YtSsiEmbedder? {
         if (loadFailed == UNSUPPORTED || !installed(context)) return null
+        if (!runtimeAvailable(context)) {
+            loadFailed = UNSUPPORTED
+            _state.value = YtSsiModelState.Unsupported
+            return null
+        }
         return try {
             val tokenizer = YtSsiTokenizer.readCache(vocabCache(context)) ?: YtSsiTokenizer.fromJson(tokenizerFile(context).readText()).also {
                 runCatching { YtSsiTokenizer.writeCache(it, vocabCache(context)) }
@@ -228,7 +245,7 @@ object YtSsiModels {
             null
         } catch (e: Throwable) {
             Log.w(TAG, "model load failed", e)
-            if (e is NoClassDefFoundError || e.cause is UnsatisfiedLinkError) {
+            if (e is NoClassDefFoundError || e is ExceptionInInitializerError || e.cause is UnsatisfiedLinkError) {
                 loadFailed = UNSUPPORTED
                 _state.value = YtSsiModelState.Unsupported
             } else {

@@ -53,6 +53,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -103,7 +104,9 @@ import com.github.libretube.ui.yt.archive.YtArchiveUi
 import com.github.libretube.ui.yt.feed.YtFeed
 import com.github.libretube.ui.yt.palette
 import com.github.libretube.ui.yt.rememberYtHaptics
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -394,15 +397,17 @@ private fun Screen(palette: YtPalette, permission: ActivityResultLauncher<String
                 icon = R.drawable.ic_play,
             ) {
                 haptics.confirm()
-                val clips = YtSsiPlayRules.clips(
-                    hits,
-                    segments = { hit -> hit.segmentId?.let { YtSsi.db.segment(it) } },
-                    before = hits.withIndex().associate { (i, h) -> i to (YtSsiUi.before[YtSsiUi.key(h)] ?: 0L) },
-                    after = hits.withIndex().associate { (i, h) -> i to (YtSsiUi.after[YtSsiUi.key(h)] ?: 0L) },
-                ).filter { clip -> hits.none { it.videoId == clip.videoId && it.availability == YtSsiAvailability.VANISHED_ARCHIVED } }
-                if (clips.isNotEmpty()) {
-                    YtSsiUi.hide()
-                    YtSsiClipModule.start(context, clips)
+                val before = hits.withIndex().associate { (i, h) -> i to (YtSsiUi.before[YtSsiUi.key(h)] ?: 0L) }
+                val after = hits.withIndex().associate { (i, h) -> i to (YtSsiUi.after[YtSsiUi.key(h)] ?: 0L) }
+                scope.launch {
+                    // a vanished original cannot be played in the service: its clips are left out
+                    val clips = withContext(Dispatchers.IO) {
+                        YtSsiPlayRules.clips(hits, segments = { hit -> hit.segmentId?.let { YtSsi.db.segment(it) } }, before = before, after = after)
+                    }.filter { clip -> hits.none { it.videoId == clip.videoId && it.availability == YtSsiAvailability.VANISHED_ARCHIVED } }
+                    if (clips.isNotEmpty()) {
+                        YtSsiUi.hide()
+                        YtSsiClipModule.start(context, clips)
+                    }
                 }
             }
         }
@@ -433,8 +438,7 @@ private fun Screen(palette: YtPalette, permission: ActivityResultLauncher<String
 private fun play(context: Context, hit: YtSsiHit) {
     YtSsiClipModule.stop()
     if (hit.availability == YtSsiAvailability.VANISHED_ARCHIVED) {
-        val scope = kotlinx.coroutines.MainScope()
-        scope.launch {
+        kotlinx.coroutines.MainScope().launch {
             val kept = YtArchive.kept(hit.videoId)
             if (kept == null || !YtArchiveUi.playKept(context, hit.videoId, kept)) {
                 kept?.meta?.let { YtArchiveUi.showText(context, it) }
@@ -442,9 +446,16 @@ private fun play(context: Context, hit: YtSsiHit) {
         }
         return
     }
-    val segment = hit.segmentId?.let { YtSsi.db.segment(it) }
-    val start = (YtSsiPlayRules.start(segment, hit.hitMs) - (YtSsiUi.before[YtSsiUi.key(hit)] ?: 0L)).coerceAtLeast(0)
-    YtSsiUi.hide()
+    val extra = YtSsiUi.before[YtSsiUi.key(hit)] ?: 0L
+    kotlinx.coroutines.MainScope().launch {
+        val segment = withContext(Dispatchers.IO) { hit.segmentId?.let { YtSsi.db.segment(it) } }
+        val start = (YtSsiPlayRules.start(segment, hit.hitMs) - extra).coerceAtLeast(0)
+        YtSsiUi.hide()
+        playFrom(context, hit, start)
+    }
+}
+
+private fun playFrom(context: Context, hit: YtSsiHit, start: Long) {
     val video = StreamItem(
         url = "/watch?v=${hit.videoId}",
         type = StreamItem.TYPE_STREAM,
@@ -608,7 +619,9 @@ private fun HitCard(hit: YtSsiHit, run: YtSsiRun, palette: YtPalette, back: Int,
             }
         }
         if (hit.segmentId != null && (extraBefore > 0 || extraAfter > 0)) {
-            val segment = remember(hit.segmentId) { YtSsi.db.segment(hit.segmentId) }
+            val segment by produceState<YtSsiSegment?>(null, hit.segmentId) {
+                value = withContext(Dispatchers.IO) { YtSsi.db.segment(hit.segmentId) }
+            }
             val start = (YtSsiPlayRules.start(segment, hit.hitMs) - extraBefore).coerceAtLeast(0)
             val end = maxOf(hit.endMs, hit.hitMs) + YtSsiPlayRules.TAIL_MS + extraAfter
             Text(
