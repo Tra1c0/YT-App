@@ -53,6 +53,11 @@
         android:id="@+id/ytArchiveSettings"
         android:name="com.github.libretube.ui.preferences.YtArchiveSettings"
         android:label="@string/yt_r31_archive_title" />
+    <!-- YT: SSI, the moments search (round 33) -->
+    <fragment
+        android:id="@+id/ytSsiSettings"
+        android:name="com.github.libretube.ui.yt.ssi.YtSsiSettings"
+        android:label="@string/yt_r33_ssi_title" />
     <!-- YT: the guide (what YT does differently, how to use it) -->
     <fragment
         android:id="@+id/ytGuide"
@@ -134,6 +139,14 @@
     <action
         android:id="@+id/action_global_ytArchiveSettings"
         app:destination="@id/ytArchiveSettings"
+        app:enterAnim="@animator/nav_default_enter_anim"
+        app:exitAnim="@animator/nav_default_exit_anim"
+        app:popEnterAnim="@animator/nav_default_pop_enter_anim"
+        app:popExitAnim="@animator/nav_default_pop_exit_anim" />
+
+    <action
+        android:id="@+id/action_global_ytSsiSettings"
+        app:destination="@id/ytSsiSettings"
         app:enterAnim="@animator/nav_default_enter_anim"
         app:exitAnim="@animator/nav_default_exit_anim"
         app:popEnterAnim="@animator/nav_default_pop_enter_anim"

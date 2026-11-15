@@ -38,6 +38,13 @@
             app:summary="@string/yt_r31_archive_entry_summary"
             app:title="@string/yt_r31_archive_title" />
 
+        <!-- YT: SSI, the moments search (round 33) -->
+        <Preference
+            android:icon="@drawable/ic_yt_ssi"
+            app:key="yt_ssi"
+            app:summary="@string/yt_r33_ssi_entry_summary"
+            app:title="@string/yt_r33_ssi_title" />
+
         <Preference
             android:icon="@drawable/ic_block"
             app:key="sponsorblock"

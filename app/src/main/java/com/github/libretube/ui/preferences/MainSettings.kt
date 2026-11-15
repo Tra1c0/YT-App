@@ -57,6 +57,7 @@ class MainSettings : BasePreferenceFragment() {
             "player" to R.id.action_global_playerSettings,
             "yt_interaction" to R.id.action_global_ytInteractionSettings,
             "yt_archive" to R.id.action_global_ytArchiveSettings,
+            "yt_ssi" to R.id.action_global_ytSsiSettings,
             "yt_guide" to R.id.action_global_ytGuide,
             "audio_video" to R.id.action_global_audioVideoSettings,
             "notifications" to R.id.action_global_notificationSettings,

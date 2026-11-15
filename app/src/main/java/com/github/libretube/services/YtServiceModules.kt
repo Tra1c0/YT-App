@@ -56,6 +56,7 @@ object YtServiceModules {
         YtSoftCloseModule,
         YtBatteryQualityModule,
         YtSoundModule,
+        com.github.libretube.ui.yt.ssi.YtSsiClipModule,
     )
 
     /** True if a module handled the command; the first one that does wins. */

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- round 33: SSI Deep budget (numbers, the same in every language) -->
+    <string-array name="yt_ssi_budget_values" translatable="false">
+        <item>3</item>
+        <item>6</item>
+        <item>10</item>
+        <item>15</item>
+    </string-array>
+</resources>

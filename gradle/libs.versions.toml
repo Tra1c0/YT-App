@@ -43,9 +43,11 @@ protobufPlugin = "0.9.6"
 anthropicJava = "3.8.0"
 # YT: instant push for new builds over UnifiedPush (no Google services); its crypto as the Android build
 unifiedpushConnector = "3.3.5"
+onnxruntime = "1.31.1"
 tinkAndroid = "1.23.0"
 
 [libraries]
+onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntime" }
 unifiedpush-connector = { module = "org.unifiedpush.android:connector", version.ref = "unifiedpushConnector" }
 tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "tinkAndroid" }
 androidx-activity = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity" }

@@ -1,0 +1,21 @@
+{
+  "name": "caption lines (English, line timing)",
+  "synthetic": true,
+  "now": "2026-11-15",
+  "videos": [
+    {
+      "id": "l1", "title": "How vaccines train the immune system", "channel": "ScienceNow", "uploaded": "2022-02-14", "language": "en",
+      "lines": [
+        {"start": 0, "end": 3500, "text": "Vaccines show the immune system a harmless piece of a germ."},
+        {"start": 3600, "end": 7000, "text": "The body then builds antibodies and memory cells against it."},
+        {"start": 12000, "end": 15000, "text": "Later, when the real virus arrives, the memory cells react within days."},
+        {"start": 15100, "end": 18500, "text": "That is why vaccinated people rarely get seriously ill."}
+      ]
+    }
+  ],
+  "cases": [
+    {"query": "memory cells react", "relevant": [{"video": "l1", "startMs": 12000, "endMs": 18500}]},
+    {"query": "\"builds antibodies\"", "relevant": [{"video": "l1", "startMs": 3000, "endMs": 7000}]},
+    {"query": "why do vaccinated people rarely get ill", "relevant": [{"video": "l1", "startMs": 15100, "endMs": 18500}]}
+  ]
+}

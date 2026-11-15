@@ -24,6 +24,8 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- YT: the designs' own haptic patterns (switch "Eigene Haptik"); no prompt, granted at install -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- YT: SSI voice search; asked for only when the microphone button is tapped -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- YT: installs its own updates (asked for once, in the system settings) -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- YT: lets Android 12+ update YT without asking again where it allows that (no prompt) -->
@@ -514,9 +516,20 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/fileprovider_paths" />
         </provider>
+
+        <!-- YT: ONNX Runtime's start-up provider sends usage telemetry (with a device id) and
+             loads the native library at every app start; SSI loads it only when it is used -->
+        <provider
+            android:name="ai.onnxruntime.TelemetryInitializer"
+            android:authorities="${applicationId}.onnxruntime_telemetry_initializer"
+            tools:node="remove" />
     </application>
 
     <queries>
+        <!-- YT: SSI voice search finds the speech recognition service (Android 11+) -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="*" />

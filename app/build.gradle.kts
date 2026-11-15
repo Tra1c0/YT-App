@@ -116,6 +116,15 @@ android {
 
     packaging {
         jniLibs.excludes.add("lib/armeabi-v7a/*_neon.so")
+        // YT: ONNX Runtime (SSI semantic search) is large (34 MB per ABI unpacked): only 64-bit
+        // ARM phones get it; elsewhere SSI searches by words only. Add "lib/x86_64/..." back
+        // (remove its line) to try the semantic part on the emulator.
+        jniLibs.excludes.add("lib/armeabi-v7a/libonnxruntime*.so")
+        jniLibs.excludes.add("lib/x86/libonnxruntime*.so")
+        jniLibs.excludes.add("lib/x86_64/libonnxruntime*.so")
+        // YT: native libraries compressed in the APK (13 instead of 34 MB for ONNX Runtime),
+        // unpacked once at install
+        jniLibs.useLegacyPackaging = true
     }
 
     tasks.register("testClasses")
@@ -211,6 +220,9 @@ dependencies {
         exclude(group = "com.google.crypto.tink", module = "tink")
     }
     implementation(libs.tink.android)
+
+    /* YT: on-device sentence embeddings for SSI (the model itself is downloaded on request) */
+    implementation(libs.onnxruntime.android)
 
 
     /* Coil */

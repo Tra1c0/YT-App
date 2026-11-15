@@ -19,6 +19,9 @@ object YtActivityHooks {
         YtQueueResume.onActivityCreated(activity, savedInstanceState)
         // first start of a new build: old YT APKs YT may delete without asking go quietly
         com.github.libretube.util.YtApkClean.onAppStart(activity)
+        // SSI: its screen over every screen, and its background indexing (kept as scheduled)
+        com.github.libretube.ui.yt.ssi.YtSsiLayer.attach(activity)
+        com.github.libretube.ui.yt.ssi.YtSsi.schedule(activity)
     }
 
     fun onStart(activity: MainActivity) {
