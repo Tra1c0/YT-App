@@ -489,7 +489,10 @@ fun YtEditorCanvas(
                     }
                 },
         ) {
+            // read here so the layer draws again while a node moves (its box follows the finger)
             hooks.placements
+            hooks.dx
+            hooks.dy
             drawOverlay(state, hooks, ::toScreen, guides, marquee, base.density)
             if (state.showRulers) drawRulers(state, hooks.themeDensity, measurer)
             if (stats != null && state.showStats) {
@@ -748,7 +751,9 @@ private fun YtEditorPreview(
     val doc = state.doc ?: return
     val target = state.target
     val sample = videos.ifEmpty { listOf(null, null, null, null) }
-    fun slots(i: Int) = YtSlotData(video = sample.getOrNull(i % sample.size.coerceAtLeast(1)), progress = { 0.4f }, imageLoader = imageLoader)
+    // one slot data per card, kept, so an edit does not compose every card again
+    val slotList = remember(videos, imageLoader) { List(8) { i -> YtSlotData(video = sample.getOrNull(i % sample.size.coerceAtLeast(1)), progress = { 0.4f }, imageLoader = imageLoader) } }
+    fun slots(i: Int) = slotList[i % slotList.size]
     val selectedState = if (state.editState) YtRenderStates.SELECTED else 0
     val navItems = remember { YtNav.items(com.github.libretube.helpers.YtDesign.CUSTOM) }
     val navState = remember { YtNavState().apply { selected = navItems.firstOrNull()?.id ?: 0 } }
@@ -759,7 +764,7 @@ private fun YtEditorPreview(
     fun Chips(modifier: Modifier = Modifier) {
         Row(modifier.padding(horizontal = doc.feed.padding.start.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             chipLabels.forEachIndexed { i, label ->
-                YtThemeComponent(if (i == 0) src else plain, YtComponentKind.CHIP, YtSlotData(label = label), states = if (i == 0) YtRenderStates.SELECTED else 0)
+                YtThemeComponent(if (i == 0) src else plain, YtComponentKind.CHIP, remember(label) { YtSlotData(label = label) }, states = if (i == 0) YtRenderStates.SELECTED else 0)
             }
         }
     }
@@ -817,7 +822,7 @@ private fun YtEditorPreview(
     when (target) {
         YtEditorTarget.SCREEN -> Column(Modifier.fillMaxSize()) {
             Spacer(Modifier.height(24.dp))
-            YtThemeComponent(src, YtComponentKind.HEADER, YtSlotData(wordmark = doc.meta.wordmark), modifier = Modifier.fillMaxWidth())
+            YtThemeComponent(src, YtComponentKind.HEADER, remember(doc.meta.wordmark) { YtSlotData(wordmark = doc.meta.wordmark) }, modifier = Modifier.fillMaxWidth())
             if (doc.feed.chips) Chips()
             Box(Modifier.weight(1f).clipToBounds()) { Cards(6) }
             Mini()
@@ -826,19 +831,18 @@ private fun YtEditorPreview(
         }
         YtEditorTarget.CARD -> Box(Modifier.padding(bottom = 16.dp)) { Cards(2) }
         YtEditorTarget.HEADER -> Column(Modifier.padding(vertical = 16.dp)) {
-            YtThemeComponent(src, YtComponentKind.HEADER, YtSlotData(wordmark = doc.meta.wordmark), modifier = Modifier.fillMaxWidth())
+            YtThemeComponent(src, YtComponentKind.HEADER, remember(doc.meta.wordmark) { YtSlotData(wordmark = doc.meta.wordmark) }, modifier = Modifier.fillMaxWidth())
         }
         YtEditorTarget.CHIP -> Column(Modifier.padding(vertical = 16.dp)) {
             Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                YtThemeComponent(src, YtComponentKind.CHIP, YtSlotData(label = chipLabels[1]), states = selectedState)
-                YtThemeComponent(plain, YtComponentKind.CHIP, YtSlotData(label = chipLabels[2]), states = if (selectedState == 0) YtRenderStates.SELECTED else 0)
-                YtThemeComponent(plain, YtComponentKind.CHIP, YtSlotData(label = chipLabels[3]))
+                YtThemeComponent(src, YtComponentKind.CHIP, remember(chipLabels[1]) { YtSlotData(label = chipLabels[1]) }, states = selectedState)
+                YtThemeComponent(plain, YtComponentKind.CHIP, remember(chipLabels[2]) { YtSlotData(label = chipLabels[2]) }, states = if (selectedState == 0) YtRenderStates.SELECTED else 0)
+                YtThemeComponent(plain, YtComponentKind.CHIP, remember(chipLabels[3]) { YtSlotData(label = chipLabels[3]) })
             }
         }
         YtEditorTarget.NAV_BAR, YtEditorTarget.NAV_TAB -> Column(Modifier.padding(vertical = 24.dp)) {
-            if (target == YtEditorTarget.NAV_TAB) {
-                navState.selected = if (state.editState) navItems.firstOrNull()?.id ?: 0 else navItems.getOrNull(1)?.id ?: 0
-            }
+            val wanted = if (target == YtEditorTarget.NAV_TAB && !state.editState) navItems.getOrNull(1)?.id ?: 0 else navItems.firstOrNull()?.id ?: 0
+            androidx.compose.runtime.SideEffect { navState.selected = wanted }
             Nav()
         }
         YtEditorTarget.MINI -> Column(Modifier.padding(vertical = 24.dp)) {

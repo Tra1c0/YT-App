@@ -84,21 +84,11 @@ object YtColor {
         return argb(ch(alpha(a), alpha(b)), ch(red(a), red(b)), ch(green(a), green(b)), ch(blue(a), blue(b)))
     }
 
-    /** WCAG relative luminance. */
-    fun luminance(argb: Int): Double {
-        fun lin(c: Int): Double {
-            val v = c / 255.0
-            return if (v <= 0.03928) v / 12.92 else Math.pow((v + 0.055) / 1.055, 2.4)
-        }
-        return 0.2126 * lin(red(argb)) + 0.7152 * lin(green(argb)) + 0.0722 * lin(blue(argb))
-    }
+    /** WCAG relative luminance (YtContrast's, the one every design check uses). */
+    fun luminance(argb: Int): Double = com.github.libretube.ui.yt.YtContrast.luminance(argb)
 
-    /** WCAG contrast of two opaque colours, 1..21. */
-    fun contrast(a: Int, b: Int): Double {
-        val la = luminance(a)
-        val lb = luminance(b)
-        return (maxOf(la, lb) + 0.05) / (minOf(la, lb) + 0.05)
-    }
+    /** WCAG contrast of two colours, 1..21 ([a] laid over [b] where it is translucent). */
+    fun contrast(a: Int, b: Int): Double = com.github.libretube.ui.yt.YtContrast.ratio(a, b)
 
     /** [fore] laid over [back] by its alpha (the colour the eye sees). */
     fun over(fore: Int, back: Int): Int {

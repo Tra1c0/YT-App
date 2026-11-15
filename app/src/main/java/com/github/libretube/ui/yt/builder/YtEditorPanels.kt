@@ -29,6 +29,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -83,7 +84,9 @@ fun YtSliderRow(label: String, value: Float, range: ClosedFloatingPointRange<Flo
 /** A number with − and + by [step], and typed input. */
 @Composable
 fun YtNumberRow(label: String, value: Float, step: Float, onChange: (Float) -> Unit, min: Float = -4000f, max: Float = 4000f) {
-    var text by remember(value) { mutableStateOf(fmt(value)) }
+    var text by remember { mutableStateOf(fmt(value)) }
+    // a new value from elsewhere replaces the text, the text being typed is left alone
+    LaunchedEffect(value) { if (text.replace(',', '.').toFloatOrNull() != value) text = fmt(value) }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         Text(label, color = PanelText, fontSize = 13.sp, modifier = Modifier.width(96.dp))
         TextButton(onClick = { onChange((value - step).coerceIn(min, max)) }) { Text("−") }
@@ -128,7 +131,8 @@ private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
 @Composable
 fun YtColorPicker(state: YtEditorState, argb: Int, token: String?, onColor: (Int) -> Unit, onToken: ((String) -> Unit)?) {
     var hsl by remember { mutableStateOf(false) }
-    var hex by remember(argb) { mutableStateOf(YtColor.hex(argb)) }
+    var hex by remember { mutableStateOf(YtColor.hex(argb)) }
+    LaunchedEffect(argb) { if (YtColor.parse(hex) != argb) hex = YtColor.hex(argb) }
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(

@@ -281,7 +281,8 @@ private class YtMeasure(val node: YtNode, val density: Float, val hooks: YtRende
     }
 }
 
-private const val MAX_PX = (1 shl 18) - 1
+// Constraints can hold both sides up to 15 bits at once; theme sizes stay far below
+private const val MAX_PX = (1 shl 15) - 1
 
 private fun Constraints.toBox() = YtLayoutEngine.Box(
     minWidth.toFloat(),
@@ -490,13 +491,16 @@ private fun Modifier.ytPadding(node: YtNode) =
 @Composable
 private fun YtTextLeaf(src: YtThemeSource, node: YtNode, text: String, modifier: Modifier) {
     val spec = node.text ?: YtTextSpec()
-    val t = src.resolver
-    val assets = src.assets
-    val style = remember(spec, t, assets) {
-        runCatching { t?.let { YtBuilderPaint.textStyle(spec, it, assets) } }.getOrNull() ?: androidx.compose.ui.text.TextStyle.Default
+    // only the type token's values compose: a colour or another node changing does not
+    val style by remember(src, spec) {
+        derivedStateOf(structuralEqualityPolicy()) {
+            val t = src.resolver
+            runCatching { t?.let { YtBuilderPaint.textStyle(spec, it, src.assets, colorOverride = Color.Unspecified) } }.getOrNull() ?: androidx.compose.ui.text.TextStyle.Default
+        }
     }
+    val caps by remember(src, spec.styleRef) { derivedStateOf { src.resolver?.type(spec.styleRef)?.caps == true } }
     BasicText(
-        text = if (t != null && t.type(spec.styleRef).caps) text.uppercase() else text,
+        text = if (caps) text.uppercase() else text,
         modifier = modifier.ytPadding(node),
         style = style,
         maxLines = spec.maxLines.coerceAtLeast(1),
@@ -508,14 +512,19 @@ private fun YtTextLeaf(src: YtThemeSource, node: YtNode, text: String, modifier:
 
 @Composable
 private fun YtIconLeaf(src: YtThemeSource, node: YtNode, icon: Int, modifier: Modifier) {
-    val spec = node.text ?: YtTextSpec()
-    val tint = src.resolver?.let { YtBuilderPaint.color(it.resolve(spec.color)) } ?: Color.White
+    val tint by rememberTint(src, node.text?.color ?: YtPaint.token(YtRole.TEXT))
     Image(
         painter = painterResource(icon),
         contentDescription = null,
         colorFilter = ColorFilter.tint(tint),
         modifier = modifier.ytPadding(node),
     )
+}
+
+/** An icon's colour, composing again only when that colour changes. */
+@Composable
+private fun rememberTint(src: YtThemeSource, paint: YtPaint): State<Color> = remember(src, paint) {
+    derivedStateOf(structuralEqualityPolicy()) { src.resolver?.let { YtBuilderPaint.color(it.resolve(paint)) } ?: Color.White }
 }
 
 @Composable
@@ -607,7 +616,7 @@ private fun YtSlotLeaf(src: YtThemeSource, node: YtNode, shape: YtCornerShape, m
         YtSlot.PROFILE -> YtActionIcon(src, node, R.drawable.ic_yt_person, if (live) data.onProfile else null, R.string.yt_builder_slot_profile, modifier)
         YtSlot.NAV_ICON -> {
             val item = data.navItem
-            val tint = src.resolver?.let { YtBuilderPaint.color(it.resolve(node.text?.color ?: YtPaint.token(YtRole.TEXT))) } ?: Color.White
+            val tint by rememberTint(src, node.text?.color ?: YtPaint.token(YtRole.TEXT))
             if (item == null || item.icon == null) {
                 Box(modifier) { YtShortsGlyph(tint, filled = false, modifier = Modifier.fillMaxSize()) }
             } else {
@@ -625,7 +634,7 @@ private fun YtSlotLeaf(src: YtThemeSource, node: YtNode, shape: YtCornerShape, m
 
 @Composable
 private fun YtActionIcon(src: YtThemeSource, node: YtNode, icon: Int, onClick: (() -> Unit)?, label: Int, modifier: Modifier) {
-    val tint = src.resolver?.let { YtBuilderPaint.color(it.resolve(node.text?.color ?: YtPaint.token(YtRole.TEXT))) } ?: Color.White
+    val tint by rememberTint(src, node.text?.color ?: YtPaint.token(YtRole.TEXT))
     val description = stringResource(label)
     Box(
         modifier

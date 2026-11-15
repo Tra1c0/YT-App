@@ -80,8 +80,10 @@ fun rememberYtAppThemeSource(): YtThemeSource {
     val configuration = LocalConfiguration.current
     val env = rememberUpdatedState(YtEnv(configuration.screenWidthDp.toFloat(), configuration.screenHeightDp.toFloat(), configuration.fontScale, YtDesignDark.active))
     return remember {
+        // loaded before any screen composes (the activity's palette); the source only reads
+        YtBuilderActive.current
         YtThemeSource(
-            docOf = { YtBuilderActive.current },
+            docOf = { YtBuilderActive.doc },
             envOf = { env.value },
             nightOf = { env.value.dark },
             assetsOf = { YtBuilderActive.assets },

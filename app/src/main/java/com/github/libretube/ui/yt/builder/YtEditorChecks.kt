@@ -2,11 +2,11 @@ package com.github.libretube.ui.yt.builder
 
 /**
  * YT: the editor's checks of a theme (pure): text that does not read on what lies below it
- * (aim 4.5:1, YtContrast's rule; Pitfall P1), controls smaller than 48 dp, layout conflicts.
+ * (aim 4.5:1, measured with YtContrast as in every design; Pitfall P1), controls smaller than 48 dp, layout conflicts.
  * Bounds come from the canvas (px); [density] turns them into dp.
  */
 object YtEditorChecks {
-    const val MIN_CONTRAST = 4.5
+    const val MIN_CONTRAST = com.github.libretube.ui.yt.YtContrast.BODY
     const val MIN_TOUCH_DP = 48f
 
     enum class Kind { CONTRAST, TOUCH, LAYOUT }
