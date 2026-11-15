@@ -36,8 +36,13 @@ object YtSsiRanker {
         val aiWords: Boolean = false,
     )
 
-    fun rank(intent: YtSsiIntent, lists: Lists, source: Source, limit: Int = LIMIT): List<YtSsiHit> {
-        val w = intent.weights
+    /**
+     * The hits of [lists]. [weights] are the intent's weights (SSI-2: as feedback adjusted them,
+     * see [YtSsiLearning]). Every passage hit gets its checked statement span ([YtSsiBoundary])
+     * and its relevance band ([YtSsiScores]).
+     */
+    fun rank(intent: YtSsiIntent, lists: Lists, source: Source, limit: Int = LIMIT, weights: YtSsiWeights = intent.weights): List<YtSsiHit> {
+        val w = weights
         val fused = YtSsiFusion.rrf(
             listOf(
                 Triple(YtSsiMethod.FTS_BM25, w.lexical, lists.lexical),
@@ -110,7 +115,11 @@ object YtSsiRanker {
                 val first = highlights.firstOrNull()
                 if (first != null && s.timing != YtSsiTiming.APPROX) YtSsiSegmenter.timeAt(s.marks, first.first, s.startMs) else s.startMs
             } ?: 0L
-            out += YtSsiHit(
+            val span = segment?.let { s ->
+                val focus = highlights.takeIf { it.isNotEmpty() }?.let { it.first().first..it.last().last }
+                YtSsiBoundary.verify(prev, s, next, focus, intent.exact)
+            }
+            val hit = YtSsiHit(
                 videoId = key.videoId,
                 title = doc.title,
                 channelName = doc.channelName,
@@ -133,10 +142,37 @@ object YtSsiRanker {
                 ranks = ranks[key].orEmpty(),
                 notes = notes,
                 modelVersion = if (YtSsiMethod.EMBEDDING in methods) lists.model else null,
+                span = span,
             )
+            out += hit.copy(band = YtSsiScores.band(hit, intent))
         }
         return out
     }
+
+    /**
+     * [hits] after the AI's [grades] (Deep re-rank): fused order ([YtSsiRerank.fuse]), the band
+     * from the grade, and the span checked again around the statement the AI named (when it
+     * named one inside the passage; never outside it).
+     */
+    fun applyAi(intent: YtSsiIntent, hits: List<YtSsiHit>, grades: Map<Long, YtSsiAiGrade>, source: Source): List<YtSsiHit> =
+        YtSsiRerank.fuse(hits, grades, intent).map { hit ->
+            val grade = hit.ai ?: return@map hit
+            val segment = hit.segmentId?.let { source.segment(it) }
+            val focus = segment?.let { s -> grade.words?.let { YtSsiBoundary.charsOfWords(s.text, it) } }
+            val span = if (segment != null && focus != null) {
+                YtSsiBoundary.verify(source.neighbour(segment.videoId, segment.ord - 1), segment, source.neighbour(segment.videoId, segment.ord + 1), focus, intent.exact)
+            } else {
+                hit.span
+            }
+            // a hit without marked words (meaning only) takes its time from the AI's statement
+            val hitMs = if (focus != null && segment != null && hit.highlights.isEmpty() && segment.timing != YtSsiTiming.APPROX) {
+                YtSsiSegmenter.timeAt(segment.marks, focus.first, segment.startMs)
+            } else {
+                hit.hitMs
+            }
+            val moved = hit.copy(span = span, hitMs = hitMs)
+            moved.copy(band = YtSsiScores.band(moved, intent))
+        }
 
     /**
      * Where a quote of k words may be for [segment]: its text with the last k-1 words of the

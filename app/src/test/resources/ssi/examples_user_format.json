@@ -1,0 +1,11 @@
+{
+  "name": "user format against the quotes fixture (synthetic, ids of the fixture)",
+  "toleranceMs": 3000,
+  "examples": [
+    {"query": "„das Fünfzigfache ihres eigenen Körpergewichts“", "videoId": "q1aaaaaaaaa", "startMs": 6000, "endMs": 11000, "kind": "quote"},
+    {"query": "Wie viel kann eine Ameise tragen?", "videoId": "https://www.youtube.com/watch?v=q1aaaaaaaaa", "start": "0:06", "end": 11, "kind": "question"},
+    {"query": "Warum macht Kaffee wach", "videoId": "q2aaaaaaaaa", "startMs": 14000, "endMs": 20000},
+    {"query": "\"Magma\"", "videoId": "q3aaaaaaaaa", "startMs": 8000, "endMs": 14000},
+    {"query": "Quantenchromodynamik Gluonen", "kind": "none"}
+  ]
+}

@@ -23,7 +23,8 @@ import java.nio.ByteOrder
  *   is unicode61 where the build has it, else "simple" (the text is folded before, so both
  *   split it the same way).
  * - `vecs`: one int8 vector per passage and model.
- * - `ai`: the AI plans per folded query.
+ * - `ai`: the AI plans per folded query, and the AI re-rank's grades (key "rr|…").
+ * - `feedback` (SSI-2): the user's verdicts on hits; the learning state itself is a preference.
  */
 class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, NAME, null, VERSION) {
     override fun onConfigure(db: SQLiteDatabase) {
@@ -35,7 +36,7 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
             """CREATE TABLE docs (id INTEGER PRIMARY KEY AUTOINCREMENT, video_id TEXT NOT NULL UNIQUE, title TEXT NOT NULL,
                channel_id TEXT, channel_name TEXT, description TEXT, uploaded INTEGER, duration_sec INTEGER, language TEXT,
                auto INTEGER, timing TEXT NOT NULL, source TEXT NOT NULL, vanished INTEGER NOT NULL DEFAULT 0, chapters TEXT,
-               indexed_at INTEGER NOT NULL, version INTEGER NOT NULL)""",
+               indexed_at INTEGER NOT NULL, version INTEGER NOT NULL, seg TEXT NOT NULL DEFAULT 'RULES')""",
         )
         db.execSQL(
             """CREATE TABLE segs (id INTEGER PRIMARY KEY AUTOINCREMENT, video_id TEXT NOT NULL, ord INTEGER NOT NULL,
@@ -45,6 +46,7 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
         db.execSQL("CREATE TABLE vecs (seg_id INTEGER PRIMARY KEY, model TEXT NOT NULL, scale REAL NOT NULL, data BLOB NOT NULL)")
         db.execSQL("CREATE INDEX vecs_model ON vecs (model, seg_id)")
         db.execSQL("CREATE TABLE ai (query TEXT PRIMARY KEY, answer TEXT NOT NULL, at INTEGER NOT NULL)")
+        createFeedback(db)
         val tokenizer = try {
             db.execSQL("CREATE VIRTUAL TABLE probe_fts USING fts4(text, tokenize=unicode61)")
             db.execSQL("DROP TABLE probe_fts")
@@ -57,9 +59,24 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
         db.execSQL("CREATE VIRTUAL TABLE docs_fts USING fts4(title, channel, description, chapters, tokenize=$tokenizer)")
     }
 
+    /** The user's verdicts on hits (SSI-2); kept when the index is cleared. */
+    private fun createFeedback(db: SQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS feedback (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, query TEXT NOT NULL,
+               kind TEXT NOT NULL, video_id TEXT NOT NULL, seg_id INTEGER, verdict TEXT NOT NULL, lex_rank INTEGER, sem_rank INTEGER,
+               title_rank INTEGER, ai_grade INTEGER, semantic INTEGER NOT NULL, timing TEXT NOT NULL)""",
+        )
+    }
+
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion == 1) {
+            // SSI-2: the passages stay (re-cut one video at a time in the background, see YtSsiIndexer.migrate)
+            db.execSQL("ALTER TABLE docs ADD COLUMN seg TEXT NOT NULL DEFAULT 'RULES'")
+            createFeedback(db)
+            return
+        }
         // the index can always be built again from its sources
-        for (table in listOf("docs", "segs", "vecs", "ai", "segs_fts", "docs_fts")) db.execSQL("DROP TABLE IF EXISTS $table")
+        for (table in listOf("docs", "segs", "vecs", "ai", "segs_fts", "docs_fts", "feedback")) db.execSQL("DROP TABLE IF EXISTS $table")
         onCreate(db)
     }
 
@@ -108,6 +125,7 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
                 put("chapters", encodeChapters(doc.chapters))
                 put("indexed_at", doc.indexedAt)
                 put("version", doc.version)
+                put("seg", doc.segmentation.name)
             })
             db.insertOrThrow("docs_fts", null, ContentValues().apply {
                 put("docid", docId)
@@ -166,6 +184,29 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
         changed()
     }
 
+    /** Marks [videoId]'s passages as cut by [segmentation] under [version] (they stay as they are). */
+    fun setSegmentation(videoId: String, segmentation: YtSsiSegmentation, version: Int) {
+        writableDatabase.execSQL("UPDATE docs SET seg = ?, version = ? WHERE video_id = ?", arrayOf<Any>(segmentation.name, version, videoId))
+        changed()
+    }
+
+    /** Raises every video of analysis [from] ..< [to] to [to] without touching its passages; returns how many. */
+    fun raiseVersion(from: Int, to: Int): Int {
+        val count = readableDatabase.rawQuery("SELECT COUNT(*) FROM docs WHERE version >= ? AND version < ?", arrayOf(from.toString(), to.toString())).use {
+            if (it.moveToFirst()) it.getInt(0) else 0
+        }
+        if (count > 0) {
+            writableDatabase.execSQL("UPDATE docs SET version = ? WHERE version >= ? AND version < ?", arrayOf<Any>(to, from, to))
+            changed()
+        }
+        return count
+    }
+
+    /** Videos per segmentation (for Diagnose). */
+    fun segmentationCounts(): Map<YtSsiSegmentation, Int> = readableDatabase.rawQuery("SELECT seg, COUNT(*) FROM docs GROUP BY seg", null).use { c ->
+        buildMap { while (c.moveToNext()) put(enumOr(c.getString(0), YtSsiSegmentation.RULES), c.getInt(1)) }
+    }
+
     /** Empties the whole index (the AI plans too). */
     fun clear() {
         val db = writableDatabase
@@ -186,7 +227,7 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
         synchronized(lock) { docCache?.let { return it } }
         val map = HashMap<String, YtSsiDoc>()
         readableDatabase.rawQuery(
-            "SELECT video_id, title, channel_id, channel_name, description, uploaded, duration_sec, language, auto, timing, source, vanished, chapters, indexed_at, version FROM docs",
+            "SELECT video_id, title, channel_id, channel_name, description, uploaded, duration_sec, language, auto, timing, source, vanished, chapters, indexed_at, version, seg FROM docs",
             null,
         ).use { c ->
             while (c.moveToNext()) {
@@ -206,6 +247,7 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
                     chapters = decodeChapters(c.getString(12)),
                     indexedAt = c.getLong(13),
                     version = c.getInt(14),
+                    segmentation = enumOr(c.getString(15), YtSsiSegmentation.RULES),
                 )
                 map[doc.videoId] = doc
             }
@@ -389,6 +431,46 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
         writableDatabase.execSQL("INSERT OR REPLACE INTO ai (query, answer, at) VALUES (?, ?, ?)", arrayOf<Any>(query, YtSsiAiRules.encode(plan), now))
     }
 
+    /** The AI re-rank's grades stored under [key] ([YtSsiRerank.cacheKey], prefixed so it never meets a plan), when fresh. */
+    fun rerank(key: String, now: Long): Map<Long, YtSsiAiGrade>? = readableDatabase.rawQuery("SELECT answer, at FROM ai WHERE query = ?", arrayOf(key)).use { c ->
+        if (c.moveToFirst() && YtSsiRerank.fresh(c.getLong(1), now)) YtSsiRerank.decode(c.getString(0)) else null
+    }
+
+    fun putRerank(key: String, grades: Map<Long, YtSsiAiGrade>, now: Long) {
+        writableDatabase.execSQL("INSERT OR REPLACE INTO ai (query, answer, at) VALUES (?, ?, ?)", arrayOf<Any>(key, YtSsiRerank.encode(grades), now))
+    }
+
+    // ---- feedback ----
+
+    fun putFeedback(f: YtSsiFeedback) {
+        writableDatabase.insertOrThrow("feedback", null, ContentValues().apply {
+            put("at", f.at)
+            put("query", f.query)
+            put("kind", f.kind.name)
+            put("video_id", f.videoId)
+            put("seg_id", f.segmentId)
+            put("verdict", f.verdict.name)
+            put("lex_rank", f.lexicalRank)
+            put("sem_rank", f.semanticRank)
+            put("title_rank", f.titleRank)
+            put("ai_grade", f.aiGrade)
+            put("semantic", if (f.semanticUsed) 1 else 0)
+            put("timing", f.timing.name)
+        })
+    }
+
+    /** The verdict last given on passage or video [key] for [query], or null. */
+    fun lastVerdict(query: String, videoId: String, segmentId: Long?): YtSsiVerdict? = readableDatabase.rawQuery(
+        "SELECT verdict FROM feedback WHERE query = ? AND video_id = ? AND " + (if (segmentId == null) "seg_id IS NULL" else "seg_id = ?") + " ORDER BY id DESC LIMIT 1",
+        if (segmentId == null) arrayOf(query, videoId) else arrayOf(query, videoId, segmentId.toString()),
+    ).use { c -> if (c.moveToFirst()) enumOr(c.getString(0), YtSsiVerdict.NOT_RELEVANT) else null }
+
+    fun feedbackCount(): Int = readableDatabase.rawQuery("SELECT COUNT(*) FROM feedback", null).use { if (it.moveToFirst()) it.getInt(0) else 0 }
+
+    fun clearFeedback() {
+        writableDatabase.execSQL("DELETE FROM feedback")
+    }
+
     // ---- numbers ----
 
     data class Stats(val videos: Int, val segments: Int, val vectors: Int, val bytes: Long)
@@ -408,7 +490,8 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
 
     companion object {
         const val NAME = "yt_ssi.db"
-        private const val VERSION = 1
+        /** 2 (SSI-2): `docs.seg`, table `feedback`. */
+        private const val VERSION = 2
         private const val TAG = "YtSsiDb"
         private const val SEG_COLUMNS = "id, video_id, ord, start_ms, end_ms, text, kind, timing, marks"
 

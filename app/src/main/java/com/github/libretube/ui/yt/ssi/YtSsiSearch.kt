@@ -6,6 +6,7 @@ import com.github.libretube.api.MediaServiceRepository
 import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.extensions.toID
 import com.github.libretube.ui.yt.archive.script.YtScriptTextAis
+import com.github.libretube.ui.yt.news.YtNewsProviderSetup
 import com.github.libretube.ui.yt.news.YtNewsSummaryKey
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -26,7 +27,7 @@ import java.time.ZoneId
 enum class YtSsiDepth { INSTANT, DEEP }
 
 /** Where a search is. */
-enum class YtSsiPhase { IDLE, LOCAL, AI, DISCOVER, FETCH, DONE }
+enum class YtSsiPhase { IDLE, LOCAL, AI, DISCOVER, FETCH, RERANK, DONE }
 
 /** What a search says about itself beyond its hits. */
 enum class YtSsiRunNote {
@@ -49,6 +50,16 @@ enum class YtSsiRunNote {
     PAUSED,
     SEARCH_FAILED,
     EMPTY_INDEX,
+
+    /** SSI-2: the AI graded the top passages (now, or the same ones earlier). */
+    RERANK_USED,
+    RERANK_CACHED,
+
+    /** The AI re-rank did not work: the local order stands. */
+    RERANK_FAILED,
+
+    /** Today's AI re-rank budget is used up: the local order stands. */
+    RERANK_BUDGET,
 }
 
 /** One search as the screen shows it; every change is a new value. */
@@ -72,7 +83,8 @@ data class YtSsiRun(
  * the same, then (when allowed) asks the AI for search phrases (cached per query), searches
  * YouTube through the app's own search, fetches the captions of the best new videos within the
  * budget (1–3 s apart, stops at a bot check), indexes them and searches again after each one, so
- * results come in while it runs.
+ * results come in while it runs. SSI-2: at its end the AI may grade the top passages
+ * ([rerank]); the learnt weights and cut-off apply to both depths.
  */
 object YtSsiSearch {
     private const val TAG = "YtSsiSearch"
@@ -133,7 +145,7 @@ object YtSsiSearch {
         var extra = emptyList<String>()
         val fromYouTube = HashSet<String>()
         suspend fun emit(phase: YtSsiPhase, fetched: Int = 0, budget: Int = 0) {
-            val (hits, semanticNotes) = retrieve(context, intent, extra, fromYouTube)
+            val (hits, semanticNotes) = local(context, intent, extra, fromYouTube)
             set(id) {
                 it.copy(
                     phase = phase,
@@ -185,7 +197,8 @@ object YtSsiSearch {
         }
 
         if (!YtSsi.mayAsk(context)) {
-            set(id) { it.copy(phase = YtSsiPhase.DONE, notes = it.notes + YtSsiRunNote.PAUSED) }
+            set(id) { it.copy(notes = it.notes + YtSsiRunNote.PAUSED) }
+            finish(context, id, intent, setup)
             return
         }
         set(id) { it.copy(phase = YtSsiPhase.DISCOVER) }
@@ -214,7 +227,61 @@ object YtSsiSearch {
             emit(YtSsiPhase.FETCH, fetched, todo.size)
         }
         if (YtSsiRunNote.BLOCKED !in _run.value.notes) YtSsi.ranOk(context, "deep")
-        emit(YtSsiPhase.DONE, fetched, todo.size)
+        emit(if (setup != null && YtSsi.aiRerank()) YtSsiPhase.RERANK else YtSsiPhase.DONE, fetched, todo.size)
+        finish(context, id, intent, setup)
+    }
+
+    /** Deep's last step: the AI re-rank of the hits that are there (when on), then done. */
+    private suspend fun finish(context: Context, id: Long, intent: YtSsiIntent, setup: YtNewsProviderSetup?) {
+        val hits = _run.value.takeIf { it.id == id }?.hits.orEmpty()
+        if (setup == null || !YtSsi.aiRerank() || hits.none { it.segmentId != null }) {
+            set(id) { it.copy(phase = YtSsiPhase.DONE) }
+            return
+        }
+        set(id) { it.copy(phase = YtSsiPhase.RERANK) }
+        val (ranked, note) = rerank(context, intent, hits, setup)
+        set(id) { it.copy(phase = YtSsiPhase.DONE, hits = ranked, notes = it.notes + listOfNotNull(note)) }
+    }
+
+    /**
+     * The AI's grades of the first [YtSsiRerank.TOP] passages of [hits], fused with their local
+     * order: from the cache when the same passages were graded for this query by this model,
+     * else one request within today's budget. Any failure keeps [hits] as they are and says so.
+     */
+    internal suspend fun rerank(context: Context, intent: YtSsiIntent, hits: List<YtSsiHit>, setup: YtNewsProviderSetup): Pair<List<YtSsiHit>, YtSsiRunNote?> {
+        val db = YtSsi.db
+        val source = source()
+        val passages = withContext(Dispatchers.IO) { YtSsiRerank.passages(hits, source::segment, source::neighbour) }
+        if (passages.isEmpty()) return hits to null
+        val now = System.currentTimeMillis()
+        val key = YtSsiRerank.cacheKey(intent.cacheKey, passages.map { it.segmentId }, "${setup.kind.id}:${setup.model}")
+        withContext(Dispatchers.IO) { db.rerank(key, now) }?.let { cached ->
+            return withContext(Dispatchers.IO) { YtSsiRanker.applyAi(intent, hits, cached, source) } to YtSsiRunNote.RERANK_CACHED
+        }
+        if (!YtSsi.spendRerank(context, now)) return hits to YtSsiRunNote.RERANK_BUDGET
+        val grades = try {
+            withTimeoutOrNull(RERANK_TIMEOUT_MS) {
+                YtSsiRerank.parse(YtScriptTextAis.of(setup).complete(YtSsiRerank.SYSTEM, YtSsiRerank.user(intent, passages), YtSsiRerank.schema()), passages)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.i(TAG, "rerank failed: $e")
+            null
+        } ?: return hits to YtSsiRunNote.RERANK_FAILED
+        withContext(Dispatchers.IO) { db.putRerank(key, grades, now) }
+        return withContext(Dispatchers.IO) { YtSsiRanker.applyAi(intent, hits, grades, source) } to YtSsiRunNote.RERANK_USED
+    }
+
+    /** The index as the ranker reads it. */
+    private fun source(): YtSsiRanker.Source {
+        val db = YtSsi.db
+        return object : YtSsiRanker.Source {
+            val docs = db.docs()
+            override fun segment(id: Long) = db.segment(id)
+            override fun neighbour(videoId: String, ord: Int) = db.neighbour(videoId, ord)
+            override fun doc(videoId: String) = docs[videoId]
+        }
     }
 
     /**
@@ -255,8 +322,17 @@ object YtSsiSearch {
         return out.values.toList()
     }
 
-    /** Full text + embeddings over the index, fused and filtered. */
-    private suspend fun retrieve(context: Context, intent: YtSsiIntent, extra: List<String>, fromYouTube: Set<String>): Pair<List<YtSsiHit>, Set<YtSsiRunNote>> {
+    /**
+     * Full text + embeddings over the index, fused and filtered. [learned] uses the weights and
+     * the cut-off as feedback moved them (the benchmark's SSI-1 way passes false).
+     */
+    internal suspend fun local(
+        context: Context,
+        intent: YtSsiIntent,
+        extra: List<String> = emptyList(),
+        fromYouTube: Set<String> = emptySet(),
+        learned: Boolean = true,
+    ): Pair<List<YtSsiHit>, Set<YtSsiRunNote>> {
         val db = YtSsi.db
         val notes = HashSet<YtSsiRunNote>()
         val match = YtSsiFusion.ftsQuery(intent, extra)
@@ -272,19 +348,15 @@ object YtSsiSearch {
                     ?: YtSsiModels.use(context) { it.embed(listOf(intent.semanticText), query = true).first() }
                         ?.also { queryVector = intent.semanticText to it }
                 if (query != null) {
-                    semantic = YtSsiVectorIndex.cut(withContext(Dispatchers.Default) { index.search(query, SEMANTIC_K) }).map { it.first }
+                    val floor = if (learned) YtSsi.minCosine(context) else YtSsiVectorIndex.MIN_COSINE
+                    semantic = YtSsiVectorIndex.cut(withContext(Dispatchers.Default) { index.search(query, SEMANTIC_K) }, floor).map { it.first }
                     model = YtSsiModels.spec.version
                 }
             }
             val pending = withContext(Dispatchers.IO) { db.unembeddedCount(YtSsiModels.spec.version) }
             if (pending > 0) notes += YtSsiRunNote.VECTORS_PENDING
         }
-        val source = object : YtSsiRanker.Source {
-            val docs = db.docs()
-            override fun segment(id: Long) = db.segment(id)
-            override fun neighbour(videoId: String, ord: Int) = db.neighbour(videoId, ord)
-            override fun doc(videoId: String) = docs[videoId]
-        }
+        val source = source()
         val lists = YtSsiRanker.Lists(
             lexical = lexical,
             semantic = semantic,
@@ -294,7 +366,8 @@ object YtSsiSearch {
             fromYouTube = fromYouTube,
             aiWords = extra.isNotEmpty(),
         )
-        val hits = withContext(Dispatchers.IO) { YtSsiRanker.rank(intent, lists, source) }
+        val weights = if (learned) YtSsi.weights(context, intent) else intent.weights
+        val hits = withContext(Dispatchers.IO) { YtSsiRanker.rank(intent, lists, source, weights = weights) }
         return hits to notes
     }
 
@@ -303,5 +376,6 @@ object YtSsiSearch {
 
     private const val SEMANTIC_K = 200
     private const val AI_TIMEOUT_MS = 25_000L
+    private const val RERANK_TIMEOUT_MS = 40_000L
     private const val EMBED_PER_VIDEO_MS = 20_000L
 }

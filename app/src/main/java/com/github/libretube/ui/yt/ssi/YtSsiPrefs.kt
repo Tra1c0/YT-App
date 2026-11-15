@@ -19,6 +19,14 @@ object YtSsiPrefs {
     const val KEY_ALLOW_AI = "yt_ssi_allow_ai"
     const val DEFAULT_ALLOW_AI = false
 
+    /** SSI-2: Deep lets the AI grade its top passages (needs [KEY_ALLOW_AI]). */
+    const val KEY_AI_RERANK = "yt_ssi_ai_rerank"
+    const val DEFAULT_AI_RERANK = true
+
+    /** SSI-2: feedback adjusts the fusion weights and the meaning cut-off. */
+    const val KEY_LEARN = "yt_ssi_learn"
+    const val DEFAULT_LEARN = true
+
     /** Per Deep search: at most this many YouTube searches. */
     const val MAX_SEARCHES = 3
 

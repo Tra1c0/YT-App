@@ -29,7 +29,8 @@ import java.io.IOException
  *   info, then the caption file of the best track. The spoken language's speech-recognition
  *   track is taken first, as json3 for its word starts (WORD timing); a manual track (LINE) when
  *   there is no recognised one; TTML when json3 gives nothing.
- * Every passage is cut by [YtSsiSegmenter]; chapters are passages of their own.
+ * Every passage is cut by [YtSsiSegmenter] first; chapters are passages of their own. With the
+ * model, [migrate] later re-cuts a video where its meaning changes ([YtSsiSemanticSegmenter]).
  */
 class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
     /** A bot check or HTTP 429: stop asking YouTube. */
@@ -37,7 +38,10 @@ class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
 
     enum class Outcome { INDEXED, NO_CAPTIONS, SKIPPED, GONE }
 
-    /** Indexes every archived video not yet in the index (or of an older analysis). Local only. */
+    /**
+     * Indexes every archived video not yet in the index (or of an analysis older than
+     * [YtSsiVersions.MIN_KEPT]; newer ones are re-cut by [migrate]). Local only.
+     */
     suspend fun indexArchive(deadline: Long = Long.MAX_VALUE): Int = withContext(Dispatchers.IO) {
         if (!YtArchive.enabled() && YtArchive.store.all().isEmpty()) return@withContext 0
         val docs = db.docs()
@@ -46,7 +50,7 @@ class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
             currentCoroutineContext().ensureActive()
             if (System.currentTimeMillis() > deadline) break
             val doc = docs[meta.videoId]
-            if (doc != null && doc.version == YtSsiVersions.ANALYSIS) {
+            if (doc != null && doc.version >= YtSsiVersions.MIN_KEPT) {
                 // already indexed (from the archive or from captions): only the vanish mark follows
                 if (doc.vanished != meta.vanished) db.setVanished(meta.videoId, meta.vanished)
                 continue
@@ -154,6 +158,79 @@ class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
         null
     }
 
+    /** What [migrate] did: videos raised to the new analysis as they were, re-cut, unchanged, failed. */
+    data class Migration(val raised: Int = 0, val recut: Int = 0, val kept: Int = 0, val failed: Int = 0)
+
+    /**
+     * SSI-2's re-index, incremental: every video of an older analysis is raised to
+     * [YtSsiVersions.ANALYSIS] as it is (its rule passages are valid). With the model ready, the
+     * videos still cut by the rules are then re-cut by meaning, newest first, one at a time
+     * until [deadline]: their units come from the archive's transcript when there is one, else
+     * from the stored passages (nothing is fetched). A video whose passages come out the same
+     * keeps them and their vectors; otherwise its new passages replace the old (their vectors
+     * are made again by [embedPending]).
+     */
+    suspend fun migrate(deadline: Long): Migration {
+        val raised = withContext(Dispatchers.IO) { db.raiseVersion(YtSsiVersions.MIN_KEPT, YtSsiVersions.ANALYSIS) }
+        if (!YtSsiModels.installed(context) || YtSsiModels.state.value == YtSsiModelState.Unsupported) return Migration(raised = raised)
+        val todo = withContext(Dispatchers.IO) { db.docs().values }.filter { it.segmentation == YtSsiSegmentation.RULES }.sortedByDescending { it.indexedAt }
+        var recut = 0
+        var kept = 0
+        var failed = 0
+        for (doc in todo) {
+            currentCoroutineContext().ensureActive()
+            if (System.currentTimeMillis() > deadline) break
+            when (recut(doc, deadline)) {
+                true -> recut++
+                false -> kept++
+                null -> {
+                    failed++
+                    break
+                }
+            }
+        }
+        return Migration(raised, recut, kept, failed)
+    }
+
+    /** Re-cuts [doc] by meaning: true when its passages changed, false when they stayed, null when the model or the deadline stopped it. */
+    private suspend fun recut(doc: YtSsiDoc, deadline: Long): Boolean? {
+        val stored = withContext(Dispatchers.IO) { db.segments(doc.videoId) }
+        val speech = stored.filter { it.kind == YtSsiSegmentKind.SPEECH }.sortedBy { it.ord }
+        if (speech.isEmpty()) {
+            withContext(Dispatchers.IO) { db.setSegmentation(doc.videoId, YtSsiSegmentation.SEMANTIC, YtSsiVersions.ANALYSIS) }
+            return false
+        }
+        val track = (if (doc.source == YtSsiSource.ARCHIVE) withContext(Dispatchers.IO) { archiveTrack(doc.videoId) } else null)
+            ?.takeIf { it.units.isNotEmpty() } ?: YtSsiSemanticSegmenter.fromPassages(speech)
+        val sentences = YtSsiSemanticSegmenter.sentences(track.units, doc.chapters)
+        val vectors = ArrayList<FloatArray>(sentences.size)
+        for (batch in sentences.chunked(SENTENCE_BATCH)) {
+            currentCoroutineContext().ensureActive()
+            if (System.currentTimeMillis() > deadline) return null
+            val got = withContext(Dispatchers.Default) { YtSsiModels.use(context) { it.embed(batch.map { s -> s.text }, query = false) } } ?: return null
+            if (got.size != batch.size) return null
+            vectors += got
+        }
+        val cut = YtSsiSemanticSegmenter.segments(doc.videoId, track, sentences, vectors, doc.chapters)
+        val semantic = doc.copy(segmentation = YtSsiSegmentation.SEMANTIC, version = YtSsiVersions.ANALYSIS)
+        return withContext(Dispatchers.IO) {
+            if (YtSsiSemanticSegmenter.same(cut, speech)) {
+                db.setSegmentation(doc.videoId, YtSsiSegmentation.SEMANTIC, YtSsiVersions.ANALYSIS)
+                false
+            } else {
+                val chapters = YtSsiSegmenter.chapterSegments(doc.videoId, doc.chapters, doc.durationSec?.times(1000), cut.size)
+                db.putVideo(semantic, cut + chapters)
+                true
+            }
+        }
+    }
+
+    /** The archive's transcript of [videoId] as units, or null. */
+    private fun archiveTrack(videoId: String): YtSsiTrack? = runCatching {
+        val files = YtArchive.store.files(videoId) ?: return null
+        YtSsiCaptions.archiveLines(YtArchiveText.read(files.transcript).map { Triple(it.start, it.end, it.text) })
+    }.getOrNull()
+
     /** Embeds passages without a vector, [batch] at a time, until [deadline]; returns how many. */
     suspend fun embedPending(deadline: Long, batch: Int = 16, only: Set<String>? = null): Int {
         var done = 0
@@ -179,5 +256,6 @@ class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
     private companion object {
         const val TAG = "YtSsiIndexer"
         const val MAX_DESCRIPTION = 5_000
+        const val SENTENCE_BATCH = 16
     }
 }

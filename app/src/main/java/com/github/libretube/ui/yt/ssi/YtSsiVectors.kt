@@ -140,14 +140,15 @@ class YtSsiVectorIndex(val model: String, val dim: Int) {
         /**
          * Which semantic neighbours count as found: e5 puts unrelated text at a cosine of about
          * 0.7, so a plain top-K would always "find" something. Kept are the ones at least
-         * [MIN_COSINE] and within [BAND] of the best. Tuned on no real data yet.
+         * [MIN_COSINE] and within [BAND] of the best. Tuned on no real data yet; SSI-2 moves the
+         * floor a little from feedback ([YtSsiLearning.minCosine]).
          */
         const val MIN_COSINE = 0.78f
         const val BAND = 0.08f
 
-        fun cut(found: List<Pair<Long, Float>>): List<Pair<Long, Float>> {
+        fun cut(found: List<Pair<Long, Float>>, minCosine: Float = MIN_COSINE): List<Pair<Long, Float>> {
             val best = found.maxOfOrNull { it.second } ?: return emptyList()
-            val floor = maxOf(MIN_COSINE, best - BAND)
+            val floor = maxOf(minCosine, best - BAND)
             return found.filter { it.second >= floor }
         }
     }

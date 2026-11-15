@@ -33,6 +33,15 @@ sealed interface YtSsiReason {
     data object FromYouTubeSearch : YtSsiReason
     data class Later(val asks: Set<YtSsiLater>) : YtSsiReason
     data class Timing(val label: YtSsiPrecisionLabel) : YtSsiReason
+
+    /** SSI-2: the relevance band and what it rests on. */
+    data class Band(val band: YtSsiBand, val ai: Boolean) : YtSsiReason
+
+    /** SSI-2: the AI's grade of the passage and the place it had before. */
+    data class AiGrade(val relevant: Int, val before: Int, val after: Int, val span: Boolean, val cached: Boolean) : YtSsiReason
+
+    /** SSI-2: how the start and end were checked. */
+    data class Bounds(val verified: Boolean, val qualifier: Boolean, val label: YtSsiPrecisionLabel) : YtSsiReason
 }
 
 /**
@@ -84,6 +93,15 @@ object YtSsiPlayRules {
         return (pick?.minus(PRE_ROLL_MS) ?: target).coerceAtLeast(0)
     }
 
+    /**
+     * SSI-2: where a hit starts playing: its checked span's start ([YtSsiBoundary]) when it has
+     * one, else the SSI-1 rule ([start]).
+     */
+    fun playStart(hit: YtSsiHit, segment: YtSsiSegment?): Long = hit.span?.playStartMs ?: start(segment, hit.hitMs)
+
+    /** Where a hit's clip ends: after its checked span (statement and qualifier), else after the passage. */
+    fun clipEnd(hit: YtSsiHit): Long = (hit.span?.endMs?.let { maxOf(it, hit.hitMs) } ?: maxOf(hit.endMs, hit.hitMs)) + TAIL_MS
+
     /** The passage start and every unit that follows a sentence end. */
     fun sentenceStarts(segment: YtSsiSegment): List<Long> {
         val out = arrayListOf(segment.startMs)
@@ -103,8 +121,8 @@ object YtSsiPlayRules {
     fun clips(hits: List<YtSsiHit>, segments: (YtSsiHit) -> YtSsiSegment?, before: Map<Int, Long> = emptyMap(), after: Map<Int, Long> = emptyMap()): List<YtSsiClip> {
         val order = LinkedHashMap<String, MutableList<YtSsiClip>>()
         hits.forEachIndexed { i, hit ->
-            val start = (start(segments(hit), hit.hitMs) - (before[i] ?: 0L)).coerceAtLeast(0)
-            val end = maxOf(hit.endMs, hit.hitMs) + TAIL_MS + (after[i] ?: 0L)
+            val start = (playStart(hit, segments(hit)) - (before[i] ?: 0L)).coerceAtLeast(0)
+            val end = clipEnd(hit) + (after[i] ?: 0L)
             order.getOrPut(hit.videoId) { ArrayList() } += YtSsiClip(hit.videoId, start, maxOf(end, start + 3_000), hit.title, hit.channelName)
         }
         val out = ArrayList<YtSsiClip>()
@@ -125,6 +143,8 @@ object YtSsiPlayRules {
     /** "Warum dieser Treffer?": every signal that put [hit] in the list, strongest first. */
     fun reasons(hit: YtSsiHit, intent: YtSsiIntent, matchedWords: List<String>): List<YtSsiReason> {
         val out = ArrayList<YtSsiReason>()
+        out += YtSsiReason.Band(hit.band, hit.ai != null)
+        hit.ai?.let { out += YtSsiReason.AiGrade(it.relevant, hit.localRank, hit.rank, it.words != null, it.cached) }
         if (intent.exact && YtSsiMatch.TRANSCRIPT_LEXICAL in hit.matches) out += YtSsiReason.ExactPhrase
         hit.ranks[YtSsiMethod.FTS_BM25]?.let { rank ->
             if (YtSsiMatch.TRANSCRIPT_LEXICAL in hit.matches || YtSsiMatch.CHAPTER in hit.matches) out += YtSsiReason.Lexical(rank, matchedWords)
@@ -143,6 +163,7 @@ object YtSsiPlayRules {
         if (hit.availability == YtSsiAvailability.VANISHED_ARCHIVED) out += YtSsiReason.Vanished
         if (intent.later.isNotEmpty()) out += YtSsiReason.Later(intent.later)
         out += YtSsiReason.Timing(label(hit.timing))
+        hit.span?.let { out += YtSsiReason.Bounds(it.verified, it.qualifier, label(it.timing)) }
         return out
     }
 }
