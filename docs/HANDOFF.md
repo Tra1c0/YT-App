@@ -8,7 +8,7 @@ not here.
 
 ## Current state
 
-- Latest release: build 135 on `main` (per-build details: Build log below). Recent rounds built:
+- Latest release: build 136 on `main` (per-build details: Build log below). Recent rounds built:
   News overlay (pinch on the home; stories; cited summaries with a provider choice: OpenAI,
   Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
@@ -27,7 +27,7 @@ not here.
 
 ## Open points
 
-- Archive (round 31, untested on the phone and against live YouTube/AI): oEmbed codes for private/deleted, raw stream and SABR downloads, storyboard fetch, player/export/badge/slider UI, all three audio AI paths (endpoints from search summaries; OpenAI's diarize model reportedly retires 2027-02-26), risk weights hand-set. Known gaps: two jobs at once may fetch twice; a half-failed text save is not retried; the list shows the newest 150.
+- Archive (round 31, build 136, untested on the phone and against live YouTube/AI): oEmbed codes for private/deleted, raw stream and SABR downloads, storyboard fetch, player/export/badge/slider UI, all three audio AI paths (endpoints from search summaries; OpenAI's diarize model reportedly retires 2027-02-26), risk weights hand-set. Known gaps: two jobs at once may fetch twice; a half-failed text save is not retried; the list shows the newest 150.
 - Stream error card (build 135, untested on the phone): look per design, open-in-YouTube intent, toast vs card. YouTube answers private videos with LOGIN_REQUIRED "Please sign in" (seen with KyUjsUuM8Gk).
 - Round 29 (untested on the phone): Formen minimize (window shape/colour during the drag, picture
   corners inside the window, overshoot over the bar without cut, page fade timing: constants
@@ -166,6 +166,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 136: archive of vanished videos (tiers, capacity slider, risk estimator with local learning + optional AI, script with speakers, settings, player, badge).
 - 135: stream error card instead of endless loading, queue kept, private/deleted videos leave feed and queue.
 - 134: seamless minimize (shared part, Formen pilot), description link groups + ad folding, dead subscriptions finder.
 - 133: update push (UnifiedPush/ntfy, CI secret `YT_PUSH_URL`), watch mode, notification split; CI runs util/services YT tests too.
