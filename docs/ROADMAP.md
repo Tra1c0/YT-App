@@ -7,6 +7,8 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
 
 ## Beschlossen, noch nicht gebaut
 
+- **SSI und Theme-Builder:** in Etappen nach [ETAPPEN.md](ETAPPEN.md), im Gleichschritt (eine Etappe
+  beginnt erst, wenn die vorige von beiden abgenommen ist)
 - **1 (Rest)** Miniplayer zurückholen im After-Design; Pop/Glas/Frost springen nach dem Halten auf „Abos“ (S)
 - **8** Intro je Kanal überspringen, abschaltbar, mit Toleranzreglern (S–M)
 - **9** Outro je Kanal früher beenden, abschaltbar, mit Toleranzreglern (S–M)

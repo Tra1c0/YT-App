@@ -9,7 +9,8 @@ here once, details live in the file named next to it.
 2. `docs/HANDOFF.md`: state, open points, how to work (docs check, release, emulator), dead ends.
 3. `docs/ARCHITECTURE.md`: only the section of the area you touch, and "Pitfalls" before a review.
    It is the code map: do not explore the code from scratch when the map answers it.
-4. `docs/FEATURES.md` (what exists) and `docs/ROADMAP.md` (what is not built), both German, for the
+4. `docs/ETAPPEN.md` before any work on SSI or the theme builder (staged plan, binding gate).
+5. `docs/FEATURES.md` (what exists) and `docs/ROADMAP.md` (what is not built), both German, for the
    user. `docs/DESIGNS.md` only for design work.
 
 ## Terms
