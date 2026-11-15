@@ -8,7 +8,7 @@ not here.
 
 ## Current state
 
-- Latest release: build 137 on `main` (per-build details: Build log below). Recent rounds built:
+- Latest release: build 138 on `main` (per-build details: Build log below). Recent rounds built:
   News overlay (pinch on the home; stories; cited summaries with a provider choice: OpenAI,
   Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
@@ -170,6 +170,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 138: SSI-1 (moment search), TB-1 (own design "Eigenes" + theme editor), Ambilight; APK 29.4 MB.
 - 137: old YT APK / old build clean-up on the storage page, quiet clean-up after updates.
 - 136: archive of vanished videos (tiers, capacity slider, risk estimator with local learning + optional AI, script with speakers, settings, player, badge).
 - 135: stream error card instead of endless loading, queue kept, private/deleted videos leave feed and queue.
