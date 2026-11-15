@@ -8,7 +8,7 @@ not here.
 
 ## Current state
 
-- Latest release: build 134 on `main` (per-build details: Build log below). Recent rounds built:
+- Latest release: build 135 on `main` (per-build details: Build log below). Recent rounds built:
   News overlay (pinch on the home; stories; cited summaries with a provider choice: OpenAI,
   Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
@@ -27,7 +27,7 @@ not here.
 
 ## Open points
 
-- Stream error card (build after 134, untested on the phone): look per design, open-in-YouTube intent, toast vs card. YouTube answers private videos with LOGIN_REQUIRED "Please sign in" (seen with KyUjsUuM8Gk). Archive of vanished videos is now decided (ROADMAP), with a capacity slider (few MB to 15 GB) and a risk estimator (local learning + optional AI via the news summary providers).
+- Stream error card (build 135, untested on the phone): look per design, open-in-YouTube intent, toast vs card. YouTube answers private videos with LOGIN_REQUIRED "Please sign in" (seen with KyUjsUuM8Gk). Archive of vanished videos is now decided (ROADMAP), with a capacity slider (few MB to 15 GB) and a risk estimator (local learning + optional AI via the news summary providers).
 - Round 29 (untested on the phone): Formen minimize (window shape/colour during the drag, picture
   corners inside the window, overshoot over the bar without cut, page fade timing: constants
   `FADE_*`, `APPROACH_TO`, `NARROW_FROM` in `YtMiniMerge.kt`); description overview layout per
@@ -165,6 +165,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 135: stream error card instead of endless loading, queue kept, private/deleted videos leave feed and queue.
 - 134: seamless minimize (shared part, Formen pilot), description link groups + ad folding, dead subscriptions finder.
 - 133: update push (UnifiedPush/ntfy, CI secret `YT_PUSH_URL`), watch mode, notification split; CI runs util/services YT tests too.
 - 132: second finger cancels card swipe, hold menu, drag and search lens.
