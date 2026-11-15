@@ -17,6 +17,7 @@ import com.github.libretube.ui.yt.Kiesel
 import com.github.libretube.ui.yt.KieselDark
 import com.github.libretube.ui.yt.Pop
 import com.github.libretube.ui.yt.PopDark
+import com.github.libretube.ui.yt.YtContrast
 import com.github.libretube.ui.yt.YtMotionStyle
 import com.github.libretube.ui.yt.YtPalette
 import com.github.libretube.ui.yt.YtPalettes
@@ -39,6 +40,12 @@ object YtBuilderActive {
     var assets: File? = null
         private set
 
+    /** Shows [doc] in the app's screens while it is edited (not stored yet). */
+    fun preview(doc: YtThemeDoc, assets: File?) {
+        this.assets = assets
+        this.doc = doc
+    }
+
     fun set(doc: YtThemeDoc?, assets: File?) {
         this.assets = assets
         this.doc = doc
@@ -54,13 +61,28 @@ object YtBuilderActive {
         }
     }
 
+    private var tried = false
+
+    /**
+     * The active document, read from disk the first time it is needed after "Eigenes" was picked
+     * (at app start the safe mode has already loaded it).
+     */
+    val current: YtThemeDoc?
+        get() {
+            val d = doc
+            if (d != null || tried) return d
+            tried = true
+            runCatching { YtBuilderStore.loadActiveAtStart(com.github.libretube.LibreTubeApp.instance) }
+            return doc
+        }
+
     private val fallback = YtPalettes.YouTube.copy(signature = YtSignature.CUSTOM)
     private var cacheKey: Pair<YtThemeDoc?, Boolean>? = null
     private var cached: YtPalette = fallback
 
     /** The design palette of the active theme ([night]: the dark look of a BOTH theme). */
     fun palette(night: Boolean): YtPalette {
-        val d = doc
+        val d = current
         val key = d to night
         if (key == cacheKey) return cached
         val p = d?.let { runCatching { paletteOf(it, night, assets) }.getOrNull() } ?: fallback
@@ -113,7 +135,9 @@ object YtBuilderActive {
             else -> 14f
         }
         val springy = day.motion == YtMotionStyle.SPRINGY
+        val panel = panels(rawRoles(day)).firstOrNull() ?: YtRole.SURFACE
         val seed = YtThemeSeeds.YtSeed(
+            panel = panel,
             design = if (design == YtDesign.STANDARD || design == YtDesign.CUSTOM) YtDesign.YOUTUBE.key else design.key,
             roles = roles(day),
             font = YtBuilderFonts.keyOf(day.font),
@@ -126,7 +150,27 @@ object YtBuilderActive {
         return seed to night?.let(::roles)
     }
 
-    private fun roles(p: YtPalette): Map<String, Int> = mapOf(
+    /**
+     * The roles of [p] with its text made to read on the background and on the surfaces (the
+     * designs' own screens lift their inks where they draw, YtInk; a theme starts readable).
+     */
+    private fun roles(p: YtPalette): Map<String, Int> = rawRoles(p).let { r ->
+        val bg = r.getValue(YtRole.BACKGROUND) or 0xFF000000.toInt()
+        // the panels on the same side of light and dark as the background carry the same text
+        val backs = (listOf(bg) + panels(r).map { YtContrast.over(r.getValue(it), bg) }).toIntArray()
+        r + mapOf(
+            YtRole.TEXT to YtContrast.readableOnAll(r.getValue(YtRole.TEXT), backs),
+            YtRole.TEXT_SECONDARY to YtContrast.readableOnAll(r.getValue(YtRole.TEXT_SECONDARY), backs),
+        )
+    }
+
+    private fun light(argb: Int) = YtColor.luminance(argb or 0xFF000000.toInt()) > 0.4
+
+    /** Surface and raised where they are as light (or as dark) as the background. */
+    private fun panels(r: Map<String, Int>): List<String> =
+        listOf(YtRole.SURFACE, YtRole.RAISED).filter { light(r.getValue(it)) == light(r.getValue(YtRole.BACKGROUND)) }
+
+    private fun rawRoles(p: YtPalette): Map<String, Int> = mapOf(
         YtRole.BACKGROUND to p.background.toArgb(),
         YtRole.SURFACE to p.surface.toArgb(),
         YtRole.RAISED to p.raised.toArgb(),

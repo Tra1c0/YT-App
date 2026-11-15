@@ -75,7 +75,7 @@ object YtLayoutEngine {
             container.layout.mode
         }
         val inner = when (mode) {
-            YtLayoutMode.FLOW_H -> flow(container, children, true, if (box.exactW) contentW else contentW, contentH, box.exactW, box.exactH, ctx, measure)
+            YtLayoutMode.FLOW_H -> flow(container, children, true, contentW, contentH, box.exactW, box.exactH, ctx, measure)
             YtLayoutMode.FLOW_V -> flow(container, children, false, contentW, contentH, box.exactW, box.exactH, ctx, measure)
             YtLayoutMode.GRID -> grid(container, children, if (contentW == INF) fillW else contentW, ctx, measure)
             YtLayoutMode.FREE -> free(container, children, fillW, fillH, contentW, contentH, ctx, measure)
@@ -91,6 +91,17 @@ object YtLayoutEngine {
             justified.map { p -> p?.let { it.copy(x = it.x + padS, y = it.y + padT) } }
         }
         return Result(w, h, places, conflicts)
+    }
+
+    /**
+     * The box of a component's root from its own rules, where the host gives [roomW] x [roomH]
+     * (INF: no size there): FILL takes the room, PERCENT a share of it, HUG may grow up to it.
+     */
+    fun boxFor(node: YtNode, roomW: Float, roomH: Float, density: Float, conflicts: MutableList<Conflict> = mutableListOf()): Box {
+        val ctx = Ctx(density, conflicts)
+        val w = axis(node, node.width, roomW, true, ctx)
+        val h = axis(node, node.height, roomH, false, ctx)
+        return childBox(node, w, h, ctx)
     }
 
     private fun clampTo(v: Float, min: Float, max: Float): Float = if (max < min) min else v.coerceIn(min, max)

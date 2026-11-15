@@ -18,6 +18,8 @@ object YtThemeSeeds {
         val smoothing: Float = 0f,
         val stiffness: Float = 500f,
         val damping: Float = 0.8f,
+        /** The role the bar and the mini player are filled with (a panel as dark or light as the background). */
+        val panel: String = YtRole.SURFACE,
     )
 
     val typeNames = listOf("display", "title", "body", "caption", "label", "navLabel")
@@ -75,9 +77,9 @@ object YtThemeSeeds {
                 card = card(r, seed.smoothing),
                 header = header(),
                 chip = chip(),
-                navBar = navBar(),
+                navBar = navBar(seed.panel),
                 navTab = navTab(),
-                mini = mini(),
+                mini = mini(seed.panel),
             ),
             nav = YtNavConfig(radius = (r + 12f).coerceAtMost(32f)),
             mini = YtMiniConfig(radius = (r + 8f).coerceAtMost(30f), thumbRadius = (r - 2f).coerceIn(0f, 20f)),
@@ -189,13 +191,13 @@ object YtThemeSeeds {
         ),
     )
 
-    fun navBar() = YtNode(
+    fun navBar(panel: String = YtRole.SURFACE) = YtNode(
         id = "navBar", name = "Bar",
         layout = YtLayout(YtLayoutMode.FLOW_H, align = YtAlign.STRETCH),
         width = YtSize.FILL, height = YtSize.FILL,
         padding = YtInsets.sym(6f, 0f),
         style = YtStyle(
-            fills = listOf(YtPaint.token(YtRole.SURFACE)),
+            fills = listOf(YtPaint.token(panel)),
             strokes = listOf(YtStroke(YtPaint.solid(0x1FFFFFFF), 1f)),
             shadows = listOf(YtShadow(0f, 8f, 24f, 0f, 0x40000000)),
         ),
@@ -226,20 +228,32 @@ object YtThemeSeeds {
         ),
     )
 
-    fun mini() = YtNode(
+    /**
+     * The docked mini player's body. The player draws the picture at its start and the buttons at
+     * its end; the body, title, channel and progress seam come from here (YtMiniCustom).
+     */
+    fun mini(panel: String = YtRole.SURFACE) = YtNode(
         id = "mini", name = "Mini player",
-        layout = YtLayout(YtLayoutMode.FLOW_V, gap = 2f),
+        layout = YtLayout(YtLayoutMode.FREE),
         width = YtSize.FILL, height = YtSize.FILL,
         style = YtStyle(
-            fills = listOf(YtPaint.token(YtRole.SURFACE)),
+            fills = listOf(YtPaint.token(panel)),
             strokes = listOf(YtStroke(YtPaint.solid(0x1FFFFFFF), 1f)),
         ),
         children = listOf(
-            text(YtSlot.TITLE, "miniTitle", "label"),
-            text(YtSlot.CHANNEL, "miniChannel", "caption", YtRole.TEXT_SECONDARY),
+            YtNode(
+                id = "miniTitle", type = YtNodeType.SLOT, slot = YtSlot.TITLE, name = "Title",
+                x = 104f, y = 13f, width = YtSize.fixed(180f),
+                text = YtTextSpec(styleRef = "label", color = YtPaint.token(YtRole.TEXT), maxLines = 1),
+            ),
+            YtNode(
+                id = "miniChannel", type = YtNodeType.SLOT, slot = YtSlot.CHANNEL, name = "Channel",
+                x = 104f, y = 33f, width = YtSize.fixed(180f),
+                text = YtTextSpec(styleRef = "caption", color = YtPaint.token(YtRole.TEXT_SECONDARY), maxLines = 1),
+            ),
             YtNode(
                 id = "miniProgress", type = YtNodeType.SLOT, slot = YtSlot.PROGRESS, name = "Progress",
-                width = YtSize.FILL, height = YtSize.fixed(2f),
+                width = YtSize.FILL, height = YtSize.fixed(2f), anchorV = YtAnchor.END,
                 style = YtStyle(fills = listOf(YtPaint.token(YtRole.ACCENT))),
             ),
         ),

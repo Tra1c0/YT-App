@@ -212,6 +212,9 @@ dependencies {
     }
     implementation(libs.tink.android)
 
+    /* YT: frame timing of the theme editor (JankStats), only while the editor is open */
+    implementation(libs.androidx.metrics.performance)
+
 
     /* Coil */
     coreLibraryDesugaring(libs.desugaring)

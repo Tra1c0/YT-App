@@ -36,7 +36,7 @@ object YtMiniCustom : YtMiniLookDesign(YtDesign.CUSTOM) {
 
     override val spec: YtMiniSpec
         get() {
-            val doc = YtBuilderActive.doc ?: return specCache
+            val doc = YtBuilderActive.current ?: return specCache
             val key = doc.mini to doc.nav
             if (key != specKey) {
                 specCache = specOf(doc.mini, doc.nav)

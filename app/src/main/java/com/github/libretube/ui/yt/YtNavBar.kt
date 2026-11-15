@@ -404,6 +404,7 @@ private fun YtNavBarOf(
         YtDesign.FREQUENCY -> FrequencyNav(palette, items, state, onSelect)
         YtDesign.SYNTHWAVE -> SynthwaveNav(palette, items, state, onSelect)
         YtDesign.KIESEL -> KieselNav(palette, items, state, onSelect)
+        YtDesign.CUSTOM -> com.github.libretube.ui.yt.builder.YtCustomNav(palette, items, state, onSelect)
         YtDesign.FROST -> if (backdrop != null) LiquidNav(design, palette, items, state, backdrop, onSelect) else FrostNav(palette, items, state, onSelect)
         else -> FloatingNav(design, palette, items, state, onSelect)
     }

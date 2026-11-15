@@ -14,6 +14,13 @@
             app:title="@string/yt_design"
             app:useSimpleSummaryProvider="true" />
 
+        <!-- YT: the theme builder: edit the design "Eigenes" -->
+        <com.github.libretube.ui.yt.builder.YtThemeEditorPreference
+            android:icon="@drawable/ic_color"
+            android:summary="@string/yt_builder_pref_summary"
+            app:key="yt_custom_edit"
+            app:title="@string/yt_builder_pref_title" />
+
         <ListPreference
             android:icon="@drawable/ic_theme"
             app:defaultValue="D"

@@ -193,6 +193,17 @@ internal fun YtRound2Home(
                 },
                 actions = actions,
             )
+            // the user's own design: drawn from its theme document (theme builder)
+            YtDesign.CUSTOM -> com.github.libretube.ui.yt.builder.YtCustomHomeScreen(
+                palette = palette,
+                imageLoader = imageLoader,
+                data = data,
+                categories = MediaServiceRepository.instance.getTrendingCategories(),
+                category = category,
+                onSelectCategory = { category = it },
+                categoryVideos = categoryVideos,
+                actions = actions,
+            )
             YtDesign.KIESEL -> KieselHomeScreen(
                 palette = palette,
                 imageLoader = imageLoader,
