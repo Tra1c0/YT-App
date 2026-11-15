@@ -45,6 +45,8 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
@@ -56,6 +58,8 @@ import com.github.libretube.helpers.IntentHelper
 import com.github.libretube.helpers.ThemeHelper
 import com.github.libretube.helpers.YtDesign
 import com.github.libretube.services.YtStreamFailure
+import com.github.libretube.ui.yt.archive.YtArchive
+import com.github.libretube.ui.yt.archive.YtArchiveUi
 import com.github.libretube.ui.yt.YtContrast
 import com.github.libretube.ui.yt.YtInk
 import com.github.libretube.ui.yt.YtPalette
@@ -78,7 +82,9 @@ import com.google.android.material.color.MaterialColors
  * if the queue has one, "Nächstes Video"; the list of next videos of the video before stays.
  * The mini player shows the short reason as its title. Every design and the classic page get
  * the same card, drawn in the design's surface (words in its YtInk, Pitfall P1).
- * While a page is in sight the service shows no toast for it.
+ * While a page is in sight the service shows no toast for it. For a video gone for everyone with
+ * a kept copy (the archive or a LibreTube download), the card leads with "privatisiert • alte
+ * Version abspielen" (or "… Skript lesen" when only text is kept).
  */
 object YtStreamErrorModule : YtPlayerModule {
     private class Failure(val videoId: String, val kind: Kind, val detail: String, val next: String?)
@@ -88,6 +94,9 @@ object YtStreamErrorModule : YtPlayerModule {
         var controller: MediaController? = null
         var view: ComposeView? = null
         var failure by mutableStateOf<Failure?>(null)
+
+        /** A kept copy of the failed video (archive or download), looked up when the card shows. */
+        var kept by mutableStateOf<YtArchive.Kept?>(null)
 
         val listener = object : Player.Listener {
             override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) = read(this@Page, mediaMetadata.extras)
@@ -149,6 +158,7 @@ object YtStreamErrorModule : YtPlayerModule {
         page.controller = null
         page.stop()
         page.failure = null
+        page.kept = null
         page.view?.let { (it.parent as? ViewGroup)?.removeView(it) }
         page.view = null
     }
@@ -167,6 +177,7 @@ object YtStreamErrorModule : YtPlayerModule {
     private fun hide(page: Page) {
         if (page.failure == null) return
         page.failure = null
+        page.kept = null
         page.view?.isVisible = false
     }
 
@@ -185,7 +196,26 @@ object YtStreamErrorModule : YtPlayerModule {
         page.host.clearVideoDetails()
         val view = page.view ?: create(page, binding.linLayout).also { page.view = it }
         view.isVisible = true
+        if (page.failure?.videoId != failure.videoId) page.kept = null
         page.failure = failure
+        // gone for everyone: an archived copy or a download may still play (round 31)
+        if (YtStreamError.removesFromFeed(failure.kind)) {
+            page.host.fragment().viewLifecycleOwner.lifecycleScope.launch {
+                val kept = YtArchive.kept(failure.videoId)
+                if (page.failure?.videoId == failure.videoId) page.kept = kept
+            }
+        }
+    }
+
+    /** The badge "privatisiert • alte Version abspielen" (or "… Skript lesen") for [failure], if a copy is kept. */
+    private fun badge(page: Page, failure: Failure, context: Context): Pair<Int, () -> Unit>? {
+        val kept = page.kept ?: return null
+        val res = YtArchiveUi.badgeRes(failure.kind, kept) ?: return null
+        return res to {
+            if (!YtArchiveUi.playKept(context, failure.videoId, kept)) {
+                kept.meta?.let { meta -> page.host.fragment().viewLifecycleOwner.lifecycleScope.launch { YtArchiveUi.showText(context, meta) } }
+            }
+        }
     }
 
     private fun create(page: Page, container: LinearLayout): ComposeView {
@@ -199,10 +229,11 @@ object YtStreamErrorModule : YtPlayerModule {
                 val onRetry = { retry(page, failure) }
                 val onOpen = { openOutside(context, failure.videoId) }
                 val onNext = failure.next?.let { next -> { page.host.playVideo(next) } }
+                val badge = badge(page, failure, context)
                 if (palette != null) {
-                    YtTheme(palette) { DesignCard(palette, failure, onRetry, onOpen, onNext) }
+                    YtTheme(palette) { DesignCard(palette, failure, badge, onRetry, onOpen, onNext) }
                 } else {
-                    Card(standard!!, failure, onRetry, onOpen, onNext)
+                    Card(standard!!, failure, badge, onRetry, onOpen, onNext)
                 }
             }
         }
@@ -271,7 +302,7 @@ object YtStreamErrorModule : YtPlayerModule {
     )
 
     @Composable
-    private fun DesignCard(palette: YtPalette, failure: Failure, onRetry: () -> Unit, onOpen: () -> Unit, onNext: (() -> Unit)?) {
+    private fun DesignCard(palette: YtPalette, failure: Failure, badge: Pair<Int, () -> Unit>?, onRetry: () -> Unit, onOpen: () -> Unit, onNext: (() -> Unit)?) {
         val context = androidx.compose.ui.platform.LocalContext.current
         val shape = ytCardShape(palette)
         val look = remember(palette) {
@@ -291,11 +322,11 @@ object YtStreamErrorModule : YtPlayerModule {
                 font = palette.font,
             )
         }
-        Content(look, failure, onRetry, onOpen, onNext)
+        Content(look, failure, badge, onRetry, onOpen, onNext)
     }
 
     @Composable
-    private fun Card(colors: StandardColors, failure: Failure, onRetry: () -> Unit, onOpen: () -> Unit, onNext: (() -> Unit)?) {
+    private fun Card(colors: StandardColors, failure: Failure, badge: Pair<Int, () -> Unit>?, onRetry: () -> Unit, onOpen: () -> Unit, onNext: (() -> Unit)?) {
         val look = remember(colors) {
             val shape = RoundedCornerShape(16.dp)
             Look(
@@ -309,12 +340,12 @@ object YtStreamErrorModule : YtPlayerModule {
                 font = null,
             )
         }
-        Content(look, failure, onRetry, onOpen, onNext)
+        Content(look, failure, badge, onRetry, onOpen, onNext)
     }
 
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
-    private fun Content(look: Look, failure: Failure, onRetry: () -> Unit, onOpen: () -> Unit, onNext: (() -> Unit)?) {
+    private fun Content(look: Look, failure: Failure, badge: Pair<Int, () -> Unit>?, onRetry: () -> Unit, onOpen: () -> Unit, onNext: (() -> Unit)?) {
         Column(
             Modifier
                 .padding(horizontal = 16.dp, vertical = 14.dp)
@@ -331,6 +362,8 @@ object YtStreamErrorModule : YtPlayerModule {
                 fontSize = 18.sp,
                 modifier = Modifier.semantics { heading() },
             )
+            // a kept copy plays first: the archive's or a download (round 31)
+            if (badge != null) Button(look, stringResource(badge.first), primary = true, badge.second)
             Text(
                 stringResource(YtStreamFailure.bodyRes(failure.kind)),
                 color = look.body,

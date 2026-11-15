@@ -103,6 +103,14 @@
             android:name=".ui.activities.ZoomableImageActivity"
             android:screenOrientation="locked" />
 
+        <!-- YT: plays a copy from the archive of vanished videos (round 31) -->
+        <activity
+            android:name=".ui.activities.YtArchivePlayerActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:label="@string/yt_r31_archive_title"
+            android:theme="@style/Theme.Material3.Dark.NoActionBar" />
+
         <activity
             android:name=".ui.activities.AddToQueueActivity"
             android:enabled="true"

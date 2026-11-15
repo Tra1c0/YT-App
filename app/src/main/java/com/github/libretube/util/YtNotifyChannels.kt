@@ -22,11 +22,23 @@ object YtNotifyChannels {
     /** LibreTube's new-video notifications (its id, unchanged). */
     const val VIDEOS = LibreTubeApp.PUSH_CHANNEL_NAME
 
+    /** The archive: "… könnte verschwinden – gesichert" (round 31). */
+    const val ARCHIVE = "yt_archive"
+
     fun ensureUpdates(context: Context) {
         NotificationManagerCompat.from(context).createNotificationChannel(
             NotificationChannelCompat.Builder(UPDATES, NotificationManagerCompat.IMPORTANCE_DEFAULT)
                 .setName(context.getString(R.string.yt_r27_updnotify_channel_name))
                 .setDescription(context.getString(R.string.yt_r27_updnotify_channel_description))
+                .build()
+        )
+    }
+
+    fun ensureArchive(context: Context) {
+        NotificationManagerCompat.from(context).createNotificationChannel(
+            NotificationChannelCompat.Builder(ARCHIVE, NotificationManagerCompat.IMPORTANCE_DEFAULT)
+                .setName(context.getString(R.string.yt_r31_archive_channel_name))
+                .setDescription(context.getString(R.string.yt_r31_archive_channel_description))
                 .build()
         )
     }

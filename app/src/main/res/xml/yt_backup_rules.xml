@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- YT: backups (Android 11 and lower) never carry the YouTube session, the sign-in window's store or the update push address -->
+<!-- YT: backups (Android 11 and lower) never carry the YouTube session, the sign-in window's store, the update push address or the archive -->
 <full-backup-content>
     <exclude domain="sharedpref" path="yt_account.xml" />
     <exclude domain="sharedpref" path="auth.xml" />
@@ -8,4 +8,7 @@
     <exclude domain="sharedpref" path="yt_push.xml" />
     <exclude domain="database" path="unifiedpush-connector" />
     <exclude domain="root" path="app_webview/" />
+    <!-- the archive of vanished videos: large media, rebuilt from the feed (YtArchive) -->
+    <exclude domain="file" path="yt_archive/" />
+    <exclude domain="sharedpref" path="yt_archive.xml" />
 </full-backup-content>

@@ -50,6 +50,7 @@ import androidx.compose.foundation.layout.offset
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.github.libretube.R
+import com.github.libretube.extensions.toID
 import com.github.libretube.api.obj.StreamItem
 import com.github.libretube.ui.yt.feed.YtPauseRules
 import com.github.libretube.ui.yt.news.YtNewsChannels
@@ -159,6 +160,15 @@ fun YtQuickSheet(
                 QuickRow(palette, R.drawable.ic_yt_person, stringResource(R.string.yt_side_open_channel)) { onChannel(item); onDismiss() }
                 QuickRow(palette, R.drawable.ic_queue, stringResource(R.string.yt_home_action_queue)) { ytQueueVideo(item); onDismiss() }
                 QuickRow(palette, R.drawable.ic_yt_hide, stringResource(R.string.yt_home_action_hide)) { ytHideVideo(item); onDismiss() }
+                // YT: "Im Archiv sichern" while the archive is on (round 31)
+                if (com.github.libretube.ui.yt.archive.YtArchive.enabled()) {
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    QuickRow(palette, R.drawable.ic_history, stringResource(R.string.yt_r31_archive_save_now)) {
+                        item.url?.let { com.github.libretube.ui.yt.archive.YtArchive.saveNow(context, it.toID()) }
+                        android.widget.Toast.makeText(context, R.string.yt_r31_archive_save_now_started, android.widget.Toast.LENGTH_SHORT).show()
+                        onDismiss()
+                    }
+                }
                 if (item.uploaderUrl != null || !item.uploaderName.isNullOrBlank()) {
                     val pause = rememberPauseOf(item)
                     val label = if (pause == null) {

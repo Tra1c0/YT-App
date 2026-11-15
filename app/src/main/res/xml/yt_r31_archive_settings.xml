@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: "Archiv" (round 31): the archive of vanished videos. The two lists are filled by
+     YtArchiveSettings from the archive on disk. -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:key="yt_archive_main"
+        app:title="@string/yt_r31_archive_title">
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_history"
+            app:defaultValue="false"
+            app:key="yt_archive_enabled"
+            app:summary="@string/yt_r31_archive_enabled_summary"
+            app:title="@string/yt_r31_archive_enabled" />
+
+        <com.github.libretube.ui.preferences.YtArchiveCapacityPreference
+            android:icon="@drawable/ic_download_folder"
+            app:key="yt_archive_capacity_mb"
+            app:title="@string/yt_r31_archive_capacity" />
+
+        <ListPreference
+            android:icon="@drawable/ic_movie"
+            app:defaultValue="video"
+            app:entries="@array/yt_archive_top_entries"
+            app:entryValues="@array/yt_archive_top_values"
+            app:key="yt_archive_top"
+            app:title="@string/yt_r31_archive_top"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_notification"
+            app:defaultValue="true"
+            app:key="yt_archive_notify_risk"
+            app:summary="@string/yt_r31_archive_notify_summary"
+            app:title="@string/yt_r31_archive_notify" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_text"
+            app:defaultValue="false"
+            app:key="yt_archive_auto_script"
+            app:summary="@string/yt_r31_archive_auto_script_summary"
+            app:title="@string/yt_r31_archive_auto_script" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_info"
+            app:defaultValue="false"
+            app:key="yt_archive_ai_risk"
+            app:summary="@string/yt_r31_archive_ai_risk_summary"
+            app:title="@string/yt_r31_archive_ai_risk" />
+
+        <Preference
+            android:icon="@drawable/ic_save"
+            app:key="yt_archive_usage"
+            app:selectable="false"
+            app:title="@string/yt_r31_archive_usage" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="yt_archive_vanished"
+        app:title="@string/yt_r31_archive_vanished" />
+
+    <PreferenceCategory
+        app:key="yt_archive_saved"
+        app:title="@string/yt_r31_archive_saved" />
+
+</PreferenceScreen>
