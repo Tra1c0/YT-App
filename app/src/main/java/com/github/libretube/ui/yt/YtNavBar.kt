@@ -146,7 +146,7 @@ object YtNav {
             YtNavItem(R.id.libraryFragment, R.string.yt_nav_mine, R.drawable.ic_yt_person, R.drawable.ic_yt_nav_person_fill),
         )
         YtDesign.CLAY, YtDesign.EDITORIAL, YtDesign.GLASS, YtDesign.POP, YtDesign.SHAPES, YtDesign.FROST,
-        YtDesign.FREQUENCY, YtDesign.SYNTHWAVE -> listOf(
+        YtDesign.FREQUENCY, YtDesign.SYNTHWAVE, YtDesign.CUSTOM -> listOf(
             YtNavItem(R.id.homeFragment, R.string.yt_nav_home, R.drawable.ic_yt_nav_home, R.drawable.ic_yt_nav_home_fill),
             // Shorts draws its own glyph (YtShortsGlyph)
             YtNavItem(R.id.trendsFragment, R.string.yt_nav_shorts, null),

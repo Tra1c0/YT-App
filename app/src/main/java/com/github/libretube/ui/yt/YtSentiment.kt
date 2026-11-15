@@ -122,7 +122,7 @@ object YtSentiment {
     /** The tones each design starts from, for light and dark pages. */
     private fun base(signature: YtSignature, dark: Boolean): Pair<Int, Int> = when (signature) {
         // graphite with YouTube red
-        YtSignature.YOUTUBE -> 0xFF5EE29A.toInt() to 0xFFFF334B.toInt()
+        YtSignature.YOUTUBE, YtSignature.CUSTOM -> 0xFF5EE29A.toInt() to 0xFFFF334B.toInt()
         // wine poster: olive film green, warm cinema red
         YtSignature.AFTER -> 0xFFB5D88A.toInt() to 0xFFE8505B.toInt()
         // dough: sage and terracotta

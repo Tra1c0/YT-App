@@ -134,7 +134,7 @@ class YtHoldTileStyle private constructor(
             val pink = palette.pink.toArgb()
             val paletteAccent = palette.accent.toArgb()
             return when (palette.signature) {
-                YtSignature.YOUTUBE -> style(
+                YtSignature.YOUTUBE, YtSignature.CUSTOM -> style(
                     YtHoldTileShape.ROUNDED, bg, intArrayOf(raised), cornerDp = 16f, videoCorner = 14f, light = text,
                 )
 

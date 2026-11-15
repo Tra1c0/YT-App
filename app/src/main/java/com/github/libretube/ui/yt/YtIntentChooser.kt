@@ -177,7 +177,7 @@ private class ChoiceLook(
 private fun choiceLook(palette: YtPalette): ChoiceLook {
     val four = { a: Color -> listOf(a, a, a, a) }
     return when (palette.signature) {
-        YtSignature.YOUTUBE -> ChoiceLook(
+        YtSignature.YOUTUBE, YtSignature.CUSTOM -> ChoiceLook(
             shape = RoundedCornerShape(16.dp), fills = four(palette.raised), inks = four(palette.text),
             font = YtFonts.geist, titleFont = YtFonts.geist, titleSize = 34.sp, titleColor = palette.text,
             scrim = palette.background, grid = false,

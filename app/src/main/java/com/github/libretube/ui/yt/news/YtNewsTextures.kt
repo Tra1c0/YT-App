@@ -55,6 +55,8 @@ object YtNewsTextures {
             YtDesign.KIESEL -> kiesel(moment)
             YtDesign.FREQUENCY -> frequency(moment)
             YtDesign.SYNTHWAVE -> synthwave(moment)
+            // the user's own design feels like the design its theme started from
+            YtDesign.CUSTOM -> of(com.github.libretube.helpers.YtBuilderMode.base, moment).steps
         }
         return YtHapticTexture("news_${moment.name.lowercase()}_${design.key}", steps, moment.fallback)
     }

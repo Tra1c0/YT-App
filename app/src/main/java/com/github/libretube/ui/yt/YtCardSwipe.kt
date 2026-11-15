@@ -518,7 +518,7 @@ private fun swipeLook(palette: YtPalette): YtSwipeLook {
     // one commit feel per design, the same for both sides; the names tell them apart in the log
     fun pair(vararg steps: YtHapticStep) = commitTexture("swipe_hide_$name", *steps) to commitTexture("swipe_queue_$name", *steps)
     return when (s) {
-        YtSignature.YOUTUBE -> {
+        YtSignature.YOUTUBE, YtSignature.CUSTOM -> {
             val (hide, queue) = pair(step(YtPrimitive.CLICK, 0.7f))
             YtSwipeLook(
                 s, queueField = palette.raised, hideField = palette.live, queueInk = palette.text, hideInk = Color.White,
@@ -703,7 +703,7 @@ private fun DrawScope.drawUnderlay(
 
     clipRect(strip.left, strip.top, strip.right, strip.bottom) {
         when (look.signature) {
-            YtSignature.YOUTUBE -> {
+            YtSignature.YOUTUBE, YtSignature.CUSTOM -> {
                 drawField(0.35f + 0.65f * a)
                 drawIcon(ink)
                 drawWord(ink)

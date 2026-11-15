@@ -56,7 +56,9 @@ object ThemeHelper {
         val night = activity.resources.configuration.uiMode and
             Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         YtDesignDark.update(design.light, night)
-        design.overlay?.let { activity.theme.applyStyle(it, true) }
+        // YT: "Eigenes" takes the classic screens of the design its theme started from
+        val overlay = if (design == YtDesign.CUSTOM) YtBuilderMode.classicOverlay() else design.overlay
+        overlay?.let { activity.theme.applyStyle(it, true) }
     }
 
     /**

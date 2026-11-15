@@ -117,7 +117,7 @@ data class YtPalette(
 )
 
 /** The designs, as the shared screens tell them apart. */
-enum class YtSignature { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL, FREQUENCY, SYNTHWAVE }
+enum class YtSignature { YOUTUBE, MOVO, AFTER, SIDE, CLAY, EDITORIAL, GLASS, POP, SHAPES, FROST, KIESEL, FREQUENCY, SYNTHWAVE, CUSTOM }
 
 object YtPalettes {
     /** "YouTube, neu gedacht": graphite, warm white, YouTube red, lime and lavender collections. */
@@ -511,6 +511,8 @@ val YtDesign.palette: YtPalette?
             YtDesign.KIESEL -> if (night) YtPalettes.KieselDark else YtPalettes.Kiesel
             YtDesign.FREQUENCY -> YtPalettes.Frequency
             YtDesign.SYNTHWAVE -> YtPalettes.Synthwave
+            // the user's own design: its colours come from the active theme document
+            YtDesign.CUSTOM -> com.github.libretube.ui.yt.builder.YtBuilderActive.palette(night)
             YtDesign.STANDARD -> null
         }
     }

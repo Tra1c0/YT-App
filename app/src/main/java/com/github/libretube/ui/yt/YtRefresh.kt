@@ -115,7 +115,7 @@ private fun YtRefreshIndicator(palette: YtPalette, state: PullToRefreshState, re
             val s = spin?.value ?: 0f
             val rad = s * PI.toFloat() / 180f
             when (palette.signature) {
-                YtSignature.YOUTUBE -> {
+                YtSignature.YOUTUBE, YtSignature.CUSTOM -> {
                     val r = 11.dp.toPx()
                     drawArc(
                         color = palette.accent,
