@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="yt_archive_risk_channel">
+        <item quantity="one">Kanal hat %1$d von %2$d Video gelöscht</item>
+        <item quantity="other">Kanal hat %1$d von %2$d Videos gelöscht</item>
+    </plurals>
+    <string name="yt_archive_risk_topic">Thema: %1$s</string>
+    <string name="yt_archive_risk_keywords">Stichwörter: %1$s</string>
+    <string name="yt_archive_risk_ai">KI: %1$s</string>
+    <string name="yt_archive_risk_ai_percent">KI schätzt %1$d %%</string>
+</resources>
