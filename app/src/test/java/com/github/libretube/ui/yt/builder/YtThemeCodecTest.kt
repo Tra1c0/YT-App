@@ -31,16 +31,33 @@ class YtThemeCodecTest {
 
     @Test
     fun `unknown fields are ignored and the animations kept`() {
-        val doc = testDoc().copy(animations = buildJsonObject { put("timeline", JsonPrimitive(3)) })
+        val doc = testDoc().copy(animations = YtAnimations(items = listOf(YtAnim("a1", component = YtComponentKind.CARD, node = testDoc().components.card.id, tracks = listOf(YtTrack(YtAnimProp.OPACITY, listOf(YtKeyframe(0f, 0f), YtKeyframe(1f, 1f))))))))
         val text = YtThemeCodec.encode(doc).replaceFirst("{", "{\"futureThing\":{\"a\":1},")
         val back = ok(text)
         assertEquals(doc.animations, back.doc.animations)
     }
 
     @Test
+    fun `schema 1 reserved animations move to the legacy field`() {
+        val raw = YtThemeCodec.json.parseToJsonElement(YtThemeCodec.encode(testDoc())).let { it as kotlinx.serialization.json.JsonObject }
+        val v1 = kotlinx.serialization.json.JsonObject(
+            raw.toMutableMap().apply {
+                put("schema", JsonPrimitive(1))
+                remove("animationsLegacy")
+                put("animations", buildJsonObject { put("timeline", JsonPrimitive(3)) })
+            },
+        )
+        val back = ok(v1.toString())
+        assertEquals(1, back.fromSchema)
+        assertEquals(YtAnimations(), back.doc.animations)
+        assertEquals(buildJsonObject { put("timeline", JsonPrimitive(3)) }, back.doc.animationsLegacy)
+        assertEquals(YT_THEME_SCHEMA, back.doc.schema)
+    }
+
+    @Test
     fun `schema 0 is migrated`() {
         val doc = testDoc()
-        val text = YtThemeCodec.encode(doc).replace("\"schema\":1,", "").replace("\"components\":", "\"parts\":")
+        val text = YtThemeCodec.encode(doc).replace("\"schema\":$YT_THEME_SCHEMA,", "").replace("\"components\":", "\"parts\":")
         val back = ok(text)
         assertEquals(0, back.fromSchema)
         assertEquals(doc.components, back.doc.components)
@@ -49,7 +66,7 @@ class YtThemeCodecTest {
 
     @Test
     fun `a newer schema is read and reported`() {
-        val text = YtThemeCodec.encode(testDoc()).replace("\"schema\":1", "\"schema\":7")
+        val text = YtThemeCodec.encode(testDoc()).replace("\"schema\":$YT_THEME_SCHEMA", "\"schema\":99")
         val back = ok(text)
         assertTrue(back.issues.any { it.path == "schema" })
         assertEquals(YT_THEME_SCHEMA, back.doc.schema)

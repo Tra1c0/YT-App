@@ -18,7 +18,7 @@ import kotlinx.serialization.json.JsonElement
  */
 
 /** The schema of this build. A newer file is read as far as it is understood (YtThemeCodec). */
-const val YT_THEME_SCHEMA = 1
+const val YT_THEME_SCHEMA = 2
 
 @Serializable
 data class YtThemeDoc(
@@ -35,11 +35,13 @@ data class YtThemeDoc(
     val mini: YtMiniConfig = YtMiniConfig(),
     /** Fonts and images that came with the theme (files in its assets folder). */
     val assets: List<YtAsset> = emptyList(),
+    /** The animator (phase 2, schema 2): animations, groups, state rules, easing presets (YtAnimModel). */
+    val animations: YtAnimations = YtAnimations(),
     /**
-     * Reserved for the animator (phase 2): timelines, keyframes, state machines. Kept as raw JSON
-     * so a file written by a newer build keeps them when this build saves it again.
+     * What a schema 1 file had in its reserved `animations` field (never written by a build, but
+     * kept as it was rather than lost; see the migration in YtThemeCodec).
      */
-    val animations: JsonElement? = null,
+    val animationsLegacy: JsonElement? = null,
     val meta: YtThemeMeta = YtThemeMeta(),
 )
 
