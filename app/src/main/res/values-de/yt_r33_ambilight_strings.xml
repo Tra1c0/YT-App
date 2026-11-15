@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- YT Runde 33: Ambilight (ui/yt/ambilight) -->
+    <string name="yt_ambilight">Ambilight</string>
+    <string name="yt_ambilight_summary">Ränder, Leiste und Hintergrund leuchten sanft in den Farben des laufenden Videos</string>
+    <string name="yt_ambilight_intensity">Ambilight-Stärke</string>
+    <string name="yt_ambilight_chrome">Auch Leiste &amp; Hintergrund</string>
+    <string name="yt_ambilight_chrome_summary">Auch Navigationsleiste, Bildschirmränder und Seitenhintergrund leuchten (nicht im Standard-Design)</string>
+    <string name="yt_ambilight_bars">Auch schwarze Balken leuchten</string>
+    <string name="yt_ambilight_bars_summary">Balken neben oder über dem Video, auch im Vollbild</string>
+    <string name="yt_ambilight_beat">Im Takt</string>
+    <string name="yt_ambilight_beat_summary">Synthwave und Frequency: das Leuchten pulsiert sanft mit dem Ton</string>
+</resources>

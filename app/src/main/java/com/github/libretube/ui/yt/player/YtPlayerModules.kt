@@ -70,6 +70,7 @@ object YtPlayerModules {
         YtSceneModule,
         YtBatteryCueModule,
         YtStreamErrorModule,
+        com.github.libretube.ui.yt.ambilight.YtAmbilightModule,
     )
 
     fun onViewCreated(host: YtPlayerHost) = modules.forEach { it.onViewCreated(host) }
