@@ -13,9 +13,10 @@ Die Liste beschreibt immer den Stand von `main` (den neuesten Build).
 
 | Funktion | Was sie macht | Status |
 | --- | --- | --- |
-| 14 Designs | Standard, YouTube neu, Movo, After, Side, Clay, Editorial, Glas, Pop, Formen, Frost, Kiesel, Frequency, Synthwave. Jedes hat eigene Startseite, Videoseite, Leiste, Kopfzeile, Miniplayer, Farben, Schriften, Animationen und Haptik. Einstellungen → Darstellung → Design. | E |
+| 15 Designs | Standard, YouTube neu, Movo, After, Side, Clay, Editorial, Glas, Pop, Formen, Frost, Kiesel, Frequency, Synthwave, Eigenes. Jedes hat eigene Startseite, Videoseite, Leiste, Kopfzeile, Miniplayer, Farben, Schriften, Animationen und Haptik. Einstellungen → Darstellung → Design. | E |
 | Frequency | 13. Design: Aufbau von YouTube neu mit den Formen von Formen auf tiefer Nacht (Koralle, Aqua, Violett). Reagiert deutlich auf den Klang: Formen wachsen, federn und morphen (Keks/Blob/Squircle/Kreis), Spektrum-Balken in der Kopfzeile, Spektrum-Welle an Leiste und Miniplayer, Strahlen um den Play-Ring, fließende Blobs und Welle im Hintergrund, Lichtstreifen bei Schlägen, Equalizer im Deezer-Stil auf dem Abo-Knopf. Passt sich dem Handy an (Stufen hoch/mittel/niedrig nach Speicher, Kernen, Android, Wärme, Energiesparmodus). Helligkeitswechsel ≤ 3/s, Schrift ruhig; ohne Ton/Animationen ruht alles. Diagnose zeigt die Klang-Analyse live. | T |
 | Synthwave | 14. Design im Neon-Chrom-Look: animierte Retro-Szene als Hintergrund (gestreifte Sonne, Drahtgitter-Berge, Palmen, Sterne, Neon-Gitter, das auf dich zufährt), Karten aus dunklem Glas mit Neonkante, Chrom-Wortmarke, Retro-Schrift (Audiowide). Reagiert dezent auf Musik (Bass beschleunigt das Gitter, Pegel lässt die Sonne glühen). Passt sich dem Handy an; ohne Animationen ein ruhiges Standbild. | T |
+| Eigenes (Theme-Builder) | 15. Design, aus deinem eigenen Theme gezeichnet (Etappe TB-1). Einstellungen → Darstellung → „Eigenes Design bearbeiten“: Karten, Kopfzeile, Chips, Leiste und Miniplayer auf der Vorschau mit echten Videos gestalten – ziehen mit magnetischem Einrasten, Zoom/Pan, Mehrfachauswahl, Griffe, Zahlenfeld, Farben (HEX/RGB/HSL, Pipette), Verläufe, Ecken einzeln, Schatten, Schriften (auch eigene TTF), Layout-Regeln und Breakpoints, Vorschau für Größe, Ausrichtung, Schrift, Hell/Dunkel. Rückgängig, automatisches Speichern, Versionen, Export/Import als .yttheme, Kontrast- und Tippflächen-Prüfung, Bildzeit-Messung. Sicherheitsmodus nach Absturz. | T |
 | Hell / Dunkel / System | Für die hellen Designs (Clay, Editorial, Glas, Pop, Kiesel): Hell, Dunkel oder dem Handy folgen. Nur die Farben ändern sich. | T |
 | Kein Neustart beim Wechsel | Design, Hell/Dunkel und Animationen greifen sofort; nur wenn gerade ein Video spielt, kommt noch der Neustart-Dialog. Es werden nur Optionen gezeigt, die zum Design passen. | T |
 | Animationen der Designs | Schaltet alle Design-Bewegungen ab, Zustände wechseln dann direkt. | E |
@@ -24,6 +25,7 @@ Die Liste beschreibt immer den Stand von `main` (den neuesten Build).
 | Klassische Bildschirme im Design | Einstellungen, Menüs, Dialoge und Sheets bekommen Ecken, Rahmen und Schrift des Designs. Kanalseite ohne große Lücken, Abonnenten nicht mehr abgeschnitten. | E |
 | Lesbare Sheets | Texte in Feed-Regler, Konto-Menü, Halte-Menü, „Warum sehe ich das?“, Rückgängig-Pille und Kacheln werden gegen die Fläche geprüft, auf der sie stehen (mind. 4,5:1), in allen Designs hell und dunkel. | T |
 | Farben aus dem Video | Optional nimmt der Player Farben aus dem Vorschaubild. | – |
+| Ambilight | Darstellung, ab Werk aus: Ränder, Hintergrund und Leiste leuchten sanft in den Farben des laufenden Videos (live aus dem Bild, sonst aus Vorschaubildern); schwarze Balken leuchten mit, auch im Vollbild; Halo um den Miniplayer; Synthwave und Frequency pulsieren dezent im Takt. Stärke einstellbar; Stromsparmodus und warmes Handy pausieren. | T |
 | App-Symbol | Mehrere Symbole zur Auswahl. | E |
 
 ## Startseite und Feed
@@ -62,6 +64,7 @@ Die Liste beschreibt immer den Stand von `main` (den neuesten Build).
 | Funktion | Was sie macht | Status |
 | --- | --- | --- |
 | Eigene Suche je Design | Öffnet sich über dem Bildschirm im Stil des Designs (z. B. Glasfeld aus dem Knopf heraus), mit Verlauf, Vorschlägen und Filtern. Standard behält das alte Feld. | E T |
+| SSI-Suche (Stellen finden) | Etappe SSI-1. Symbol im Suchfeld (alle Designs außer Standard): findet Stellen in Videos über die Untertitel – Zitate in Anführungszeichen wortgenau, Fragen nach Bedeutung (optionales Modell auf dem Gerät, ca. 135 MB), Zeitraum/Kanal/Ausschlüsse als harte Bedingungen. „Sofort“ = lokaler Index (Archiv, gelesene Videos), „Tief“ = zusätzlich YouTube-Suche und Untertitel der besten neuen Videos. Treffer mit markiertem Zitat, Zeit (≈ wenn nicht wortgenau), Genauigkeit, ±30 s, „Warum dieser Treffer?“; Clip-Folge abspielen; Spracheingabe. Einstellungen → SSI-Suche. | T |
 | Gesehenes in der Suche | Suchergebnisse zeigen dieselbe Markierung wie die Karten (Balken in der Akzentfarbe, gesehene abgedunkelt mit Abzeichen). | T |
 | Suchfeld wird Such-Knopf | Bei Glas, Frost und Formen verwandelt sich das Suchfeld der Seite beim Scrollen fließend in den Knopf oben. | T |
 

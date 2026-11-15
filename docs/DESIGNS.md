@@ -1,7 +1,7 @@
 # Designs in YT
 
 <!-- gen:designs-de -->
-**14 Designs** (Einträge von `YtDesign`, in der Reihenfolge der Auswahl): `STANDARD`, `YOUTUBE`, `MOVO`, `AFTER`, `SIDE`, `CLAY`, `EDITORIAL`, `GLASS`, `POP`, `SHAPES`, `FROST`, `KIESEL`, `FREQUENCY`, `SYNTHWAVE`.
+**15 Designs** (Einträge von `YtDesign`, in der Reihenfolge der Auswahl): `STANDARD`, `YOUTUBE`, `MOVO`, `AFTER`, `SIDE`, `CLAY`, `EDITORIAL`, `GLASS`, `POP`, `SHAPES`, `FROST`, `KIESEL`, `FREQUENCY`, `SYNTHWAVE`, `CUSTOM`.
 <!-- /gen:designs-de -->
 
 Umschaltbar unter Einstellungen → Darstellung → Design. Die Abschnitte unten sind in der

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_r33_guide_ssi_t">SSI: find moments in videos</string>
+    <string name="yt_r33_guide_ssi_b">The SSI icon in the search field searches what is said in videos, via their captions. Quotes in quotation marks match word for word; questions match by meaning once the optional model is loaded. Instant searches your local index, Deep also reads new videos. Tap a hit to play just before the moment, or play all hits as a clip sequence.</string>
+    <string name="yt_r33_guide_builder_t">Your own design</string>
+    <string name="yt_r33_guide_builder_b">Settings → Appearance → Edit own design: shape cards, header, chips, bar and mini player on a live preview with real videos – drag with magnetic snapping, colours, gradients, corners, shadows, fonts. Then pick the design "Eigenes". If it ever crashes, YT starts with your previous design and offers repair.</string>
+    <string name="yt_r33_guide_ambilight_t">Ambilight</string>
+    <string name="yt_r33_guide_ambilight_b">Settings → Appearance → Ambilight (off by default): the edges, background and bar glow softly in the colours of the running video; black bars glow too. Synthwave and Frequency pulse gently with the beat.</string>
+</resources>

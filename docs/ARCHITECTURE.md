@@ -70,7 +70,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > The design enum, palettes, fonts, motion, haptics, glass, navigation, headers, design switch.
 
 <!-- gen:designs -->
-14 designs (enum `YtDesign`, in picker order): `STANDARD`, `YOUTUBE`, `MOVO`, `AFTER`, `SIDE`, `CLAY`, `EDITORIAL`, `GLASS`, `POP`, `SHAPES`, `FROST`, `KIESEL`, `FREQUENCY`, `SYNTHWAVE`.
+15 designs (enum `YtDesign`, in picker order): `STANDARD`, `YOUTUBE`, `MOVO`, `AFTER`, `SIDE`, `CLAY`, `EDITORIAL`, `GLASS`, `POP`, `SHAPES`, `FROST`, `KIESEL`, `FREQUENCY`, `SYNTHWAVE`, `CUSTOM`.
 <!-- /gen:designs -->
 
 - `J/helpers/YtDesign.kt`: the enum (key, overlay style, brand font, `labeledNavigation`, `light`),
@@ -111,6 +111,29 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - Navigation: `Y/YtNavBar.kt`, `Y/YtNavDesigns.kt`, long press `Y/YtNavHold.kt`;
   `J/ui/views/YtBottomNavigationView.kt` (floating bar: touches beside the drawn bar reach the
   content). Headers: `Y/YtHeader.kt` (`YtChrome` holds the search callbacks; `overlayHome`).
+
+- Own design "Eigenes" (`CUSTOM`, theme builder stage TB-1, see `docs/ETAPPEN.md`): the
+  surfaces are rendered from a theme document. Package `Y/builder/`:
+  - Pure: model `YtThemeModel` (schema 1, tokens, six component node trees, layout FLOW_H/FLOW_V/
+    GRID/FREE, size rules, per-corner radii + smoothing, fills/strokes/shadows/glow, overrides,
+    states, reserved `animations`), `YtColor`, `YtThemeCodec` (JSON + migration, never throws),
+    `YtThemeValidate` (clamp, ids, depth/node caps), `YtLayoutEngine` (one measure per child,
+    conflicts), `YtSnap` (hysteresis snap-in/out, priorities, equal spacing, grid), `YtHistory`
+    (undo/redo, coalescing), `YtResponsive`, `YtDocOps`, `YtTokensResolver`, `YtThemeSeeds`,
+    `YtThemeZip` (.yttheme with checks), `YtEditorDrag`, `YtEditorChecks` (4.5:1, 48 dp),
+    `YtFrameStats` (P50–P99, jank).
+  - Android/Compose: `YtBuilderActive` (active theme as snapshot state), `YtBuilderFonts`,
+    `YtBuilderInks`, `YtBuilderPaint` (`YtCornerShape`), renderer `YtThemeRender` (per-node state,
+    drawWithCache, failing node → hatched placeholder), `YtBuilderScreens` (feed, chips, header,
+    bar), `YtBuilderStore` (`filesDir/yt_themes/<id>/` theme.json, assets/, versions/), safe mode
+    `YtBuilderSafeMode` (crash marker `yt_themes/crashed`, `YtCrashLog` calls `onCrash`; next start
+    falls back to the previous design with repair/reset), editor `YtThemeEditorActivity` (own
+    Material 3 window) + `YtEditorState`, `YtEditorCanvas`, `YtEditorPanels`, `YtEditorMetrics`
+    (JankStats, Diagnose "Theme-Editor"), settings row `YtThemeEditorPreference`.
+  - `J/helpers/YtBuilderMode.kt` (prefs `yt_custom_*`: light, wordmark, timeline, base design,
+    previous, disabled; read before any theme file); mini player `Y/mini/YtMiniCustom.kt`.
+    Search inks, Shorts look, haptics and classic overlay follow the base design (`ThemeHelper`).
+    `YtDesign.light` is open: CUSTOM is light only when the theme has both looks.
 
 ## Mini player
 
@@ -497,6 +520,17 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - Music mode for the other designs: not built (see `docs/ROADMAP.md`); the engine above is ready
   for it.
 
+- Ambilight `Y/ambilight/` (off by default, prefs `yt_ambilight`, `_intensity`, `_chrome`, `_bars`,
+  `_beat`): pure `YtAmbilightMath` (letterbox, 8 edge zones in linear light, Oklab smoothing
+  `YtAmbilightSmoother`, scene cuts, contrast guard via `YtContrast`) and `YtAmbilightRules` (rates,
+  visibility, beat, fallback, per-design `YtAmbilightProfile`); `YtAmbilightPrefs`;
+  `YtAmbilightSampler` (PixelCopy on its own thread, reused bitmap); `YtAmbilightFallback`
+  (storyboard still, thumbnail); engine `YtAmbilight` (glide ~30 Hz, docked 20 Hz, beat from the
+  sound engine ≤ +25 % through the flash guard, power saver/thermal stop, Diagnose);
+  `YtAmbilightPaint` (one tinted blob bitmap), `YtAmbilightViews` (player background bars,
+  `YtAmbilightLayer` overlay that never takes touches); page module `YtAmbilightModule`. Hook:
+  `YtEdgeScrollView.under` draws below the page content.
+
 ## Account, update, settings, diagnostics
 
 > Sign-in, in-app update and release notes, settings screens, guide, crash report, storage, security.
@@ -604,6 +638,20 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
     Mistral Voxtral diarize; endpoints from search summaries, untested live), caps `YtScriptLedger`
     (20 text / 5 audio a day, one script per video, no audio > 3 h), `YtScriptMaker`, Android side
     `YtArchiveScripts` (`register()`, `diagnosis()`). No voice data is stored.
+- SSI search (stage SSI-1, see `docs/ETAPPEN.md`), package `Y/ssi/`: own DB `databases/yt_ssi.db`
+  (`YtSsiDb`: videos, passages, vectors, AI cache; FTS4 with BM25 from `matchinfo`), model types
+  `YtSsiModel`, `YtSsiText` (folding), `YtSsiCaptions` (json3 word timings via `fmt=json3`, TTML
+  fallback, archive lines), `YtSsiSegmenter`, `YtSsiIntent` (rules: quote, time, channel,
+  exclusions, language; later-phase intents flagged), `YtSsiFusion` (BM25, RRF, constraints),
+  `YtSsiRanker`, `YtSsiVectors` (int8, top-K), `YtSsiTokenizer` (Unigram from tokenizer.json),
+  `YtSsiEmbedder` (ONNX Runtime, multilingual-e5-small int8; arm64 only, telemetry provider removed),
+  `YtSsiModels` (download to `filesDir/yt_ssi/model/`, SHA-256 from the server, not pinned yet),
+  `YtSsiIndexer`, `YtSsi` (glue, `YtSsiWorker`, Diagnose "SSI"), `YtSsiSearch` (Instant/Deep,
+  progressive, cancellable, archive-style back-off), `YtSsiAiPlan` (Deep only, via
+  `YtScriptTextAis`), `YtSsiPlayRules`, `YtSsiPrefs`, service module `YtSsiClipModule` (clip
+  sequence via the time box's end points), `YtSsiVoice`, screen `YtSsiLayer` (icon in
+  `YtSearchUi`; STANDARD has no entry yet), settings `YtSsiSettings` (`R/xml/yt_r33_ssi_settings.xml`).
+  Benchmark harness `T/ui/yt/ssi/YtSsiBench.kt` (fixtures `app/src/test/resources/ssi/`, synthetic).
 - Security: notes `docs/SICHERHEIT.md`; emulator-only switches guarded by `J/helpers/YtGuard.kt`.
 
 ## Build, CI, tests, docs system
@@ -685,13 +733,13 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (425 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (487 files; generated, do not edit)</summary>
 
-- `J/helpers/` (25): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
-  YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDeadSubs, YtDesign,
-  YtDesignDark, YtGuard, YtHidden, YtLeveller, YtLoudness, YtLoudnessMeter, YtMusicPlayback,
-  YtNotes, YtPeakLimiter, YtSceneUnlock, YtSoundFeatures, YtSpectrum, YtSpeedRules, YtThemeRefresh,
-  YtVideoColors
+- `J/helpers/` (26): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
+  YtBatteryRules, YtBuilderMode, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDeadSubs,
+  YtDesign, YtDesignDark, YtGuard, YtHidden, YtLeveller, YtLoudness, YtLoudnessMeter,
+  YtMusicPlayback, YtNotes, YtPeakLimiter, YtSceneUnlock, YtSoundFeatures, YtSpectrum, YtSpeedRules,
+  YtThemeRefresh, YtVideoColors
 - `J/obj/update/` (1): YtWorkflowRuns
 - `J/receivers/` (1): YtUpdateReceiver
 - `J/repo/` (1): YtFeedFlight
@@ -726,22 +774,30 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtTitles, YtTopicChip, YtTopicSuggest, YtUndoPill, YtVibes, YtWatch, YtWatchDesigns, YtWatchEdge,
   YtWatchPages, YtWaveShape, YtWaveView
 - `Y/account/` (4): YtAccount, YtAccountSheet, YtImport, YtInnerTube
+- `Y/ambilight/` (9): YtAmbilight, YtAmbilightFallback, YtAmbilightMath, YtAmbilightModule,
+  YtAmbilightPaint, YtAmbilightPrefs, YtAmbilightRules, YtAmbilightSampler, YtAmbilightViews
 - `Y/archive/` (11): YtArchive, YtArchiveContract, YtArchiveFetcher, YtArchiveMeta, YtArchivePrefs,
   YtArchiveRules, YtArchiveRunner, YtArchiveStore, YtArchiveText, YtArchiveThrottle, YtArchiveUi
 - `Y/archive/risk/` (6): YtArchiveRisk, YtRiskAiClient, YtRiskAiRules, YtRiskEngine, YtRiskModel,
   YtRiskText
 - `Y/archive/script/` (10): YtArchiveScript, YtArchiveScripts, YtScriptAudio, YtScriptAudioAis,
   YtScriptCheck, YtScriptDialogue, YtScriptInput, YtScriptLedger, YtScriptMaker, YtScriptTextAis
+- `Y/builder/` (29): YtBuilderActive, YtBuilderFonts, YtBuilderInks, YtBuilderPaint,
+  YtBuilderSafeMode, YtBuilderScreens, YtBuilderStore, YtColor, YtDocOps, YtEditorCanvas,
+  YtEditorChecks, YtEditorDrag, YtEditorMetrics, YtEditorPanels, YtEditorState, YtFrameStats,
+  YtHistory, YtLayoutEngine, YtResponsive, YtSnap, YtThemeCodec, YtThemeEditorActivity,
+  YtThemeEditorPreference, YtThemeModel, YtThemeRender, YtThemeSeeds, YtThemeValidate, YtThemeZip,
+  YtTokensResolver
 - `Y/feed/` (24): YtDeadSubsPreference, YtDeadSubsRules, YtDragRules, YtFeed, YtFeedEngine,
   YtFeedFresh, YtFeedRules, YtFeedTopics, YtFeedTopicsSession, YtFeedTopicsWords, YtHideRules,
   YtHomePreferences, YtHomeTestHooks, YtQueueRule, YtSeenHide, YtSeenMark, YtSession, YtSubsOrder,
   YtSwipeCalibration, YtSwipeCalibrationScreen, YtSwipePhysics, YtSwipeSettings, YtSwipeTuning,
   YtTimeBox
 - `Y/liquid/` (4): DampedDragAnimation, InteractiveHighlight, LiquidGestures, YtViewBackdrop
-- `Y/mini/` (83): YtBleedMath, YtDockMath, YtGlassLayout, YtGlassOver, YtGlassSlabShape,
+- `Y/mini/` (84): YtBleedMath, YtDockMath, YtGlassLayout, YtGlassOver, YtGlassSlabShape,
   YtMiniAfter, YtMiniAfterLayout, YtMiniAfterOver, YtMiniAfterTextures, YtMiniAfterUnder,
   YtMiniBleed, YtMiniClay, YtMiniClayLayout, YtMiniClayOver, YtMiniClayTextures, YtMiniClayUnder,
-  YtMiniDesign, YtMiniDesigns, YtMiniDockBar, YtMiniEditorial, YtMiniEditorialLayout,
+  YtMiniCustom, YtMiniDesign, YtMiniDesigns, YtMiniDockBar, YtMiniEditorial, YtMiniEditorialLayout,
   YtMiniEditorialOver, YtMiniEditorialTextures, YtMiniEditorialUnder, YtMiniFrequency,
   YtMiniFrequencyTextures, YtMiniFrost, YtMiniFrostLayout, YtMiniFrostOver, YtMiniFrostTextures,
   YtMiniFrostUnder, YtMiniGeometry, YtMiniGlass, YtMiniHost, YtMiniKiesel, YtMiniKieselLayout,
@@ -772,6 +828,10 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - `Y/shorts/` (10): YtShortsLook, YtShortsMath, YtShortsPlayer, YtShortsPrefs, YtShortsScreen,
   YtShortsSource, YtShortsStyle, YtShortsTestHooks, YtShortsTimeline, YtShortsView
 - `Y/sound/` (3): YtSound, YtSoundEngine, YtSoundShaping
+- `Y/ssi/` (22): YtSsi, YtSsiAiPlan, YtSsiCaptions, YtSsiClipModule, YtSsiDb, YtSsiEmbedder,
+  YtSsiFusion, YtSsiIndexer, YtSsiIntent, YtSsiLayer, YtSsiModel, YtSsiModels, YtSsiPlayRules,
+  YtSsiPrefs, YtSsiRanker, YtSsiSearch, YtSsiSegmenter, YtSsiSettings, YtSsiText, YtSsiTokenizer,
+  YtSsiVectors, YtSsiVoice
 - `app/src/main/java/androidx/constraintlayout/motion/widget/` (1): YtMotionAccess
 
 </details>

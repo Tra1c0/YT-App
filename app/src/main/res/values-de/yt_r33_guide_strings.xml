@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_r33_guide_ssi_t">SSI: Stellen in Videos finden</string>
+    <string name="yt_r33_guide_ssi_b">Das SSI-Symbol im Suchfeld durchsucht, was in Videos gesagt wird, über die Untertitel. Zitate in Anführungszeichen werden wortgenau gesucht, Fragen nach Bedeutung, sobald das optionale Modell geladen ist. „Sofort“ sucht im lokalen Index, „Tief“ liest auch neue Videos. Ein Treffer spielt kurz vor der Stelle ab, oder alle Treffer als Clip-Folge.</string>
+    <string name="yt_r33_guide_builder_t">Eigenes Design</string>
+    <string name="yt_r33_guide_builder_b">Einstellungen → Darstellung → Eigenes Design bearbeiten: Karten, Kopfzeile, Chips, Leiste und Miniplayer auf einer Live-Vorschau mit echten Videos gestalten – ziehen mit magnetischem Einrasten, Farben, Verläufe, Ecken, Schatten, Schriften. Danach das Design „Eigenes“ wählen. Stürzt es einmal ab, startet YT mit deinem vorherigen Design und bietet eine Reparatur an.</string>
+    <string name="yt_r33_guide_ambilight_t">Ambilight</string>
+    <string name="yt_r33_guide_ambilight_b">Einstellungen → Darstellung → Ambilight (ab Werk aus): Ränder, Hintergrund und Leiste leuchten sanft in den Farben des laufenden Videos, schwarze Balken leuchten mit. Synthwave und Frequency pulsieren dezent im Takt.</string>
+</resources>
