@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- round 30: a video whose streams could not be loaded (the player page's error state) -->
+    <string name="yt_stream_error_age_title">Altersbeschränktes Video</string>
+    <string name="yt_stream_error_age_body">YouTube verlangt dafür eine Anmeldung, die YT beim Abspielen nicht nutzen kann.</string>
+    <string name="yt_stream_error_members_title">Nur für Kanalmitglieder</string>
+    <string name="yt_stream_error_members_body">Dieses Video ist nur für Mitglieder des Kanals freigegeben.</string>
+    <string name="yt_stream_error_private_title">Privates Video</string>
+    <string name="yt_stream_error_private_body">Der Kanal hat dieses Video auf privat gestellt.</string>
+    <string name="yt_stream_error_bot_title">YouTube hält die Anfrage für einen Bot</string>
+    <string name="yt_stream_error_bot_body">Das ist meist vorübergehend – später erneut versuchen oder in YouTube öffnen.</string>
+    <string name="yt_stream_error_signin_title">Video nicht mehr verfügbar</string>
+    <string name="yt_stream_error_signin_body">Wahrscheinlich privat gestellt oder gelöscht – YouTube verlangt dafür eine Anmeldung. Ist es nur vorübergehend, später erneut versuchen oder in YouTube öffnen.</string>
+    <string name="yt_stream_error_geo_title">In deinem Land nicht verfügbar</string>
+    <string name="yt_stream_error_geo_body">Dieses Video ist in deinem Land gesperrt.</string>
+    <string name="yt_stream_error_paid_title">Kostenpflichtiges Video</string>
+    <string name="yt_stream_error_paid_body">Dieses Video gibt es nur gegen Bezahlung oder mit YouTube Premium.</string>
+    <string name="yt_stream_error_terminated_title">Kanal geschlossen</string>
+    <string name="yt_stream_error_terminated_body">YouTube hat den Kanal dieses Videos geschlossen.</string>
+    <string name="yt_stream_error_unavailable_title">Video nicht verfügbar</string>
+    <string name="yt_stream_error_unavailable_body">YouTube stellt dieses Video gerade nicht bereit.</string>
+    <string name="yt_stream_error_network_title">Keine Verbindung</string>
+    <string name="yt_stream_error_network_body">Das Video konnte nicht geladen werden. Prüfe die Internetverbindung und versuche es erneut.</string>
+    <string name="yt_stream_error_other_title">Video konnte nicht geladen werden</string>
+    <string name="yt_stream_error_other_body">Beim Laden ist ein Fehler aufgetreten.</string>
+    <string name="yt_stream_error_retry">Erneut versuchen</string>
+    <string name="yt_stream_error_open">In YouTube öffnen</string>
+    <string name="yt_stream_error_next">Nächstes Video</string>
+    <string name="yt_stream_error_open_failed">Keine App kann dieses Video öffnen</string>
+</resources>

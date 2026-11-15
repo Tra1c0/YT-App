@@ -1961,4 +1961,8 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
         val player = _binding?.player ?: return
         if (on) player.showControllerPermanently() else player.showController()
     }
+
+    override fun clearVideoDetails() {
+        ytWatch?.streams = null
+    }
 }

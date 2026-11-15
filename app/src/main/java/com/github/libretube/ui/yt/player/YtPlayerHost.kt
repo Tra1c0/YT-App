@@ -77,4 +77,10 @@ interface YtPlayerHost {
 
     /** Shows the controls without hiding them after a while ([on]), or lets them hide again. */
     fun showControlsPermanently(on: Boolean)
+
+    /**
+     * Drops the details of the video before from the design's page (the video that should
+     * follow failed to load; YtStreamErrorModule shows why instead).
+     */
+    fun clearVideoDetails()
 }
