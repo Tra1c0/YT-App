@@ -73,12 +73,12 @@ object YtSsiSegmenter {
         return out
     }
 
-    private fun ends(text: String) = SENTENCE_END.containsMatchIn(text.trim())
+    internal fun ends(text: String) = SENTENCE_END.containsMatchIn(text.trim())
 
-    private fun gap(unit: YtSsiUnit, next: YtSsiUnit): Long =
+    internal fun gap(unit: YtSsiUnit, next: YtSsiUnit): Long =
         if (unit.word) next.startMs - unit.startMs else next.startMs - unit.endMs
 
-    private fun pause(unit: YtSsiUnit, next: YtSsiUnit): Boolean =
+    internal fun pause(unit: YtSsiUnit, next: YtSsiUnit): Boolean =
         gap(unit, next) >= if (unit.word) WORD_PAUSE_MS else LINE_PAUSE_MS
 
     /**
@@ -99,7 +99,7 @@ object YtSsiSegmenter {
         return best
     }
 
-    private fun build(videoId: String, ord: Int, units: List<YtSsiUnit>, timing: YtSsiTiming): YtSsiSegment {
+    internal fun build(videoId: String, ord: Int, units: List<YtSsiUnit>, timing: YtSsiTiming): YtSsiSegment {
         val text = StringBuilder()
         val marks = ArrayList<YtSsiMark>(units.size)
         for (unit in units) {

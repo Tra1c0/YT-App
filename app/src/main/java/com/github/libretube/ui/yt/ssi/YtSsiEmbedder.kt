@@ -38,7 +38,7 @@ data class YtSsiModelSpec(
     val passagePrefix: String,
     val maxTokens: Int,
 ) {
-    val version: String get() = "$id/${YtSsiVersions.ANALYSIS}"
+    val version: String get() = "$id/${YtSsiVersions.VECTORS}"
 
     companion object {
         /**

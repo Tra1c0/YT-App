@@ -130,6 +130,10 @@ object YtSsiUi {
     internal val after = mutableStateMapOf<String, Long>()
     internal var openWhy by mutableStateOf<String?>(null)
 
+    /** SSI-2: the hit whose feedback buttons are open, and the verdict given per hit of this search. */
+    internal var openFeedback by mutableStateOf<String?>(null)
+    internal val verdicts = mutableStateMapOf<String, YtSsiVerdict>()
+
     /** Opens SSI; a non-empty [query] goes into the field and is searched at once (Instant). */
     fun open(context: Context, query: String = "") {
         val text = query.trim()
@@ -156,6 +160,8 @@ object YtSsiUi {
         before.clear()
         after.clear()
         openWhy = null
+        openFeedback = null
+        verdicts.clear()
         YtSsiSearch.start(context, text, depth)
     }
 
@@ -449,7 +455,7 @@ private fun play(context: Context, hit: YtSsiHit) {
     val extra = YtSsiUi.before[YtSsiUi.key(hit)] ?: 0L
     kotlinx.coroutines.MainScope().launch {
         val segment = withContext(Dispatchers.IO) { hit.segmentId?.let { YtSsi.db.segment(it) } }
-        val start = (YtSsiPlayRules.start(segment, hit.hitMs) - extra).coerceAtLeast(0)
+        val start = (YtSsiPlayRules.playStart(hit, segment) - extra).coerceAtLeast(0)
         YtSsiUi.hide()
         playFrom(context, hit, start)
     }
@@ -474,6 +480,7 @@ private fun Status(run: YtSsiRun, palette: YtPalette) {
         YtSsiPhase.AI -> stringResource(R.string.yt_r33_ssi_phase_ai)
         YtSsiPhase.DISCOVER -> stringResource(R.string.yt_r33_ssi_phase_discover)
         YtSsiPhase.FETCH -> stringResource(R.string.yt_r33_ssi_phase_fetch, run.fetched + 1, run.budget.coerceAtLeast(run.fetched + 1))
+        YtSsiPhase.RERANK -> stringResource(R.string.yt_r35_ssi_phase_rerank)
         YtSsiPhase.DONE -> if (run.depth == YtSsiDepth.DEEP) {
             stringResource(R.string.yt_r33_ssi_phase_done_deep, run.hits.size, run.fetched, run.indexedVideos)
         } else {
@@ -505,6 +512,10 @@ private fun Status(run: YtSsiRun, palette: YtPalette) {
                 YtSsiRunNote.PAUSED -> R.string.yt_r33_ssi_note_paused
                 YtSsiRunNote.SEARCH_FAILED -> R.string.yt_r33_ssi_note_failed
                 YtSsiRunNote.EMPTY_INDEX -> R.string.yt_r33_ssi_note_empty_index
+                YtSsiRunNote.RERANK_USED -> R.string.yt_r35_ssi_note_rerank_used
+                YtSsiRunNote.RERANK_CACHED -> R.string.yt_r35_ssi_note_rerank_cached
+                YtSsiRunNote.RERANK_FAILED -> R.string.yt_r35_ssi_note_rerank_failed
+                YtSsiRunNote.RERANK_BUDGET -> R.string.yt_r35_ssi_note_rerank_budget
             }
             Text("· " + stringResource(text), color = palette.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
         }
@@ -592,13 +603,30 @@ private fun HitCard(hit: YtSsiHit, run: YtSsiRun, palette: YtPalette, back: Int,
             if (hit.segmentId != null) {
                 Text(YtSsiPlayRules.stamp(hit.hitMs, hit.timing), color = palette.accent.let { ink.read(it) }, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
+            // SSI-2: relevance and timing are two separate badges, neither a percentage
             Badge(
                 stringResource(
-                    when (YtSsiPlayRules.label(hit.timing)) {
-                        YtSsiPrecisionLabel.WORD -> R.string.yt_r33_ssi_precision_word
-                        YtSsiPrecisionLabel.LINE -> R.string.yt_r33_ssi_precision_line
-                        YtSsiPrecisionLabel.SPAN -> R.string.yt_r33_ssi_precision_span
-                    },
+                    R.string.yt_r35_ssi_relevance,
+                    stringResource(
+                        when (hit.band) {
+                            YtSsiBand.HIGH -> R.string.yt_r35_ssi_band_high
+                            YtSsiBand.MEDIUM -> R.string.yt_r35_ssi_band_medium
+                            YtSsiBand.LOW -> R.string.yt_r35_ssi_band_low
+                        },
+                    ),
+                ),
+                ink,
+            )
+            Badge(
+                stringResource(
+                    R.string.yt_r35_ssi_timing,
+                    stringResource(
+                        when (YtSsiPlayRules.label(hit.span?.timing ?: hit.timing)) {
+                            YtSsiPrecisionLabel.WORD -> R.string.yt_r33_ssi_precision_word
+                            YtSsiPrecisionLabel.LINE -> R.string.yt_r33_ssi_precision_line
+                            YtSsiPrecisionLabel.SPAN -> R.string.yt_r33_ssi_precision_span
+                        },
+                    ),
                 ),
                 ink,
             )
@@ -617,13 +645,18 @@ private fun HitCard(hit: YtSsiHit, run: YtSsiRun, palette: YtPalette, back: Int,
                 haptics.tick()
                 YtSsiUi.openWhy = if (YtSsiUi.openWhy == key) null else key
             }
+            SmallButton(stringResource(if (YtSsiUi.verdicts[key] != null) R.string.yt_r35_ssi_feedback_given else R.string.yt_r35_ssi_feedback), ink) {
+                haptics.tick()
+                YtSsiUi.openFeedback = if (YtSsiUi.openFeedback == key) null else key
+            }
         }
+        if (YtSsiUi.openFeedback == key) Feedback(hit, run, ink)
         if (hit.segmentId != null && (extraBefore > 0 || extraAfter > 0)) {
             val segment by produceState<YtSsiSegment?>(null, hit.segmentId) {
                 value = withContext(Dispatchers.IO) { YtSsi.db.segment(hit.segmentId) }
             }
-            val start = (YtSsiPlayRules.start(segment, hit.hitMs) - extraBefore).coerceAtLeast(0)
-            val end = maxOf(hit.endMs, hit.hitMs) + YtSsiPlayRules.TAIL_MS + extraAfter
+            val start = (YtSsiPlayRules.playStart(hit, segment) - extraBefore).coerceAtLeast(0)
+            val end = YtSsiPlayRules.clipEnd(hit) + extraAfter
             Text(
                 stringResource(R.string.yt_r33_ssi_window, YtSsiPlayRules.stamp(start, YtSsiTiming.WORD), YtSsiPlayRules.stamp(end, YtSsiTiming.WORD)),
                 color = ink.textSecondary,
@@ -672,8 +705,76 @@ private fun Why(hit: YtSsiHit, run: YtSsiRun, ink: YtInk) {
                         YtSsiPrecisionLabel.SPAN -> R.string.yt_r33_ssi_reason_timing_span
                     },
                 )
+                is YtSsiReason.Band -> stringResource(
+                    when (reason.band) {
+                        YtSsiBand.HIGH -> if (reason.ai) R.string.yt_r35_ssi_reason_band_high_ai else R.string.yt_r35_ssi_reason_band_high
+                        YtSsiBand.MEDIUM -> if (reason.ai) R.string.yt_r35_ssi_reason_band_medium_ai else R.string.yt_r35_ssi_reason_band_medium
+                        YtSsiBand.LOW -> if (reason.ai) R.string.yt_r35_ssi_reason_band_low_ai else R.string.yt_r35_ssi_reason_band_low
+                    },
+                )
+                is YtSsiReason.AiGrade -> stringResource(
+                    if (reason.cached) R.string.yt_r35_ssi_reason_ai_grade_cached else R.string.yt_r35_ssi_reason_ai_grade,
+                    reason.relevant,
+                    stringResource(
+                        when (reason.relevant) {
+                            3 -> R.string.yt_r35_ssi_grade_3
+                            2 -> R.string.yt_r35_ssi_grade_2
+                            1 -> R.string.yt_r35_ssi_grade_1
+                            else -> R.string.yt_r35_ssi_grade_0
+                        },
+                    ),
+                    reason.before,
+                    reason.after,
+                ) + if (reason.span) " " + stringResource(R.string.yt_r35_ssi_reason_ai_span) else ""
+                is YtSsiReason.Bounds -> stringResource(
+                    when {
+                        reason.label == YtSsiPrecisionLabel.SPAN -> R.string.yt_r35_ssi_reason_bounds_approx
+                        !reason.verified -> R.string.yt_r35_ssi_reason_bounds_cut
+                        reason.qualifier -> R.string.yt_r35_ssi_reason_bounds_qualifier
+                        else -> R.string.yt_r35_ssi_reason_bounds_ok
+                    },
+                )
             }
             Line(text, ink)
+        }
+    }
+}
+
+/** SSI-2: the five verdicts; the one given is marked. Stored locally, learnt from when learning is on. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Feedback(hit: YtSsiHit, run: YtSsiRun, ink: YtInk) {
+    val context = LocalContext.current
+    val intent = run.intent ?: return
+    val key = YtSsiUi.key(hit)
+    val haptics = rememberYtHaptics()
+    val scope = rememberCoroutineScope()
+    val semanticUsed = YtSsiRunNote.LEXICAL_ONLY !in run.notes && YtSsiRunNote.SEMANTIC_UNSUPPORTED !in run.notes
+    Column(Modifier.padding(top = 10.dp)) {
+        Text(stringResource(R.string.yt_r35_ssi_feedback_title), color = ink.textSecondary, fontSize = 12.sp)
+        Spacer(Modifier.height(6.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            for (verdict in YtSsiVerdict.entries) {
+                val chosen = YtSsiUi.verdicts[key] == verdict
+                val label = stringResource(
+                    when (verdict) {
+                        YtSsiVerdict.PERFECT -> R.string.yt_r35_ssi_verdict_perfect
+                        YtSsiVerdict.WRONG_SPOT -> R.string.yt_r35_ssi_verdict_wrong_spot
+                        YtSsiVerdict.WRONG_CONTEXT -> R.string.yt_r35_ssi_verdict_wrong_context
+                        YtSsiVerdict.NOT_RELEVANT -> R.string.yt_r35_ssi_verdict_not_relevant
+                        YtSsiVerdict.TIME_OFF -> R.string.yt_r35_ssi_verdict_time_off
+                    },
+                )
+                SmallButton(if (chosen) "✓ $label" else label, ink) {
+                    if (chosen) return@SmallButton
+                    haptics.confirm()
+                    YtSsiUi.verdicts[key] = verdict
+                    scope.launch {
+                        withContext(Dispatchers.IO) { YtSsi.feedback(context, hit, intent, verdict, semanticUsed) }
+                        Toast.makeText(context, R.string.yt_r35_ssi_feedback_saved, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
     }
 }

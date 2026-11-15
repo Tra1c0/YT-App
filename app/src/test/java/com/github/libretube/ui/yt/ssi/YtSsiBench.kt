@@ -22,6 +22,11 @@ import kotlin.math.ln
  *
  * The fixtures in this repository are synthetic. Real quality needs real, verified examples
  * (video, query, start/end checked by hand) that the user has to supply.
+ *
+ * SSI-2: [loadExamples] reads a file in the user's example format ([YtSsiBenchmark]) and
+ * [runExamples] measures it against a fixture's index with the same measures as the in-app
+ * benchmark (Recall@1/3/5, nDCG@5, deviation P50/P95, no-match, latency), the SSI-2 way and
+ * the SSI-1 way.
  */
 object YtSsiBench {
     @Serializable
@@ -189,7 +194,7 @@ object YtSsiBench {
             val moment = case.relevant.firstOrNull { it !in found && matches(hit, it) } ?: return@forEachIndexed
             found += moment
             dcg += 1.0 / log2(i + 2.0)
-            val start = YtSsiPlayRules.start(hit.segmentId?.let { index.segment(it) }, hit.hitMs)
+            val start = YtSsiPlayRules.playStart(hit, hit.segmentId?.let { index.segment(it) })
             deviations += abs(start - moment.startMs)
         }
         val ideal = (0 until minOf(case.relevant.size, case.k)).sumOf { 1.0 / log2(it + 2.0) }
@@ -197,4 +202,43 @@ object YtSsiBench {
     }
 
     private fun log2(x: Double) = ln(x) / ln(2.0)
+
+    /** The user's example format from a test resource. */
+    fun loadExamples(resource: String): YtSsiBenchmark.Examples {
+        val text = YtSsiBench::class.java.classLoader!!.getResourceAsStream(resource)!!.bufferedReader().use { it.readText() }
+        return YtSsiBenchmark.parse(text)
+    }
+
+    /**
+     * [examples] answered from [fixture]'s index (lexical; the model is not on the JVM). [ssi1]
+     * measures the SSI-1 way: the SSI-1 play start and the passage as the span.
+     */
+    fun runExamples(fixture: Fixture, examples: YtSsiBenchmark.Examples, ssi1: Boolean = false): YtSsiBenchmark.Metrics {
+        val index = Index(fixture)
+        val now = date(fixture.now)!! + 12 * 3600_000L
+        val known = fixture.videos.mapNotNull { it.channel }.distinct()
+        val answers = examples.examples.map { example ->
+            val started = System.nanoTime()
+            val intent = YtSsiIntentParser.parse(example.query, now, UTC, known)
+            val match = YtSsiFusion.ftsQuery(intent)
+            val lexical = index.search(match, index.segments.mapValues { it.value.text })
+            val titles = index.search(match, index.docs.mapValues { it.value.title + " " + it.value.channelName.orEmpty() })
+            val hits = YtSsiRanker.rank(intent, YtSsiRanker.Lists(lexical, emptyList(), titles, inTitle = titles.toSet()), index)
+            val latency = (System.nanoTime() - started) / 1_000_000
+            YtSsiBenchmark.Answer(
+                hits.take(5).map { hit ->
+                    val segment = hit.segmentId?.let { index.segment(it) }
+                    YtSsiBenchmark.Found(
+                        videoId = hit.videoId,
+                        hitMs = hit.hitMs,
+                        spanStartMs = if (segment == null) null else if (ssi1) hit.startMs else hit.span?.startMs ?: hit.startMs,
+                        spanEndMs = if (segment == null) null else if (ssi1) hit.endMs else hit.span?.endMs ?: hit.endMs,
+                        playStartMs = if (ssi1) YtSsiPlayRules.start(segment, hit.hitMs) else YtSsiPlayRules.playStart(hit, segment),
+                    )
+                },
+                latency,
+            )
+        }
+        return YtSsiBenchmark.evaluate(examples, answers)
+    }
 }

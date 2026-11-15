@@ -48,6 +48,27 @@
             app:summary="@string/yt_r33_ssi_allow_ai_summary"
             app:title="@string/yt_r33_ssi_allow_ai" />
 
+        <!-- SSI-2 (round 35) -->
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_info"
+            app:defaultValue="true"
+            app:dependency="yt_ssi_allow_ai"
+            app:key="yt_ssi_ai_rerank"
+            app:summary="@string/yt_r35_ssi_rerank_summary"
+            app:title="@string/yt_r35_ssi_rerank" />
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_history"
+            app:defaultValue="true"
+            app:key="yt_ssi_learn"
+            app:summary="@string/yt_r35_ssi_learn_summary"
+            app:title="@string/yt_r35_ssi_learn" />
+
+        <Preference
+            android:icon="@drawable/ic_close"
+            app:key="yt_ssi_learn_reset"
+            app:title="@string/yt_r35_ssi_learn_reset" />
+
         <Preference
             android:icon="@drawable/ic_download_folder"
             app:key="yt_ssi_index_now"
@@ -65,6 +86,29 @@
             app:key="yt_ssi_clear"
             app:summary="@string/yt_r33_ssi_clear_index_summary"
             app:title="@string/yt_r33_ssi_clear_index" />
+
+    </PreferenceCategory>
+
+    <!-- SSI-2 (round 35): the benchmark on the user's own verified examples -->
+    <PreferenceCategory
+        app:key="yt_ssi_bench"
+        app:title="@string/yt_r35_ssi_bench_title">
+
+        <Preference
+            android:icon="@drawable/ic_download_folder"
+            app:key="yt_ssi_bench_import"
+            app:title="@string/yt_r35_ssi_bench_import" />
+
+        <Preference
+            android:icon="@drawable/ic_yt_ssi"
+            app:key="yt_ssi_bench_run"
+            app:title="@string/yt_r35_ssi_bench_run" />
+
+        <Preference
+            android:icon="@drawable/ic_info"
+            app:key="yt_ssi_bench_format"
+            app:summary="@string/yt_r35_ssi_bench_format_summary"
+            app:title="@string/yt_r35_ssi_bench_format" />
 
     </PreferenceCategory>
 </PreferenceScreen>

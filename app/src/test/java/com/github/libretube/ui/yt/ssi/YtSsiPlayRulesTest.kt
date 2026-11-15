@@ -74,6 +74,8 @@ class YtSsiPlayRulesTest {
         )
         assertEquals(
             listOf(
+                // SSI-2: the relevance band comes first
+                YtSsiReason.Band(YtSsiBand.LOW, ai = false),
                 YtSsiReason.Lexical(2, listOf("treffer")),
                 YtSsiReason.Semantic(5, "m/1"),
                 YtSsiReason.FromYouTubeSearch,
@@ -83,5 +85,37 @@ class YtSsiPlayRulesTest {
             ),
             reasons,
         )
+    }
+
+    @Test
+    fun ssi2ReasonsNameTheAiGradeAndTheBorders() {
+        val intent = YtSsiIntentParser.parse("Treffer", 1_800_000_000_000L, ZoneId.of("UTC"))
+        val reasons = YtSsiPlayRules.reasons(
+            hit("a", 0, 1000).copy(
+                rank = 1,
+                localRank = 6,
+                band = YtSsiBand.HIGH,
+                ai = YtSsiAiGrade(3, 2..5),
+                span = YtSsiSpan(0, 900, 0, YtSsiTiming.WORD, verified = true, qualifier = true),
+            ),
+            intent,
+            listOf("treffer"),
+        )
+        assertEquals(YtSsiReason.Band(YtSsiBand.HIGH, ai = true), reasons[0])
+        assertEquals(YtSsiReason.AiGrade(3, before = 6, after = 1, span = true, cached = false), reasons[1])
+        assertEquals(YtSsiReason.Bounds(verified = true, qualifier = true, label = YtSsiPrecisionLabel.WORD), reasons.last())
+    }
+
+    @Test
+    fun clipsFollowTheCheckedSpan() {
+        val withSpan = hit("a", 10_000, 12_000, 10_500).copy(span = YtSsiSpan(9_800, 15_000, 9_500, YtSsiTiming.WORD, verified = true, qualifier = true))
+        assertEquals(9_500L, YtSsiPlayRules.playStart(withSpan, segment))
+        assertEquals(15_000L + YtSsiPlayRules.TAIL_MS, YtSsiPlayRules.clipEnd(withSpan))
+        val clip = YtSsiPlayRules.clips(listOf(withSpan), segments = { segment }).single()
+        assertEquals(9_500L, clip.startMs)
+        assertEquals(16_000L, clip.endMs)
+        // without a span the SSI-1 rules stay
+        val plain = hit("a", 10_000, 16_000, 14_200)
+        assertEquals(YtSsiPlayRules.start(segment, 14_200), YtSsiPlayRules.playStart(plain, segment))
     }
 }

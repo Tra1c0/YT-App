@@ -36,8 +36,11 @@ enum class YtSsiAvailability {
 /** What part of a video matched. */
 enum class YtSsiMatch { TITLE, DESCRIPTION, CHAPTER, TRANSCRIPT_LEXICAL, TRANSCRIPT_SEMANTIC }
 
-/** Which retrieval found it. */
-enum class YtSsiMethod { FTS_BM25, EMBEDDING, AI_REWRITE, YOUTUBE_SEARCH }
+/** Which retrieval found it. AI_RERANK: the optional AI grading of the top passages (Deep). */
+enum class YtSsiMethod { FTS_BM25, EMBEDDING, AI_REWRITE, YOUTUBE_SEARCH, AI_RERANK }
+
+/** How a video's passages were cut: by the rules of SSI-1, or at drops of meaning between sentences. */
+enum class YtSsiSegmentation { RULES, SEMANTIC }
 
 /** A video as SSI keeps it. [uploaded] epoch ms or null; [language] a base code ("de") or null. */
 data class YtSsiDoc(
@@ -57,6 +60,7 @@ data class YtSsiDoc(
     val chapters: List<YtSsiChapter> = emptyList(),
     val indexedAt: Long = 0,
     val version: Int = YtSsiVersions.ANALYSIS,
+    val segmentation: YtSsiSegmentation = YtSsiSegmentation.RULES,
 ) {
     val availability: YtSsiAvailability get() = if (vanished) YtSsiAvailability.VANISHED_ARCHIVED else YtSsiAvailability.PUBLIC
 }
@@ -85,9 +89,50 @@ data class YtSsiMark(val char: Int, val ms: Long)
 
 /** Versions stored with the index and every hit: a change re-indexes or re-embeds. */
 object YtSsiVersions {
-    /** Segmentation and folding. */
-    const val ANALYSIS = 1
+    /**
+     * Segmentation and folding. 2 (SSI-2): passages are cut where the meaning changes when the
+     * model is there ([YtSsiSemanticSegmenter]); the rules of 1 stay the fallback.
+     */
+    const val ANALYSIS = 2
+
+    /**
+     * The oldest analysis whose passages are still valid rule passages: such a video is not read
+     * again but re-cut in the background ([YtSsiIndexer.migrate]), one at a time.
+     */
+    const val MIN_KEPT = 1
+
+    /**
+     * Stored with every vector (in the model's version string). Apart from [ANALYSIS] so a passage
+     * that stays the same keeps its vector when the analysis changes elsewhere.
+     */
+    const val VECTORS = 1
 }
+
+/** Relevance as a band of evidence, never a percentage. */
+enum class YtSsiBand { HIGH, MEDIUM, LOW }
+
+/**
+ * The statement a hit stands for, with checked borders: [startMs]..[endMs] holds the whole
+ * sentence(s) of the match, plus a following sentence that qualifies it ("aber", "nicht", "but")
+ * when [qualifier]. [playStartMs] is where playback begins (a moment before [startMs], or before
+ * the quote when the sentence starts long before it). [timing] is how exact these times are:
+ * never more than the marks they come from. [verified] is false when a border had to be cut
+ * (no sentence end in reach, or no marks).
+ */
+data class YtSsiSpan(
+    val startMs: Long,
+    val endMs: Long,
+    val playStartMs: Long,
+    val timing: YtSsiTiming,
+    val verified: Boolean,
+    val qualifier: Boolean = false,
+)
+
+/**
+ * The AI's grade of a passage (Deep re-rank): [relevant] 0 (does not fit) to 3 (exactly it),
+ * [words] the statement inside the passage as word offsets, when it named one.
+ */
+data class YtSsiAiGrade(val relevant: Int, val words: IntRange? = null, val cached: Boolean = false)
 
 /**
  * One result. Relevance and timing precision are separate on purpose: there is no single
@@ -125,6 +170,14 @@ data class YtSsiHit(
     val analysisVersion: Int = YtSsiVersions.ANALYSIS,
     /** The embedding model of the semantic part, null when it was not used. */
     val modelVersion: String? = null,
+    /** Relevance band (rank evidence and the AI's grade), shown apart from the timing. */
+    val band: YtSsiBand = YtSsiBand.LOW,
+    /** The checked statement borders; null for a title-only hit. */
+    val span: YtSsiSpan? = null,
+    /** The AI's grade when Deep re-ranked the top passages. */
+    val ai: YtSsiAiGrade? = null,
+    /** The place before the AI re-rank (equal to [rank] without it). */
+    val localRank: Int = rank,
 )
 
 /** Things to say about a hit beyond its matches. */

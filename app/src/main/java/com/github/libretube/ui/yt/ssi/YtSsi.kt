@@ -40,6 +40,8 @@ object YtSsi {
     private const val PREFS = "yt_ssi"
     private const val KEY_THROTTLE = "throttle"
     private const val KEY_LAST = "last_run"
+    private const val KEY_LEARN_STATE = "learn"
+    private const val KEY_RERANK_DAY = "rerank_day"
     const val WORK_PERIODIC = "YtSsiIndex"
     const val WORK_NOW = "YtSsiIndexNow"
     private const val PERIOD_HOURS = 12L
@@ -68,6 +70,65 @@ object YtSsi {
     fun feed(): Boolean = PreferenceHelper.getBoolean(YtSsiPrefs.KEY_FEED, YtSsiPrefs.DEFAULT_FEED)
     fun deepBudget(): Int = YtSsiPrefs.budget(PreferenceHelper.getString(YtSsiPrefs.KEY_DEEP_BUDGET, YtSsiPrefs.DEFAULT_DEEP_BUDGET.toString()))
     fun allowAi(): Boolean = PreferenceHelper.getBoolean(YtSsiPrefs.KEY_ALLOW_AI, YtSsiPrefs.DEFAULT_ALLOW_AI)
+    fun aiRerank(): Boolean = allowAi() && PreferenceHelper.getBoolean(YtSsiPrefs.KEY_AI_RERANK, YtSsiPrefs.DEFAULT_AI_RERANK)
+    fun learnOn(): Boolean = PreferenceHelper.getBoolean(YtSsiPrefs.KEY_LEARN, YtSsiPrefs.DEFAULT_LEARN)
+
+    // ---- learning from feedback (SSI-2) ----
+
+    @Volatile
+    private var learnCache: YtSsiLearnState? = null
+
+    fun learnState(context: Context): YtSsiLearnState =
+        learnCache ?: YtSsiLearning.decode(prefs(context).getString(KEY_LEARN_STATE, null)).also { learnCache = it }
+
+    /** The fusion weights for [intent] (learnt ones when learning is on). */
+    fun weights(context: Context, intent: YtSsiIntent, now: Long = System.currentTimeMillis()): YtSsiWeights =
+        if (learnOn()) YtSsiLearning.weights(intent.weights, intent.kind, learnState(context), now) else intent.weights
+
+    /** The meaning search's cut-off (learnt when learning is on). */
+    fun minCosine(context: Context, now: Long = System.currentTimeMillis()): Float =
+        if (learnOn()) YtSsiLearning.minCosine(learnState(context), now) else YtSsiVectorIndex.MIN_COSINE
+
+    /**
+     * Stores [verdict] on [hit] and, when learning is on, learns from it. Call off the main
+     * thread (one DB insert).
+     */
+    @Synchronized
+    fun feedback(context: Context, hit: YtSsiHit, intent: YtSsiIntent, verdict: YtSsiVerdict, semanticUsed: Boolean) {
+        val now = System.currentTimeMillis()
+        val event = YtSsiLearning.feedback(hit, intent, verdict, now, semanticUsed)
+        runCatching { db.putFeedback(event) }.onFailure { Log.w(TAG, "feedback not stored", it) }
+        if (!learnOn()) return
+        val next = YtSsiLearning.learn(learnState(context), event)
+        learnCache = next
+        prefs(context).edit { putString(KEY_LEARN_STATE, YtSsiLearning.encode(next)) }
+    }
+
+    /** "Gelerntes zurücksetzen": the learnt values and the stored verdicts go. */
+    @Synchronized
+    fun resetLearning(context: Context) {
+        learnCache = YtSsiLearnState()
+        prefs(context).edit { remove(KEY_LEARN_STATE) }
+        runCatching { db.clearFeedback() }
+    }
+
+    // ---- AI re-rank budget (SSI-2) ----
+
+    private fun today(now: Long) = Math.floorDiv(now + offsetMs(now), 24L * 60 * 60 * 1000)
+
+    private fun rerankDay(context: Context): YtSsiRerank.Day = runCatching {
+        prefs(context).getString(KEY_RERANK_DAY, null)?.split(':')?.let { YtSsiRerank.Day(it[0].toLong(), it[1].toInt()) }
+    }.getOrNull() ?: YtSsiRerank.Day()
+
+    /** Takes one AI re-rank request from today's budget; false when it is used up. */
+    @Synchronized
+    fun spendRerank(context: Context, now: Long = System.currentTimeMillis()): Boolean {
+        val next = YtSsiRerank.spend(rerankDay(context), today(now)) ?: return false
+        prefs(context).edit { putString(KEY_RERANK_DAY, "${next.day}:${next.count}") }
+        return true
+    }
+
+    fun rerankUsedToday(context: Context, now: Long = System.currentTimeMillis()): Int = YtSsiRerank.used(rerankDay(context), today(now))
 
     // ---- throttle ----
 
@@ -133,7 +194,16 @@ object YtSsi {
     }
 
     @Serializable
-    data class LastRun(val at: Long = 0, val archive: Int = 0, val online: Int = 0, val embedded: Int = 0, val note: String? = null)
+    data class LastRun(
+        val at: Long = 0,
+        val archive: Int = 0,
+        val online: Int = 0,
+        val embedded: Int = 0,
+        val note: String? = null,
+        /** SSI-2: videos re-cut by meaning and checked unchanged in this run. */
+        val recut: Int = 0,
+        val unchanged: Int = 0,
+    )
 
     fun lastRun(context: Context): LastRun? = runCatching {
         prefs(context).getString(KEY_LAST, null)?.let { json.decodeFromString(LastRun.serializer(), it) }
@@ -144,7 +214,9 @@ object YtSsi {
     /**
      * One background run: the archive's transcripts (local), then captions of recent feed videos
      * (at most [YtSsiPrefs.FEED_PER_RUN], 2–8 s apart like the archive, stops at a bot check),
-     * then vectors for passages without one, until [YtSsiPrefs.RUN_BUDGET_MS].
+     * then the SSI-2 re-cut by meaning ([YtSsiIndexer.migrate], at most half of what is left of
+     * the budget, so vectors still get made), then vectors for passages without one, until
+     * [YtSsiPrefs.RUN_BUDGET_MS].
      */
     suspend fun run(context: Context, stopped: () -> Boolean): LastRun {
         val start = System.currentTimeMillis()
@@ -172,11 +244,17 @@ object YtSsi {
             }
             if (note == null) ranOk(context, "background")
         }
+        var migration = YtSsiIndexer.Migration()
+        if (!stopped()) {
+            val now = System.currentTimeMillis()
+            val until = now + (deadline - now).coerceAtLeast(0) / 2
+            migration = runCatching { indexer.migrate(until) }.onFailure { if (it is CancellationException) throw it }.getOrDefault(migration)
+        }
         var embedded = 0
         if (!stopped() && YtSsiModels.installed(context)) {
             embedded = runCatching { indexer.embedPending(deadline) }.onFailure { if (it is CancellationException) throw it }.getOrDefault(0)
         }
-        return LastRun(System.currentTimeMillis(), archive, online, embedded, note).also { saveLastRun(context, it) }
+        return LastRun(System.currentTimeMillis(), archive, online, embedded, note, migration.recut, migration.kept).also { saveLastRun(context, it) }
     }
 
     // ---- diagnosis ----
@@ -201,11 +279,27 @@ object YtSsi {
             append(", background ").append(if (background()) "on" else "off")
             append(", last run ")
             if (last == null || last.at == 0L) append("never") else {
-                append(YtCrashLog.formatTime(last.at)).append(" (archive ${last.archive}, online ${last.online}, vectors ${last.embedded}")
+                append(YtCrashLog.formatTime(last.at)).append(" (archive ${last.archive}, online ${last.online}, vectors ${last.embedded}, re-cut ${last.recut}, unchanged ${last.unchanged}")
                 last.note?.let { append(", $it") }
                 append(")")
             }
             paused?.let { append(", paused until ${YtCrashLog.formatTime(it)}") }
+            // SSI-2
+            runCatching { db.segmentationCounts() }.getOrNull()?.let { counts ->
+                append(", segmentation meaning ${counts[YtSsiSegmentation.SEMANTIC] ?: 0} / rules ${counts[YtSsiSegmentation.RULES] ?: 0}")
+            }
+            append(", AI re-rank ").append(if (aiRerank()) "on" else "off")
+            append(" (${rerankUsedToday(context)}/${YtSsiRerank.CALLS_PER_DAY} today)")
+            append(", learning ").append(if (learnOn()) "on" else "off").append(": ")
+            append(YtSsiLearning.summary(learnState(context), System.currentTimeMillis()))
+            runCatching { db.feedbackCount() }.getOrNull()?.let { append(", $it verdicts stored") }
+            YtSsiBenchRunner.last(context)?.let { run ->
+                val m = run.current
+                append(", benchmark ${YtCrashLog.formatTime(m.at)}: R@1 %.2f R@3 %.2f R@5 %.2f nDCG@5 %.2f dev P50 %s P95 %s ms, no-match %.2f, latency P50 %d P95 %d ms (SSI-1 way: R@3 %.2f)".format(
+                    java.util.Locale.ROOT, m.recall1, m.recall3, m.recall5, m.ndcg5, m.deviationP50Ms?.toString() ?: "–", m.deviationP95Ms?.toString() ?: "–",
+                    m.noMatch, m.latencyP50Ms, m.latencyP95Ms, run.baseline.recall3,
+                ))
+            }
         }
     }
 
