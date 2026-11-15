@@ -104,6 +104,9 @@ class YtEditorState(app: Application) : AndroidViewModel(app) {
     private var saveJob: Job? = null
     private var dirty = false
 
+    /** The active theme's look (light/dark, base design) changed: the activities are rebuilt once saved. */
+    private var rebuild = false
+
     val isActiveTheme: Boolean get() = doc?.id != null && doc?.id == activeId
 
     fun open(id: String?) {
@@ -150,6 +153,7 @@ class YtEditorState(app: Application) : AndroidViewModel(app) {
         val before = h.current
         val next = h.run(YtCommand(label, coalesce, change))
         if (next === before) return
+        if (isActiveTheme && (next.mode != before.mode || next.base != before.base || next.meta.wordmark != before.meta.wordmark)) rebuild = true
         changed(next)
     }
 
@@ -206,7 +210,7 @@ class YtEditorState(app: Application) : AndroidViewModel(app) {
         val stamped = d.copy(meta = d.meta.copy(modified = System.currentTimeMillis()))
         // a short synchronous write: the process may be about to go
         runCatching { YtBuilderStore.save(context, stamped) }
-        if (stamped.id == activeId) YtBuilderActive.set(stamped, YtBuilderStore.assets(context, stamped.id))
+        if (stamped.id == activeId) published(stamped)
     }
 
     private suspend fun saveNow() {
@@ -219,8 +223,15 @@ class YtEditorState(app: Application) : AndroidViewModel(app) {
             dirty = true
             note = context.getString(com.github.libretube.R.string.yt_builder_save_failed)
         } else if (stamped.id == activeId) {
-            YtBuilderActive.set(stamped, YtBuilderStore.assets(context, stamped.id))
+            published(stamped)
         }
+    }
+
+    /** The saved active theme becomes the app's; a changed look rebuilds the screens (YtThemeRefresh). */
+    private fun published(doc: YtThemeDoc) {
+        YtBuilderActive.set(doc, YtBuilderStore.assets(context, doc.id))
+        if (rebuild && YtDesign.current() == YtDesign.CUSTOM) YtThemeRefresh.bump()
+        rebuild = false
     }
 
     override fun onCleared() {
