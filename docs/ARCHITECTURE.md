@@ -645,7 +645,9 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   exclusions, language; later-phase intents flagged), `YtSsiFusion` (BM25, RRF, constraints),
   `YtSsiRanker`, `YtSsiVectors` (int8, top-K), `YtSsiTokenizer` (Unigram from tokenizer.json),
   `YtSsiEmbedder` (ONNX Runtime, multilingual-e5-small int8; arm64 only, telemetry provider removed),
-  `YtSsiModels` (download to `filesDir/yt_ssi/model/`, SHA-256 from the server, not pinned yet),
+  `YtSsiModels` (download to `filesDir/yt_ssi/model/`; checksum from the hub's file listing via pure
+  `YtSsiHfChecksum`: LFS SHA-256 or git blob SHA-1 — never the storage server's ETag, which is a
+  storage hash; not pinned yet; Diagnose shows the last check),
   `YtSsiIndexer`, `YtSsi` (glue, `YtSsiWorker`, Diagnose "SSI"), `YtSsiSearch` (Instant/Deep,
   progressive, cancellable, archive-style back-off), `YtSsiAiPlan` (Deep only, via
   `YtScriptTextAis`), `YtSsiPlayRules`, `YtSsiPrefs`, service module `YtSsiClipModule` (clip
