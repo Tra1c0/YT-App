@@ -32,4 +32,8 @@ interface SubscriptionsFeedDao {
 
     @Query("DELETE FROM feedItem")
     suspend fun deleteAll()
+
+    // YT: a video that turned private or was deleted leaves the cached feed (YtStreamFailure)
+    @Query("DELETE FROM feedItem WHERE videoId = :videoId")
+    suspend fun ytDeleteVideo(videoId: String)
 }

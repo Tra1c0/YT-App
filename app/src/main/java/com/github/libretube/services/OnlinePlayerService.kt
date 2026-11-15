@@ -29,7 +29,6 @@ import com.github.libretube.db.DatabaseHelper
 import com.github.libretube.extensions.TAG
 import com.github.libretube.extensions.parcelable
 import com.github.libretube.extensions.setMetadata
-import com.github.libretube.extensions.toastFromMainDispatcher
 import com.github.libretube.extensions.toastFromMainThread
 import com.github.libretube.extensions.updateParameters
 import com.github.libretube.helpers.PlayerHelper
@@ -79,6 +78,9 @@ open class OnlinePlayerService : AbstractPlayerService() {
 
     // YT: attempts to bring a failed live stream back, in a row (see YtLiveRecovery)
     private var liveAttempts = 0
+
+    // YT: the queue a fresh start cleared, until its first video loaded (see YtStreamFailure)
+    private var ytQueueBefore: YtStreamFailure.QueueBefore? = null
 
     // YT: whether the video before started with its channel's own speed (see applyChannelSpeed)
     private var lastWasChannelSpeed = false
@@ -138,7 +140,11 @@ open class OnlinePlayerService : AbstractPlayerService() {
         channelId = playerData.channelId
         startTimestampSeconds = playerData.timestamp
 
-        if (!playerData.keepQueue) PlayingQueue.clear()
+        // YT: the queue before is kept aside, put back if this first video fails to load
+        if (!playerData.keepQueue) {
+            ytQueueBefore = YtStreamFailure.QueueBefore.take()
+            PlayingQueue.clear()
+        }
 
         exoPlayer?.addListener(playerListener)
         trackSelector?.updateParameters {
@@ -157,6 +163,7 @@ open class OnlinePlayerService : AbstractPlayerService() {
 
         // start loading the video info while keeping a reference to the job
         // so that it can be canceled once a different video is loaded
+        val ytLoadingId = videoId
         fetchVideoInfoJob = scope.launch {
             streams = withContext(Dispatchers.IO) {
                 try {
@@ -164,11 +171,15 @@ open class OnlinePlayerService : AbstractPlayerService() {
                         DeArrowUtil.deArrowStreams(it, videoId)
                     }
                 } catch (e: Exception) {
+                    // YT: a newer video was picked: no error for this one
+                    if (e is kotlinx.coroutines.CancellationException) throw e
                     Log.e(TAG(), e.stackTraceToString())
-                    toastFromMainDispatcher(e.localizedMessage.orEmpty())
+                    // YT: the page shows why, with retry / open in YouTube / next (YtStreamFailure)
+                    withContext(Dispatchers.Main) { ytLoadFailed(ytLoadingId, e) }
                     return@withContext null
                 }
             } ?: return@launch
+            ytQueueBefore = null
 
             streams?.toStreamItem(videoId)?.let {
                 // save the current stream to the queue
@@ -195,6 +206,19 @@ open class OnlinePlayerService : AbstractPlayerService() {
 
         fetchVideoInfoJob?.join()
         fetchVideoInfoJob = null
+    }
+
+    /** YT: tells the page (playlist metadata) that [id]'s streams failed; a toast if no page is in sight. */
+    private fun ytLoadFailed(id: String, error: Exception) {
+        if (id != videoId) return
+        val extras = YtStreamFailure.failed(id, error, ytQueueBefore)
+        ytQueueBefore = null
+        extras.putString(IntentData.videoId, id)
+        updatePlaylistMetadata { setExtras(extras) }
+        val kind = YtStreamFailure.kindOf(extras) ?: return
+        // a video made private or deleted disappears from the feed and the upcoming queue
+        YtStreamFailure.forget(id, kind)
+        if (!YtStreamFailure.pageShowing) toastFromMainThread(YtStreamFailure.titleRes(kind))
     }
 
     private fun isLive() = streams?.isLive == true || exoPlayer?.isCurrentMediaItemLive == true
@@ -292,6 +316,8 @@ open class OnlinePlayerService : AbstractPlayerService() {
         this.streams = null
         // YT: another video starts with its own attempts; a retry of the same live stream keeps them
         if (!isVideoIdSet() || videoId != this.videoId) liveAttempts = 0
+        // YT: a video that failed as gone for everyone leaves the queue once another one plays
+        YtStreamFailure.leave(videoId)
 
         super.navigateVideo(videoId)
     }
