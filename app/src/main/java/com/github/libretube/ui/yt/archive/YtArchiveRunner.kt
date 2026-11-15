@@ -254,7 +254,8 @@ class YtArchiveRunner(private val context: Context) {
             raise(planItem(meta), YtArchiveTier.AUDIO, targets, budget)
             val saved = store[meta.videoId] ?: continue
             YtArchive.notifyHighRisk(context, saved)
-            if (saved.tier.level >= YtArchiveTier.AUDIO.level && YtArchive.autoScript() && saved.scriptState == null) {
+            // the user asked for high-risk audio to be analysed at once; the script part caps it per day
+            if (saved.tier.level >= YtArchiveTier.AUDIO.level && saved.scriptState == null) {
                 script(saved, audio = true)
             }
         }

@@ -18,7 +18,7 @@
     <string name="yt_r31_archive_notify">Benachrichtigung bei hohem Risiko</string>
     <string name="yt_r31_archive_notify_summary">„… könnte verschwinden – gesichert“, einmal je Video</string>
     <string name="yt_r31_archive_auto_script">Skript automatisch erstellen</string>
-    <string name="yt_r31_archive_auto_script_summary">Bei verschwundenen Videos (aus dem Transkript) und bei Videos mit hohem Risiko (aus dem gesicherten Ton). Nutzt deinen KI-Anbieter und kostet Geld. Aus: der Knopf je Eintrag.</string>
+    <string name="yt_r31_archive_auto_script_summary">Bei verschwundenen Videos, aus dem Transkript. Nutzt deinen KI-Anbieter und kostet Geld. Aus: der Knopf je Eintrag. Ton von Videos mit hohem Risiko wird immer analysiert (höchstens 5 am Tag), wenn ein KI-Anbieter eingerichtet ist.</string>
     <string name="yt_r31_archive_ai_risk">KI-Einschätzung</string>
     <string name="yt_r31_archive_ai_risk_summary">Der Risiko-Schätzer fragt zu neuen Videos auch deinen KI-Anbieter (Titel, Kanal, Beschreibung). Kostet Geld.</string>
     <string name="yt_r31_archive_usage">Belegt</string>

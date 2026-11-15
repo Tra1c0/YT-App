@@ -562,6 +562,40 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   `notification_worker`). Settings → Benachrichtigungen holds both groups (guide target
   `NOTIFICATIONS`). CI `build.yml` posts "started" and "published" to secret `YT_PUSH_URL`
   (main only, never fails the build).
+- Archive of vanished videos (round 31, off by default; Settings → Archiv): contract
+  `Y/archive/YtArchiveContract.kt` (tiers TEXT/AUDIO/VIDEO, candidate, `YtRiskScore`,
+  `YtArchiveFiles` layout under `filesDir/yt_archive/<id>/`, parts registry `YtArchiveParts`).
+  - Core in `Y/archive/`: `YtArchiveMeta` (meta.json, chapters `{start ms, title}`), pure
+    `YtArchiveRules` (capacity steps 5 MB–15 GB, plan, fall-back VIDEO→AUDIO→TEXT→drop, hard cap =
+    budget + ¼ (50 MB–1 GB) for high risk, retries 1/2/4/8 days) and `YtArchiveThrottle` (per run
+    15 text / 6 media / 3 urgent / 5 checks, 20 media a day, 2–8 s jitter, bot check or 429 → pause
+    6 h doubling to 48 h, 8 min per run), `YtArchiveStore` (lazy index, atomic writes, zip export),
+    `YtArchiveText` (transcript gz JSON lines, script reader), `YtArchivePrefs` (keys
+    `yt_archive_enabled`, `_capacity_mb`, `_top`, `_notify_risk`, `_auto_script`, `_ai_risk`),
+    `YtArchiveFetcher` (NewPipe streams, `YtNewsCaptions.pick`, storyboards, LibreTube ranged/SABR
+    download providers), `YtArchiveRunner` (modes text/media/urgent/check/now; high-risk audio is
+    analysed at once), `YtArchive` (glue: schedule, `onVanished` from `YtStreamFailure.forget`,
+    vanish confirmed by oEmbed before `observe(true)`, notification channel `yt_archive`, kept-copy
+    lookup incl. LibreTube downloads, Diagnose), `YtArchiveUi` (sizes, badge text, reading dialog,
+    export). Worker `J/workers/YtArchiveWorker.kt` (jobs `YtArchiveText` 6 h any network,
+    `YtArchiveMedia` 6 h unmetered + charging, one-off `YtArchiveUrgent`/`Check`/`Now`). Settings
+    `J/ui/preferences/YtArchiveSettings.kt` (`R/xml/yt_r31_archive_settings.xml`), slider
+    `J/ui/preferences/YtArchiveCapacityPreference.kt`, player `J/ui/activities/YtArchivePlayerActivity.kt`
+    (144p + audio merged, or storyboard stills). Badge in `YtStreamErrorModule`; hold-menu row in
+    `YtQuickSheet`.
+  - Risk estimator `Y/archive/risk/`: pure `YtRiskText` (tokens, cold-start keywords), `YtRiskModel`
+    (global Beta 0.5/30, channel Beta-Binomial strength 20, shrunk word rates, keyword weights
+    fading with labels, optional AI term, high ≥ 0.35, reason text, decay half-life 180 d, caps),
+    `YtRiskAiRules` + `YtRiskEngine` (batches of 25, 4 requests a day, asked once per video),
+    `YtRiskAiClient` (completion over the news-summary provider, key and model), Android side
+    `YtArchiveRisk` (`install()`, file `filesDir/yt_archive_risk.json`, `describe()`).
+  - Script `Y/archive/script/`: format `YtArchiveScript` (script.json v1), `YtScriptInput`,
+    fuzzy check `YtScriptCheck` (≥ 85 % words from the source, names only if said), `YtScriptDialogue`
+    (chunks of 9000 chars, repair, plain fallback), text requests `YtScriptTextAis`, audio
+    `YtScriptAudio` + `YtScriptAudioAis` (OpenAI diarized transcription, Gemini inline/Files API,
+    Mistral Voxtral diarize; endpoints from search summaries, untested live), caps `YtScriptLedger`
+    (20 text / 5 audio a day, one script per video, no audio > 3 h), `YtScriptMaker`, Android side
+    `YtArchiveScripts` (`register()`, `diagnosis()`). No voice data is stored.
 - Security: notes `docs/SICHERHEIT.md`; emulator-only switches guarded by `J/helpers/YtGuard.kt`.
 
 ## Build, CI, tests, docs system
@@ -643,7 +677,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (391 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (422 files; generated, do not edit)</summary>
 
 - `J/helpers/` (25): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDeadSubs, YtDesign,
@@ -657,14 +691,15 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtPlaybackGuards, YtPositionLedger, YtPositionRules, YtPushService, YtResumeNotification,
   YtScrubModule, YtServiceModules, YtServiceSoftClose, YtSessionModule, YtSoundModule,
   YtStreamFailure
-- `J/ui/activities/` (1): YtSignInActivity
-- `J/ui/preferences/` (3): YtChannelSpeedsPreference, YtInteractionSettings, YtUpdateNotifyPrefs
+- `J/ui/activities/` (2): YtArchivePlayerActivity, YtSignInActivity
+- `J/ui/preferences/` (5): YtArchiveCapacityPreference, YtArchiveSettings,
+  YtChannelSpeedsPreference, YtInteractionSettings, YtUpdateNotifyPrefs
 - `J/ui/views/` (2): YtBottomNavigationView, YtEdgeScrollView
 - `J/util/` (21): YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules, YtNotifyChannels, YtPush,
   YtPushRules, YtQueueEdit, YtQueuePersist, YtQueueStore, YtReleaseNotes, YtSelfUpdater, YtStorage,
   YtStorageRules, YtStreamError, YtTitleCalm, YtUpdateNotifier, YtUpdateNotifyRules, YtUpdateRules,
   YtUpdateWatch, YtUpdateWatchRules
-- `J/workers/` (1): YtUpdateCheckWorker
+- `J/workers/` (2): YtArchiveWorker, YtUpdateCheckWorker
 - `Y/` (116): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
   FrequencyMotion, FrequencyPillBars, FrequencyPulse, FrequencyPulseMath, FrequencyTimeBar,
   FrequencyVisuals, FrostHome, GlassHome, KieselDiscover, KieselHome, MovoHome, MovoWatch, PopHome,
@@ -683,6 +718,12 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtTitles, YtTopicChip, YtTopicSuggest, YtUndoPill, YtVibes, YtWatch, YtWatchDesigns, YtWatchEdge,
   YtWatchPages, YtWaveShape, YtWaveView
 - `Y/account/` (4): YtAccount, YtAccountSheet, YtImport, YtInnerTube
+- `Y/archive/` (11): YtArchive, YtArchiveContract, YtArchiveFetcher, YtArchiveMeta, YtArchivePrefs,
+  YtArchiveRules, YtArchiveRunner, YtArchiveStore, YtArchiveText, YtArchiveThrottle, YtArchiveUi
+- `Y/archive/risk/` (6): YtArchiveRisk, YtRiskAiClient, YtRiskAiRules, YtRiskEngine, YtRiskModel,
+  YtRiskText
+- `Y/archive/script/` (10): YtArchiveScript, YtArchiveScripts, YtScriptAudio, YtScriptAudioAis,
+  YtScriptCheck, YtScriptDialogue, YtScriptInput, YtScriptLedger, YtScriptMaker, YtScriptTextAis
 - `Y/feed/` (24): YtDeadSubsPreference, YtDeadSubsRules, YtDragRules, YtFeed, YtFeedEngine,
   YtFeedFresh, YtFeedRules, YtFeedTopics, YtFeedTopicsSession, YtFeedTopicsWords, YtHideRules,
   YtHomePreferences, YtHomeTestHooks, YtQueueRule, YtSeenHide, YtSeenMark, YtSession, YtSubsOrder,

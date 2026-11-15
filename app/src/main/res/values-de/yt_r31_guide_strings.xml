@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_r31_guide_archive_t">Archiv für verschwundene Videos</string>
+    <string name="yt_r31_guide_archive_b">Einstellungen → Archiv (standardmäßig aus): sichert Videos aus dem Feed vorsorglich – Text für alle, Ton und 144p im WLAN beim Laden, im Rahmen deiner Kapazität. Ein kleines Lernmodell warnt, wenn ein Video verschwinden könnte. Privat gestellt oder gelöscht: alte Version abspielen oder Skript lesen.</string>
+</resources>

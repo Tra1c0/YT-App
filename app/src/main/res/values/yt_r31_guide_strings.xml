@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_r31_guide_archive_t">Archive of vanished videos</string>
+    <string name="yt_r31_guide_archive_b">Settings → Archive (off by default): keeps feed videos ahead of time – text for all, sound and 144p on Wi-Fi while charging, within the capacity you set. A small learning model warns when a video may vanish. Made private or deleted: play the old version or read the script.</string>
+</resources>

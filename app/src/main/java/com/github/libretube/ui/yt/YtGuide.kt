@@ -75,6 +75,7 @@ object YtGuide {
                 item("swipe", R.string.yt_guide_swipe_t, R.string.yt_guide_swipe_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_card_swipe"),
                 item("pause", R.string.yt_guide_pause_t, R.string.yt_guide_pause_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_paused_channels_list"),
                 item("dead_subs", R.string.yt_r29_guide_dead_subs_t, R.string.yt_r29_guide_dead_subs_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_dead_subs"),
+                item("archive", R.string.yt_r31_guide_archive_t, R.string.yt_r31_guide_archive_b),
                 item("drag_mini", R.string.yt_guide_drag_mini_t, R.string.yt_guide_drag_mini_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_home_drag"),
                 item("lens", R.string.yt_guide_lens_t, R.string.yt_guide_lens_b, R.string.yt_guide_where_home, YtGuideTarget.INTERACTION, "yt_home_drag"),
                 item("hold_menu", R.string.yt_guide_hold_menu_t, R.string.yt_guide_hold_menu_b),

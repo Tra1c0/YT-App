@@ -44,6 +44,8 @@ object YtDiagnosis {
             add("News summaries" to runCatching { com.github.libretube.ui.yt.news.YtNewsSummaryKey.diagnosis() }.getOrNull())
             // the archive of vanished videos: tiers, MB used/budget, last run, last error
             add("Archiv" to runCatching { com.github.libretube.ui.yt.archive.YtArchive.diagnosis(context) }.getOrNull())
+            add("Archiv-Risiko" to runCatching { com.github.libretube.ui.yt.archive.risk.YtArchiveRisk.describe() }.getOrNull())
+            add("Archiv-Skript" to runCatching { com.github.libretube.ui.yt.archive.script.YtArchiveScripts.diagnosis() }.getOrNull())
             add("YouTube account" to if (runCatching { YtAccount.signedIn }.getOrDefault(false)) "yes" else "no")
             add("Queue" to runCatching { PlayingQueue.size().toString() }.getOrNull())
             add("Saved queue" to runCatching { savedQueue() }.getOrNull())
