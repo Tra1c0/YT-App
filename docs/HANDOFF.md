@@ -8,7 +8,7 @@ not here.
 
 ## Current state
 
-- Latest release: build 136 on `main` (per-build details: Build log below). Recent rounds built:
+- Latest release: build 137 on `main` (per-build details: Build log below). Recent rounds built:
   News overlay (pinch on the home; stories; cited summaries with a provider choice: OpenAI,
   Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
@@ -27,7 +27,7 @@ not here.
 
 ## Open points
 
-- APK clean-up (round 32, untested on the phone): all-files access return + rescan, `createDeleteRequest`, uninstall dialogs, install from `local.apk`, the quiet start-of-build clean-up. Next asked by the user: theme builder ("Eigenes Design"; ask what "fluent in YouTube" means), Ambilight, then a local search/classification framework (index, on-device embeddings, own classifier) with supercut + memory search.
+- APK clean-up (round 32, build 137, untested on the phone): all-files access return + rescan, `createDeleteRequest`, uninstall dialogs, install from `local.apk`, the quiet start-of-build clean-up. Next asked by the user: theme builder ("Eigenes Design"; ask what "fluent in YouTube" means), Ambilight, then SSI (search framework; user's requirement file was assessed in chat: phase 1 = local index from archive + fetched captions with word timings from YouTube's ASR json3, FTS + on-device ONNX embeddings + RRF, intent rules + AI, moments with context, clip collection; WhisperX/PySceneDetect/Qdrant/ML Kit/Data API/IFrame replaced; visual search only via Gemini later).
 - Archive (round 31, build 136, untested on the phone and against live YouTube/AI): oEmbed codes for private/deleted, raw stream and SABR downloads, storyboard fetch, player/export/badge/slider UI, all three audio AI paths (endpoints from search summaries; OpenAI's diarize model reportedly retires 2027-02-26), risk weights hand-set. Known gaps: two jobs at once may fetch twice; a half-failed text save is not retried; the list shows the newest 150.
 - Stream error card (build 135, untested on the phone): look per design, open-in-YouTube intent, toast vs card. YouTube answers private videos with LOGIN_REQUIRED "Please sign in" (seen with KyUjsUuM8Gk).
 - Round 29 (untested on the phone): Formen minimize (window shape/colour during the drag, picture
@@ -167,6 +167,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 137: old YT APK / old build clean-up on the storage page, quiet clean-up after updates.
 - 136: archive of vanished videos (tiers, capacity slider, risk estimator with local learning + optional AI, script with speakers, settings, player, badge).
 - 135: stream error card instead of endless loading, queue kept, private/deleted videos leave feed and queue.
 - 134: seamless minimize (shared part, Formen pilot), description link groups + ad folding, dead subscriptions finder.
