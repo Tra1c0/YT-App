@@ -45,6 +45,14 @@ object YtThemeCodec {
             }
             JsonObject(m)
         },
+        // schema 1: `animations` was reserved raw JSON; schema 2 types it (YtAnimations). Anything
+        // that was there is kept under `animationsLegacy`, the typed field starts empty.
+        1 to { o ->
+            val m = o.toMutableMap()
+            val old = m.remove("animations")
+            if (old != null && old !is kotlinx.serialization.json.JsonNull) m["animationsLegacy"] = old
+            JsonObject(m)
+        },
     )
 
     fun encode(doc: YtThemeDoc): String = json.encodeToString(YtThemeDoc.serializer(), doc)
@@ -89,6 +97,6 @@ object YtThemeCodec {
         return if (from < YT_THEME_SCHEMA) JsonObject(o.toMutableMap().apply { put("schema", JsonPrimitive(YT_THEME_SCHEMA)) }) else o
     }
 
-    /** The animations of a raw file, kept as they are (phase 2 reads them). */
+    /** The raw `animations` part of a file (what a migration starts from). */
     fun animationsOf(text: String): JsonElement? = runCatching { json.parseToJsonElement(text).jsonObject["animations"] }.getOrNull()
 }

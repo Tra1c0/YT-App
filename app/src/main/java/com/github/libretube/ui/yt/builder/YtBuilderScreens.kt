@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +33,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
+import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -133,6 +143,19 @@ fun YtCustomHomeScreen(
     val positions by YtSeenStore.positions.collectAsState()
     val cardShape = remember(doc?.components?.card?.style?.corners) { YtCornerShape(doc?.components?.card?.style?.corners ?: YtCorners()) }
     val motion = doc?.tokens?.motion ?: YtMotionToken()
+    val grid = rememberLazyGridState()
+    val feedScroll = rememberYtAnimFeedScroll(grid, loading)
+    // the cards' appear/disappear: half of the card in the visible part of the feed
+    val needVisibility = remember(doc?.animations) {
+        doc?.animations?.of(YtComponentKind.CARD)?.any { it.trigger.kind == YtTriggerKind.APPEAR || it.trigger.kind == YtTriggerKind.DISAPPEAR } == true
+    }
+    val shown = remember { mutableStateOf<Set<Any>>(emptySet()) }
+    if (needVisibility) {
+        LaunchedEffect(grid) {
+            snapshotFlow { ytHalfVisible(grid) }.distinctUntilChanged().collect { shown.value = it }
+        }
+    }
+    val ownsPress = src.ownsPress(YtComponentKind.CARD)
 
     YtRefreshBox(
         palette = palette,
@@ -142,7 +165,8 @@ fun YtCustomHomeScreen(
     ) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(columns),
-            modifier = Modifier.fillMaxSize(),
+            state = grid,
+            modifier = Modifier.fillMaxSize().nestedScroll(feedScroll),
             contentPadding = PaddingValues(
                 start = feed.padding.start.dp, end = feed.padding.end.dp,
                 top = feed.padding.top.dp, bottom = feed.padding.bottom.dp + ytNavPadding(),
@@ -181,14 +205,18 @@ fun YtCustomHomeScreen(
                         palette = palette,
                     )
                 }
+                val itemKey = "v-" + video.url
+                val input = remember(itemKey, needVisibility) { if (needVisibility) YtAnimInput(visible = { itemKey in shown.value }) else YtAnimInput.NONE }
                 YtThemeComponent(
                     src, YtComponentKind.CARD, slots,
                     modifier = Modifier
                         .ytCardSwipe(palette, video, cardShape)
                         // held: lifts and drags onto the mini player; let go unmoved: quick actions
                         .ytHomeCard(palette, video, cardShape, onRelease = { actions.onQuick(video) })
-                        .ytThemePress(press, motion)
+                        // an animated press (theme animator) replaces the plain press feel
+                        .then(if (ownsPress) Modifier else Modifier.ytThemePress(press, motion))
                         .clickable(interactionSource = press, indication = null) { actions.onOpenVideo(video) },
+                    input = input,
                 )
             }
         }
@@ -212,7 +240,7 @@ private fun YtCustomChips(src: YtThemeSource, palette: YtPalette, categories: Li
             YtThemeComponent(
                 src, YtComponentKind.CHIP, remember(label) { YtSlotData(label = label) },
                 modifier = Modifier
-                    .ytThemePress(press, motion)
+                    .then(if (src.ownsPress(YtComponentKind.CHIP)) Modifier else Modifier.ytThemePress(press, motion))
                     .clickable(interactionSource = press, indication = null) { onSelect(key) },
                 states = if (key == selected) YtRenderStates.SELECTED else 0,
             )
@@ -287,7 +315,7 @@ fun YtCustomNav(
                     Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .ytThemePress(press, motion)
+                        .then(if (src.ownsPress(YtComponentKind.NAV_TAB)) Modifier else Modifier.ytThemePress(press, motion))
                         .clickable(interactionSource = press, indication = null) { onSelect(item.id) }
                         .ytNavHoldTarget(item.id),
                 ) {
@@ -303,3 +331,29 @@ fun YtCustomNav(
     }
 }
 
+/** Reports the feed's scroll (as its nested scroll parent) and loading to the animator (YtAnimSignals). */
+@Composable
+private fun rememberYtAnimFeedScroll(grid: LazyGridState, loading: Boolean): NestedScrollConnection {
+    val density = LocalDensity.current.density
+    LaunchedEffect(loading) { YtAnimSignals.feedLoading = loading }
+    return remember(grid, density) {
+        object : NestedScrollConnection {
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (consumed.y != 0f) YtAnimSignals.scrolled(-consumed.y / density, !grid.canScrollBackward)
+                return Offset.Zero
+            }
+        }
+    }
+}
+
+/** The keys of the feed items of which at least half is in the visible part. */
+private fun ytHalfVisible(grid: LazyGridState): Set<Any> {
+    val info = grid.layoutInfo
+    val top = info.viewportStartOffset
+    val bottom = info.viewportEndOffset
+    return info.visibleItemsInfo.filter {
+        val h = it.size.height
+        val seen = minOf(bottom, it.offset.y + h) - maxOf(top, it.offset.y)
+        h > 0 && seen * 2 >= h
+    }.mapTo(HashSet()) { it.key }
+}

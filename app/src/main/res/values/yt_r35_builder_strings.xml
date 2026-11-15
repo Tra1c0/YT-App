@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: theme builder phase 2, the animator (round 35). -->
+<resources>
+    <string name="yt_anim_tab">Animation</string>
+    <string name="yt_anim_ui_simple">Simple</string>
+    <string name="yt_anim_ui_advanced">Advanced</string>
+    <string name="yt_anim_ui_pro">Pro</string>
+    <string name="yt_anim_motion_off_note">Animations are off (Appearance → Animations of the designs): in the app they jump to their end. The preview here still plays.</string>
+    <string name="yt_anim_of_node">Animations of this element</string>
+    <string name="yt_anim_add">Animation</string>
+    <string name="yt_anim_pick_preset">Pick a preset – it plays at once</string>
+    <string name="yt_anim_trigger">Starts on</string>
+    <string name="yt_anim_trigger_all">Trigger (all)</string>
+    <string name="yt_anim_strength">Strength</string>
+    <string name="yt_anim_duration">Duration</string>
+    <string name="yt_anim_spring_length">Spring: settles in about %1$d ms (from stiffness and damping, not a duration)</string>
+    <string name="yt_anim_preview">Preview</string>
+    <string name="yt_anim_test">Try</string>
+    <string name="yt_anim_test_on">Try mode: touches play the animations</string>
+    <string name="yt_anim_test_reset">Reset</string>
+    <string name="yt_anim_test_scroll">Scroll</string>
+    <string name="yt_anim_disable">Pause</string>
+    <string name="yt_anim_enable">Turn on</string>
+    <string name="yt_anim_state_any">any</string>
+    <string name="yt_anim_state_from">From state</string>
+    <string name="yt_anim_state_to">To state</string>
+    <string name="yt_anim_state_custom">New state</string>
+    <string name="yt_anim_scroll_range">Scroll distance</string>
+    <string name="yt_anim_kind">Kind</string>
+    <string name="yt_anim_kind_time">Time (keyframes)</string>
+    <string name="yt_anim_kind_spring">Spring (physics)</string>
+    <string name="yt_anim_kind_time_note">Runs over its duration along its curves; interrupted, it starts again from where the element is.</string>
+    <string name="yt_anim_kind_spring_note">Has no duration: it moves towards its target and settles. Interrupted, it keeps its current speed. Uses the first and last keyframe.</string>
+    <string name="yt_anim_delay">Delay</string>
+    <string name="yt_anim_forever">Repeat forever</string>
+    <string name="yt_anim_repeat">Repeats</string>
+    <string name="yt_anim_direction">Direction</string>
+    <string name="yt_anim_dir_normal">Forward</string>
+    <string name="yt_anim_dir_reverse">Backward</string>
+    <string name="yt_anim_dir_alternate">Back and forth</string>
+    <string name="yt_anim_spring">Spring</string>
+    <string name="yt_anim_spring_feel">Feel: %1$s · settles in about %2$d ms</string>
+    <string name="yt_anim_feel_bouncy">bouncy</string>
+    <string name="yt_anim_feel_soft">soft overshoot</string>
+    <string name="yt_anim_feel_critical">no overshoot</string>
+    <string name="yt_anim_feel_slow">slow, heavy</string>
+    <string name="yt_anim_easing">Easing</string>
+    <string name="yt_anim_easing_name">Name of the curve</string>
+    <string name="yt_anim_easing_save">Save as preset</string>
+    <string name="yt_anim_easings">Saved curves</string>
+    <string name="yt_anim_curve_strong">Strong out</string>
+    <string name="yt_anim_group">Group</string>
+    <string name="yt_anim_group_none">None</string>
+    <string name="yt_anim_group_new">New group</string>
+    <string name="yt_anim_group_parallel">Together</string>
+    <string name="yt_anim_group_sequence">One after another</string>
+    <string name="yt_anim_group_stagger">Staggered</string>
+    <string name="yt_anim_stagger">Offset</string>
+    <string name="yt_anim_group_note">%1$d animations in this group; started by the same event they play by its rule.</string>
+    <string name="yt_anim_tracks">Tracks (one per property)</string>
+    <string name="yt_anim_track_add">Track</string>
+    <string name="yt_anim_track_no_effect">No effect here: %1$s</string>
+    <string name="yt_anim_unsupported_title">Not possible on this element:</string>
+    <string name="yt_anim_velocity">Push (per s)</string>
+    <string name="yt_anim_spring_keys">A spring starts at the first keyframe and moves to the last; the ones between are not used.</string>
+    <string name="yt_anim_own_colour">Own colour</string>
+    <string name="yt_anim_note_visibility">Appear: when the element is shown and when the app comes back. Disappear is sent by cards only.</string>
+    <string name="yt_anim_note_visibility_card">Appear/disappear: when half of the card comes into or leaves the visible part of the feed.</string>
+    <string name="yt_anim_note_touch">Touches on the element; it keeps its own gestures. A double tap also counts as two taps.</string>
+    <string name="yt_anim_note_scroll">The home feed\'s scroll: “Scroll” plays along the scroll position, the others on a change of direction.</string>
+    <string name="yt_anim_note_selection">A chip or tab becoming (de)selected.</string>
+    <string name="yt_anim_note_player">The player starting or pausing (while a video is open).</string>
+    <string name="yt_anim_note_loading">The home feed starting or finishing to load.</string>
+    <string name="yt_anim_note_state">A change of the element\'s shown state (see States).</string>
+    <string name="yt_anim_note_manual">Plays only in the editor.</string>
+    <string name="yt_anim_note_mini">The mini player and the bar\'s surface are drawn by the app itself, not from the nodes: their animations play in the editor only.</string>
+    <string name="yt_anim_states">States</string>
+    <string name="yt_anim_states_note">Shown is the first that is on: Disabled, Loading, Pressed, Active (player plays), Selected, Focused, Expanded, Collapsed, then your own. Each change can play an animation (trigger “State change”).</string>
+    <string name="yt_anim_states_test">Tap a state to switch it on or off in the preview.</string>
+    <string name="yt_anim_rules">Rules: an event changes a state</string>
+    <string name="yt_anim_rule_add">Rule</string>
+    <string name="yt_anim_rule_text">Several animations on the same property: the one started last wins and starts from the current value (a spring keeps its speed). In one event, the state change plays first, then the event\'s own animations.</string>
+    <string name="yt_anim_conflict">%1$s: %2$s – the last started wins</string>
+    <string name="yt_anim_all">Animations (%1$d)</string>
+    <string name="yt_anim_none_yet">None yet. Select an element and open the tab “Animation”.</string>
+    <string name="yt_anim_loop_once">Once</string>
+    <string name="yt_anim_loop_loop">Loop</string>
+    <string name="yt_anim_loop_pingpong">Ping-pong</string>
+    <string name="yt_anim_snap">Frame grid</string>
+    <string name="yt_anim_multi">Multi-select</string>
+    <string name="yt_anim_copy">Copy</string>
+    <string name="yt_anim_paste">Paste</string>
+    <string name="yt_anim_distribute">Distribute</string>
+    <string name="yt_anim_align">To playhead</string>
+    <string name="yt_anim_key">Key</string>
+    <string name="yt_anim_key_time">Time (ms)</string>
+    <string name="yt_anim_curves">Curves</string>
+    <string name="yt_anim_spring_timeline">Spring: the bar shows its settle time; there are no keyframe times to move.</string>
+    <string name="yt_anim_graph">Curve: %1$s</string>
+    <string name="yt_anim_graph_note">Line: value over time. Dashed: speed. Drag the two handles of the selected segment.</string>
+    <string name="yt_anim_segment">Segment %1$d of %2$d</string>
+    <string name="yt_anim_curve_copy">Copy curve</string>
+    <string name="yt_anim_curve_paste">Paste curve</string>
+    <string name="yt_anim_curve_paste_all">Paste on all segments</string>
+    <string-array name="yt_anim_props">
+        <item>Position X</item>
+        <item>Position Y</item>
+        <item>Width</item>
+        <item>Height</item>
+        <item>Scale X</item>
+        <item>Scale Y</item>
+        <item>Rotation</item>
+        <item>Pivot X</item>
+        <item>Pivot Y</item>
+        <item>Opacity</item>
+        <item>Fill colour</item>
+        <item>Outline colour</item>
+        <item>Text colour</item>
+        <item>Gradient angle</item>
+        <item>Gradient shift</item>
+        <item>Corners (+dp)</item>
+        <item>Outline width</item>
+        <item>Shadow X</item>
+        <item>Shadow Y</item>
+        <item>Shadow blur</item>
+        <item>Shadow strength</item>
+        <item>Glow</item>
+        <item>Blur</item>
+        <item>Shimmer</item>
+    </string-array>
+    <string-array name="yt_anim_presets">
+        <item>Fade in</item>
+        <item>Fade out</item>
+        <item>Slide in</item>
+        <item>Slide out</item>
+        <item>Scale in</item>
+        <item>Scale out</item>
+        <item>Bounce</item>
+        <item>Spring</item>
+        <item>Pop</item>
+        <item>Pulse</item>
+        <item>Rotate</item>
+        <item>Shake</item>
+        <item>Wobble</item>
+        <item>Stretch</item>
+        <item>Compress</item>
+        <item>Expand</item>
+        <item>Collapse</item>
+        <item>Floating</item>
+        <item>Glow pulse</item>
+        <item>Colour transition</item>
+        <item>Loading</item>
+        <item>Shimmer</item>
+        <item>Stagger</item>
+    </string-array>
+    <string-array name="yt_anim_triggers">
+        <item>Appear</item>
+        <item>Disappear</item>
+        <item>Tap</item>
+        <item>Double tap</item>
+        <item>Long press</item>
+        <item>Touch down</item>
+        <item>Release</item>
+        <item>Scroll</item>
+        <item>Scroll up</item>
+        <item>Scroll down</item>
+        <item>Selected</item>
+        <item>Deselected</item>
+        <item>Player plays</item>
+        <item>Player pauses</item>
+        <item>Loading starts</item>
+        <item>Loading ends</item>
+        <item>State change</item>
+        <item>Editor only</item>
+    </string-array>
+    <string-array name="yt_anim_unsupported">
+        <item>it has no fill</item>
+        <item>only a flat fill can change colour</item>
+        <item>only a gradient fill</item>
+        <item>it has no outline</item>
+        <item>it has no drop shadow</item>
+        <item>text only</item>
+        <item>this element draws itself (progress bar)</item>
+        <item>needs Android 12</item>
+    </string-array>
+    <string-array name="yt_anim_curves">
+        <item>Linear</item>
+        <item>Ease in</item>
+        <item>Ease out</item>
+        <item>Ease in-out</item>
+        <item>Bézier</item>
+        <item>Hold</item>
+    </string-array>
+    <string-array name="yt_anim_states">
+        <item>Idle</item>
+        <item>Disabled</item>
+        <item>Loading</item>
+        <item>Pressed</item>
+        <item>Active</item>
+        <item>Selected</item>
+        <item>Focused</item>
+        <item>Expanded</item>
+        <item>Collapsed</item>
+    </string-array>
+    <string-array name="yt_anim_actions">
+        <item>switches on</item>
+        <item>switches off</item>
+        <item>toggles</item>
+    </string-array>
+</resources>

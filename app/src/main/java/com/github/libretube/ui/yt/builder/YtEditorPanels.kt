@@ -261,6 +261,7 @@ private enum class Tab(val label: Int, val simple: Boolean) {
     SIZE(R.string.yt_builder_tab_size, true),
     CORNERS(R.string.yt_builder_tab_corners, true),
     TEXT(R.string.yt_builder_tab_text, true),
+    ANIM(R.string.yt_anim_tab, true),
     SHADOW(R.string.yt_builder_tab_shadow, false),
     LAYOUT(R.string.yt_builder_tab_layout, false),
     RULES(R.string.yt_builder_tab_rules, false),
@@ -279,6 +280,12 @@ fun YtEditorPanel(state: YtEditorState, onImportFont: ((String) -> Unit) -> Unit
             node.type == YtNodeType.ICON || node.slot == YtSlot.SEARCH || node.slot == YtSlot.PROFILE || node.slot == YtSlot.NAV_ICON
         val tabs = Tab.entries.filter { (state.advanced || it.simple) && (it != Tab.TEXT || textual) && (it != Tab.LAYOUT || node.type == YtNodeType.CONTAINER) }
         var tab by remember { mutableStateOf(Tab.COLOR) }
+        LaunchedEffect(state.openAnimTab) {
+            if (state.openAnimTab) {
+                tab = Tab.ANIM
+                state.openAnimTab = false
+            }
+        }
         if (tab !in tabs) tab = tabs.first()
         Text(node.name.ifEmpty { node.id } + if (state.selection.size > 1) " (+${state.selection.size - 1})" else "", color = PanelText, fontSize = 15.sp)
         ScrollableTabRow(selectedTabIndex = tabs.indexOf(tab), edgePadding = 0.dp, containerColor = Color.Transparent) {
@@ -289,6 +296,7 @@ fun YtEditorPanel(state: YtEditorState, onImportFont: ((String) -> Unit) -> Unit
             Tab.SIZE -> SizeTab(state, node)
             Tab.CORNERS -> CornersTab(state, node)
             Tab.TEXT -> TextTab(state, node, onImportFont)
+            Tab.ANIM -> YtAnimTab(state, node)
             Tab.SHADOW -> ShadowTab(state, node)
             Tab.LAYOUT -> LayoutTab(state, node)
             Tab.RULES -> RulesTab(state, node)
@@ -636,6 +644,7 @@ private fun YtThemePanel(state: YtEditorState) {
     Text(stringResource(R.string.yt_builder_mini_note), color = PanelDim, fontSize = 11.sp)
     Label(stringResource(R.string.yt_builder_wordmark))
     OutlinedTextField(value = doc.meta.wordmark, onValueChange = { v -> state.run("wordmark", "wordmark") { d -> d.copy(meta = d.meta.copy(wordmark = v.take(40))) } }, singleLine = true, modifier = Modifier.fillMaxWidth())
+    YtAnimThemeSection(state)
     Spacer(Modifier.height(24.dp))
 }
 

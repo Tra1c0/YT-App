@@ -181,8 +181,12 @@ private fun YtEditorScreen(
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (doc != null && palette != null) {
                 YtEditorCanvas(state, hooks, palette, videos, imageLoader, metrics.line, Modifier.fillMaxSize())
+                // the animator's test: touches go to the animations, not to the tools
+                if (state.animTest) YtAnimTestOverlay(state, Modifier.matchParentSize())
             }
         }
+        YtAnimPlayhead(state)
+        if (state.animTest) YtAnimTestBar(state)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth().background(Color(0xFF17181C)).padding(horizontal = 8.dp),
@@ -196,7 +200,8 @@ private fun YtEditorScreen(
             TextButton(onClick = { YtEditorViewActions.actual() }) { Text("100 %") }
         }
         if (panel) {
-            val height = (LocalConfiguration.current.screenHeightDp * 0.38f).dp
+            // the animator's timeline needs more room
+            val height = (LocalConfiguration.current.screenHeightDp * if (state.timelineOpen) 0.56f else 0.38f).dp
             Box(Modifier.fillMaxWidth().height(height).background(Color(0xFF17181C))) {
                 if (checks) YtWarningsPanel(state, Modifier.fillMaxSize()) else YtEditorPanel(state, onImportFont, Modifier.fillMaxSize())
             }

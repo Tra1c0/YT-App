@@ -3,6 +3,7 @@ package com.github.libretube.ui.yt.builder
 import android.app.Application
 import android.net.Uri
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -404,7 +405,8 @@ class YtEditorState(app: Application) : AndroidViewModel(app) {
         run("delete") { d ->
             var out = d
             for (kind in YtComponentKind.entries) out = out.withComponent(kind) { root -> ids.fold(root) { r, id -> if (id == root.id) r else YtDocOps.remove(r, id) } }
-            out
+            // the animations of the deleted nodes go with them (undo brings both back)
+            YtAnimOps.withoutNodes(out)
         }
         selection = emptySet()
     }
@@ -441,10 +443,182 @@ class YtEditorState(app: Application) : AndroidViewModel(app) {
         run("move") { d -> d.withComponent(kind) { YtDocOps.moveTo(it, id, parent.id, index) } }
     }
 
+    // ---- animator (phase 2) ----
+
+    /** The animation edited in the panel. */
+    var animId by mutableStateOf<String?>(null)
+    var animUi by mutableStateOf(YtAnimUi.SIMPLE)
+
+    /** What the playhead shows (animations with their schedule offsets), or null: the preview rests. */
+    var animPreview by mutableStateOf<List<Pair<YtAnim, Int>>?>(null)
+        private set
+
+    /** A one-off preview (simple mode) ends by resting; the timeline's stays at the playhead. */
+    private var previewOnce = false
+    var playMs by mutableDoubleStateOf(0.0)
+    var playing by mutableStateOf(false)
+    var loop by mutableStateOf(YtLoopMode.ONCE)
+    var speed by mutableFloatStateOf(1f)
+    var fps by mutableIntStateOf(60)
+    var snapKeys by mutableStateOf(true)
+    var keySel by mutableStateOf<Set<YtKeyRef>>(emptySet())
+    private var playDir = 1
+    var keyClipboard: List<YtAnimTimeline.Clip> = emptyList()
+    var curveClipboard by mutableStateOf<YtCurve?>(null)
+
+    /** The theme list asked for the animation tab of the node it selected. */
+    var openAnimTab by mutableStateOf(false)
+
+    /** The timeline is open: the panel takes more room. */
+    var timelineOpen by mutableStateOf(false)
+
+    /** Test mode: taps on the preview reach the animations instead of the editing tools. */
+    var animTest by mutableStateOf(false)
+    val animInstances = ArrayList<YtAnimInstance>()
+
+    fun anim(id: String?): YtAnim? = id?.let { i -> doc?.animations?.items?.firstOrNull { it.id == i } }
+
+    /** Changes animation [id]; [coalesce] merges quick steps of one control. */
+    fun editAnim(id: String, label: String, coalesce: String? = null, change: (YtAnim) -> YtAnim) {
+        run(label, coalesce?.let { "anim:$it:$id" }) { d -> YtAnimOps.update(d, id, change) }
+        refreshPreview()
+    }
+
+    fun editAnimations(label: String, coalesce: String? = null, change: (YtAnimations) -> YtAnimations) {
+        run(label, coalesce) { d -> d.copy(animations = change(d.animations)) }
+    }
+
+    /** Adds preset [p] to the selected node and plays it at once. */
+    fun addPreset(p: YtPreset, strength: Float = 1f) {
+        val node = primary ?: return
+        val kind = kindOf(node.id) ?: return
+        val d = doc ?: return
+        val accent = YtTokensResolver(d, night).argb(YtRole.ACCENT)
+        val children = if (p == YtPreset.STAGGER) node.children.map { it.id } else emptyList()
+        val built = YtAnimPresets.build(p, kind, node.id, strength, accent = accent, children = children, name = p.name.lowercase().replace('_', ' '), newId = YtAnimOps.ids(d.animations))
+        run("animation") { YtAnimOps.add(it, built) }
+        val first = built.anims.first()
+        animId = first.id
+        keySel = emptySet()
+        // a stagger lives on the children: show the first one with its group
+        if (first.node != node.id) {
+            selection = setOf(first.node)
+            openAnimTab = true
+        }
+        playOnce(first.id)
+    }
+
+    fun removeAnim(id: String) {
+        stopPreview()
+        run("animation") { YtAnimOps.remove(it, id) }
+        if (animId == id) animId = null
+        keySel = emptySet()
+    }
+
+    /** The animations played together with [id]: its group's members, else itself. */
+    fun together(id: String): List<YtAnim> {
+        val a = anim(id) ?: return emptyList()
+        val all = doc?.animations?.items.orEmpty()
+        return if (a.group != null) all.filter { it.group == a.group && it.enabled } else listOf(a)
+    }
+
+    /** Plays [id] once on the preview (with its group), then rests. */
+    fun playOnce(id: String) {
+        val d = doc ?: return
+        animPreview = YtAnimCombine.schedule(together(id), d.animations.groups)
+        previewOnce = true
+        playDir = 1
+        playMs = 0.0
+        loop = YtLoopMode.ONCE
+        playing = true
+    }
+
+    /** The timeline shows [list] at the playhead (it stays after playing). */
+    fun showOnTimeline(list: List<YtAnim>) {
+        val d = doc ?: return
+        animPreview = YtAnimCombine.schedule(list.filter { it.enabled }, d.animations.groups)
+        previewOnce = false
+    }
+
+    /** After an edit: the preview shows the new values. */
+    private fun refreshPreview() {
+        val current = animPreview ?: return
+        val d = doc ?: return
+        val ids = current.map { it.first.id }
+        animPreview = YtAnimCombine.schedule(ids.mapNotNull { i -> d.animations.items.firstOrNull { it.id == i } }, d.animations.groups)
+    }
+
+    fun stopPreview() {
+        playing = false
+        animPreview = null
+        previewOnce = false
+    }
+
+    /** The end of what the playhead plays: the longest member (one play for those that repeat forever). */
+    val previewEndMs: Double
+        get() = animPreview?.maxOfOrNull { (a, off) -> (off + YtAnimCombine.lengthMs(a)).toDouble() } ?: 0.0
+
+    /** Moves the playhead on by [dtMs] of real time (speed, loop and ping-pong applied). */
+    fun advancePlayhead(dtMs: Double) {
+        val end = previewEndMs
+        if (end <= 0.0) {
+            playing = false
+            return
+        }
+        var t = playMs + dtMs * speed * playDir
+        when (loop) {
+            YtLoopMode.ONCE -> if (t >= end) {
+                t = end
+                playing = false
+                if (previewOnce) {
+                    animPreview = null
+                    previewOnce = false
+                }
+            }
+            YtLoopMode.LOOP -> if (t >= end) t %= end
+            YtLoopMode.PING_PONG -> {
+                if (t >= end) {
+                    t = end - (t - end)
+                    playDir = -1
+                } else if (t <= 0.0) {
+                    t = -t
+                    playDir = 1
+                }
+            }
+        }
+        playMs = t.coerceIn(0.0, end)
+    }
+
+    fun stepFrame(frames: Int) {
+        playing = false
+        playMs = (playMs + frames * YtAnimTimeline.frameMs(fps)).coerceIn(0.0, maxOf(previewEndMs, 0.0))
+    }
+
+    /** Test mode: an event for every instance of [kind] in the preview. */
+    fun testEvent(kind: YtComponentKind?, t: YtTriggerKind) {
+        stopPreview()
+        for (i in animInstances) if (kind == null || i.kind == kind) i.event(t)
+    }
+
+    fun testState(kind: YtComponentKind?, state: String) {
+        stopPreview()
+        for (i in animInstances) if (kind == null || i.kind == kind) i.state(state, !i.controller.machine.isOn(state))
+    }
+
+    fun testScroll(kind: YtComponentKind?, dp: Float) {
+        stopPreview()
+        for (i in animInstances) if (kind == null || i.kind == kind) i.scroll(dp)
+    }
+
     companion object {
         const val SAVE_DELAY_MS = 1200L
     }
 }
+
+/** The animator panel's level of detail. */
+enum class YtAnimUi { SIMPLE, ADVANCED, PRO }
+
+enum class YtLoopMode { ONCE, LOOP, PING_PONG }
 
 /** YT: which design a first theme starts from: the one in use, else YouTube neu. */
 internal object YtBuilderBase {

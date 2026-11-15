@@ -131,6 +131,18 @@ class YtEditorHooks(private val state: YtEditorState) : YtRenderHooks {
     }
 
     fun forgetAll() = coords.clear()
+
+    /** The animator's playhead and test events for the edited instances. */
+    override val anim: YtAnimLink = object : YtAnimLink {
+        override fun preview(kind: YtComponentKind): List<Pair<YtAnim, Int>>? = state.animPreview?.filter { it.first.component == kind }?.ifEmpty { null }
+        override val previewMs: Double get() = state.playMs
+        override fun attach(inst: YtAnimInstance) {
+            state.animInstances += inst
+        }
+        override fun detach(inst: YtAnimInstance) {
+            state.animInstances -= inst
+        }
+    }
 }
 
 private fun Rect.snap() = YtSnap.Rect(left, top, right, bottom)
@@ -170,8 +182,9 @@ fun YtEditorCanvas(
     val src = remember(state, hooks) {
         YtThemeSource({ state.doc }, { YtEnv(state.size.widthDp, state.size.heightDp, state.fontScale, state.night) }, { state.night }, { state.doc?.let { YtBuilderStore.assets(hooksContext(state), it.id) } }, hooks)
     }
+    // the other instances stay still: the edited one shows the animations
     val plain = remember(state) {
-        YtThemeSource({ state.doc }, { YtEnv(state.size.widthDp, state.size.heightDp, state.fontScale, state.night) }, { state.night }, { state.doc?.let { YtBuilderStore.assets(hooksContext(state), it.id) } })
+        YtThemeSource({ state.doc }, { YtEnv(state.size.widthDp, state.size.heightDp, state.fontScale, state.night) }, { state.night }, { state.doc?.let { YtBuilderStore.assets(hooksContext(state), it.id) } }, animMode = YtAnimMode.NONE)
     }
 
     fun toFrame(p: Offset) = (p - state.pan) / state.zoom

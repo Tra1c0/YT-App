@@ -67,10 +67,12 @@ object YtThemeValidate {
         val name = doc.name.take(80).ifBlank { "Theme" }
         val id = doc.id.takeIf { YtThemeIds.valid(it) } ?: YtThemeIds.fresh().also { issues += Issue("id", "invalid id replaced") }
         val meta = doc.meta.copy(wordmark = doc.meta.wordmark.take(40))
+        val nodeIds = YtComponentKind.entries.associateWith { k -> YtDocOps.all(components[k]).mapTo(HashSet()) { it.id } }
+        val animations = YtAnimValidate.clamp(doc.animations, nodeIds) { path, what -> issues += Issue(path, what) }
         return Result(
             doc.copy(
                 schema = YT_THEME_SCHEMA, id = id, name = name, tokens = tokens, components = components,
-                feed = feed, nav = nav, mini = mini, assets = assets, meta = meta,
+                feed = feed, nav = nav, mini = mini, assets = assets, meta = meta, animations = animations,
             ),
             issues,
         )

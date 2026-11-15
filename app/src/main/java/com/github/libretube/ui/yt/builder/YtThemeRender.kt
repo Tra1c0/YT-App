@@ -107,6 +107,9 @@ interface YtRenderHooks {
 
     /** Conflicts of a container's last layout. */
     fun conflicts(id: String, conflicts: List<YtLayoutEngine.Conflict>) {}
+
+    /** The animator's playhead and test events (phase 2). */
+    val anim: YtAnimLink? get() = null
 }
 
 /** Where the renderer takes its theme from (state reads, so changes recompose or redraw). */
@@ -117,15 +120,40 @@ class YtThemeSource(
     private val nightOf: () -> Boolean,
     private val assetsOf: () -> File?,
     val hooks: YtRenderHooks? = null,
+    /** How animations play: the app's live ones, the editor's playhead, or none (still previews). */
+    val animMode: YtAnimMode = if (hooks != null) YtAnimMode.EDITOR else YtAnimMode.APP,
 ) {
-    private class Index(val doc: YtThemeDoc?, val night: Boolean, val byKind: Map<YtComponentKind, Map<String, YtNode>>, val resolver: YtTokensResolver?)
+    private class Index(
+        val doc: YtThemeDoc?,
+        val night: Boolean,
+        val byKind: Map<YtComponentKind, Map<String, YtNode>>,
+        val resolver: YtTokensResolver?,
+        val anims: Map<YtComponentKind, YtAnimIndex>,
+        val patchMask: Map<YtComponentKind, Int>,
+    )
 
     private val index: State<Index> = derivedStateOf {
         val doc = docOf()
         val night = nightOf()
         val byKind = doc?.let { d -> YtComponentKind.entries.associateWith { k -> YtDocOps.all(d.components[k]).associateBy { it.id } } }.orEmpty()
-        Index(doc, night, byKind, doc?.let { YtTokensResolver(it, night) })
+        val anims = if (doc == null || animMode == YtAnimMode.NONE || doc.animations.isEmpty) {
+            emptyMap()
+        } else {
+            YtComponentKind.entries.associateWith { YtAnimIndex(doc.animations, it) }.filterValues { !it.empty }
+        }
+        // the states a node of the component has a look for: only these recompose it
+        val custom = doc?.animations?.customStates.orEmpty()
+        val mask = byKind.mapValues { (_, nodes) -> nodes.values.fold(0) { m, n -> m or YtRenderStates.bitsOf(n.states.keys, custom) } }
+        Index(doc, night, byKind, doc?.let { YtTokensResolver(it, night) }, anims, mask)
     }
+
+    /** The animations of component [kind], or null when it has none. */
+    fun animIndex(kind: YtComponentKind): YtAnimIndex? = index.value.anims[kind]
+
+    /** The animator owns the press of [kind]: the theme's plain press feel (ytThemePress) steps aside. */
+    fun ownsPress(kind: YtComponentKind): Boolean = index.value.anims[kind]?.ownsPress == true
+
+    internal fun patchMask(kind: YtComponentKind): Int = index.value.patchMask[kind] ?: 0
 
     val doc: YtThemeDoc? get() = index.value.doc
     val env: YtEnv get() = envOf()
@@ -141,7 +169,7 @@ class YtThemeSource(
     internal fun resolve(kind: YtComponentKind, id: String, states: Int): YtResolved? {
         val raw = index.value.byKind[kind]?.get(id) ?: return null
         return try {
-            val s = YtRenderStates.names(states)
+            val s = YtRenderStates.names(states, index.value.doc?.animations?.customStates.orEmpty())
             val n = YtResponsive.resolve(raw, envOf(), s)
             YtResolved(n.copy(children = emptyList()), n.children.map { it.id }, false)
         } catch (e: Exception) {
@@ -150,18 +178,36 @@ class YtThemeSource(
     }
 }
 
-/** Component states as bits, so the renderer's parameters stay stable. */
+/**
+ * Component states as bits, so the renderer's parameters stay stable: the built-in states first
+ * (selected and pressed keep their bits of phase 1), then the theme's custom states in their order.
+ */
 object YtRenderStates {
     const val SELECTED = 1
     const val PRESSED = 2
 
-    fun names(bits: Int): Set<String> = when (bits) {
+    /** The built-in states by bit, from bit 0 up. */
+    private val order = listOf(
+        YtStateNames.SELECTED, YtStateNames.PRESSED, YtStateNames.ACTIVE, YtStateNames.LOADING, YtStateNames.DISABLED,
+        YtStateNames.EXPANDED, YtStateNames.COLLAPSED, YtStateNames.FOCUSED,
+    )
+
+    fun bitOf(state: String, custom: List<String> = emptyList()): Int {
+        val i = order.indexOf(state)
+        if (i >= 0) return 1 shl i
+        val c = custom.indexOf(state)
+        return if (c in 0 until 16) 1 shl (order.size + c) else 0
+    }
+
+    fun bitsOf(states: Collection<String>, custom: List<String> = emptyList()): Int = states.fold(0) { b, s -> b or bitOf(s, custom) }
+
+    fun names(bits: Int, custom: List<String> = emptyList()): Set<String> = when (bits) {
         0 -> emptySet()
         SELECTED -> setOf(YtStates.SELECTED)
         PRESSED -> setOf(YtStates.PRESSED)
         else -> buildSet {
-            if (bits and SELECTED != 0) add(YtStates.SELECTED)
-            if (bits and PRESSED != 0) add(YtStates.PRESSED)
+            order.forEachIndexed { i, s -> if (bits and (1 shl i) != 0) add(s) }
+            custom.forEachIndexed { i, s -> if (i < 16 && bits and (1 shl (order.size + i)) != 0) add(s) }
         }
     }
 }
@@ -196,11 +242,18 @@ fun YtThemeComponent(
     slots: YtSlotData,
     modifier: Modifier = Modifier,
     states: Int = 0,
+    /** What the host knows for the animations (on screen or not). */
+    input: YtAnimInput = YtAnimInput.NONE,
 ) {
     val root by remember(src, kind) { derivedStateOf { src.rootId(kind) } }
     val id = root ?: return
-    CompositionLocalProvider(LocalYtSlots provides slots) {
-        YtNodeView(src, kind, id, states, modifier, root = true)
+    val anim = rememberYtAnimInstance(src, kind, states, input)
+    // states the animator's state machine set (pressed, loading, custom …) where a node has a look for them
+    val all = if (anim == null) states else states or (anim.stateBits and src.patchMask(kind))
+    val touch = anim != null && src.animMode == YtAnimMode.APP && src.animIndex(kind)?.touch == true
+    val outer = if (touch && anim != null) modifier.ytAnimTouch(anim) else modifier
+    CompositionLocalProvider(LocalYtSlots provides slots, LocalYtAnim provides anim) {
+        YtNodeView(src, kind, id, all, outer, root = true)
     }
 }
 
@@ -212,24 +265,32 @@ private fun YtNodeView(src: YtThemeSource, kind: YtComponentKind, id: String, st
     val r = resolved ?: return
     val node = r.node
     if (!node.visible) return
+    val inst = LocalYtAnim.current
+    // the instance's index changes when the animations are edited: read its version so this node follows
+    val animVersion = inst?.indexVersion ?: 0
+    val anim = remember(inst, id, animVersion) { inst?.nodeAnim(id) }
     val density = LocalDensity.current.density
     var modifier = outer.then(YtNodeDataElement(node))
     if (root) modifier = modifier.ytRootSize(node, density)
     val hooks = src.hooks
     if (hooks != null) modifier = modifier.onPlaced { hooks.placed(kind, id, it) }
-    modifier = modifier.ytLayer(node, hooks)
+    modifier = modifier.ytLayer(node, hooks, anim)
     if (r.broken) {
         Box(modifier.ytPlaceholder())
         return
     }
     val shape = remember(node.style.corners) { YtCornerShape(node.style.corners) }
     // the progress slot draws its fills as bar and track itself
-    if (node.slot != YtSlot.PROGRESS) modifier = modifier.ytStyle(node.style, shape, src)
+    if (node.slot != YtSlot.PROGRESS) {
+        modifier = if (anim != null && anim.style) modifier.ytAnimStyle(node.style, src, anim) else modifier.ytStyle(node.style, shape, src)
+    }
     if (node.layout.clip) modifier = modifier.clip(shape)
+    // a size animation: the box (and its fills above) grows, the content keeps its layout
+    if (anim != null && anim.size) modifier = modifier.ytAnimSize(anim)
     when (node.type) {
         YtNodeType.CONTAINER -> YtContainer(src, kind, r, states, modifier, density)
-        YtNodeType.TEXT -> YtTextLeaf(src, node, node.text?.text.orEmpty(), modifier)
-        YtNodeType.SLOT -> YtSlotLeaf(src, node, shape, modifier)
+        YtNodeType.TEXT -> YtTextLeaf(src, node, node.text?.text.orEmpty(), modifier, anim)
+        YtNodeType.SLOT -> YtSlotLeaf(src, node, shape, modifier, anim)
         YtNodeType.ICON -> YtIconLeaf(src, node, YtIcons.of(node.icon), modifier)
         YtNodeType.IMAGE -> YtImageLeaf(src, node, modifier)
         YtNodeType.SHAPE -> Box(modifier.padding(node.padding.start.dp, node.padding.top.dp, node.padding.end.dp, node.padding.bottom.dp))
@@ -336,22 +397,38 @@ private data class YtNodeDataElement(val node: YtNode) : ModifierNodeElement<YtN
 
 // ---- layer, style ----
 
-/** Rotation, opacity and, in the editor, the drag offset and the lift, all read in the layer. */
-private fun Modifier.ytLayer(node: YtNode, hooks: YtRenderHooks?): Modifier {
+/**
+ * Rotation, opacity, the animator's transform, opacity and blur and, in the editor, the drag
+ * offset and the lift, all read in the layer (a frame of an animation runs this block only).
+ */
+private fun Modifier.ytLayer(node: YtNode, hooks: YtRenderHooks?, anim: YtNodeAnim? = null): Modifier {
     val opacity = node.style.opacity
     val rotation = node.rotation
-    if (hooks == null && opacity >= 1f && rotation == 0f) return this
+    val animated = anim != null && anim.layer
+    if (hooks == null && opacity >= 1f && rotation == 0f && !animated) return this
     val id = node.id
     return graphicsLayer {
         alpha = opacity
         rotationZ = rotation
+        if (animated && anim != null) {
+            anim.inst.frame.intValue
+            val n = anim.node
+            alpha = (opacity * n.float(YtAnimProp.OPACITY)).coerceIn(0f, 1f)
+            rotationZ = rotation + n.float(YtAnimProp.ROTATION)
+            translationX = n.float(YtAnimProp.X) * density
+            translationY = n.float(YtAnimProp.Y) * density
+            scaleX = n.float(YtAnimProp.SCALE_X)
+            scaleY = n.float(YtAnimProp.SCALE_Y)
+            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(n.float(YtAnimProp.PIVOT_X), n.float(YtAnimProp.PIVOT_Y))
+            if (anim.blur) renderEffect = anim.blurOf(n.float(YtAnimProp.BLUR) * density)
+        }
         if (hooks != null) {
-            translationX = hooks.dragX(id)
-            translationY = hooks.dragY(id)
+            translationX += hooks.dragX(id)
+            translationY += hooks.dragY(id)
             val lift = hooks.lift(id)
             if (lift > 0f) {
-                scaleX = 1f + 0.03f * lift
-                scaleY = 1f + 0.03f * lift
+                scaleX *= 1f + 0.03f * lift
+                scaleY *= 1f + 0.03f * lift
                 shadowElevation = 12f * density * lift
             }
         }
@@ -489,7 +566,7 @@ private fun Modifier.ytPadding(node: YtNode) =
     if (node.padding == YtInsets()) this else padding(node.padding.start.dp, node.padding.top.dp, node.padding.end.dp, node.padding.bottom.dp)
 
 @Composable
-private fun YtTextLeaf(src: YtThemeSource, node: YtNode, text: String, modifier: Modifier) {
+private fun YtTextLeaf(src: YtThemeSource, node: YtNode, text: String, modifier: Modifier, anim: YtNodeAnim? = null) {
     val spec = node.text ?: YtTextSpec()
     // only the type token's values compose: a colour or another node changing does not
     val style by remember(src, spec) {
@@ -505,8 +582,14 @@ private fun YtTextLeaf(src: YtThemeSource, node: YtNode, text: String, modifier:
         style = style,
         maxLines = spec.maxLines.coerceAtLeast(1),
         overflow = TextOverflow.Ellipsis,
-        // the colour is read in draw: a token colour that changes draws again without recomposing
-        color = { src.resolver?.let { YtBuilderPaint.color(it.resolve(spec.color)) } ?: Color.Unspecified },
+        // the colour is read in draw: a token colour that changes (or an animated one) draws again without recomposing
+        color = {
+            if (anim != null && anim.text && anim.inst.frame.intValue >= 0 && anim.node.animated(YtAnimProp.TEXT_COLOR)) {
+                Color(anim.node.argb(YtAnimProp.TEXT_COLOR, 0))
+            } else {
+                src.resolver?.let { YtBuilderPaint.color(it.resolve(spec.color)) } ?: Color.Unspecified
+            }
+        },
     )
 }
 
@@ -546,7 +629,7 @@ private fun YtImageLeaf(src: YtThemeSource, node: YtNode, modifier: Modifier) {
 }
 
 @Composable
-private fun YtSlotLeaf(src: YtThemeSource, node: YtNode, shape: YtCornerShape, modifier: Modifier) {
+private fun YtSlotLeaf(src: YtThemeSource, node: YtNode, shape: YtCornerShape, modifier: Modifier, anim: YtNodeAnim? = null) {
     val data = LocalYtSlots.current
     val video = data.video
     val live = !src.editing
@@ -578,23 +661,23 @@ private fun YtSlotLeaf(src: YtThemeSource, node: YtNode, shape: YtCornerShape, m
                 }
             }
         }
-        YtSlot.TITLE -> YtTextLeaf(src, node, video?.ytTitle ?: stringResource(R.string.yt_builder_sample_title), modifier)
-        YtSlot.CHANNEL -> YtTextLeaf(src, node, video?.uploaderName ?: stringResource(R.string.yt_builder_sample_channel), modifier)
+        YtSlot.TITLE -> YtTextLeaf(src, node, video?.ytTitle ?: stringResource(R.string.yt_builder_sample_title), modifier, anim)
+        YtSlot.CHANNEL -> YtTextLeaf(src, node, video?.uploaderName ?: stringResource(R.string.yt_builder_sample_channel), modifier, anim)
         YtSlot.DURATION -> {
             val text = when {
                 video == null -> "12:34"
                 video.isLive -> stringResource(R.string.yt_live_now)
                 else -> ytDuration(video).orEmpty()
             }
-            YtTextLeaf(src, node, text, modifier)
+            YtTextLeaf(src, node, text, modifier, anim)
         }
         YtSlot.META -> {
             val text = if (video == null) stringResource(R.string.yt_builder_sample_meta) else listOfNotNull(video.uploaderName, ytMeta(video, " · ").ifEmpty { null }).joinToString(" · ")
-            YtTextLeaf(src, node, text, modifier)
+            YtTextLeaf(src, node, text, modifier, anim)
         }
-        YtSlot.WORDMARK -> YtTextLeaf(src, node, data.wordmark.ifEmpty { src.doc?.meta?.wordmark.orEmpty() }, modifier)
-        YtSlot.NAV_LABEL -> YtTextLeaf(src, node, data.navItem?.let { stringResource(it.label) } ?: data.label, modifier)
-        YtSlot.CHIP_LABEL -> YtTextLeaf(src, node, data.label, modifier)
+        YtSlot.WORDMARK -> YtTextLeaf(src, node, data.wordmark.ifEmpty { src.doc?.meta?.wordmark.orEmpty() }, modifier, anim)
+        YtSlot.NAV_LABEL -> YtTextLeaf(src, node, data.navItem?.let { stringResource(it.label) } ?: data.label, modifier, anim)
+        YtSlot.CHIP_LABEL -> YtTextLeaf(src, node, data.label, modifier, anim)
         YtSlot.PROGRESS -> {
             val fills = node.style.fills.filter { it.enabled }
             Box(
