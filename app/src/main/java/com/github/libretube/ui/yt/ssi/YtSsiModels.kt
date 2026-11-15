@@ -153,21 +153,30 @@ object YtSsiModels {
     }
 
     /**
-     * One file into [target]; returns its SHA-256 (hex). It is checked against [pinned], or
-     * without one against the server's declared SHA-256 (X-Linked-Etag / ETag of an LFS file);
-     * a file that can be checked against neither is refused.
+     * One file into [target]; returns its SHA-256 (hex). It is checked against [pinned]; without
+     * one against the checksum the hub's file listing names for it ([YtSsiHfChecksum]: SHA-256 of
+     * a large file, git blob SHA-1 of a small one), else against an X-Linked-Etag of the hub
+     * itself. The storage server the download redirects to is never asked: its ETag can be a
+     * storage hash, not the file's SHA-256. A file that can be checked against none is refused.
      */
     private suspend fun fetch(url: String, pinned: String, target: File, progress: (Long, Long?) -> Unit): String {
         val part = File(target.parentFile, target.name + ".part")
         part.delete()
+        val listed = if (pinned.isEmpty()) listedChecksum(url) else null
         val response = client.newCall(Request.Builder().url(url).build()).execute()
         response.use { r ->
             if (!r.isSuccessful) throw IOException("HTTP ${r.code}")
-            val declared = declaredSha(r)
-            val expected = pinned.lowercase().ifEmpty { declared } ?: throw IOException("no checksum")
+            val expected: YtSsiHfChecksum.Expected = when {
+                pinned.isNotEmpty() -> YtSsiHfChecksum.Expected.Sha256(pinned.lowercase())
+                listed != null -> listed
+                else -> hubSha(r)?.let { YtSsiHfChecksum.Expected.Sha256(it) } ?: throw IOException("no checksum")
+            }
             val body = r.body ?: throw IOException("empty")
             val size = body.contentLength().takeIf { it > 0 }
             val digest = MessageDigest.getInstance("SHA-256")
+            val blob = (expected as? YtSsiHfChecksum.Expected.GitBlob)?.let {
+                MessageDigest.getInstance("SHA-1").apply { update(YtSsiHfChecksum.gitBlobHeader(it.size)) }
+            }
             var done = 0L
             body.byteStream().use { input ->
                 part.outputStream().use { out ->
@@ -179,6 +188,7 @@ object YtSsiModels {
                         if (n < 0) break
                         out.write(buffer, 0, n)
                         digest.update(buffer, 0, n)
+                        blob?.update(buffer, 0, n)
                         done += n
                         if (done - lastReport > 512 * 1024) {
                             lastReport = done
@@ -187,11 +197,17 @@ object YtSsiModels {
                     }
                 }
             }
-            val sha = digest.digest().joinToString("") { "%02x".format(it) }
-            if (sha != expected) {
-                part.delete()
-                throw IOException("checksum mismatch")
+            val sha = YtSsiHfChecksum.hex(digest.digest())
+            val ok = when (expected) {
+                is YtSsiHfChecksum.Expected.Sha256 -> sha == expected.hex
+                is YtSsiHfChecksum.Expected.GitBlob -> done == expected.size && YtSsiHfChecksum.hex(blob!!.digest()) == expected.sha1
             }
+            if (!ok) {
+                part.delete()
+                lastCheck = "mismatch: ${target.name} got ${sha.take(12)} want ${expected.short()}"
+                throw IOException("checksum mismatch (${target.name})")
+            }
+            lastCheck = "ok: ${target.name} ${expected.short()}"
             if (!part.renameTo(target)) {
                 target.delete()
                 if (!part.renameTo(target)) throw IOException("rename failed")
@@ -200,12 +216,32 @@ object YtSsiModels {
         }
     }
 
-    /** The SHA-256 the server declares for an LFS file, from the redirect chain's headers. */
-    private fun declaredSha(response: Response): String? {
+    /** The last checksum check, for the Diagnose line. */
+    @Volatile
+    var lastCheck: String? = null
+        private set
+
+    private fun YtSsiHfChecksum.Expected.short(): String = when (this) {
+        is YtSsiHfChecksum.Expected.Sha256 -> "sha256 ${hex.take(12)}"
+        is YtSsiHfChecksum.Expected.GitBlob -> "git ${sha1.take(12)}"
+    }
+
+    /** The checksum the hub's file listing names for [url]'s file; null when it cannot be read. */
+    private fun listedChecksum(url: String): YtSsiHfChecksum.Expected? {
+        val ref = YtSsiHfChecksum.ref(url) ?: return null
+        return runCatching {
+            client.newCall(Request.Builder().url(ref.treeUrl).build()).execute().use { r ->
+                if (!r.isSuccessful) null else r.body?.string()?.let { YtSsiHfChecksum.expected(it, ref) }
+            }
+        }.onFailure { Log.w(TAG, "file listing failed", it) }.getOrNull()
+    }
+
+    /** An X-Linked-Etag SHA-256 declared by the hub itself (huggingface.co), never by the storage server. */
+    private fun hubSha(response: Response): String? {
         var r: Response? = response
         while (r != null) {
-            for (name in listOf("x-linked-etag", "etag")) {
-                val value = r.header(name)?.removePrefix("W/")?.trim('"')?.lowercase()
+            if (r.request.url.host == "huggingface.co") {
+                val value = r.header("x-linked-etag")?.removePrefix("W/")?.trim('"')?.lowercase()
                 if (value != null && SHA.matches(value)) return value
             }
             r = r.priorResponse

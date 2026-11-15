@@ -189,10 +189,10 @@ object YtSsi {
         val model = when (val state = YtSsiModels.state.value) {
             YtSsiModelState.Missing -> "model not downloaded"
             is YtSsiModelState.Downloading -> "model downloading ${state.done / 1_000_000} MB"
-            YtSsiModelState.Ready -> "model ${spec.id} (${if (YtSsiModels.verified(context)?.pinned == true) "pinned sha" else "server sha"})"
+            YtSsiModelState.Ready -> "model ${spec.id} (${if (YtSsiModels.verified(context)?.pinned == true) "pinned sha" else "hub-listed sha"})"
             YtSsiModelState.Unsupported -> "model unsupported on this ABI"
             is YtSsiModelState.Failed -> "model failed: ${state.reason.take(60)}"
-        }
+        } + (YtSsiModels.lastCheck?.let { " [$it]" } ?: "")
         val last = lastRun(context)
         val paused = pausedUntil(context)
         return buildString {
