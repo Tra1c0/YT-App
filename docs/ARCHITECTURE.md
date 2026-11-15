@@ -47,7 +47,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   `scripts/check-strings.sh`). Newer files are named per round and topic (`yt_r24_synthwave_strings.xml`).
 - Page modules (player page side): `Y/player/YtPlayerHost.kt` (PlayerFragment implements it),
   `Y/player/YtPlayerModules.kt` (fixed module list: mini `YtMiniModule`, minimize
-  `YtMinimizeModule`, player gestures `YtPlayerGestureModule`, scene `YtSceneModule`, battery cue
+  `YtMinimizeModule`, player gestures `YtPlayerGestureModule`, scene `YtSceneModule`, stream error card `YtStreamErrorModule`, battery cue
   `YtBatteryCueModule`). Module hooks include `onConfigurationChanged`.
 - Service modules: `J/services/YtServiceModules.kt` (commands travel in the `yt_cmd` bundle key);
   modules `YtLoopModule`, `YtScrubModule`, `YtSessionModule` (time box), `YtSoftCloseModule`,
@@ -266,6 +266,14 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 
 > Service, modules, queue, positions, speed, loudness, music, battery, floating player.
 
+- Stream load failure: `OnlinePlayerService.startPlayback` catch → `ytLoadFailed`; pure
+  classifier `J/util/YtStreamError.kt` (exception cause chain → kind; `removesFromFeed`,
+  `retryMayHelp`, queue rules; YouTube now answers private videos with LOGIN_REQUIRED "Please sign
+  in", mapped to SIGN_IN_REQUIRED), glue `J/services/YtStreamFailure.kt` (playlist-metadata keys
+  `yt_stream_error`/`yt_stream_error_detail`, texts, queue kept aside on a fresh start and restored,
+  `forget` deletes gone videos from the feed DB via `SubscriptionsFeedDao.ytDeleteVideo` and later
+  queue copies, `leave` on the next navigate). Page card: module `Y/player/YtStreamErrorModule.kt`
+  (retry / open in YouTube / next; `YtPlayerHost.clearVideoDetails`). Toast only when no page shows.
 - `J/services/AbstractPlayerService.kt`, `OnlinePlayerService.kt`, `OfflinePlayerService.kt`;
   notification `J/util/NowPlayingNotification.kt`.
 - `J/services/YtPlaybackGuards.kt`: `YtForegroundHold` (keeps the service in the foreground while
@@ -635,7 +643,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (388 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (391 files; generated, do not edit)</summary>
 
 - `J/helpers/` (25): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDeadSubs, YtDesign,
@@ -645,16 +653,17 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - `J/obj/update/` (1): YtWorkflowRuns
 - `J/receivers/` (1): YtUpdateReceiver
 - `J/repo/` (1): YtFeedFlight
-- `J/services/` (14): YtBatteryQualityModule, YtLoopModule, YtOfflineAudio, YtPlayRecovery,
+- `J/services/` (15): YtBatteryQualityModule, YtLoopModule, YtOfflineAudio, YtPlayRecovery,
   YtPlaybackGuards, YtPositionLedger, YtPositionRules, YtPushService, YtResumeNotification,
-  YtScrubModule, YtServiceModules, YtServiceSoftClose, YtSessionModule, YtSoundModule
+  YtScrubModule, YtServiceModules, YtServiceSoftClose, YtSessionModule, YtSoundModule,
+  YtStreamFailure
 - `J/ui/activities/` (1): YtSignInActivity
 - `J/ui/preferences/` (3): YtChannelSpeedsPreference, YtInteractionSettings, YtUpdateNotifyPrefs
 - `J/ui/views/` (2): YtBottomNavigationView, YtEdgeScrollView
-- `J/util/` (20): YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules, YtNotifyChannels, YtPush,
+- `J/util/` (21): YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules, YtNotifyChannels, YtPush,
   YtPushRules, YtQueueEdit, YtQueuePersist, YtQueueStore, YtReleaseNotes, YtSelfUpdater, YtStorage,
-  YtStorageRules, YtTitleCalm, YtUpdateNotifier, YtUpdateNotifyRules, YtUpdateRules, YtUpdateWatch,
-  YtUpdateWatchRules
+  YtStorageRules, YtStreamError, YtTitleCalm, YtUpdateNotifier, YtUpdateNotifyRules, YtUpdateRules,
+  YtUpdateWatch, YtUpdateWatchRules
 - `J/workers/` (1): YtUpdateCheckWorker
 - `Y/` (116): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
   FrequencyMotion, FrequencyPillBars, FrequencyPulse, FrequencyPulseMath, FrequencyTimeBar,
@@ -702,13 +711,13 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtNewsStoryEdits, YtNewsStoryPage, YtNewsSummary, YtNewsSummaryApi, YtNewsSummaryKey,
   YtNewsSummaryKeyPreference, YtNewsSummaryModel, YtNewsSummaryProvider, YtNewsSummaryUi,
   YtNewsText, YtNewsTextures, YtNewsTranscript
-- `Y/player/` (34): YtBatteryCapLabel, YtBatteryCueModule, YtBatteryCueView, YtChapterTap,
+- `Y/player/` (35): YtBatteryCapLabel, YtBatteryCueModule, YtBatteryCueView, YtChapterTap,
   YtChapterTapLabel, YtHoldDirection, YtHoldGesture, YtHoldLayout, YtHoldTileStyle, YtHoldTilesView,
   YtLoopChipView, YtLoopController, YtLoopPlan, YtLoopSheet, YtLoops, YtPageLayoutRules,
   YtPlayerGestureModule, YtPlayerGesturePrefs, YtPlayerGestureTestHooks, YtPlayerHost,
   YtPlayerHudStyle, YtPlayerModules, YtPlayerTouch, YtReturnChipView, YtRewindChip, YtRewindMemory,
   YtScrubLensView, YtScrubLive, YtScrubPrecision, YtSharePlan, YtShareScrub, YtShareScrubSource,
-  YtShareTokenView, YtSpring
+  YtShareTokenView, YtSpring, YtStreamErrorModule
 - `Y/scene/` (4): YtSceneCompose, YtSceneModule, YtSceneSheet, YtSceneTestHooks
 - `Y/search/` (6): YtSearchData, YtSearchEntry, YtSearchInks, YtSearchRules, YtSearchUi, YtSeenRow
 - `Y/shorts/` (10): YtShortsLook, YtShortsMath, YtShortsPlayer, YtShortsPrefs, YtShortsScreen,

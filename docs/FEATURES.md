@@ -121,6 +121,7 @@ Bekannt: Wischen zum nächsten Short hat im Emulator nicht reagiert; auf dem Han
 | Nur Audio und Hintergrund | Spielt nur den Ton, auch die Warteschlange weiter; bei Downloads ohne eigene Tonspur den Ton der Videodatei. | E T |
 | Kein Absturz im Hintergrund | Der Dienst bleibt beim Wechsel zum nächsten Video im Vordergrund; sonst pausiert er mit „Wiedergabe pausiert – zum Fortsetzen tippen“. | T |
 | Livestreams erholen sich | Bis zu drei Neuversuche; die Fehlermeldung nennt den genauen Code. | T |
+| Klare Meldung statt endlosem Laden | Lässt sich ein Video nicht laden, zeigt die Videoseite den Grund (privat/gelöscht, altersbeschränkt, nur für Mitglieder, Bot-Prüfung, Land, kostenpflichtig, Netz) mit „Erneut versuchen“, „In YouTube öffnen“ und „Nächstes Video“. Die nächsten Videos bleiben erhalten; private oder gelöschte Videos verschwinden aus dem Feed und der Warteschlange. | T |
 | Downloads | Videos und Ton herunterladen und offline abspielen. | E |
 | Lautstärke angleichen | Bringt Videos auf etwa −14 LUFS (einstellbar −16 bis −12, höchstens +12 dB), hebt leise Stellen sanft an (abschaltbar) und begrenzt bei −1 dBTP, damit nichts übersteuert. Globale Lautstärke −10 bis +6 dB. Einstellungen → Audio & Video → Lautstärke; ganz aus = Ton unverändert (ab dem nächsten Video). | T |
 | Musik im Hintergrund nur als Audio | Geht YT bei einem Musikvideo in den Hintergrund, lädt nur noch der Ton; beim Zurückkommen ist das Bild wieder da. Erkannt an markierten Kanälen, „- Topic“, VEVO, „… Music“, Kategorie Musik. Abschaltbar unter Player. | T |

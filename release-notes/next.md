@@ -1,7 +1,4 @@
-## Neu
-- Formen: Minimieren geht nahtlos in die Leiste über. Das Video nimmt beim Runterziehen Breite, Ecken und Farbe der Leiste an, die Seite darunter blendet weich aus, keine unsichtbare Wand mehr.
-- Beschreibung: Links nach Typ gruppiert (Zeitmarken, Kanäle, Videos & Playlists, externe Links). Werbe- und Affiliate-Links sind markiert und eingeklappt, auch im Text.
-- „Tote Abos finden“ (Einstellungen → Gesten & Interaktion): Kanäle ohne Upload seit über einem Jahr, ankreuzen und deabonnieren, mit Rückgängig.
-
-## Geändert
-- Kanal- und Playlist-Links in Beschreibung und Kommentaren öffnen direkt in der App.
+## Behoben
+- Videos, die sich nicht laden lassen (z. B. privat gestellt, gelöscht, altersbeschränkt, nur für Kanalmitglieder, Bot-Prüfung), zeigen jetzt auf der Videoseite den Grund mit „Erneut versuchen“, „In YouTube öffnen“ und „Nächstes Video“, statt endlos zu laden.
+- Die nächsten Videos bleiben dabei erhalten.
+- Private oder gelöschte Videos verschwinden aus dem Feed und der Warteschlange.
