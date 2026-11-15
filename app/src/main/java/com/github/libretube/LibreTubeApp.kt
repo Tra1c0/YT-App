@@ -15,6 +15,8 @@ class LibreTubeApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // YT: the archive's script part (dialogue script, audio analysis) registers itself
+        com.github.libretube.ui.yt.archive.script.YtArchiveScripts.register()
 
         /**
          * Initialize the needed notification channels for DownloadService and BackgroundMode
