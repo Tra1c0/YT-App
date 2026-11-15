@@ -139,3 +139,5 @@
 # YT: the API SDK of the news summaries pulls in opentelemetry-api, whose AutoValue
 # annotation is compile-time only (the SDK ships its own keep rules for Jackson).
 -dontwarn com.google.auto.value.AutoValue
+# YT: ONNX Runtime's JNI code looks its Java classes, fields and methods up by name.
+-keep class ai.onnxruntime.** { *; }

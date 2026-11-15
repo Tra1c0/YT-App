@@ -72,6 +72,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -580,6 +581,12 @@ private fun Field(
         )
         if (value.text.isNotEmpty()) {
             IconSpot(R.drawable.ic_close, stringResource(R.string.yt_r12_search_clear), Color(inks.fieldText), content.testTag("yt_search_clear"), actions.clear)
+        }
+        // SSI: the moments search, with what is typed
+        val context = LocalContext.current
+        IconSpot(R.drawable.ic_yt_ssi, stringResource(R.string.yt_r33_ssi_open), Color(inks.fieldText), content.testTag("yt_search_ssi")) {
+            com.github.libretube.ui.yt.ssi.YtSsiUi.open(context, value.text)
+            actions.back()
         }
     }
 }

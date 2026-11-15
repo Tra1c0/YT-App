@@ -1,0 +1,20 @@
+{
+  "name": "no-match handling",
+  "synthetic": true,
+  "now": "2026-11-15",
+  "videos": [
+    {
+      "id": "n1", "title": "Gartenarbeit im Sommer", "channel": "GrünerDaumen", "uploaded": "2024-07-01", "language": "de",
+      "speech": [
+        {"start": 0, "text": "Tomaten brauchen viel Sonne und regelmäßig Wasser, sonst bleiben die Früchte klein und sauer im Geschmack."},
+        {"start": 9000, "text": "Im Herbst sollte man die letzten grünen Tomaten ernten und drinnen nachreifen lassen, bevor der erste Frost kommt."}
+      ]
+    }
+  ],
+  "cases": [
+    {"query": "Quantencomputer Verschränkung", "relevant": []},
+    {"query": "\"Tomaten brauchen keine Sonne\"", "relevant": [], "note": "a quote that is not said must not be softened into a similar one"},
+    {"query": "Tomaten -Sonne", "relevant": [], "note": "the only passage says Sonne"},
+    {"query": "Tomaten 2019", "relevant": []}
+  ]
+}

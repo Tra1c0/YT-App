@@ -1,0 +1,37 @@
+{
+  "name": "quotes and wordings (German, word timing)",
+  "synthetic": true,
+  "now": "2026-11-15",
+  "videos": [
+    {
+      "id": "q1", "title": "Warum Ameisen so stark sind", "channel": "Naturkanal", "uploaded": "2024-03-10", "language": "de",
+      "speech": [
+        {"start": 0, "text": "Willkommen zu einer neuen Folge über die kleinen Tiere im Wald."},
+        {"start": 6000, "text": "Eine Ameise kann das Fünfzigfache ihres eigenen Körpergewichts tragen."},
+        {"start": 12000, "text": "Das liegt vor allem an ihren kräftigen Muskeln und dem geringen Gewicht."},
+        {"start": 18000, "text": "Außerdem arbeiten die Tiere im Team zusammen und teilen die Last auf."}
+      ]
+    },
+    {
+      "id": "q2", "title": "Kaffee am Morgen", "channel": "Alltagswissen", "uploaded": "2025-01-20", "language": "de",
+      "speech": [
+        {"start": 0, "text": "Viele Menschen trinken am Morgen eine Tasse Kaffee zum Wachwerden."},
+        {"start": 7000, "text": "Koffein blockiert im Gehirn die Rezeptoren für das Müdigkeitssignal Adenosin."},
+        {"start": 14000, "text": "Deshalb fühlen wir uns nach dem ersten Kaffee wacher und konzentrierter."}
+      ]
+    },
+    {
+      "id": "q3", "title": "Vulkane erklärt", "channel": "Geo", "uploaded": "2023-08-01", "language": "de",
+      "speech": [
+        {"start": 0, "text": "Ein Vulkan entsteht dort, wo flüssiges Gestein aus dem Erdinneren an die Oberfläche steigt."},
+        {"start": 8000, "text": "Dieses geschmolzene Gestein nennt man Magma, an der Oberfläche heißt es Lava."}
+      ]
+    }
+  ],
+  "cases": [
+    {"query": "„das Fünfzigfache ihres eigenen Körpergewichts“", "relevant": [{"video": "q1", "startMs": 6000, "endMs": 11000}], "note": "exact quote"},
+    {"query": "Wie viel kann eine Ameise tragen?", "relevant": [{"video": "q1", "startMs": 6000, "endMs": 11000}], "note": "question, other wording"},
+    {"query": "Warum macht Kaffee wach", "relevant": [{"video": "q2", "startMs": 0, "endMs": 6000}, {"video": "q2", "startMs": 14000, "endMs": 20000}]},
+    {"query": "\"Magma\"", "relevant": [{"video": "q3", "startMs": 8000, "endMs": 14000}]}
+  ]
+}
