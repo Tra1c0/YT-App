@@ -16,7 +16,8 @@ class YtArchiveStore(val root: File) {
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
-        encodeDefaults = false
+        // every field written, so the other parts (script, risk) read the candidate as it is
+        encodeDefaults = true
     }
 
     private val lock = Any()

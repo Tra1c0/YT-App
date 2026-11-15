@@ -262,16 +262,8 @@ class YtArchiveRunner(private val context: Context) {
         for (meta in store.all().filter { it.high && !it.notified }) YtArchive.notifyHighRisk(context, meta)
     }
 
-    /** Asks the script part; the entry remembers whether it worked. */
     private suspend fun script(meta: YtArchiveMeta, audio: Boolean) {
-        val files = store.files(meta.videoId) ?: return
-        val ok = runCatching {
-            if (audio) YtArchiveParts.script.analyseAudio(meta.candidate(), files) else YtArchiveParts.script.dialogue(meta.candidate(), files)
-        }.getOrDefault(false)
-        val (text, _, _) = store.measure(meta.videoId)
-        store.update(meta.videoId) {
-            it.copy(scriptState = if (ok) YtArchiveMeta.SCRIPT_DONE else YtArchiveMeta.SCRIPT_FAILED, scriptAt = now(), textBytes = text)
-        }
+        YtArchive.makeScript(meta, audio)
     }
 
     /** The light checks: vanished entries to confirm, then entries in the window not checked lately. */

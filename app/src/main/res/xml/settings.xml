@@ -31,6 +31,13 @@
             app:summary="@string/yt_interaction_summary"
             app:title="@string/yt_interaction" />
 
+        <!-- YT: the archive of vanished videos (round 31) -->
+        <Preference
+            android:icon="@drawable/ic_history"
+            app:key="yt_archive"
+            app:summary="@string/yt_r31_archive_entry_summary"
+            app:title="@string/yt_r31_archive_title" />
+
         <Preference
             android:icon="@drawable/ic_block"
             app:key="sponsorblock"

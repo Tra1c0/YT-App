@@ -42,8 +42,6 @@ class LibreTubeApp : Application() {
 
         // YT: the background check for a new YT build (kept as scheduled; off cancels it)
         com.github.libretube.util.YtUpdateNotifier.schedule(this)
-        // YT: the archive of vanished videos (its jobs only while switched on)
-        com.github.libretube.ui.yt.archive.YtArchive.schedule(this)
 
         /**
          * Handler for uncaught exceptions
@@ -64,6 +62,7 @@ class LibreTubeApp : Application() {
 
         // YT: the playing queue is saved on every change and put back after a restart
         com.github.libretube.util.YtQueueStore.start(this)
+        com.github.libretube.ui.yt.archive.YtArchive.schedule(this) // YT: archive jobs (round 31), only while switched on
     }
 
     /**

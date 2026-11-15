@@ -26,7 +26,7 @@ class YtArchiveStoreTest {
         videoId = id, title = "Title", channelName = "Channel", tierLevel = tier.level,
         savedAt = 1, tierAt = 1, textBytes = 10, audioBytes = 20, videoBytes = 30,
         audioMime = "audio/webm", videoMime = "video/mp4",
-        chapters = listOf(YtArchiveChapter(0, "Intro"), YtArchiveChapter(65, "Main")),
+        chapters = listOf(YtArchiveChapter(0, "Intro"), YtArchiveChapter(65_000, "Main")),
     )
 
     @Test

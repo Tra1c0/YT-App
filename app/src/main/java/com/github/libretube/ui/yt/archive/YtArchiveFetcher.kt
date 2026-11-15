@@ -88,7 +88,7 @@ class YtArchiveFetcher(private val store: YtArchiveStore) {
                 description = streams.description.ifBlank { meta.description.orEmpty() }.take(MAX_DESCRIPTION),
                 channelName = streams.uploader.ifBlank { meta.channelName.orEmpty() },
                 durationSec = streams.duration.takeIf { it > 0 } ?: meta.durationSec,
-                chapters = streams.chapters.map { YtArchiveChapter(it.start, it.title) },
+                chapters = streams.chapters.map { YtArchiveChapter(it.start * 1000, it.title) },
             )
         }
         if (!files.thumbnail.isFile) {

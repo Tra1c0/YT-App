@@ -84,7 +84,7 @@ data class YtArchiveMeta(
     }
 }
 
-/** A chapter of a kept video: start in seconds. */
+/** A chapter of a kept video: start in milliseconds (the script part reads it so). */
 @Serializable
 data class YtArchiveChapter(val start: Long, val title: String)
 

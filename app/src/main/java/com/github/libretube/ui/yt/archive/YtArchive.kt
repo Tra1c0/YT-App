@@ -26,6 +26,7 @@ import com.github.libretube.LibreTubeApp
 import com.github.libretube.R
 import com.github.libretube.constants.IntentData
 import com.github.libretube.db.DatabaseHolder
+import com.github.libretube.enums.FileType
 import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.ui.activities.MainActivity
 import com.github.libretube.util.YtCrashLog
@@ -195,10 +196,29 @@ object YtArchive {
             if (meta.vanished) meta else meta.copy(vanishedAt = now, vanishedKind = kind.name)
         }
 
+    // ---- scripts ----
+
+    /**
+     * Asks the script part: the audio analysis when [audio] (default: when audio is kept), else
+     * the dialogue from the transcript. The entry remembers the outcome; true when a script came out.
+     */
+    suspend fun makeScript(meta: YtArchiveMeta, audio: Boolean? = null): Boolean = withContext(Dispatchers.IO) {
+        val files = store.files(meta.videoId) ?: return@withContext false
+        val withAudio = audio ?: (meta.tier.level >= YtArchiveTier.AUDIO.level && files.audio.isFile)
+        val ok = runCatching {
+            if (withAudio) YtArchiveParts.script.analyseAudio(meta.candidate(), files) else YtArchiveParts.script.dialogue(meta.candidate(), files)
+        }.getOrDefault(false)
+        val (text, _, _) = store.measure(meta.videoId)
+        store.update(meta.videoId) {
+            it.copy(scriptState = if (ok) YtArchiveMeta.SCRIPT_DONE else YtArchiveMeta.SCRIPT_FAILED, scriptAt = System.currentTimeMillis(), textBytes = text)
+        }
+        ok
+    }
+
     // ---- what the watch page can offer ----
 
     /** A kept copy of a video: the archive's entry and/or a finished LibreTube download. */
-    data class Kept(val meta: YtArchiveMeta?, val download: Boolean) {
+    data class Kept(val meta: YtArchiveMeta?, val download: Boolean, val downloadHasVideo: Boolean = false) {
         /** Something to play (a download, or archived audio/video). */
         val playable: Boolean get() = download || (meta != null && meta.tier.level >= YtArchiveTier.AUDIO.level)
     }
@@ -206,11 +226,12 @@ object YtArchive {
     /** The kept copy of [videoId], or null when there is none. Reads the disk and the downloads DB. */
     suspend fun kept(videoId: String): Kept? = withContext(Dispatchers.IO) {
         val meta = runCatching { store[videoId] }.getOrNull()
-        val download = runCatching {
+        val files = runCatching {
             DatabaseHolder.Database.downloadDao().findById(videoId)?.downloadItems
-                ?.any { it.path.exists() && (it.type == com.github.libretube.enums.FileType.VIDEO || it.type == com.github.libretube.enums.FileType.AUDIO) } == true
-        }.getOrDefault(false)
-        if (meta == null && !download) null else Kept(meta, download)
+                ?.filter { it.path.exists() }?.map { it.type }.orEmpty()
+        }.getOrDefault(emptyList())
+        val download = FileType.VIDEO in files || FileType.AUDIO in files
+        if (meta == null && !download) null else Kept(meta, download, FileType.VIDEO in files)
     }
 
     // ---- notification ----

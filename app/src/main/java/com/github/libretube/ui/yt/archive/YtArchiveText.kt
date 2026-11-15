@@ -116,7 +116,7 @@ object YtArchiveText {
             appendLine(it)
         }
         val chapters = script?.chapters?.takeIf { it.isNotEmpty() }?.map { it.start / 1000 to it.title }
-            ?: meta.chapters.map { it.start to it.title }
+            ?: meta.chapters.map { it.start / 1000 to it.title }
         if (chapters.isNotEmpty()) {
             appendLine()
             appendLine(labels.chapters)
