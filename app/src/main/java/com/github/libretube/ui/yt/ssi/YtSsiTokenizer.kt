@@ -8,12 +8,12 @@ import java.text.Normalizer
 /**
  * YT: the tokenizer of the embedding model in plain Kotlin: SentencePiece's Unigram model as the
  * Hugging Face file `tokenizer.json` describes it (XLM-RoBERTa's vocabulary, used by
- * multilingual-e5-small). Text is NFKC-normalised, split at white space, every word gets the "▁"
- * prefix (Metaspace), and each word is cut into the pieces with the best total log probability
- * (Viterbi). Unknown characters become <unk>. The ids get <s> … </s> around them.
- *
- * Known difference: the original normaliser is a compiled character map ("nmt_nfkc"); NFKC plus
- * space folding gives the same result except for a few control and rare characters. Pure.
+ * multilingual-e5-small). Text is normalised by the model's own compiled character map
+ * ([YtSsiCharsMap], "precompiled_charsmap" in the file: NFKC plus SentencePiece's "nmt" rules),
+ * split at white space, every word gets the "▁" prefix (Metaspace), and each word is cut into
+ * the pieces with the best total log probability (Viterbi). Unknown characters become <unk>.
+ * The ids get <s> … </s> around them. A file without a character map falls back to NFKC with
+ * control characters removed (close to the map except for a few rare characters). Pure.
  */
 class YtSsiTokenizer(
     private val pieces: Map<String, Int>,
@@ -22,6 +22,8 @@ class YtSsiTokenizer(
     val bosId: Int,
     val eosId: Int,
     val padId: Int,
+    /** The model's character map; null: NFKC. */
+    val charsMap: YtSsiCharsMap? = null,
 ) {
     private val maxPiece = pieces.keys.maxOfOrNull { it.length } ?: 1
     private val unkScore = (scores.minOrNull() ?: 0f) - 10f
@@ -45,11 +47,14 @@ class YtSsiTokenizer(
         return words(text).flatMap { word(SPACE + it) }.map { byId[it] ?: "<unk>" }
     }
 
-    private fun words(text: String): List<String> =
-        Normalizer.normalize(text, Normalizer.Form.NFKC)
-            .filter { !Character.isISOControl(it) || it.isWhitespace() }
-            .split(WHITE)
-            .filter { it.isNotEmpty() }
+    /** [text] as the model's normaliser makes it (before the split at white space). */
+    fun normalize(text: String): String = charsMap?.normalize(text)
+        ?: Normalizer.normalize(text, Normalizer.Form.NFKC).filter { !Character.isISOControl(it) || it.isWhitespace() }
+
+    /** For Diagnose: which normaliser is in use. */
+    val normalizer: String get() = charsMap?.let { "charsmap (${it.blob.size / 1024} KB)" } ?: "NFKC fallback"
+
+    private fun words(text: String): List<String> = normalize(text).split(WHITE).filter { it.isNotEmpty() }
 
     /** The best cut of one word ("▁word") into pieces: Viterbi over the piece scores. */
     private fun word(word: String): List<Int> {
@@ -150,13 +155,24 @@ class YtSsiTokenizer(
                 val b = Regex("\\{[^{}]*\"content\"\\s*:\\s*\"$escaped\"[^{}]*\"id\"\\s*:\\s*(\\d+)[^{}]*\\}").find(added)
                 return (a ?: b)?.groupValues?.get(1)?.toInt() ?: names.indexOf(content).takeIf { it >= 0 } ?: default
             }
-            return of(names, values.toFloatArray(), unk, special("<s>", 0), special("</s>", 2), special("<pad>", 1))
+            return of(names, values.toFloatArray(), unk, special("<s>", 0), special("</s>", 2), special("<pad>", 1), charsMap(text))
         }
 
-        fun of(names: List<String>, scores: FloatArray, unk: Int, bos: Int, eos: Int, pad: Int): YtSsiTokenizer {
+        /**
+         * The "precompiled_charsmap" of the file's normaliser (base64), or null when there is
+         * none (another normaliser, or null) or it cannot be read.
+         */
+        fun charsMap(text: String): YtSsiCharsMap? {
+            val key = Regex("\"precompiled_charsmap\"\\s*:\\s*\"").find(text) ?: return null
+            val start = key.range.last + 1
+            val end = text.indexOf('"', start).takeIf { it > start } ?: return null
+            return YtSsiCharsMap.fromBase64(text.substring(start, end))
+        }
+
+        fun of(names: List<String>, scores: FloatArray, unk: Int, bos: Int, eos: Int, pad: Int, charsMap: YtSsiCharsMap? = null): YtSsiTokenizer {
             val map = HashMap<String, Int>(names.size * 2)
             names.forEachIndexed { i, name -> map.putIfAbsent(name, i) }
-            return YtSsiTokenizer(map, scores, unk, bos, eos, pad)
+            return YtSsiTokenizer(map, scores, unk, bos, eos, pad, charsMap)
         }
 
         /** A compact copy of the vocabulary, read much faster than the JSON on later starts. */
@@ -174,6 +190,9 @@ class YtSsiTokenizer(
                     out.writeUTF(byId[i] ?: "")
                     out.writeFloat(tokenizer.scores[i])
                 }
+                val blob = tokenizer.charsMap?.blob ?: ByteArray(0)
+                out.writeInt(blob.size)
+                out.write(blob)
             }
         }
 
@@ -191,11 +210,18 @@ class YtSsiTokenizer(
                     names += input.readUTF()
                     scores[i] = input.readFloat()
                 }
-                of(names, scores, unk, bos, eos, pad)
+                val size = input.readInt()
+                val charsMap = if (size > 0) {
+                    YtSsiCharsMap.parse(ByteArray(size).also { input.readFully(it) }) ?: return null
+                } else {
+                    null
+                }
+                of(names, scores, unk, bos, eos, pad, charsMap)
             }
         }.getOrNull()
 
-        private const val CACHE_VERSION = 1
+        /** 2: with the character map (a version-1 cache is read from the JSON again). */
+        private const val CACHE_VERSION = 2
     }
 
     /** Just enough JSON for the vocabulary array: strings with escapes and numbers. */

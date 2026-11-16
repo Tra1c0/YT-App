@@ -148,8 +148,12 @@ object YtHeader {
         YtAccountSheet.show(activity, entries)
     }
 
-    /** The search item stays hidden until the header's search button opens it. */
+    /**
+     * The search item stays hidden until the header's search button opens it. Standard: SSI's
+     * icon goes next to the classic search field ([com.github.libretube.ui.yt.ssi.YtSsiClassicEntry]).
+     */
     fun onMenuCreated(searchItem: MenuItem, menu: android.view.Menu) {
+        com.github.libretube.ui.yt.ssi.YtSsiClassicEntry.onMenuCreated(searchItem, menu)
         if (!active) return
         searchItem.isVisible = searchItem.isActionViewExpanded
         MENU_IDS.forEach { menu.findItem(it)?.isVisible = false }

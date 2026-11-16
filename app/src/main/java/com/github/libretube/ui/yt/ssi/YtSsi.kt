@@ -85,9 +85,40 @@ object YtSsi {
     fun weights(context: Context, intent: YtSsiIntent, now: Long = System.currentTimeMillis()): YtSsiWeights =
         if (learnOn()) YtSsiLearning.weights(intent.weights, intent.kind, learnState(context), now) else intent.weights
 
-    /** The meaning search's cut-off (learnt when learning is on). */
-    fun minCosine(context: Context, now: Long = System.currentTimeMillis()): Float =
-        if (learnOn()) YtSsiLearning.minCosine(learnState(context), now) else YtSsiVectorIndex.MIN_COSINE
+    /**
+     * The meaning search's cut-off: the calibrated base ("Schwelle kalibrieren") or the default,
+     * plus the learnt offset when learning is on.
+     */
+    fun minCosine(context: Context, now: Long = System.currentTimeMillis()): Float {
+        val base = YtSsiCalibration.base(calibratedCut(context))
+        return if (learnOn()) YtSsiLearning.minCosine(learnState(context), now, base) else base
+    }
+
+    /** The learnt offset added to the cut-off (0 when learning is off). */
+    fun cutOffset(context: Context, now: Long = System.currentTimeMillis()): Float =
+        if (learnOn()) YtSsiLearning.cutOffset(learnState(context), now) else 0f
+
+    // ---- calibrated cut-off (SSI-2 gap) ----
+
+    private const val KEY_CUT = "calibrated_cut"
+    private const val KEY_CUT_AT = "calibrated_cut_at"
+
+    /** The calibrated base cut-off, or null for the default. */
+    fun calibratedCut(context: Context): Float? =
+        prefs(context).getFloat(KEY_CUT, Float.NaN).takeIf { !it.isNaN() }?.let(YtSsiCalibration::bound)
+
+    fun calibratedAt(context: Context): Long = prefs(context).getLong(KEY_CUT_AT, 0)
+
+    /** Applies [cut] (bounded) as the base cut-off; null goes back to the default. */
+    fun setCalibratedCut(context: Context, cut: Float?, now: Long = System.currentTimeMillis()) = prefs(context).edit {
+        if (cut == null) {
+            remove(KEY_CUT)
+            remove(KEY_CUT_AT)
+        } else {
+            putFloat(KEY_CUT, YtSsiCalibration.bound(cut))
+            putLong(KEY_CUT_AT, now)
+        }
+    }
 
     /**
      * Stores [verdict] on [hit] and, when learning is on, learns from it. Call off the main
@@ -129,6 +160,37 @@ object YtSsi {
     }
 
     fun rerankUsedToday(context: Context, now: Long = System.currentTimeMillis()): Int = YtSsiRerank.used(rerankDay(context), today(now))
+
+    // ---- json3 caption answers (SSI-1 gap) ----
+
+    private const val KEY_JSON3 = "json3"
+
+    @Volatile
+    private var json3Cache: YtSsiJson3State? = null
+
+    fun json3State(context: Context): YtSsiJson3State = json3Cache ?: runCatching {
+        prefs(context).getString(KEY_JSON3, null)?.let { json.decodeFromString(YtSsiJson3State.serializer(), it) }
+    }.getOrNull().let { it ?: YtSsiJson3State() }.also { json3Cache = it }
+
+    @Synchronized
+    private fun json3(context: Context, change: (YtSsiJson3State) -> YtSsiJson3State) {
+        val next = change(json3State(context))
+        json3Cache = next
+        prefs(context).edit { putString(KEY_JSON3, json.encodeToString(YtSsiJson3State.serializer(), next)) }
+    }
+
+    /** Whether a caption fetch for [videoId] asks for json3 first ([YtSsiJson3Gate]). */
+    fun json3Try(context: Context, videoId: String): Boolean {
+        var tried = true
+        json3(context) { state -> YtSsiJson3Gate.decide(state, videoId, System.currentTimeMillis()).let { (t, next) -> tried = t; next } }
+        return tried
+    }
+
+    fun json3Result(context: Context, videoId: String, ok: Boolean) = json3(context) { state ->
+        if (ok) YtSsiJson3Gate.ok(state, videoId) else YtSsiJson3Gate.empty(state, videoId, System.currentTimeMillis())
+    }
+
+    fun json3Fallback(context: Context) = json3(context) { YtSsiJson3Gate.fallback(it) }
 
     // ---- throttle ----
 
@@ -291,8 +353,13 @@ object YtSsi {
             append(", AI re-rank ").append(if (aiRerank()) "on" else "off")
             append(" (${rerankUsedToday(context)}/${YtSsiRerank.CALLS_PER_DAY} today)")
             append(", learning ").append(if (learnOn()) "on" else "off").append(": ")
-            append(YtSsiLearning.summary(learnState(context), System.currentTimeMillis()))
+            append(YtSsiLearning.summary(learnState(context), System.currentTimeMillis(), YtSsiCalibration.base(calibratedCut(context))))
             runCatching { db.feedbackCount() }.getOrNull()?.let { append(", $it verdicts stored") }
+            // SSI-1/SSI-2 gaps: captions, tokenizer, cut-off, Instant's time
+            append(", ").append(YtSsiJson3Gate.describe(json3State(context), System.currentTimeMillis()))
+            append(", tokenizer ").append(YtSsiModels.tokenizerNormalizer ?: "not loaded yet")
+            append(", ").append(YtSsiCalibration.describe(calibratedCut(context)))
+            append(", ").append(YtSsiSearch.lastInstant?.describe() ?: "no Instant search yet")
             YtSsiBenchRunner.last(context)?.let { run ->
                 val m = run.current
                 append(", benchmark ${YtCrashLog.formatTime(m.at)}: R@1 %.2f R@3 %.2f R@5 %.2f nDCG@5 %.2f dev P50 %s P95 %s ms, no-match %.2f, latency P50 %d P95 %d ms (SSI-1 way: R@3 %.2f)".format(

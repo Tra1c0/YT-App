@@ -117,7 +117,7 @@ import java.util.Locale
  * matched words marked, the time ("≈" where it is not word-exact), a precision badge, −30 s /
  * +30 s, "Warum dieser Treffer?" and "Alle als Clip-Folge abspielen". Playing hides the layer;
  * the search stays and comes back when SSI is opened again. Opened from the design search's
- * field ([YtSsiUi.open]). Every text on the cards takes its colour from [YtInk] (Pitfall P1).
+ * field ([YtSsiUi.open]) or, in Standard, from the classic search bar ([YtSsiClassicEntry]). Every text on the cards takes its colour from [YtInk] (Pitfall P1).
  */
 object YtSsiUi {
     var shown by mutableStateOf(false)

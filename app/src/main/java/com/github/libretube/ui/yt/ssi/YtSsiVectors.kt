@@ -1,5 +1,11 @@
 package com.github.libretube.ui.yt.ssi
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import java.nio.ByteBuffer
 import java.util.PriorityQueue
 import kotlin.math.abs
@@ -9,7 +15,8 @@ import kotlin.math.sqrt
 /**
  * YT: the vector side of SSI, pure. Passage vectors are L2-normalised and kept as int8 with one
  * scale per vector (a quarter of float32, the cosine changes by well under 1 %); the search is a
- * plain scan over all of them with a top-K heap, fast enough below some 200 000 passages.
+ * plain scan over all of them with a top-K heap (two threads from 8 000 rows on; its time at
+ * 50 000 passages is checked by YtSsiVectorScanTest, the phone's last one shows in Diagnose).
  */
 object YtSsiVectors {
     fun normalize(v: FloatArray): FloatArray {
@@ -122,29 +129,80 @@ class YtSsiVectorIndex(val model: String, val dim: Int) {
         }
     }
 
-    /** The [k] passages closest to [query] (normalised), best first, as (id, cosine). */
-    fun search(query: FloatArray, k: Int): List<Pair<Long, Float>> {
-        if (query.size != dim) return emptyList()
-        val top = YtSsiVectors.TopK(k)
+    /**
+     * The [k] passages closest to [query] (normalised), best first, as (id, cosine). From
+     * [PARALLEL_FROM] rows on, the rows are split into [threads] (at most [MAX_THREADS]) equal
+     * parts scanned at the same time, each with its own top-K heap, merged at the end. Every
+     * [SLICE] rows the scan checks its coroutine, so a new query cancels it at once.
+     */
+    suspend fun search(query: FloatArray, k: Int, threads: Int = MAX_THREADS): List<Pair<Long, Float>> {
+        if (query.size != dim || k <= 0) return emptyList()
         val list = synchronized(chunks) { chunks.toList() }
-        // the heap holds (chunk << 32 | row) as one index, so no id is boxed per row
-        for ((c, chunk) in list.withIndex()) {
-            for (row in chunk.ids.indices) {
-                top.offer(YtSsiVectors.dot(query, chunk.data, row * dim, chunk.scales[row]), (c shl 20) or row)
+        val total = list.sumOf { it.ids.size }
+        if (total == 0) return emptyList()
+        val parts = if (total < PARALLEL_FROM) 1 else threads.coerceIn(1, MAX_THREADS)
+        lastThreads = parts
+        val found = if (parts == 1) {
+            scan(query, list, 0, total, k)
+        } else {
+            coroutineScope {
+                (0 until parts).map { p ->
+                    val from = (total.toLong() * p / parts).toInt()
+                    val to = (total.toLong() * (p + 1) / parts).toInt()
+                    async(Dispatchers.Default) { scan(query, list, from, to, k) }
+                }.awaitAll().flatten()
             }
         }
-        return top.best().map { (score, at) -> list[at ushr 20].ids[at and 0xFFFFF] to score }
+        return found.sortedByDescending { it.first }.take(k).map { (score, at) -> list[at ushr 20].ids[at and 0xFFFFF] to score }
+    }
+
+    /** Threads the last [search] used (for Diagnose). */
+    @Volatile
+    var lastThreads: Int = 0
+        private set
+
+    /** The best (score, chunk << 20 | row) of the rows [from] until [to], counted over all chunks. */
+    private suspend fun scan(query: FloatArray, list: List<Chunk>, from: Int, to: Int, k: Int): List<Pair<Float, Int>> {
+        val top = YtSsiVectors.TopK(k)
+        val row = ByteArray(dim)
+        var first = 0
+        for ((c, chunk) in list.withIndex()) {
+            val rows = chunk.ids.size
+            val start = maxOf(from, first) - first
+            val end = minOf(to, first + rows) - first
+            first += rows
+            if (start >= end) continue
+            // a view of its own: position and bulk reads do not disturb the other thread
+            val view = chunk.data.duplicate()
+            for (r in start until end) {
+                if ((r - start) % SLICE == 0) currentCoroutineContext().ensureActive()
+                view.position(r * dim)
+                view.get(row, 0, dim)
+                top.offer(YtSsiVectors.dot(query, row, chunk.scales[r]), (c shl 20) or r)
+            }
+        }
+        return top.best()
     }
 
     companion object {
         /**
          * Which semantic neighbours count as found: e5 puts unrelated text at a cosine of about
          * 0.7, so a plain top-K would always "find" something. Kept are the ones at least
-         * [MIN_COSINE] and within [BAND] of the best. Tuned on no real data yet; SSI-2 moves the
-         * floor a little from feedback ([YtSsiLearning.minCosine]).
+         * [MIN_COSINE] and within [BAND] of the best. [MIN_COSINE] is the default floor; the user
+         * can calibrate it on their examples ([YtSsiCalibration]) and feedback moves it a little
+         * on top ([YtSsiLearning.minCosine]).
          */
         const val MIN_COSINE = 0.78f
         const val BAND = 0.08f
+
+        /** At most two threads, so playback and the screen stay smooth. */
+        const val MAX_THREADS = 2
+
+        /** Below this many rows one thread is quicker than starting a second. */
+        const val PARALLEL_FROM = 8_000
+
+        /** Rows between two checks for cancellation. */
+        const val SLICE = 2_048
 
         fun cut(found: List<Pair<Long, Float>>, minCosine: Float = MIN_COSINE): List<Pair<Long, Float>> {
             val best = found.maxOfOrNull { it.second } ?: return emptyList()

@@ -1,6 +1,7 @@
 package com.github.libretube.ui.yt.ssi
 
 import android.content.Context
+import android.os.SystemClock
 import android.util.Log
 import com.github.libretube.api.MediaServiceRepository
 import com.github.libretube.api.obj.StreamItem
@@ -22,6 +23,19 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.ZoneId
+
+/**
+ * How long the last Instant search took: [totalMs] from the query to its hits (the archive's
+ * new transcripts, the parse and the local search), [localMs] the local search alone, [scan]
+ * the vector scan in it (null without the model).
+ */
+data class YtSsiLatency(val at: Long, val totalMs: Long, val localMs: Long, val scan: YtSsiSearch.Scan?) {
+    fun describe(): String = buildString {
+        append("last Instant $totalMs ms (local $localMs ms")
+        if (scan != null) append(", vector scan ${scan.ms} ms over ${scan.rows} vectors on ${scan.threads} thread${if (scan.threads == 1) "" else "s"}")
+        append(")")
+    }
+}
 
 /** Instant: the local index only. Deep: also YouTube's search and fresh captions. */
 enum class YtSsiDepth { INSTANT, DEEP }
@@ -126,6 +140,7 @@ object YtSsiSearch {
     }
 
     private suspend fun search(context: Context, id: Long, query: String, depth: YtSsiDepth) {
+        val started = SystemClock.elapsedRealtime()
         val db = YtSsi.db
         // the archive's new transcripts first (local and quick when nothing changed)
         runCatching { YtSsi.indexer.indexArchive(System.currentTimeMillis() + 3_000) }
@@ -161,8 +176,14 @@ object YtSsiSearch {
             set(id) { it.copy(phase = YtSsiPhase.DONE) }
             return
         }
+        lastScan = null
+        val localStart = SystemClock.elapsedRealtime()
         emit(if (depth == YtSsiDepth.DEEP) YtSsiPhase.AI else YtSsiPhase.DONE)
-        if (depth == YtSsiDepth.INSTANT) return
+        if (depth == YtSsiDepth.INSTANT) {
+            val now = SystemClock.elapsedRealtime()
+            lastInstant = YtSsiLatency(System.currentTimeMillis(), now - started, now - localStart, lastScan)
+            return
+        }
 
         // the AI's search phrases and words (opt-in, cached per query)
         var plan: YtSsiAiPlan? = null
@@ -324,7 +345,8 @@ object YtSsiSearch {
 
     /**
      * Full text + embeddings over the index, fused and filtered. [learned] uses the weights and
-     * the cut-off as feedback moved them (the benchmark's SSI-1 way passes false).
+     * the cut-off as feedback moved them (the benchmark's SSI-1 way passes false); [cutOff]
+     * replaces the meaning cut-off (the calibration's sweep).
      */
     internal suspend fun local(
         context: Context,
@@ -332,6 +354,7 @@ object YtSsiSearch {
         extra: List<String> = emptyList(),
         fromYouTube: Set<String> = emptySet(),
         learned: Boolean = true,
+        cutOff: Float? = null,
     ): Pair<List<YtSsiHit>, Set<YtSsiRunNote>> {
         val db = YtSsi.db
         val notes = HashSet<YtSsiRunNote>()
@@ -348,8 +371,11 @@ object YtSsiSearch {
                     ?: YtSsiModels.use(context) { it.embed(listOf(intent.semanticText), query = true).first() }
                         ?.also { queryVector = intent.semanticText to it }
                 if (query != null) {
-                    val floor = if (learned) YtSsi.minCosine(context) else YtSsiVectorIndex.MIN_COSINE
-                    semantic = YtSsiVectorIndex.cut(withContext(Dispatchers.Default) { index.search(query, SEMANTIC_K) }, floor).map { it.first }
+                    val floor = cutOff ?: if (learned) YtSsi.minCosine(context) else YtSsiVectorIndex.MIN_COSINE
+                    val t = SystemClock.elapsedRealtime()
+                    val found = withContext(Dispatchers.Default) { index.search(query, SEMANTIC_K) }
+                    lastScan = Scan(SystemClock.elapsedRealtime() - t, index.size, index.lastThreads)
+                    semantic = YtSsiVectorIndex.cut(found, floor).map { it.first }
                     model = YtSsiModels.spec.version
                 }
             }
@@ -373,6 +399,17 @@ object YtSsiSearch {
 
     @Volatile
     private var queryVector: Pair<String, FloatArray>? = null
+
+    /** One vector scan: its time, the rows it went over and the threads it used. */
+    data class Scan(val ms: Long, val rows: Int, val threads: Int)
+
+    @Volatile
+    private var lastScan: Scan? = null
+
+    /** The last Instant search's times (this session), for Diagnose. */
+    @Volatile
+    var lastInstant: YtSsiLatency? = null
+        private set
 
     private const val SEMANTIC_K = 200
     private const val AI_TIMEOUT_MS = 25_000L

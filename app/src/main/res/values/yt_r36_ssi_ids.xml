@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 36: the SSI action in the classic (Standard) search bar. -->
+<resources>
+    <item name="yt_ssi_classic" type="id" />
+</resources>
