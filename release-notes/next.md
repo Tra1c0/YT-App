@@ -1,6 +1,10 @@
 ## Neu
-- SSI-Suche (Etappe 2): KI-Nachsortierung der besten 20 Treffer in „Tief“ (optional, mit lokaler Reihenfolge verrechnet, höchstens 40 Anfragen am Tag); Abschnitte nach Bedeutung; Start und Ende an Satzgrenzen geprüft, ein einschränkender Folgesatz („aber“, „nicht“) kommt mit; Relevanz und Zeitgenauigkeit getrennt angezeigt; Treffer bewerten, SSI lernt daraus lokal; eigener Benchmark mit importierten Testbeispielen (Einstellungen → SSI-Suche → Benchmark).
-- Eigenes Design (Etappe 2, Animator): Tab „Animation“ im Editor – 23 Vorlagen, Federn, Keyframes, Timeline und Kurveneditor, Zustände (gedrückt, ausgewählt, lädt …) mit Übergängen, Auslöser wie Tippen, Scrollen oder „Player spielt“; Ausprobieren-Modus; Diagnose-Zeile „Animator“.
+- Standard-Design: Stellensuche (SSI) direkt aus der Suchleiste öffnen.
+- SSI-Benchmark: „Schwelle kalibrieren“ probiert mehrere Bedeutungs-Schwellen an deinen Beispielen aus und übernimmt auf Wunsch die beste (zurücksetzbar).
+- Eigenes Design: Der Miniplayer zeigt das ganze im Editor gestaltete Element (Formen, Texte, Bilder, Verläufe); ein Bild-Platzhalter folgt dem Video mit Rahmen und Schatten.
+- Eigenes Design: Bilder importieren, für Bild-Elemente und als Füllung; große Bilder werden verkleinert.
+- Eigenes Design: Aussehen je Zustand (gedrückt, ausgewählt, spielt, lädt) unter Farbe → „Aussehen für“, auch in der App sichtbar.
 
-## Geändert
-- Die SSI-Datenbank wird auf Version 2 gehoben; ein älterer Build kann sie danach nicht mehr öffnen.
+## Behoben
+- Eigenes Design: Animationen von Miniplayer und Leiste laufen jetzt auch in der App; zwei schnelle Tipps zählen nur noch als Doppeltipp; Endlos-Animationen pausieren, solange sie nicht zu sehen sind; nach dem Umsortieren gleiten die Elemente an ihren Platz; die Ganzbild-Vorschau lässt sich scrollen.
+- SSI: Text wird genau wie vom Modell vorgesehen normalisiert; leere Untertitel mit Wortzeiten werden erkannt und eine Weile übersprungen; „Sofort“ rechnet auf zwei Kernen und bricht bei neuer Eingabe sofort ab, die Diagnose zeigt die letzte Antwortzeit.

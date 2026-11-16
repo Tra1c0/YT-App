@@ -142,8 +142,16 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
     `YtAnimValidate` (+ `YtAnimOps`), `YtAnimTimeline`. Android: `YtAnimRuntime` (one engine per
     component instance; triggers: touches, feed visibility/scroll/loading, chip/tab selection,
     player playing via `YtPlaybackClock`; Diagnose "Animator" with planned vs. real run length),
-    editor tab `YtAnimPanel` and `YtAnimTimelineView` (timeline + curve editor). Mini player and
-    bar animations play only in the editor.
+    editor tab `YtAnimPanel` and `YtAnimTimelineView` (timeline + curve editor). Mini player
+    (`scene.finger` → `YtAnimInput.events`, docked/playing signals) and bar (`ytAnimHostLayer`,
+    `bareRoot`) animate in the app too; loops pause while hidden (`YtAnimInput.shown`).
+  - Stage 1/2 gap fixes: pure `YtTapArbiter` (tap waits for the double-tap window only where a
+    double-tap trigger exists), `YtReorderAnim` (spring from old places after a flow drop, via
+    `YtRenderHooks.placeOffset`), `YtImageImport` (format by bytes, limits, downscale to 2048 px /
+    4 MP, PNG/JPEG/WebP), `YtStatePatchRule` (state patches skip properties the animator owns;
+    patch order); `YtBuilderImages` (off-main bitmap cache for IMAGE fills). Mini player of
+    "Eigenes" renders the MINI node tree in `Y/mini/YtMiniCustomUnder.kt`; a THUMBNAIL slot draws
+    nothing over the video, only its outline along `YtMiniScene.picture`/`pictureMoves`.
 
 ## Mini player
 
@@ -669,6 +677,12 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   qualifier sentence within 8 s), `YtSsiScores` (relevance band), `YtSsiLearning` (feedback table,
   bounded weights ×0.6–1.4, cut-off ±0.03, 30-day half-life), `YtSsiBenchmark` + `YtSsiBenchRunner`
   (in-app benchmark from imported examples, SSI-2 vs. SSI-1 way). DB v2 cannot be downgraded.
+  Gap fixes: pure `YtSsiCharsMap` (SentencePiece precompiled charsmap; NFKC only without a map;
+  vocab cache v2), `YtSsiCalibration` (cut-off sweep 0.72–0.84 on the user's examples, bounds
+  0.70–0.86, prefs `calibrated_cut`), `YtSsiJson3Gate` (empty json3 → TTML for that video 14 days,
+  back-off for the next videos, Diagnose counters); classic entry `YtSsiClassicEntry` (menu icon in
+  STANDARD's search toolbar via `YtHeader.onMenuCreated`); vector scan suspend, 2 threads from
+  8,000 rows, cancellable; Diagnose shows the last Instant latency.
   Benchmark harness `T/ui/yt/ssi/YtSsiBench.kt` (fixtures `app/src/test/resources/ssi/`, synthetic).
 - Security: notes `docs/SICHERHEIT.md`; emulator-only switches guarded by `J/helpers/YtGuard.kt`.
 
@@ -745,13 +759,15 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   rebuilt when fullscreen ends; cached geometry must be invalidated per configuration, not per size.
 - **P12** Anything drawn on a thumbnail image sits under the Box's later children: draw overlays
   in a node placed after them.
+- **P13** A `pointerInput` inside a mini player's `Under` composable takes the page's touches
+  (tap, drag, minimize). Route touches through the host's finger signal (`scene.finger`) instead.
 
 ## File inventory
 
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (505 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (515 files; generated, do not edit)</summary>
 
 - `J/helpers/` (26): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtBuilderMode, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDeadSubs,
@@ -800,35 +816,37 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtRiskText
 - `Y/archive/script/` (10): YtArchiveScript, YtArchiveScripts, YtScriptAudio, YtScriptAudioAis,
   YtScriptCheck, YtScriptDialogue, YtScriptInput, YtScriptLedger, YtScriptMaker, YtScriptTextAis
-- `Y/builder/` (39): YtAnimControl, YtAnimEngine, YtAnimMath, YtAnimModel, YtAnimPanel,
+- `Y/builder/` (44): YtAnimControl, YtAnimEngine, YtAnimMath, YtAnimModel, YtAnimPanel,
   YtAnimPresets, YtAnimRuntime, YtAnimTimeline, YtAnimTimelineView, YtAnimValidate, YtBuilderActive,
-  YtBuilderFonts, YtBuilderInks, YtBuilderPaint, YtBuilderSafeMode, YtBuilderScreens,
-  YtBuilderStore, YtColor, YtDocOps, YtEditorCanvas, YtEditorChecks, YtEditorDrag, YtEditorMetrics,
-  YtEditorPanels, YtEditorState, YtFrameStats, YtHistory, YtLayoutEngine, YtResponsive, YtSnap,
-  YtThemeCodec, YtThemeEditorActivity, YtThemeEditorPreference, YtThemeModel, YtThemeRender,
-  YtThemeSeeds, YtThemeValidate, YtThemeZip, YtTokensResolver
+  YtBuilderFonts, YtBuilderImages, YtBuilderInks, YtBuilderPaint, YtBuilderSafeMode,
+  YtBuilderScreens, YtBuilderStore, YtColor, YtDocOps, YtEditorCanvas, YtEditorChecks, YtEditorDrag,
+  YtEditorMetrics, YtEditorPanels, YtEditorState, YtFrameStats, YtHistory, YtImageImport,
+  YtLayoutEngine, YtReorderAnim, YtResponsive, YtSnap, YtStatePatchRule, YtTapArbiter, YtThemeCodec,
+  YtThemeEditorActivity, YtThemeEditorPreference, YtThemeModel, YtThemeRender, YtThemeSeeds,
+  YtThemeValidate, YtThemeZip, YtTokensResolver
 - `Y/feed/` (24): YtDeadSubsPreference, YtDeadSubsRules, YtDragRules, YtFeed, YtFeedEngine,
   YtFeedFresh, YtFeedRules, YtFeedTopics, YtFeedTopicsSession, YtFeedTopicsWords, YtHideRules,
   YtHomePreferences, YtHomeTestHooks, YtQueueRule, YtSeenHide, YtSeenMark, YtSession, YtSubsOrder,
   YtSwipeCalibration, YtSwipeCalibrationScreen, YtSwipePhysics, YtSwipeSettings, YtSwipeTuning,
   YtTimeBox
 - `Y/liquid/` (4): DampedDragAnimation, InteractiveHighlight, LiquidGestures, YtViewBackdrop
-- `Y/mini/` (84): YtBleedMath, YtDockMath, YtGlassLayout, YtGlassOver, YtGlassSlabShape,
+- `Y/mini/` (85): YtBleedMath, YtDockMath, YtGlassLayout, YtGlassOver, YtGlassSlabShape,
   YtMiniAfter, YtMiniAfterLayout, YtMiniAfterOver, YtMiniAfterTextures, YtMiniAfterUnder,
   YtMiniBleed, YtMiniClay, YtMiniClayLayout, YtMiniClayOver, YtMiniClayTextures, YtMiniClayUnder,
-  YtMiniCustom, YtMiniDesign, YtMiniDesigns, YtMiniDockBar, YtMiniEditorial, YtMiniEditorialLayout,
-  YtMiniEditorialOver, YtMiniEditorialTextures, YtMiniEditorialUnder, YtMiniFrequency,
-  YtMiniFrequencyTextures, YtMiniFrost, YtMiniFrostLayout, YtMiniFrostOver, YtMiniFrostTextures,
-  YtMiniFrostUnder, YtMiniGeometry, YtMiniGlass, YtMiniHost, YtMiniKiesel, YtMiniKieselLayout,
-  YtMiniKieselOver, YtMiniKieselTextures, YtMiniKieselUnder, YtMiniLook, YtMiniMerge, YtMiniModule,
-  YtMiniMovo, YtMiniMovoLayout, YtMiniMovoOver, YtMiniMovoTextures, YtMiniMovoUnder, YtMiniParts,
-  YtMiniPop, YtMiniPopLayout, YtMiniPopOver, YtMiniPopTextures, YtMiniPopUnder, YtMiniRestore,
-  YtMiniRestoreRules, YtMiniRiseRules, YtMiniShapes, YtMiniShapesMath, YtMiniShapesOver,
-  YtMiniShapesTextures, YtMiniShapesUnder, YtMiniSide, YtMiniSideLayout, YtMiniSideParts,
-  YtMiniSideTextures, YtMiniStandard, YtMiniSynthwave, YtMiniSynthwaveTextures, YtMiniTestHooks,
-  YtMiniTextures, YtMiniTouch, YtMiniYouTube, YtMiniYoutubeLayout, YtMiniYoutubeParts,
-  YtMiniYoutubeTextures, YtMinimizeDrag, YtMinimizeGeometry, YtMinimizeModule, YtMinimizeTestHooks,
-  YtPageStart, YtSoftClose, YtSoftCloseRules, YtUnderFinger
+  YtMiniCustom, YtMiniCustomUnder, YtMiniDesign, YtMiniDesigns, YtMiniDockBar, YtMiniEditorial,
+  YtMiniEditorialLayout, YtMiniEditorialOver, YtMiniEditorialTextures, YtMiniEditorialUnder,
+  YtMiniFrequency, YtMiniFrequencyTextures, YtMiniFrost, YtMiniFrostLayout, YtMiniFrostOver,
+  YtMiniFrostTextures, YtMiniFrostUnder, YtMiniGeometry, YtMiniGlass, YtMiniHost, YtMiniKiesel,
+  YtMiniKieselLayout, YtMiniKieselOver, YtMiniKieselTextures, YtMiniKieselUnder, YtMiniLook,
+  YtMiniMerge, YtMiniModule, YtMiniMovo, YtMiniMovoLayout, YtMiniMovoOver, YtMiniMovoTextures,
+  YtMiniMovoUnder, YtMiniParts, YtMiniPop, YtMiniPopLayout, YtMiniPopOver, YtMiniPopTextures,
+  YtMiniPopUnder, YtMiniRestore, YtMiniRestoreRules, YtMiniRiseRules, YtMiniShapes,
+  YtMiniShapesMath, YtMiniShapesOver, YtMiniShapesTextures, YtMiniShapesUnder, YtMiniSide,
+  YtMiniSideLayout, YtMiniSideParts, YtMiniSideTextures, YtMiniStandard, YtMiniSynthwave,
+  YtMiniSynthwaveTextures, YtMiniTestHooks, YtMiniTextures, YtMiniTouch, YtMiniYouTube,
+  YtMiniYoutubeLayout, YtMiniYoutubeParts, YtMiniYoutubeTextures, YtMinimizeDrag,
+  YtMinimizeGeometry, YtMinimizeModule, YtMinimizeTestHooks, YtPageStart, YtSoftClose,
+  YtSoftCloseRules, YtUnderFinger
 - `Y/news/` (30): YtNews, YtNewsChannelRules, YtNewsChannels, YtNewsChatCompletions, YtNewsGemini,
   YtNewsGestureRules, YtNewsGestures, YtNewsHome, YtNewsHttp, YtNewsLayer, YtNewsMerge, YtNewsModel,
   YtNewsMotion, YtNewsOpenAi, YtNewsQuotes, YtNewsSeen, YtNewsStories, YtNewsStory,
@@ -847,8 +865,9 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - `Y/shorts/` (10): YtShortsLook, YtShortsMath, YtShortsPlayer, YtShortsPrefs, YtShortsScreen,
   YtShortsSource, YtShortsStyle, YtShortsTestHooks, YtShortsTimeline, YtShortsView
 - `Y/sound/` (3): YtSound, YtSoundEngine, YtSoundShaping
-- `Y/ssi/` (30): YtSsi, YtSsiAiPlan, YtSsiBenchRunner, YtSsiBenchmark, YtSsiBoundary, YtSsiCaptions,
-  YtSsiClipModule, YtSsiDb, YtSsiEmbedder, YtSsiFusion, YtSsiHfChecksum, YtSsiIndexer, YtSsiIntent,
+- `Y/ssi/` (34): YtSsi, YtSsiAiPlan, YtSsiBenchRunner, YtSsiBenchmark, YtSsiBoundary,
+  YtSsiCalibration, YtSsiCaptions, YtSsiCharsMap, YtSsiClassicEntry, YtSsiClipModule, YtSsiDb,
+  YtSsiEmbedder, YtSsiFusion, YtSsiHfChecksum, YtSsiIndexer, YtSsiIntent, YtSsiJson3Gate,
   YtSsiLayer, YtSsiLearning, YtSsiModel, YtSsiModels, YtSsiPlayRules, YtSsiPrefs, YtSsiRanker,
   YtSsiRerank, YtSsiScores, YtSsiSearch, YtSsiSegmenter, YtSsiSemanticSegmenter, YtSsiSettings,
   YtSsiText, YtSsiTokenizer, YtSsiVectors, YtSsiVoice
