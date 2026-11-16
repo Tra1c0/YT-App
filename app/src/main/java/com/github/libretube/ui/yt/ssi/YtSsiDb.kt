@@ -23,7 +23,8 @@ import java.nio.ByteOrder
  *   is unicode61 where the build has it, else "simple" (the text is folded before, so both
  *   split it the same way).
  * - `vecs`: one int8 vector per passage and model.
- * - `ai`: the AI plans per folded query, and the AI re-rank's grades (key "rr|…").
+ * - `ai`: the AI plans per folded query, the AI re-rank's grades (key "rr|…") and, SSI-3, the
+ *   raw relation answers per claim and passage (key "st|…", verified again on every read).
  * - `feedback` (SSI-2): the user's verdicts on hits; the learning state itself is a preference.
  */
 class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, NAME, null, VERSION) {
@@ -438,6 +439,33 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
 
     fun putRerank(key: String, grades: Map<Long, YtSsiAiGrade>, now: Long) {
         writableDatabase.execSQL("INSERT OR REPLACE INTO ai (query, answer, at) VALUES (?, ?, ?)", arrayOf<Any>(key, YtSsiRerank.encode(grades), now))
+    }
+
+    // ---- SSI-3 relations ----
+
+    /** The raw stance answer stored under [key] ([YtSsiStanceRules.cacheKey], prefix "st|"), when fresh; verified again by the caller. */
+    fun stance(key: String, now: Long): YtSsiStanceRules.Raw? = readableDatabase.rawQuery("SELECT answer, at FROM ai WHERE query = ?", arrayOf(key)).use { c ->
+        if (c.moveToFirst() && YtSsiStanceRules.fresh(c.getLong(1), now)) YtSsiStanceRules.decode(c.getString(0)) else null
+    }
+
+    fun putStance(key: String, raw: YtSsiStanceRules.Raw, now: Long) {
+        writableDatabase.execSQL("INSERT OR REPLACE INTO ai (query, answer, at) VALUES (?, ?, ?)", arrayOf<Any>(key, YtSsiStanceRules.encode(raw), now))
+    }
+
+    /** The stored vectors of [model] for the passages [ids] (for near-duplicate passages, SSI-3). */
+    fun vectorsOf(model: String, ids: Collection<Long>): Map<Long, FloatArray> {
+        if (ids.isEmpty()) return emptyMap()
+        val out = HashMap<Long, FloatArray>()
+        for (chunk in ids.distinct().chunked(400)) {
+            val marks = chunk.joinToString(",") { "?" }
+            readableDatabase.rawQuery(
+                "SELECT seg_id, scale, data FROM vecs WHERE model = ? AND seg_id IN ($marks)",
+                arrayOf(model) + chunk.map { it.toString() }.toTypedArray(),
+            ).use { c ->
+                while (c.moveToNext()) out[c.getLong(0)] = YtSsiVectors.dequantize(c.getBlob(2), c.getFloat(1))
+            }
+        }
+        return out
     }
 
     // ---- feedback ----

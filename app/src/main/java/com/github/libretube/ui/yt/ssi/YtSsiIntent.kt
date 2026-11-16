@@ -9,7 +9,10 @@ import java.time.temporal.TemporalAdjusters
 /** What the query is after; it sets the weights of the retrieval methods. */
 enum class YtSsiIntentKind { EXACT_QUOTE, FIND_VIDEO, EXPLANATION, QUESTION, STATEMENT }
 
-/** Asks the later stages of SSI will answer (stance, comparison); now only flagged and said. */
+/**
+ * Asks beyond finding a spot (named when they were flagged for a later stage): since SSI-3 they
+ * open the evidence, comparison or timeline view and start the relation analysis ([YtSsiRoute]).
+ */
 enum class YtSsiLater { REFUTE, COMPARE, CONTRADICTION, CHRONOLOGY }
 
 /** An upload-date range (epoch ms, both ends inclusive; null = open). */
@@ -100,7 +103,7 @@ object YtSsiIntentParser {
         YtSsiLater.REFUTE to Regex("""\b(widerleg\w*|gegenargument\w*|entkr(ä|a)ft\w*|debunk\w*|refut\w*|counter\s*argument\w*|rebut\w*)""", RegexOption.IGNORE_CASE),
         YtSsiLater.COMPARE to Regex("""\b(vergleich\w*|compar\w*|versus|vs\.?)\b""", RegexOption.IGNORE_CASE),
         YtSsiLater.CONTRADICTION to Regex("""\b(widersp(r|ru)ch\w*|widerspricht|widersprochen|etwas anderes behauptet|contradict\w*)""", RegexOption.IGNORE_CASE),
-        YtSsiLater.CHRONOLOGY to Regex("""\b(im laufe der (zeit|jahre)|entwicklung|früher|frueher|over time|timeline)\b""", RegexOption.IGNORE_CASE),
+        YtSsiLater.CHRONOLOGY to Regex("""\b(im laufe der (zeit|jahre)|über die jahre|ueber die jahre|entwicklung|früher|frueher|over time|timeline|zeitleiste|(meinung|position|haltung)\s+(ge(ä|ae|a)ndert|gewechselt)|changed\s+(his|her|their)\s+(mind|position))\b""", RegexOption.IGNORE_CASE),
     )
 
     private val QUESTION_START = Regex("""^\s*(warum|wieso|weshalb|wie|was|wer|wann|wo|welche\w*|woher|wozu|why|how|what|who|when|where|which)\b""", RegexOption.IGNORE_CASE)

@@ -45,7 +45,6 @@
     <string name="yt_r33_ssi_chip_without">Without: %1$s</string>
     <string name="yt_r33_ssi_chip_not_channel">Not from: %1$s</string>
     <string name="yt_r33_ssi_chip_language">Language: %1$s</string>
-    <string name="yt_r33_ssi_chip_later">Counter-arguments, comparisons and contradictions are checked in a later stage; for now SSI finds the topic</string>
     <string name="yt_r33_ssi_play_all">Play all as clips (%1$d)</string>
     <string name="yt_r33_ssi_before">−30 s</string>
     <string name="yt_r33_ssi_after">+30 s</string>
@@ -69,7 +68,6 @@
     <string name="yt_r33_ssi_reason_vanished">The original is gone; this is the archive\'s copy</string>
     <string name="yt_r33_ssi_reason_ai">Found with words the AI suggested</string>
     <string name="yt_r33_ssi_reason_youtube">Found by Deep\'s YouTube search and read just now</string>
-    <string name="yt_r33_ssi_reason_later">Whether it agrees or refutes is not checked yet</string>
     <string name="yt_r33_ssi_reason_timing_word">Time from the speech recognition\'s word timestamps</string>
     <string name="yt_r33_ssi_reason_timing_line">Time from caption lines: a few seconds off is possible</string>
     <string name="yt_r33_ssi_reason_timing_span">No spoken moment: a chapter, the title or the description</string>

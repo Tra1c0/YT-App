@@ -73,6 +73,14 @@ object YtSsi {
     fun aiRerank(): Boolean = allowAi() && PreferenceHelper.getBoolean(YtSsiPrefs.KEY_AI_RERANK, YtSsiPrefs.DEFAULT_AI_RERANK)
     fun learnOn(): Boolean = PreferenceHelper.getBoolean(YtSsiPrefs.KEY_LEARN, YtSsiPrefs.DEFAULT_LEARN)
 
+    /** SSI-3: relations may be asked of the AI (the AI switch and the relations switch). */
+    fun stanceOn(): Boolean = allowAi() && PreferenceHelper.getBoolean(YtSsiPrefs.KEY_STANCE, YtSsiPrefs.DEFAULT_STANCE)
+    fun stancePerSearch(): Int = YtSsiPrefs.stancePerSearch(PreferenceHelper.getString(YtSsiPrefs.KEY_STANCE_PER_SEARCH, YtSsiPrefs.DEFAULT_STANCE_PER_SEARCH.toString()))
+    fun stancePerDay(): Int = YtSsiPrefs.stancePerDay(PreferenceHelper.getString(YtSsiPrefs.KEY_STANCE_PER_DAY, YtSsiPrefs.DEFAULT_STANCE_PER_DAY.toString()))
+
+    /** SSI-3: saved researches (`filesDir/yt_ssi/research/`). */
+    val research: YtSsiResearchStore by lazy { YtSsiResearchStore(java.io.File(LibreTubeApp.instance.filesDir, "yt_ssi/research")) }
+
     // ---- learning from feedback (SSI-2) ----
 
     @Volatile
@@ -160,6 +168,24 @@ object YtSsi {
     }
 
     fun rerankUsedToday(context: Context, now: Long = System.currentTimeMillis()): Int = YtSsiRerank.used(rerankDay(context), today(now))
+
+    // ---- relation budget (SSI-3) ----
+
+    private const val KEY_STANCE_DAY = "stance_day"
+
+    private fun stanceDay(context: Context): YtSsiRerank.Day = runCatching {
+        prefs(context).getString(KEY_STANCE_DAY, null)?.split(':')?.let { YtSsiRerank.Day(it[0].toLong(), it[1].toInt()) }
+    }.getOrNull() ?: YtSsiRerank.Day()
+
+    /** Takes one relation request from today's budget; false when it is used up. */
+    @Synchronized
+    fun spendStance(context: Context, now: Long = System.currentTimeMillis()): Boolean {
+        val next = YtSsiRerank.spend(stanceDay(context), today(now), stancePerDay()) ?: return false
+        prefs(context).edit { putString(KEY_STANCE_DAY, "${next.day}:${next.count}") }
+        return true
+    }
+
+    fun stanceUsedToday(context: Context, now: Long = System.currentTimeMillis()): Int = YtSsiRerank.used(stanceDay(context), today(now))
 
     // ---- json3 caption answers (SSI-1 gap) ----
 
@@ -355,6 +381,11 @@ object YtSsi {
             append(", learning ").append(if (learnOn()) "on" else "off").append(": ")
             append(YtSsiLearning.summary(learnState(context), System.currentTimeMillis(), YtSsiCalibration.base(calibratedCut(context))))
             runCatching { db.feedbackCount() }.getOrNull()?.let { append(", $it verdicts stored") }
+            // SSI-3
+            append(", relations ").append(if (stanceOn()) "on" else "off")
+            append(" (${stanceUsedToday(context)}/${stancePerDay()} today, ${stancePerSearch()} per analysis)")
+            append(", ").append(YtSsiStances.last?.describe() ?: "no analysis yet")
+            runCatching { research.count() }.getOrNull()?.let { append(", $it saved researches") }
             // SSI-1/SSI-2 gaps: captions, tokenizer, cut-off, Instant's time
             append(", ").append(YtSsiJson3Gate.describe(json3State(context), System.currentTimeMillis()))
             append(", tokenizer ").append(YtSsiModels.tokenizerNormalizer ?: "not loaded yet")

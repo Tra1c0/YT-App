@@ -24,7 +24,8 @@ import java.util.Locale
  * the index, background indexing, the Deep budget, the AI switch, "Jetzt indexieren", rebuild
  * and clear. Round 35 (SSI-2): the AI re-rank switch, learning from feedback with its reset,
  * and the benchmark on the user's own examples (import, run, format help). Round 36: the
- * meaning cut-off calibrated on the same examples ("Schwelle kalibrieren").
+ * meaning cut-off calibrated on the same examples ("Schwelle kalibrieren"). Round 37 (SSI-3):
+ * the relations switch, their budgets per analysis and per day, and today's use.
  */
 class YtSsiSettings : BasePreferenceFragment() {
     private val importExamples = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -132,6 +133,16 @@ class YtSsiSettings : BasePreferenceFragment() {
         refreshIndex()
         refreshLearning()
         refreshBench()
+        refreshStance()
+    }
+
+    /** SSI-3: today's relation requests and the saved researches. */
+    private fun refreshStance() {
+        val context = context ?: return
+        lifecycleScope.launch {
+            val (used, saved) = withContext(Dispatchers.IO) { YtSsi.stanceUsedToday(context) to runCatching { YtSsi.research.count() }.getOrDefault(0) }
+            findPreference<Preference>(KEY_STANCE_INFO)?.summary = getString(R.string.yt_r37_ssi_stance_info_summary, used, YtSsi.stancePerDay(), saved)
+        }
     }
 
     private fun refreshLearning() {
@@ -449,5 +460,6 @@ class YtSsiSettings : BasePreferenceFragment() {
         const val KEY_BENCH_RUN = "yt_ssi_bench_run"
         const val KEY_BENCH_FORMAT = "yt_ssi_bench_format"
         const val KEY_BENCH_CALIBRATE = "yt_ssi_bench_calibrate"
+        const val KEY_STANCE_INFO = "yt_ssi_stance_info"
     }
 }

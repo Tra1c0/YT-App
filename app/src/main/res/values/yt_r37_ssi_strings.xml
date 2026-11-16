@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 37: SSI-3 "Belege" (relations with verified quotes, comparison, timeline, report, saved research). -->
+<resources>
+    <!-- views -->
+    <string name="yt_r37_ssi_view_hits">Hits</string>
+    <string name="yt_r37_ssi_view_evidence">Evidence</string>
+    <string name="yt_r37_ssi_view_compare">Compare</string>
+    <string name="yt_r37_ssi_view_timeline">Timeline</string>
+    <string name="yt_r37_ssi_view_report">Report</string>
+    <string name="yt_r37_ssi_view_saved">Research</string>
+    <string name="yt_r37_ssi_chip_routed">Counter-arguments, comparisons, contradictions and changes over time are placed in the views above, each with a verified quote</string>
+    <string name="yt_r37_ssi_reason_routed">The view Evidence shows how this passage relates to the claim (only with a verified quote)</string>
+    <string name="yt_r37_ssi_note_restored">Saved research: hits as they were saved</string>
+    <string name="yt_r37_ssi_empty">No passages to show yet.</string>
+    <string name="yt_r37_ssi_no_ai">Relations need the AI: in the SSI settings turn on \"Allow AI\" and \"Place evidence\", and set up a provider for the summaries. Without it SSI shows the plain hits, without any relation.</string>
+    <string name="yt_r37_ssi_neutral">SSI only describes what the passages say: it does not check who is right. A contradiction is not a refutation, and many videos saying the same thing are no proof.</string>
+
+    <!-- relations -->
+    <string name="yt_r37_ssi_rel_supports">supports</string>
+    <string name="yt_r37_ssi_rel_contradicts">contradicts</string>
+    <string name="yt_r37_ssi_rel_refutes_reasoned">refutes with reasons</string>
+    <string name="yt_r37_ssi_rel_qualifies">qualifies</string>
+    <string name="yt_r37_ssi_rel_quotes">quotes</string>
+    <string name="yt_r37_ssi_rel_discusses">discusses</string>
+    <string name="yt_r37_ssi_rel_uncertain">uncertain</string>
+    <string name="yt_r37_ssi_not_evidenced">not evidenced</string>
+    <string name="yt_r37_ssi_cached">saved answer</string>
+    <string name="yt_r37_ssi_unsure_not_found">The AI said \"%1$s\", but its quote is not in this passage: shown as uncertain.</string>
+    <string name="yt_r37_ssi_unsure_no_quote">The AI said \"%1$s\" without a quote: shown as uncertain.</string>
+    <string name="yt_r37_ssi_unsure_ai">The AI could not tell the position from this passage.</string>
+    <string name="yt_r37_ssi_reason">Reason: „%1$s“</string>
+    <string name="yt_r37_ssi_contradicts_note">Says the opposite without giving a reason of its own; who is right stays open.</string>
+    <string name="yt_r37_ssi_flag_ironic">ironic</string>
+    <string name="yt_r37_ssi_flag_hypothetical">hypothetical</string>
+    <string name="yt_r37_ssi_flag_quoting">quoting someone else</string>
+    <string name="yt_r37_ssi_flag_critical">critical</string>
+    <string name="yt_r37_ssi_stance_pending">Being placed …</string>
+
+    <!-- groups -->
+    <string name="yt_r37_ssi_group_supports">Supports the claim</string>
+    <string name="yt_r37_ssi_group_refutes_reasoned">Refutes it with reasons</string>
+    <string name="yt_r37_ssi_group_contradicts">Contradicts it</string>
+    <string name="yt_r37_ssi_group_qualifies">Qualifies it</string>
+    <string name="yt_r37_ssi_group_quotes">Quotes it</string>
+    <string name="yt_r37_ssi_group_discusses">Discusses the topic</string>
+    <string name="yt_r37_ssi_group_uncertain">Uncertain or not evidenced</string>
+    <string name="yt_r37_ssi_group_unchecked">Not checked</string>
+
+    <!-- analysis -->
+    <string name="yt_r37_ssi_claim">Claim</string>
+    <string name="yt_r37_ssi_stance_start">Place evidence</string>
+    <string name="yt_r37_ssi_stance_again">Place again</string>
+    <string name="yt_r37_ssi_stance_stop">Stop</string>
+    <string name="yt_r37_ssi_stance_nothing">Only title matches: there is no passage to place.</string>
+    <string name="yt_r37_ssi_stance_running">Placing … %1$d placed, request %2$d</string>
+    <string name="yt_r37_ssi_budget_line">Up to %1$d passages per analysis, %2$d requests a day</string>
+    <string name="yt_r37_ssi_note_no_ai">The AI is off or not set up: no relations</string>
+    <string name="yt_r37_ssi_note_used">The AI placed the passages; every quote was checked against the passage</string>
+    <string name="yt_r37_ssi_note_cached">Some relations come from earlier answers for the same claim (checked again)</string>
+    <string name="yt_r37_ssi_note_failed">A request did not work: those passages stay unchecked</string>
+    <string name="yt_r37_ssi_note_budget_search">The budget of this analysis is used up: the rest stays unchecked</string>
+    <string name="yt_r37_ssi_note_budget_day">Today\'s budget for relations is used up</string>
+    <string name="yt_r37_ssi_note_nothing">No passage to place</string>
+    <string name="yt_r37_ssi_play">Play</string>
+    <string name="yt_r37_ssi_play_before">From −30 s</string>
+    <string name="yt_r37_ssi_choose">Compare</string>
+    <string name="yt_r37_ssi_choose_full">At most %1$d passages can be compared</string>
+
+    <!-- origins -->
+    <string name="yt_r37_ssi_origins">%1$d videos, %2$d origins</string>
+    <string name="yt_r37_ssi_origin_first">Earliest of %1$d more videos with the same origin</string>
+    <string name="yt_r37_ssi_origin_same">Same origin as „%1$s“ (counts once)</string>
+    <string name="yt_r37_ssi_origin_title">Counted once</string>
+    <string name="yt_r37_ssi_origin_row">%1$d videos, 1 origin: %2$s</string>
+    <string name="yt_r37_ssi_origin_text">nearly the same words</string>
+    <string name="yt_r37_ssi_origin_link">same source linked</string>
+    <string name="yt_r37_ssi_origin_links_video">one links the other</string>
+    <string name="yt_r37_ssi_origin_reupload">re-upload</string>
+
+    <!-- compare -->
+    <string name="yt_r37_ssi_compare_chosen">Your chosen passages side by side (up to %1$d)</string>
+    <string name="yt_r37_ssi_compare_auto">Choose 2 to %1$d passages with \"Compare\"; until then SSI shows one per relation</string>
+    <string name="yt_r37_ssi_compare_few">Fewer than 2 passages: nothing to compare yet.</string>
+    <string name="yt_r37_ssi_passage">Passage</string>
+    <string name="yt_r37_ssi_before30">30 s before</string>
+    <string name="yt_r37_ssi_after30">30 s after</string>
+
+    <!-- timeline -->
+    <string name="yt_r37_ssi_timeline_all">All</string>
+    <string name="yt_r37_ssi_timeline_hint">By upload date, oldest first. Choose a channel to follow one person.</string>
+    <string name="yt_r37_ssi_person_note">One channel by upload date. The facts and the question may have changed in between: an earlier statement is not wrong because a later one differs.</string>
+    <string name="yt_r37_ssi_undated">Without date</string>
+    <string name="yt_r37_ssi_shift_changed">Changed position? %1$s: %2$s → %3$s: %4$s</string>
+    <string name="yt_r37_ssi_shift_narrowed">Qualified position? %1$s: %2$s → %3$s: %4$s</string>
+    <string name="yt_r37_ssi_shift_note">Only a hint from two verified quotes; facts and context may have changed.</string>
+
+    <!-- report -->
+    <string name="yt_r37_ssi_report_title">Evidence report</string>
+    <string name="yt_r37_ssi_report_question">Question</string>
+    <string name="yt_r37_ssi_report_created">Created</string>
+    <string name="yt_r37_ssi_report_reason">Reason</string>
+    <string name="yt_r37_ssi_report_passage">Passage, not placed</string>
+    <string name="yt_r37_ssi_report_same_origin">Same origin</string>
+    <string name="yt_r37_ssi_report_uncertain">Uncertainties</string>
+    <string name="yt_r37_ssi_report_u_not_verified">%1$d relations of the AI had no quote that is in the passage: shown as uncertain</string>
+    <string name="yt_r37_ssi_report_u_ai">%1$d passages the AI could not place</string>
+    <string name="yt_r37_ssi_report_u_unchecked">%1$d passages were not checked</string>
+    <string name="yt_r37_ssi_report_u_no_ai">No AI: the report lists the hits without any relation</string>
+    <string name="yt_r37_ssi_report_u_approx">%1$d times are not word-exact (≈)</string>
+    <string name="yt_r37_ssi_report_u_undated">%1$d videos without an upload date</string>
+    <string name="yt_r37_ssi_report_shift">%1$s: possible change of position between %2$s and %3$s.</string>
+    <string name="yt_r37_ssi_report_none">None noted</string>
+    <string name="yt_r37_ssi_export_md">Export Markdown</string>
+    <string name="yt_r37_ssi_export_json">Export JSON</string>
+    <string name="yt_r37_ssi_export_done">Report saved</string>
+    <string name="yt_r37_ssi_export_failed">The report could not be saved</string>
+
+    <!-- saved research -->
+    <string name="yt_r37_ssi_notes">Notes</string>
+    <string name="yt_r37_ssi_notes_hint">Your notes on this research</string>
+    <string name="yt_r37_ssi_save">Save research</string>
+    <string name="yt_r37_ssi_save_update">Update research</string>
+    <string name="yt_r37_ssi_save_hint">Keeps the query, the claim, the chosen passages (or all placed ones), their relations with quotes and your notes, on this phone only.</string>
+    <string name="yt_r37_ssi_saved_done">Research saved</string>
+    <string name="yt_r37_ssi_saved_failed">The research could not be saved</string>
+    <string name="yt_r37_ssi_saved_title">Saved research (%1$d)</string>
+    <string name="yt_r37_ssi_saved_none">No research saved yet.</string>
+    <string name="yt_r37_ssi_saved_meta">%1$s · %2$d passages · %3$d evidenced · %4$d uncertain</string>
+    <string name="yt_r37_ssi_saved_open">Open</string>
+    <string name="yt_r37_ssi_saved_continue">Continue</string>
+    <string name="yt_r37_ssi_saved_delete">Delete</string>
+    <string name="yt_r37_ssi_saved_delete_sure">Really delete?</string>
+
+    <!-- settings -->
+    <string name="yt_r37_ssi_settings_title">Evidence (relations)</string>
+    <string name="yt_r37_ssi_stance">Place evidence</string>
+    <string name="yt_r37_ssi_stance_summary">The AI says per passage whether it supports, contradicts, qualifies, quotes or discusses the claim. A relation counts only with a quote that is found word for word in the passage.</string>
+    <string name="yt_r37_ssi_per_search">Requests per analysis</string>
+    <string name="yt_r37_ssi_per_day">Requests per day</string>
+    <string name="yt_r37_ssi_stance_info">Relations today</string>
+    <string name="yt_r37_ssi_stance_info_summary">%1$d of %2$d requests used today (6 passages each) · %3$d saved researches</string>
+</resources>

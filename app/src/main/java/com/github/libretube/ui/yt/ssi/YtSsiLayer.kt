@@ -155,14 +155,26 @@ object YtSsiUi {
         YtSsiSearch.cancel()
     }
 
-    internal fun search(context: Context, text: String) {
-        if (text.isBlank()) return
+    /**
+     * Starts a search of [text]; SSI-3's views start over too (a continued research keeps its
+     * id and notes when [keepResearch]). Returns the search's id (0 for a blank text).
+     */
+    internal fun search(context: Context, text: String, keepResearch: Boolean = false): Long {
+        if (text.isBlank()) return 0
         before.clear()
         after.clear()
         openWhy = null
         openFeedback = null
         verdicts.clear()
-        YtSsiSearch.start(context, text, depth)
+        YtSsiEvidenceState.newSearch(keepResearch)
+        val id = YtSsiSearch.start(context, text, depth)
+        YtSsiStances.reset(id)
+        return id
+    }
+
+    /** Puts [text] into the field without searching. */
+    internal fun setField(text: String) {
+        field = TextFieldValue(text, TextRange(text.length))
     }
 
     internal fun key(hit: YtSsiHit) = "${hit.videoId}:${hit.segmentId ?: "v"}"
@@ -190,6 +202,15 @@ object YtSsiLayer {
                 if (granted) YtSsiMic.start?.invoke() else Toast.makeText(activity, R.string.yt_r33_ssi_voice_denied, Toast.LENGTH_SHORT).show()
             }
         }.getOrNull()
+        // SSI-3: the evidence report's export (Markdown, JSON) through the system's file picker
+        val exportMd = runCatching {
+            activity.activityResultRegistry.register("yt_ssi_export_md", ActivityResultContracts.CreateDocument("text/markdown")) { YtSsiExport.write(activity, it) }
+        }.getOrNull()
+        val exportJson = runCatching {
+            activity.activityResultRegistry.register("yt_ssi_export_json", ActivityResultContracts.CreateDocument("application/json")) { YtSsiExport.write(activity, it) }
+        }.getOrNull()
+        YtSsiExport.markdown = exportMd
+        YtSsiExport.json = exportJson
         val compose = ComposeView(activity).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
@@ -210,6 +231,10 @@ object YtSsiLayer {
             override fun onViewDetachedFromWindow(v: View) {
                 permission?.unregister()
                 YtSsiMic.start = null
+                exportMd?.unregister()
+                exportJson?.unregister()
+                if (YtSsiExport.markdown === exportMd) YtSsiExport.markdown = null
+                if (YtSsiExport.json === exportJson) YtSsiExport.json = null
             }
         })
         content.addView(host, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -265,6 +290,27 @@ private fun Screen(palette: YtPalette, permission: ActivityResultLauncher<String
     val cardBack = remember(palette) { YtContrast.over(palette.surface.toArgb(), palette.background.toArgb()) }
     val ink = remember(palette, cardBack) { YtInk.on(palette, cardBack) }
     val accentInk = remember(palette) { YtInk.on(palette, palette.accent.toArgb()) }
+    val stanceRun by YtSsiStances.run.collectAsState()
+    val stances = if (stanceRun.runId == run.id) stanceRun.stances else emptyMap()
+    val pending = if (stanceRun.runId == run.id) stanceRun.pending else emptySet()
+
+    // SSI-3: an ask for a refutation, comparison, contradiction or chronology opens its view and,
+    // once the search is done, starts the relation analysis (when the AI is allowed)
+    LaunchedEffect(run.id, run.intent) {
+        val intent = run.intent ?: return@LaunchedEffect
+        if (YtSsiEvidenceState.routedFor == run.id) return@LaunchedEffect
+        YtSsiEvidenceState.routedFor = run.id
+        YtSsiEvidenceState.view = YtSsiRoute.view(intent)
+        if (YtSsiRoute.personTimeline(intent)) YtSsiEvidenceState.person = YtSsiChronology.person(intent)
+    }
+    LaunchedEffect(run.id, run.phase) {
+        if (run.phase != YtSsiPhase.DONE || YtSsiEvidenceState.autoFor == run.id) return@LaunchedEffect
+        val auto = YtSsiRoute.autoStance(run.intent) || YtSsiEvidenceState.forceAutoFor == run.id
+        if (!auto || run.hits.none { it.segmentId != null }) return@LaunchedEffect
+        val available = withContext(Dispatchers.IO) { YtSsiStances.available() }
+        YtSsiEvidenceState.autoFor = run.id
+        if (available) YtSsiStances.start(context, run.id, YtSsiEvidenceState.claimOf(run.intent), run.query, run.hits)
+    }
 
     fun submit() {
         val text = YtSsiUi.field.text
@@ -392,8 +438,13 @@ private fun Screen(palette: YtPalette, permission: ActivityResultLauncher<String
 
         Status(run, palette)
         run.intent?.let { Chips(it, palette, Color(cardBack), ink) }
+        if (run.query.isNotEmpty()) ViewTabs(palette, cardBack, ink, accentInk)
 
         val hits = run.hits
+        if (YtSsiEvidenceState.view != YtSsiView.HITS && run.query.isNotEmpty()) {
+            EvidenceViews(run, palette, cardBack, ink, accentInk, Modifier.weight(1f))
+            return@Column
+        }
         if (hits.size > 1) {
             Pill(
                 text = stringResource(R.string.yt_r33_ssi_play_all, hits.size),
@@ -434,14 +485,14 @@ private fun Screen(palette: YtPalette, permission: ActivityResultLauncher<String
                 }
             }
             itemsIndexed(hits, key = { _, hit -> YtSsiUi.key(hit) }) { _, hit ->
-                HitCard(hit, run, palette, cardBack, ink) { play(context, hit) }
+                HitCard(hit, run, palette, cardBack, ink, hit.segmentId?.let { stances[it] }, hit.segmentId != null && hit.segmentId in pending) { ssiPlay(context, hit) }
             }
         }
     }
 }
 
 /** Plays [hit] from its start (a little before, at a sentence); a vanished one from the archive's copy. */
-private fun play(context: Context, hit: YtSsiHit) {
+internal fun ssiPlay(context: Context, hit: YtSsiHit) {
     YtSsiClipModule.stop()
     if (hit.availability == YtSsiAvailability.VANISHED_ARCHIVED) {
         kotlinx.coroutines.MainScope().launch {
@@ -457,11 +508,22 @@ private fun play(context: Context, hit: YtSsiHit) {
         val segment = withContext(Dispatchers.IO) { hit.segmentId?.let { YtSsi.db.segment(it) } }
         val start = (YtSsiPlayRules.playStart(hit, segment) - extra).coerceAtLeast(0)
         YtSsiUi.hide()
-        playFrom(context, hit, start)
+        playVideo(context, hit, start)
     }
 }
 
-private fun playFrom(context: Context, hit: YtSsiHit, start: Long) {
+/** SSI-3: plays [hit]'s video from [start] (a quote's second, or 30 s before); a vanished one from the archive. */
+internal fun ssiPlayFrom(context: Context, hit: YtSsiHit, start: Long) {
+    YtSsiClipModule.stop()
+    if (hit.availability == YtSsiAvailability.VANISHED_ARCHIVED) {
+        ssiPlay(context, hit)
+        return
+    }
+    YtSsiUi.hide()
+    playVideo(context, hit, start)
+}
+
+private fun playVideo(context: Context, hit: YtSsiHit, start: Long) {
     val video = StreamItem(
         url = "/watch?v=${hit.videoId}",
         type = StreamItem.TYPE_STREAM,
@@ -516,6 +578,7 @@ private fun Status(run: YtSsiRun, palette: YtPalette) {
                 YtSsiRunNote.RERANK_CACHED -> R.string.yt_r35_ssi_note_rerank_cached
                 YtSsiRunNote.RERANK_FAILED -> R.string.yt_r35_ssi_note_rerank_failed
                 YtSsiRunNote.RERANK_BUDGET -> R.string.yt_r35_ssi_note_rerank_budget
+                YtSsiRunNote.RESTORED -> R.string.yt_r37_ssi_note_restored
             }
             Text("· " + stringResource(text), color = palette.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
         }
@@ -548,7 +611,8 @@ private fun Chips(intent: YtSsiIntent, palette: YtPalette, back: Color, ink: YtI
             }
         }
         if (intent.later.isNotEmpty()) {
-            Text(stringResource(R.string.yt_r33_ssi_chip_later), color = palette.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+            // SSI-3: the ask is answered in its view (no longer "a later stage")
+            Text(stringResource(R.string.yt_r37_ssi_chip_routed), color = palette.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
         }
     }
 }
@@ -567,7 +631,7 @@ private fun range(range: YtSsiTimeRange): String {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun HitCard(hit: YtSsiHit, run: YtSsiRun, palette: YtPalette, back: Int, ink: YtInk, onPlay: () -> Unit) {
+private fun HitCard(hit: YtSsiHit, run: YtSsiRun, palette: YtPalette, back: Int, ink: YtInk, stance: YtSsiStance?, pending: Boolean, onPlay: () -> Unit) {
     val key = YtSsiUi.key(hit)
     val extraBefore = YtSsiUi.before[key] ?: 0L
     val extraAfter = YtSsiUi.after[key] ?: 0L
@@ -649,7 +713,11 @@ private fun HitCard(hit: YtSsiHit, run: YtSsiRun, palette: YtPalette, back: Int,
                 haptics.tick()
                 YtSsiUi.openFeedback = if (YtSsiUi.openFeedback == key) null else key
             }
+            // SSI-3: choose for the side-by-side comparison
+            if (hit.segmentId != null) ChooseButton(hit, ink)
         }
+        // SSI-3: the relation with its verified quote ("nicht belegt" without one)
+        if (hit.segmentId != null) StanceBlock(hit, stance, pending, ink)
         if (YtSsiUi.openFeedback == key) Feedback(hit, run, ink)
         if (hit.segmentId != null && (extraBefore > 0 || extraAfter > 0)) {
             val segment by produceState<YtSsiSegment?>(null, hit.segmentId) {
@@ -697,7 +765,7 @@ private fun Why(hit: YtSsiHit, run: YtSsiRun, ink: YtInk) {
                 YtSsiReason.Vanished -> stringResource(R.string.yt_r33_ssi_reason_vanished)
                 YtSsiReason.AiRewrite -> stringResource(R.string.yt_r33_ssi_reason_ai)
                 YtSsiReason.FromYouTubeSearch -> stringResource(R.string.yt_r33_ssi_reason_youtube)
-                is YtSsiReason.Later -> stringResource(R.string.yt_r33_ssi_reason_later)
+                is YtSsiReason.Later -> stringResource(R.string.yt_r37_ssi_reason_routed)
                 is YtSsiReason.Timing -> stringResource(
                     when (reason.label) {
                         YtSsiPrecisionLabel.WORD -> R.string.yt_r33_ssi_reason_timing_word

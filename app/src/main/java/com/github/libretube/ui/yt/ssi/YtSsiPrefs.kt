@@ -27,6 +27,24 @@ object YtSsiPrefs {
     const val KEY_LEARN = "yt_ssi_learn"
     const val DEFAULT_LEARN = true
 
+    /** SSI-3: the relation analysis ("Belege"), needs [KEY_ALLOW_AI]. */
+    const val KEY_STANCE = "yt_ssi_stance"
+    const val DEFAULT_STANCE = true
+
+    /** SSI-3: AI requests per analysis (each places [YtSsiStanceRules.BATCH] passages). */
+    const val KEY_STANCE_PER_SEARCH = "yt_ssi_stance_per_search"
+    const val DEFAULT_STANCE_PER_SEARCH = 3
+    val STANCE_PER_SEARCH = listOf(1, 2, 3, 5)
+
+    /** SSI-3: AI requests for relations per day (counted on the phone). */
+    const val KEY_STANCE_PER_DAY = "yt_ssi_stance_per_day"
+    const val DEFAULT_STANCE_PER_DAY = 30
+    val STANCE_PER_DAY = listOf(10, 20, 30, 50)
+
+    fun stancePerSearch(raw: String?): Int = raw?.toIntOrNull()?.takeIf { it in STANCE_PER_SEARCH } ?: DEFAULT_STANCE_PER_SEARCH
+
+    fun stancePerDay(raw: String?): Int = raw?.toIntOrNull()?.takeIf { it in STANCE_PER_DAY } ?: DEFAULT_STANCE_PER_DAY
+
     /** Per Deep search: at most this many YouTube searches. */
     const val MAX_SEARCHES = 3
 
