@@ -54,6 +54,12 @@ enum class YtAnimProp(val rest: Float, val min: Float, val max: Float, val phase
     GLOW(0f, 0f, 200f, YtPropPhase.STYLE),
     BLUR(0f, 0f, 100f, YtPropPhase.LAYER),
     SHIMMER(0f, 0f, 1f, YtPropPhase.OVERLAY),
+
+    /** Progress 0..1 along the animation's motion path ([YtAnim.motion], phase 3). */
+    PATH(0f, 0f, 1f, YtPropPhase.LAYER),
+
+    /** Progress 0..1 from the node's own shape to the animation's morph target ([YtAnim.morph], phase 3). */
+    MORPH(0f, 0f, 1f, YtPropPhase.STYLE),
     ;
 
     /** Values per sample: colours run as four (OKLab + alpha), everything else as one. */
@@ -171,6 +177,10 @@ data class YtAnim(
     val preset: YtPreset? = null,
     val strength: Float = 1f,
     val enabled: Boolean = true,
+    /** The path a PATH track moves the node along (phase 3). */
+    val motion: YtMotionPath? = null,
+    /** The shape a MORPH track changes the node into (phase 3). */
+    val morph: YtMorphTarget? = null,
 ) {
     val infinite: Boolean get() = repeat < 0
 
@@ -247,7 +257,7 @@ object YtStateNames {
 }
 
 /** Why a property cannot animate on a node (the editor marks it), or null when it can. */
-enum class YtAnimUnsupported { NO_FILL, SOLID_FILL_ONLY, GRADIENT_ONLY, NO_STROKE, NO_SHADOW, TEXT_ONLY, OWN_DRAWING, NEEDS_ANDROID_12 }
+enum class YtAnimUnsupported { NO_FILL, SOLID_FILL_ONLY, GRADIENT_ONLY, NO_STROKE, NO_SHADOW, TEXT_ONLY, OWN_DRAWING, NEEDS_ANDROID_12, SHAPE_ONLY }
 
 object YtAnimSupport {
     /** Whether [prop] has an effect on [node] (Android [sdk]); null: it does. */
@@ -273,6 +283,7 @@ object YtAnimSupport {
             YtAnimProp.CORNERS, YtAnimProp.GLOW, YtAnimProp.SHIMMER -> if (!styled) YtAnimUnsupported.OWN_DRAWING else null
             YtAnimProp.TEXT_COLOR -> if (node.type == YtNodeType.TEXT || (node.type == YtNodeType.SLOT && node.slot?.text == true)) null else YtAnimUnsupported.TEXT_ONLY
             YtAnimProp.BLUR -> if (sdk < 31) YtAnimUnsupported.NEEDS_ANDROID_12 else null
+            YtAnimProp.MORPH -> if (node.type != YtNodeType.SHAPE) YtAnimUnsupported.SHAPE_ONLY else null
             else -> null
         }
     }

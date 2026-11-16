@@ -119,6 +119,12 @@ interface YtRenderHooks {
      * place); the returned shift is added to the placement (the reorder after a drop settles).
      */
     fun placeOffset(parent: String, child: String, x: Float, y: Float): androidx.compose.ui.unit.IntOffset = androidx.compose.ui.unit.IntOffset.Zero
+
+    /** The path of node [id] while the pen tool drags its points (read in the draw cache), or null (phase 3). */
+    fun livePath(id: String): YtPath? = null
+
+    /** Frames run over budget while points are dragged: the dragged path draws as an outline only. */
+    fun reduced(): Boolean = false
 }
 
 /** Where the renderer takes its theme from (state reads, so changes recompose or redraw). */
@@ -336,6 +342,9 @@ private fun YtNodeView(src: YtThemeSource, kind: YtComponentKind, id: String, st
     val hooks = src.hooks
     if (hooks != null) modifier = modifier.onPlaced { hooks.placed(kind, id, it) }
     modifier = modifier.ytLayer(node, hooks, anim)
+    // a mask clips everything the node draws (phase 3)
+    val mask = node.mask
+    if (mask != null && mask.enabled && !mask.path.isEmpty) modifier = modifier.ytMask(mask)
     if (r.broken) {
         Box(modifier.ytPlaceholder())
         return
@@ -345,12 +354,16 @@ private fun YtNodeView(src: YtThemeSource, kind: YtComponentKind, id: String, st
         Box(modifier)
         return
     }
-    val shape = remember(node.style.corners) { YtCornerShape(node.style.corners) }
+    val shape = remember(node.style.corners, node.shape, node.shapeSpec, node.path, node.type) { ytNodeShape(node) }
     // the progress slot draws its fills as bar and track itself
     if (bare) {
         // no style: the host draws it
     } else if (node.slot != YtSlot.PROGRESS) {
-        modifier = if (anim != null && anim.style) modifier.ytAnimStyle(node.style, src, anim) else modifier.ytStyle(node.style, shape, src)
+        modifier = when {
+            anim != null && anim.style -> modifier.ytAnimStyle(node.style, src, anim, node)
+            ytIsVector(node) -> modifier.ytVectorStyle(node, src)
+            else -> modifier.ytStyle(node.style, shape as? YtCornerShape ?: YtCornerShape(node.style.corners), src)
+        }
     }
     if (node.layout.clip) modifier = modifier.clip(shape)
     // a size animation: the box (and its fills above) grows, the content keeps its layout
@@ -493,6 +506,16 @@ private fun Modifier.ytLayer(node: YtNode, hooks: YtRenderHooks?, anim: YtNodeAn
             scaleY = n.float(YtAnimProp.SCALE_Y)
             transformOrigin = androidx.compose.ui.graphics.TransformOrigin(n.float(YtAnimProp.PIVOT_X), n.float(YtAnimProp.PIVOT_Y))
             if (anim.blur) renderEffect = anim.blurOf(n.float(YtAnimProp.BLUR) * density)
+            // along a motion path (phase 3): moved by the path, turned with it or held at its angle
+            if (anim.motion && n.animated(YtAnimProp.PATH)) {
+                val out = anim.motionOut
+                anim.vector.motion(n.channel(YtAnimProp.PATH)?.owner)?.let { m ->
+                    m.at(n.float(YtAnimProp.PATH), out)
+                    translationX += out[0] * density
+                    translationY += out[1] * density
+                    rotationZ += out[2]
+                }
+            }
         }
         if (hooks != null) {
             translationX += hooks.dragX(id)
@@ -712,7 +735,7 @@ private fun YtImageLeaf(src: YtThemeSource, node: YtNode, modifier: Modifier) {
 }
 
 @Composable
-private fun YtSlotLeaf(src: YtThemeSource, node: YtNode, shape: YtCornerShape, modifier: Modifier, anim: YtNodeAnim? = null) {
+private fun YtSlotLeaf(src: YtThemeSource, node: YtNode, shape: androidx.compose.ui.graphics.Shape, modifier: Modifier, anim: YtNodeAnim? = null) {
     val data = LocalYtSlots.current
     val video = data.video
     val live = !src.editing

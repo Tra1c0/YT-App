@@ -35,7 +35,16 @@ class YtFrameStats(private val capacity: Int = 1200) {
     data class Summary(val p50: Double, val p90: Double, val p95: Double, val p99: Double, val frames: Long, val janky: Long) {
         /** One line, e.g. "P50 8.1 ms · P90 11.0 · P95 13.2 · P99 21.0 · jank 3/1240". */
         fun line(): String = "P50 %.1f ms · P90 %.1f · P95 %.1f · P99 %.1f · jank %d/%d".format(java.util.Locale.ROOT, p50, p90, p95, p99, janky, frames)
+
+        /** GREEN: P95 within the frame budget [budgetMs] (one refresh of the display); AMBER up to 1.5×; RED above. */
+        fun rating(budgetMs: Double): Rating = when {
+            p95 <= budgetMs -> Rating.GREEN
+            p95 <= budgetMs * 1.5 -> Rating.AMBER
+            else -> Rating.RED
+        }
     }
+
+    enum class Rating { GREEN, AMBER, RED }
 
     /** Percentiles over the frames in the ring (nearest rank); null before the first frame. */
     fun summary(): Summary? {

@@ -127,6 +127,8 @@
         <item>Glow</item>
         <item>Blur</item>
         <item>Shimmer</item>
+        <item>Motion path</item>
+        <item>Morph</item>
     </string-array>
     <string-array name="yt_anim_presets">
         <item>Fade in</item>
@@ -182,6 +184,7 @@
         <item>text only</item>
         <item>this element draws itself (progress bar)</item>
         <item>needs Android 12</item>
+        <item>shapes only</item>
     </string-array>
     <string-array name="yt_anim_curves">
         <item>Linear</item>

@@ -129,6 +129,8 @@ fun YtAnimTab(state: YtEditorState, node: YtNode) {
         }
         FilterChip(selected = adding || anims.isEmpty(), onClick = { adding = !adding }, label = { Text("+ " + stringResource(R.string.yt_anim_add), fontSize = 12.sp) })
     }
+    // motion paths, recording and morphs (phase 3)
+    YtAnimVectorSection(state, node, if (adding || anims.isEmpty()) null else current)
     if (adding || anims.isEmpty()) {
         AnimLabel(stringResource(R.string.yt_anim_pick_preset))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -259,7 +261,14 @@ private fun AdvancedAnim(state: YtEditorState, a: YtAnim, node: YtNode) {
     TextButton(onClick = { addTrack = !addTrack }) { Text("+ " + stringResource(R.string.yt_anim_track_add)) }
     if (addTrack) YtPropPicker(node, a.tracks.map { it.prop }.toSet()) { p ->
         addTrack = false
-        edit("track") { it.copy(tracks = it.tracks + newTrack(p, node, state)) }
+        edit("track") {
+            it.copy(
+                tracks = it.tracks + newTrack(p, node, state),
+                // a motion path or a morph needs its path or target: a short arc, a circle
+                motion = if (p == YtAnimProp.PATH) it.motion ?: YtMotionPath(YtPath(listOf(YtSubpath(listOf(YtPoint(0f, 0f, ox = 40f, oy = -50f), YtPoint(140f, 0f, ix = -40f, iy = -50f)), closed = false)), w = 1f, h = 1f)) else it.motion,
+                morph = if (p == YtAnimProp.MORPH) it.morph ?: YtMorphTarget(YtShapeKind.ELLIPSE, corners = YtCorners.all(500f)) else it.morph,
+            )
+        }
     }
 }
 
@@ -301,6 +310,7 @@ internal fun newTrack(p: YtAnimProp, node: YtNode, state: YtEditorState): YtTrac
         YtAnimProp.SHIMMER -> 1f
         YtAnimProp.GRADIENT_SHIFT -> 0.5f
         YtAnimProp.GRADIENT_ANGLE -> 90f
+        YtAnimProp.PATH, YtAnimProp.MORPH -> 1f
         else -> 8f
     }
     return YtTrack(p, listOf(YtKeyframe(0f, p.rest, curve = YtCurve.EASE_IN_OUT), YtKeyframe(1f, to)))
@@ -368,7 +378,7 @@ private fun YtTrackEditor(state: YtEditorState, a: YtAnim, ti: Int, t: YtTrack, 
 
 internal fun step(p: YtAnimProp): Float = when (p) {
     YtAnimProp.SCALE_X, YtAnimProp.SCALE_Y, YtAnimProp.OPACITY, YtAnimProp.PIVOT_X, YtAnimProp.PIVOT_Y,
-    YtAnimProp.SHADOW_ALPHA, YtAnimProp.GRADIENT_SHIFT, YtAnimProp.SHIMMER -> 0.05f
+    YtAnimProp.SHADOW_ALPHA, YtAnimProp.GRADIENT_SHIFT, YtAnimProp.SHIMMER, YtAnimProp.PATH, YtAnimProp.MORPH -> 0.05f
     YtAnimProp.ROTATION, YtAnimProp.GRADIENT_ANGLE -> 5f
     else -> 1f
 }

@@ -61,6 +61,8 @@ object YtDiagnosis {
             add("Theme-Editor" to runCatching { com.github.libretube.ui.yt.builder.YtEditorMetrics.diagnosis() }.getOrNull())
             // the animator: animations in the theme, motion switch, live instances, measured frame step and last run length
             add("Animator" to runCatching { com.github.libretube.ui.yt.builder.YtAnimStats.diagnosis() }.getOrNull())
+            // the vector tools: paths, masks, motion paths and morphs of the theme, the last pen session's frame times
+            add("Vektor" to runCatching { com.github.libretube.ui.yt.builder.YtVectorStats.diagnosis() }.getOrNull())
             add("Crashes stored" to crashes.size.toString())
             add("Last crash" to crashes.firstOrNull()?.let(YtCrashText::summary))
         }
