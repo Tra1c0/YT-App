@@ -66,14 +66,14 @@
     <string name="yt_anim_own_colour">Own colour</string>
     <string name="yt_anim_note_visibility">Appear: when the element is shown and when the app comes back. Disappear is sent by cards only.</string>
     <string name="yt_anim_note_visibility_card">Appear/disappear: when half of the card comes into or leaves the visible part of the feed.</string>
-    <string name="yt_anim_note_touch">Touches on the element; it keeps its own gestures. A double tap also counts as two taps.</string>
+    <string name="yt_anim_note_touch">Touches on the element; it keeps its own gestures. Where a double tap starts an animation, a tap waits a moment for a second one (two quick taps play the double tap only); elsewhere taps play at once.</string>
     <string name="yt_anim_note_scroll">The home feed\'s scroll: “Scroll” plays along the scroll position, the others on a change of direction.</string>
     <string name="yt_anim_note_selection">A chip or tab becoming (de)selected.</string>
     <string name="yt_anim_note_player">The player starting or pausing (while a video is open).</string>
     <string name="yt_anim_note_loading">The home feed starting or finishing to load.</string>
     <string name="yt_anim_note_state">A change of the element\'s shown state (see States).</string>
     <string name="yt_anim_note_manual">Plays only in the editor.</string>
-    <string name="yt_anim_note_mini">The mini player and the bar\'s surface are drawn by the app itself, not from the nodes: their animations play in the editor only.</string>
+    <string name="yt_anim_note_mini">Mini player: appear when it docks on the bar, disappear when it opens. Its touches are those on the docked player beside its buttons.</string>
     <string name="yt_anim_states">States</string>
     <string name="yt_anim_states_note">Shown is the first that is on: Disabled, Loading, Pressed, Active (player plays), Selected, Focused, Expanded, Collapsed, then your own. Each change can play an animation (trigger “State change”).</string>
     <string name="yt_anim_states_test">Tap a state to switch it on or off in the preview.</string>

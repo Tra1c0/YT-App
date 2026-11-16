@@ -142,12 +142,15 @@ enum class YtEasing { LINEAR, STANDARD, EMPHASIZED, DECELERATE, ACCELERATE }
 // ---- paints ----
 
 @Serializable
-enum class YtPaintType { SOLID, LINEAR, RADIAL }
+enum class YtPaintType { SOLID, LINEAR, RADIAL, IMAGE }
 
 /**
  * A fill or a stroke colour. SOLID: [color], or the token [ref] if set. LINEAR: [stops] along
  * [angle] (0° left to right, 90° top to bottom). RADIAL: [stops] from the centre ([centerX],
- * [centerY] as shares of the box) out to [radius] (a share of the longer side).
+ * [centerY] as shares of the box) out to [radius] (a share of the longer side). IMAGE (fills
+ * only): the theme's image asset [image], covering the box (cropped to it, centred); [color]
+ * shows until it is loaded and stands for it in the contrast checks. A build without IMAGE reads
+ * it as a flat [color].
  */
 @Serializable
 data class YtPaint(
@@ -160,9 +163,12 @@ data class YtPaint(
     val centerY: Float = 0.5f,
     val radius: Float = 0.5f,
     val enabled: Boolean = true,
+    /** IMAGE: the file name in the theme's assets folder. */
+    val image: String? = null,
 ) {
     companion object {
         fun solid(argb: Int) = YtPaint(color = argb)
+        fun image(file: String, placeholder: Int = 0xFF3A3D45.toInt()) = YtPaint(type = YtPaintType.IMAGE, color = placeholder, image = file)
         fun token(name: String) = YtPaint(ref = name)
     }
 }

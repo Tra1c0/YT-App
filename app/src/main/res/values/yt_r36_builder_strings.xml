@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT: theme builder, the gaps of stages 1 and 2 closed (round 36): images, state looks. -->
+<resources>
+    <string name="yt_builder_paint_image">Image</string>
+    <string name="yt_builder_image">Image</string>
+    <string name="yt_builder_image_none">No image in this theme yet.</string>
+    <string name="yt_builder_import_image">Import image…</string>
+    <string name="yt_builder_image_imported">Image imported (%1$d × %2$d px)</string>
+    <string name="yt_builder_image_failed">Image not imported: %1$s</string>
+    <string name="yt_builder_image_unreadable">the file cannot be read</string>
+    <string name="yt_builder_image_empty">the file is empty</string>
+    <string name="yt_builder_image_too_large">the file is larger than 20 MB</string>
+    <string name="yt_builder_image_format">not a PNG, JPEG or WebP image</string>
+    <string name="yt_builder_image_size">its size cannot be read or is over 16384 px</string>
+    <string name="yt_builder_image_pixels">more than 80 megapixels</string>
+    <string name="yt_builder_image_result">still larger than 8 MB after scaling down</string>
+    <string name="yt_builder_state_look">Look of</string>
+    <string name="yt_builder_state_normal">Normal</string>
+    <string name="yt_builder_press_scale">Gives when pressed</string>
+</resources>

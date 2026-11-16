@@ -37,6 +37,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onVisibilityChanged
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -60,8 +63,11 @@ import kotlin.math.sin
  * the header, a tab) gets a YtAnimInstance when its component has animations: an engine
  * (YtAnimEngine), the controller with the state machine, and a frame counter the drawing reads.
  *
- * Frames: a loop runs withFrameNanos only while a run is active (and only while the screen is at
- * least STARTED; the time away is not counted). Values are read in the draw phase: transforms,
+ * Frames: a loop runs withFrameNanos only while a run is active, and only while the component can
+ * be seen: the screen at least STARTED, its view shown (not in a hidden fragment), the component in
+ * the window (onVisibilityChanged) and, where the host says so, shown by the host (the mini player
+ * while docked). The time away is not counted: a loop that repeats forever stands still while hidden
+ * and goes on from there. Values are read in the draw phase: transforms,
  * opacity and blur in graphicsLayer, colours/radii/strokes/shadows/glow/shimmer in drawWithCache's
  * draw (paints, shaders and paths are built once per size and reused), text colour in BasicText's
  * colour producer. Only a size change (WIDTH/HEIGHT) is read in layout, as it moves the neighbours.
@@ -152,9 +158,19 @@ interface YtAnimLink {
     fun detach(inst: YtAnimInstance)
 }
 
-/** What the host knows about the instance besides its states: whether it is on screen (cards). */
+/**
+ * What the host knows about the instance besides its states: whether it is on screen for the
+ * appear trigger ([visible]: cards half in the feed, the mini player docked), the touches and
+ * events it sends itself ([events]: the mini player, whose touches the player page takes; TOUCH_DOWN
+ * and TOUCH_UP also set the pressed state), and whether it is shown at all ([shown], snapshot
+ * reads; false pauses the frame loop).
+ */
 @Stable
-class YtAnimInput(val visible: (() -> Boolean)? = null) {
+class YtAnimInput(
+    val visible: (() -> Boolean)? = null,
+    val events: kotlinx.coroutines.flow.Flow<YtTriggerKind>? = null,
+    val shown: (() -> Boolean)? = null,
+) {
     companion object {
         val NONE = YtAnimInput()
     }
@@ -165,6 +181,9 @@ interface YtAnimTouchSink {
     /** A touch went down (pressed on) or up/cancelled (pressed off). */
     fun touch(down: Boolean)
     fun event(t: YtTriggerKind)
+
+    /** A double tap starts something here: a tap waits for the double-tap window (YtTapArbiter). */
+    val waitsForDoubleTap: Boolean get() = false
 }
 
 /** The animations of one drawn component instance. */
@@ -189,6 +208,23 @@ class YtAnimInstance internal constructor(val kind: YtComponentKind, private val
         private set
 
     private val nodes = HashMap<String, YtNodeAnim>()
+
+    /** In the window (onVisibilityChanged), its view shown, and what the host says ([hostShown]). Snapshot state. */
+    var onScreen by mutableStateOf(true)
+    var viewShown by mutableStateOf(true)
+    var hostShown: (() -> Boolean)? = null
+
+    /** The component can be seen: the frame loop may run. */
+    val shown: Boolean get() = onScreen && viewShown && hostShown?.invoke() != false
+
+    override val waitsForDoubleTap: Boolean get() = controller.index.doubleTap
+
+    /** The loop stopped with a run still going (hidden): its measurement no longer means anything. */
+    internal fun paused() {
+        loopStart = -1L
+        lastFrame = -1L
+        planned = 0L
+    }
 
     // measuring: the first and last frame of the current loop, and how long the started runs should take
     private var loopStart = -1L
@@ -355,15 +391,40 @@ internal fun rememberYtAnimInstance(src: YtThemeSource, kind: YtComponentKind, h
     inst.engine.snap = src.animMode == YtAnimMode.APP && !motion
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
-    // the frame loop: only while something runs, only while the screen is started
+    // the frame loop: only while something runs, only while the screen is started and the component shown
     LaunchedEffect(inst, lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             inst.engine.resetClock()
             while (true) {
-                snapshotFlow { inst.running }.first { it }
-                // the time the loop was idle does not count: the first frame takes none
+                snapshotFlow { inst.running && inst.shown }.first { it }
+                // the time the loop was idle or hidden does not count: the first frame takes none
                 inst.engine.resetClock()
-                while (inst.engine.running) withFrameNanos(inst.onFrame)
+                while (inst.engine.running && inst.shown) withFrameNanos(inst.onFrame)
+                if (inst.engine.running) inst.paused()
+            }
+        }
+    }
+    if (src.animMode == YtAnimMode.APP) {
+        inst.hostShown = input.shown
+        // a hidden fragment keeps its screen STARTED: its view is not shown then
+        val view = androidx.compose.ui.platform.LocalView.current
+        androidx.compose.runtime.DisposableEffect(inst, view) {
+            val check = android.view.ViewTreeObserver.OnGlobalLayoutListener { inst.viewShown = view.isShown }
+            val attach = object : android.view.View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: android.view.View) {
+                    inst.viewShown = v.isShown
+                    v.viewTreeObserver.addOnGlobalLayoutListener(check)
+                }
+
+                override fun onViewDetachedFromWindow(v: android.view.View) {
+                    v.viewTreeObserver.removeOnGlobalLayoutListener(check)
+                }
+            }
+            view.addOnAttachStateChangeListener(attach)
+            if (view.isAttachedToWindow) attach.onViewAttachedToWindow(view)
+            onDispose {
+                view.removeOnAttachStateChangeListener(attach)
+                view.viewTreeObserver.removeOnGlobalLayoutListener(check)
             }
         }
     }
@@ -391,6 +452,19 @@ internal fun rememberYtAnimInstance(src: YtThemeSource, kind: YtComponentKind, h
         return inst
     }
 
+    // what the host sends itself (the mini player's touches)
+    val events = input.events
+    if (events != null) {
+        LaunchedEffect(inst, events) {
+            events.collect { e ->
+                when (e) {
+                    YtTriggerKind.TOUCH_DOWN -> inst.touch(true)
+                    YtTriggerKind.TOUCH_UP -> inst.touch(false)
+                    else -> inst.event(e)
+                }
+            }
+        }
+    }
     // appear: on screen (cards: half visible in the feed), and again when the app comes back
     val visible = input.visible
     LaunchedEffect(inst, visible, lifecycle) {
@@ -445,17 +519,26 @@ internal fun rememberYtAnimInstance(src: YtThemeSource, kind: YtComponentKind, h
 
 /**
  * Watches the touches on the component without taking them (the cards keep their swipe, hold
- * and click): down/up (pressed state), tap, double tap (a second tap soon after; the first tap
- * still counts as a tap), long press. Every end of a gesture, a cancel included, releases.
+ * and click): down/up (pressed state), tap, double tap, long press. Where a double tap starts
+ * something, a tap waits for the double-tap window and two quick taps are one double tap only
+ * (YtTapArbiter); elsewhere taps play at once. Every end of a gesture, a cancel included, releases.
  */
 internal fun Modifier.ytAnimTouch(inst: YtAnimTouchSink): Modifier = pointerInput(inst) {
     val slop = viewConfiguration.touchSlop
     val longMs = viewConfiguration.longPressTimeoutMillis
-    val doubleMs = viewConfiguration.doubleTapTimeoutMillis
-    var lastTap = -1L
-    var lastPos = Offset.Zero
+    val taps = YtTapArbiter(inst.waitsForDoubleTap, viewConfiguration.doubleTapTimeoutMillis, slop)
     awaitEachGesture {
-        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        taps.waitForDouble = inst.waitsForDoubleTap
+        // a tap held back for its double: let go once the window ends without a second touch
+        var early: androidx.compose.ui.input.pointer.PointerInputChange? = null
+        val wait = taps.waitMs(android.os.SystemClock.uptimeMillis())
+        if (wait != null) {
+            early = withTimeoutOrNull(wait.coerceAtLeast(1L)) { awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial) }
+            if (early == null) taps.expire(android.os.SystemClock.uptimeMillis())?.let(inst::event)
+        }
+        val down = early ?: awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        taps.down(down.uptimeMillis, down.position.x, down.position.y)?.let(inst::event)
+        var upAt = down.uptimeMillis
         var pressed = true
         var moved = false
         var released = false
@@ -476,7 +559,10 @@ internal fun Modifier.ytAnimTouch(inst: YtAnimTouchSink): Modifier = pointerInpu
                             pressed = false
                             inst.touch(false)
                         }
-                        if (!c.pressed) result = true
+                        if (!c.pressed) {
+                            upAt = c.uptimeMillis
+                            result = true
+                        }
                     }
                 }
                 result
@@ -498,19 +584,69 @@ internal fun Modifier.ytAnimTouch(inst: YtAnimTouchSink): Modifier = pointerInpu
         } finally {
             if (pressed) inst.touch(false)
         }
-        if (released && !moved && !long) {
-            inst.event(YtTriggerKind.TAP)
-            val now = down.uptimeMillis
-            if (lastTap >= 0 && now - lastTap <= doubleMs && (down.position - lastPos).getDistance() < slop * 4) {
-                inst.event(YtTriggerKind.DOUBLE_TAP)
-                lastTap = -1L
-            } else {
-                lastTap = now
-                lastPos = down.position
+        val decided = if (released && !moved && !long) taps.tap(upAt, down.position.x, down.position.y) else taps.other()
+        decided?.let(inst::event)
+    }
+}
+
+/**
+ * Watches for a press without taking the touch, for a pressed look without animations: on at the
+ * touch, off when it lifts, is cancelled or moves past the slop (a scroll is no press).
+ */
+internal fun Modifier.ytPressWatch(onPress: (Boolean) -> Unit): Modifier = pointerInput(Unit) {
+    val slop = viewConfiguration.touchSlop
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        onPress(true)
+        try {
+            while (true) {
+                val ev = awaitPointerEvent(PointerEventPass.Initial)
+                val c = ev.changes.firstOrNull { it.id == down.id } ?: break
+                if (!c.pressed || (c.position - down.position).getDistance() > slop) break
             }
+        } finally {
+            onPress(false)
         }
     }
 }
+
+/** Tells [inst] whether the component is in the window, for the frame loop. */
+internal fun Modifier.ytAnimShown(inst: YtAnimInstance): Modifier = onVisibilityChanged(0L, 0f) { inst.onScreen = it }
+
+/**
+ * The states YT itself knows, for a component without animations that has a look for them:
+ * loading (the home feed loads) and active (the player plays). With animations the state machine
+ * sets them instead.
+ */
+@Composable
+internal fun rememberYtHostStateBits(mask: Int): Int {
+    var bits = 0
+    val loading = YtRenderStates.bitOf(YtStateNames.LOADING)
+    val active = YtRenderStates.bitOf(YtStateNames.ACTIVE)
+    if (mask and loading != 0 && YtAnimSignals.feedLoading) bits = bits or loading
+    if (mask and active != 0) {
+        val flow = remember { YtPlaybackClock.clock.map { it.playing }.distinctUntilChanged() }
+        val playing by flow.collectAsState(YtPlaybackClock.clock.value.playing)
+        if (playing) bits = bits or active
+    }
+    return bits
+}
+
+/**
+ * The root's move, scale, turn and opacity on a surface the host draws itself (the bar of
+ * "Eigenes": its shadow and clip move with it). Read in the layer only.
+ */
+internal fun Modifier.ytAnimHostLayer(a: YtNodeAnim): Modifier = this.then(Modifier.graphicsLayer {
+    a.inst.frame.intValue
+    val n = a.node
+    alpha = n.float(YtAnimProp.OPACITY).coerceIn(0f, 1f)
+    rotationZ = n.float(YtAnimProp.ROTATION)
+    translationX = n.float(YtAnimProp.X) * density
+    translationY = n.float(YtAnimProp.Y) * density
+    scaleX = n.float(YtAnimProp.SCALE_X)
+    scaleY = n.float(YtAnimProp.SCALE_Y)
+    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(n.float(YtAnimProp.PIVOT_X), n.float(YtAnimProp.PIVOT_Y))
+})
 
 /** WIDTH/HEIGHT: the node's box grows or shrinks by the animated dp (as far as its parent allows). */
 internal fun Modifier.ytAnimSize(a: YtNodeAnim): Modifier = layout { m, c ->
@@ -565,7 +701,7 @@ private fun CacheDrawScope.buildAnimStyle(style: YtStyle, src: YtThemeSource, a:
     val baseBl = (if (rtl) c.bottomEnd else c.bottomStart)
     val smooth = c.smoothing.coerceIn(0f, 1f)
 
-    class Fill(val paint: android.graphics.Paint, val solid: Boolean, val own: Int, val shader: Shader?, val matrix: Matrix, val radial: Boolean, val angle: Float)
+    class Fill(val paint: android.graphics.Paint, val solid: Boolean, val own: Int, val shader: Shader?, val matrix: Matrix, val radial: Boolean, val angle: Float, val base: Matrix? = null)
     val fills = style.fills.filter { it.enabled }.mapNotNull { p0 ->
         val p = runCatching { t?.resolve(p0) ?: p0 }.getOrNull() ?: return@mapNotNull null
         val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
@@ -573,6 +709,23 @@ private fun CacheDrawScope.buildAnimStyle(style: YtStyle, src: YtThemeSource, a:
             YtPaintType.SOLID -> {
                 paint.color = p.color
                 Fill(paint, true, p.color, null, Matrix(), false, 0f)
+            }
+            YtPaintType.IMAGE -> {
+                // the image covering the box; its placeholder colour until it is loaded (the read redraws)
+                YtBuilderImages.version
+                val name = p.image
+                val dir = src.assets
+                val bitmap = if (name != null && dir != null && YtThemeZip.safeAssetName(name)) YtBuilderImages.get(java.io.File(dir, name)) else null
+                if (bitmap == null) {
+                    paint.color = p.color
+                    Fill(paint, false, p.color, null, Matrix(), false, 0f)
+                } else {
+                    val sh = android.graphics.BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+                    val base = YtBuilderImages.coverMatrix(bitmap.width, bitmap.height, w, h)
+                    sh.setLocalMatrix(base)
+                    paint.shader = sh
+                    Fill(paint, false, 0, sh, Matrix(), false, 0f, base)
+                }
             }
             YtPaintType.LINEAR -> {
                 val stops = YtColor.normalizeStops(p.stops, p.color)
@@ -696,7 +849,7 @@ private fun CacheDrawScope.buildAnimStyle(style: YtStyle, src: YtThemeSource, a:
                     f.paint.color = if (firstSolid) n.argb(YtAnimProp.FILL_COLOR, f.own) else f.own
                     firstSolid = false
                 } else if (f.shader != null) {
-                    f.matrix.reset()
+                    if (f.base != null) f.matrix.set(f.base) else f.matrix.reset()
                     if (angle != 0f) f.matrix.postRotate(angle, w / 2f, h / 2f)
                     if (shift != 0f) {
                         val rad = (f.angle + angle) * Math.PI.toFloat() / 180f

@@ -80,6 +80,15 @@ class YtAnimIndex(val anims: YtAnimations, val kind: YtComponentKind) {
     /** The press is the animator's: the theme's plain press feel steps aside. */
     val ownsPress: Boolean = uses(YtTriggerKind.TOUCH_DOWN, YtTriggerKind.TOUCH_UP) || mentions(YtStateNames.PRESSED)
 
+    /** A double tap starts something: a tap then waits for the double-tap window (YtTapArbiter). */
+    val doubleTap: Boolean = uses(YtTriggerKind.DOUBLE_TAP)
+
+    private val stateProps = HashMap<Pair<String, String>, Set<YtAnimProp>>()
+
+    /** What the animator animates on [node] when [state] changes: the state patch leaves these alone (YtStatePatchRule). */
+    fun statePropsOf(node: String, state: String): Set<YtAnimProp> =
+        stateProps.getOrPut(node to state) { YtStatePatchRule.animatedIn(items, rules, node, state) }
+
     /** The props animated on [node] (the renderer adds only the drawing these need). */
     fun props(node: String): Set<YtAnimProp> = items.filter { it.node == node }.flatMapTo(HashSet()) { a -> a.playing().map { it.prop } }
 

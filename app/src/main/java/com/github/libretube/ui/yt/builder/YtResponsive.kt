@@ -45,12 +45,16 @@ object YtResponsive {
             .sortedWith(compareBy({ specificity(it.value) }, { it.index }))
             .map { it.value }
 
-    /** [node] as it is in [env] and [states] (children untouched: each resolves its own). */
-    fun resolve(node: YtNode, env: YtEnv, states: Set<String> = emptySet()): YtNode {
+    /**
+     * [node] as it is in [env] and [states] (children untouched: each resolves its own). The
+     * state patches are laid on in the order of [states]; [patchOf] may trim one first (what the
+     * animator animates in that state, YtStatePatchRule).
+     */
+    fun resolve(node: YtNode, env: YtEnv, states: Collection<String> = emptySet(), patchOf: (String, YtPatch) -> YtPatch = { _, p -> p }): YtNode {
         if (node.overrides.isEmpty() && (states.isEmpty() || node.states.isEmpty())) return node
         var n = node
         for (o in applying(node, env)) n = apply(n, o.patch)
-        for (s in states) node.states[s]?.let { n = apply(n, it) }
+        for (s in states) node.states[s]?.let { n = apply(n, patchOf(s, it)) }
         return n
     }
 

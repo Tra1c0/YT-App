@@ -81,7 +81,6 @@
     <string name="yt_builder_delete_ask">Delete \"%1$s\" with its versions and fonts?</string>
     <string name="yt_builder_duplicate">Duplicate</string>
     <string name="yt_builder_edit_night">Edit the dark look</string>
-    <string name="yt_builder_edit_selected">Edit the \"selected\" state</string>
     <string name="yt_builder_export">Export</string>
     <string name="yt_builder_feed">Feed</string>
     <string name="yt_builder_fill">Fill</string>

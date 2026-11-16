@@ -85,4 +85,12 @@ object YtEditorDrag {
     }
 
     private fun round1(v: Float) = Math.round(v * 10f) / 10f
+
+    /**
+     * Whether a drag in the whole-screen preview scrolls its feed instead of editing: it starts
+     * in the feed, not on a selected element (that one is moved; select first to move one), and
+     * runs more up or down than sideways.
+     */
+    fun scrollsFeed(inFeed: Boolean, onSelected: Boolean, dx: Float, dy: Float): Boolean =
+        inFeed && !onSelected && kotlin.math.abs(dy) >= kotlin.math.abs(dx)
 }

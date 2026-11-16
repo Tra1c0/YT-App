@@ -70,9 +70,13 @@ class YtThemeEditorActivity : ComponentActivity() {
     private val state: YtEditorState by viewModels()
     private var metrics: YtEditorMetrics? = null
     private var fontDone: ((String) -> Unit)? = null
+    private var imageDone: ((String) -> Unit)? = null
 
     private val pickFont = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) state.importFont(uri, displayName(uri)) { key -> fontDone?.invoke(key) }
+    }
+    private val pickImage = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) state.importImage(uri, displayName(uri)) { file -> imageDone?.invoke(file) }
     }
     private val exportTheme = registerForActivityResult(ActivityResultContracts.CreateDocument(YtThemeZip.MIME)) { uri ->
         if (uri != null) state.export(uri)
@@ -102,6 +106,10 @@ class YtThemeEditorActivity : ComponentActivity() {
                     onImportFont = { done ->
                         fontDone = done
                         pickFont.launch(arrayOf("font/ttf", "font/otf", "application/x-font-ttf", "application/octet-stream", "*/*"))
+                    },
+                    onImportImage = { done ->
+                        imageDone = done
+                        pickImage.launch(arrayOf("image/png", "image/jpeg", "image/webp"))
                     },
                     onExport = { exportTheme.launch((state.doc?.name ?: "theme").replace(Regex("[^A-Za-z0-9_-]"), "_") + "." + YtThemeZip.EXTENSION) },
                     onImport = { importTheme.launch(arrayOf(YtThemeZip.MIME, "application/octet-stream", "*/*")) },
@@ -139,6 +147,7 @@ private fun YtEditorScreen(
     metrics: YtEditorMetrics,
     onBack: () -> Unit,
     onImportFont: ((String) -> Unit) -> Unit,
+    onImportImage: ((String) -> Unit) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
 ) {
@@ -203,7 +212,7 @@ private fun YtEditorScreen(
             // the animator's timeline needs more room
             val height = (LocalConfiguration.current.screenHeightDp * if (state.timelineOpen) 0.56f else 0.38f).dp
             Box(Modifier.fillMaxWidth().height(height).background(Color(0xFF17181C))) {
-                if (checks) YtWarningsPanel(state, Modifier.fillMaxSize()) else YtEditorPanel(state, onImportFont, Modifier.fillMaxSize())
+                if (checks) YtWarningsPanel(state, Modifier.fillMaxSize()) else YtEditorPanel(state, onImportFont, Modifier.fillMaxSize(), onImportImage)
             }
         }
     }

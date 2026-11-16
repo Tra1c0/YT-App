@@ -190,25 +190,37 @@ fun YtColorPicker(state: YtEditorState, argb: Int, token: String?, onColor: (Int
     }
 }
 
-/** A paint: flat, linear or radial; gradients with their stops (each stop its own colour). */
+/**
+ * A paint: flat, linear or radial; gradients with their stops (each stop its own colour). With
+ * [onImportImage] (fills) also an image of the theme, covering the element.
+ */
 @Composable
-fun YtPaintEditor(state: YtEditorState, paint: YtPaint, key: String, onPaint: (YtPaint) -> Unit) {
+fun YtPaintEditor(state: YtEditorState, paint: YtPaint, key: String, onImportImage: (((String) -> Unit) -> Unit)? = null, onPaint: (YtPaint) -> Unit) {
     val t = state.doc?.let { YtTokensResolver(it, state.night) }
     var stop by remember(key) { mutableIntStateOf(0) }
     Column {
         Choice(
-            listOf(YtPaintType.SOLID to stringResource(R.string.yt_builder_paint_solid), YtPaintType.LINEAR to stringResource(R.string.yt_builder_paint_linear), YtPaintType.RADIAL to stringResource(R.string.yt_builder_paint_radial)),
+            buildList {
+                add(YtPaintType.SOLID to stringResource(R.string.yt_builder_paint_solid))
+                add(YtPaintType.LINEAR to stringResource(R.string.yt_builder_paint_linear))
+                add(YtPaintType.RADIAL to stringResource(R.string.yt_builder_paint_radial))
+                if (onImportImage != null || paint.type == YtPaintType.IMAGE) add(YtPaintType.IMAGE to stringResource(R.string.yt_builder_paint_image))
+            },
             paint.type,
         ) { type ->
-            val base = t?.resolve(paint)?.let { if (it.type == YtPaintType.SOLID) it.color else it.stops.first().color } ?: paint.color
-            onPaint(
-                when (type) {
-                    YtPaintType.SOLID -> YtPaint.solid(base)
-                    else -> paint.copy(type = type, ref = null, stops = paint.stops.takeIf { it.size >= 2 } ?: listOf(YtStop(0f, base), YtStop(1f, YtColor.withAlpha(base, 0.2f))))
-                },
-            )
+            val base = t?.resolve(paint)?.let { if (it.type == YtPaintType.SOLID || it.type == YtPaintType.IMAGE) it.color else it.stops.firstOrNull()?.color ?: it.color } ?: paint.color
+            when (type) {
+                YtPaintType.SOLID -> onPaint(YtPaint.solid(base))
+                YtPaintType.IMAGE -> {
+                    val first = state.doc?.assets?.firstOrNull { it.kind == YtAssetKind.IMAGE }?.file
+                    if (first != null) onPaint(YtPaint.image(first, base)) else onImportImage?.invoke { file -> onPaint(YtPaint.image(file, base)) }
+                }
+                else -> onPaint(paint.copy(type = type, ref = null, image = null, stops = paint.stops.takeIf { it.size >= 2 } ?: listOf(YtStop(0f, base), YtStop(1f, YtColor.withAlpha(base, 0.2f)))))
+            }
         }
-        if (paint.type == YtPaintType.SOLID) {
+        if (paint.type == YtPaintType.IMAGE) {
+            YtImagePicker(state, paint.image, onImportImage) { file -> onPaint(paint.copy(image = file)) }
+        } else if (paint.type == YtPaintType.SOLID) {
             val argb = t?.resolve(paint)?.color ?: paint.color
             YtColorPicker(state, argb, paint.ref, { onPaint(YtPaint.solid(it)) }, { onPaint(YtPaint.token(it)) })
         } else {
@@ -248,6 +260,21 @@ fun YtPaintEditor(state: YtEditorState, paint: YtPaint, key: String, onPaint: (Y
     }
 }
 
+/** The theme's images to pick from, and the import (a picked file is checked and scaled, YtImageImport). */
+@Composable
+fun YtImagePicker(state: YtEditorState, selected: String?, onImportImage: (((String) -> Unit) -> Unit)?, onPick: (String) -> Unit) {
+    val images = state.doc?.assets?.filter { it.kind == YtAssetKind.IMAGE }.orEmpty()
+    Label(stringResource(R.string.yt_builder_image))
+    if (images.isEmpty()) {
+        Text(stringResource(R.string.yt_builder_image_none), color = PanelDim, fontSize = 12.sp)
+    } else {
+        Choice(images.map { it.file to it.file }, selected ?: "") { onPick(it) }
+    }
+    if (onImportImage != null) {
+        TextButton(onClick = { onImportImage(onPick) }) { Text(stringResource(R.string.yt_builder_import_image)) }
+    }
+}
+
 /** Copied effect values, to put on another element. */
 object YtEditorClipboard {
     var paint: YtPaint? by mutableStateOf(null)
@@ -269,7 +296,7 @@ private enum class Tab(val label: Int, val simple: Boolean) {
 
 /** The context panel: the selected node's tools, or the theme's values when nothing is selected. */
 @Composable
-fun YtEditorPanel(state: YtEditorState, onImportFont: ((String) -> Unit) -> Unit, modifier: Modifier = Modifier) {
+fun YtEditorPanel(state: YtEditorState, onImportFont: ((String) -> Unit) -> Unit, modifier: Modifier = Modifier, onImportImage: ((String) -> Unit) -> Unit = {}) {
     val node = state.primary
     Column(modifier.verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 6.dp)) {
         if (node == null) {
@@ -292,28 +319,48 @@ fun YtEditorPanel(state: YtEditorState, onImportFont: ((String) -> Unit) -> Unit
             tabs.forEach { t -> Tab(selected = t == tab, onClick = { tab = t }, text = { Text(stringResource(t.label), fontSize = 12.sp) }) }
         }
         when (tab) {
-            Tab.COLOR -> ColorTab(state, node)
+            Tab.COLOR -> ColorTab(state, node, onImportImage)
             Tab.SIZE -> SizeTab(state, node)
             Tab.CORNERS -> CornersTab(state, node)
             Tab.TEXT -> TextTab(state, node, onImportFont)
             Tab.ANIM -> YtAnimTab(state, node)
             Tab.SHADOW -> ShadowTab(state, node)
-            Tab.LAYOUT -> LayoutTab(state, node)
+            Tab.LAYOUT -> LayoutTab(state, node, onImportImage)
             Tab.RULES -> RulesTab(state, node)
         }
         Spacer(Modifier.height(24.dp))
     }
 }
 
+/** The states whose look the colour tab edits besides the normal one (drawn in the app: YtStatePatchRule). */
+private val editableStates = listOf(YtStateNames.SELECTED, YtStateNames.PRESSED, YtStateNames.ACTIVE, YtStateNames.LOADING)
+
 @Composable
-private fun ColorTab(state: YtEditorState, node: YtNode) {
+private fun ColorTab(state: YtEditorState, node: YtNode, onImportImage: ((String) -> Unit) -> Unit) {
     val textual = node.text != null
     var which by remember(node.id) { mutableIntStateOf(if (node.style.fills.isEmpty() && textual) 2 else 0) }
-    val stateful = node.states.containsKey(YtStates.SELECTED)
-    if (stateful || state.target == YtEditorTarget.CHIP || state.target == YtEditorTarget.NAV_TAB) {
-        SwitchRow(stringResource(R.string.yt_builder_edit_selected), state.editState) { state.editState = it }
+    if (node.type == YtNodeType.IMAGE) {
+        // an image element shows one of the theme's images (its file name is kept in `icon`)
+        YtImagePicker(state, node.icon, onImportImage) { file -> state.edit("image") { it.copy(icon = file) } }
     }
-    val inState = state.editState && stateful
+    // the look of a state: normal, or the patch of selected, pressed, active (player plays), loading
+    Label(stringResource(R.string.yt_builder_state_look))
+    Choice(
+        listOf<Pair<String?, String>>(null to stringResource(R.string.yt_builder_state_normal)) + editableStates.map { it to stateLabel(it) },
+        if (state.editState) state.editStateName else null,
+    ) { s ->
+        state.editState = s != null
+        if (s != null) state.editStateName = s
+    }
+    val sKey = state.editStateName
+    val inState = state.editState
+    if (inState && sKey == YtStateNames.PRESSED) {
+        // how far the element gives while pressed (the plain press feel; the animator's own press replaces it)
+        val scale = node.states[sKey]?.scale ?: state.doc?.tokens?.motion?.pressScale ?: 0.97f
+        YtSliderRow(stringResource(R.string.yt_builder_press_scale), scale * 100f, 80f..110f, { v ->
+            state.edit("press scale", "pressScale") { n -> n.copy(states = n.states + (sKey to (n.states[sKey] ?: YtPatch()).copy(scale = v / 100f))) }
+        }, state::seal, unit = "%")
+    }
     Choice(
         buildList {
             add(0 to stringResource(R.string.yt_builder_fill))
@@ -324,13 +371,13 @@ private fun ColorTab(state: YtEditorState, node: YtNode) {
     ) { which = it }
     when (which) {
         0 -> {
-            val fills = if (inState) node.states[YtStates.SELECTED]?.fills ?: node.style.fills else node.style.fills
+            val fills = if (inState) node.states[sKey]?.fills ?: node.style.fills else node.style.fills
             val fill = fills.firstOrNull()
             if (fill == null) {
-                TextButton(onClick = { state.edit("fill") { setFills(it, listOf(YtPaint.token(YtRole.RAISED)), inState) } }) { Text(stringResource(R.string.yt_builder_add_fill)) }
+                TextButton(onClick = { state.edit("fill") { setFills(it, listOf(YtPaint.token(YtRole.RAISED)), inState, sKey) } }) { Text(stringResource(R.string.yt_builder_add_fill)) }
             } else {
-                YtPaintEditor(state, fill, node.id + "fill") { p -> state.edit("fill", "fill") { setFills(it, listOf(p) + fills.drop(1), inState) } }
-                TextButton(onClick = { state.edit("fill") { setFills(it, emptyList(), inState) } }) { Text(stringResource(R.string.yt_builder_remove)) }
+                YtPaintEditor(state, fill, node.id + "fill", onImportImage) { p -> state.edit("fill", "fill") { setFills(it, listOf(p) + fills.drop(1), inState, sKey) } }
+                TextButton(onClick = { state.edit("fill") { setFills(it, emptyList(), inState, sKey) } }) { Text(stringResource(R.string.yt_builder_remove)) }
             }
         }
         1 -> {
@@ -345,10 +392,10 @@ private fun ColorTab(state: YtEditorState, node: YtNode) {
         }
         2 -> {
             val spec = node.text ?: YtTextSpec()
-            val color = if (inState) node.states[YtStates.SELECTED]?.textColor ?: spec.color else spec.color
+            val color = if (inState) node.states[sKey]?.textColor ?: spec.color else spec.color
             YtPaintEditor(state, color, node.id + "text") { p ->
                 state.edit("text color", "textColor") { n ->
-                    if (inState) n.copy(states = n.states + (YtStates.SELECTED to (n.states[YtStates.SELECTED] ?: YtPatch()).copy(textColor = p)))
+                    if (inState) n.copy(states = n.states + (sKey to (n.states[sKey] ?: YtPatch()).copy(textColor = p)))
                     else n.copy(text = (n.text ?: YtTextSpec()).copy(color = p))
                 }
             }
@@ -357,8 +404,8 @@ private fun ColorTab(state: YtEditorState, node: YtNode) {
     YtSliderRow(stringResource(R.string.yt_builder_opacity), node.style.opacity * 100f, 0f..100f, { v -> state.edit("opacity", "opacity") { it.copy(style = it.style.copy(opacity = v / 100f)) } }, state::seal, unit = "%")
 }
 
-private fun setFills(n: YtNode, fills: List<YtPaint>, inState: Boolean): YtNode =
-    if (inState) n.copy(states = n.states + (YtStates.SELECTED to (n.states[YtStates.SELECTED] ?: YtPatch()).copy(fills = fills)))
+private fun setFills(n: YtNode, fills: List<YtPaint>, inState: Boolean, state: String = YtStates.SELECTED): YtNode =
+    if (inState) n.copy(states = n.states + (state to (n.states[state] ?: YtPatch()).copy(fills = fills)))
     else n.copy(style = n.style.copy(fills = fills))
 
 @Composable
@@ -491,7 +538,7 @@ private fun ShadowTab(state: YtEditorState, node: YtNode) {
 }
 
 @Composable
-private fun LayoutTab(state: YtEditorState, node: YtNode) {
+private fun LayoutTab(state: YtEditorState, node: YtNode, onImportImage: ((String) -> Unit) -> Unit) {
     val l = node.layout
     fun set(change: (YtLayout) -> YtLayout) = state.edit("layout", "layout") { it.copy(layout = change(it.layout)) }
     Label(stringResource(R.string.yt_builder_layout_mode))
@@ -523,10 +570,18 @@ private fun LayoutTab(state: YtEditorState, node: YtNode) {
     YtSliderRow(stringResource(R.string.yt_builder_side_bottom), p.bottom, 0f..64f, { v -> pad { it.copy(bottom = v) } }, state::seal)
     if (state.advanced) {
         Label(stringResource(R.string.yt_builder_add))
-        Row {
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
             TextButton(onClick = { state.addChild(YtNode("text", type = YtNodeType.TEXT, name = "Text", text = YtTextSpec(text = "Text"), x = 12f, y = 12f)) }) { Text(stringResource(R.string.yt_builder_add_text)) }
             TextButton(onClick = { state.addChild(YtNode("shape", type = YtNodeType.SHAPE, name = "Shape", width = YtSize.fixed(48f), height = YtSize.fixed(48f), x = 12f, y = 12f, style = YtStyle(fills = listOf(YtPaint.token(YtRole.ACCENT)), corners = YtCorners.all(12f)))) }) { Text(stringResource(R.string.yt_builder_add_shape)) }
             TextButton(onClick = { state.addChild(YtNode("icon", type = YtNodeType.ICON, name = "Icon", icon = "star", width = YtSize.fixed(24f), height = YtSize.fixed(24f), x = 12f, y = 12f, text = YtTextSpec())) }) { Text(stringResource(R.string.yt_builder_add_icon)) }
+            TextButton(onClick = {
+                // an image element: the theme's first image (another one is picked in its colour tab), or a new one
+                val add = { file: String ->
+                    state.addChild(YtNode("image", type = YtNodeType.IMAGE, name = "Image", icon = file, width = YtSize.fixed(96f), height = YtSize.fixed(64f), x = 12f, y = 12f, style = YtStyle(corners = YtCorners.all(8f)), layout = YtLayout(clip = true)))
+                }
+                val first = state.doc?.assets?.firstOrNull { it.kind == YtAssetKind.IMAGE }?.file
+                if (first != null) add(first) else onImportImage(add)
+            }) { Text(stringResource(R.string.yt_builder_image)) }
             TextButton(onClick = { state.addChild(YtNode("box", name = "Box", layout = YtLayout(YtLayoutMode.FREE), width = YtSize.fixed(80f), height = YtSize.fixed(60f), x = 12f, y = 12f, style = YtStyle(fills = listOf(YtPaint.token(YtRole.RAISED)), corners = YtCorners.all(12f)))) }) { Text(stringResource(R.string.yt_builder_add_box)) }
         }
     }

@@ -280,7 +280,7 @@ private fun triggerNote(t: YtTriggerKind, kind: YtComponentKind): Int = when (t)
     YtTriggerKind.LOADING_START, YtTriggerKind.LOADING_END -> R.string.yt_anim_note_loading
     YtTriggerKind.STATE -> R.string.yt_anim_note_state
     YtTriggerKind.MANUAL -> R.string.yt_anim_note_manual
-}.let { if ((kind == YtComponentKind.MINI || kind == YtComponentKind.NAV_BAR) && t != YtTriggerKind.MANUAL) R.string.yt_anim_note_mini else it }
+}.let { if (kind == YtComponentKind.MINI && (t == YtTriggerKind.APPEAR || t == YtTriggerKind.DISAPPEAR)) R.string.yt_anim_note_mini else it }
 
 internal fun firstCurve(a: YtAnim): YtCurve = a.tracks.firstOrNull()?.keys?.firstOrNull()?.curve ?: YtCurve.LINEAR
 
@@ -535,6 +535,10 @@ fun YtAnimTestOverlay(state: YtEditorState, modifier: Modifier = Modifier) {
             }
 
             override fun event(t: YtTriggerKind) = state.testEvent(state.target.kind, t)
+
+            // as in the app: a tap waits for a double tap only where one starts something
+            override val waitsForDoubleTap: Boolean
+                get() = state.animInstances.any { (state.target.kind == null || it.kind == state.target.kind) && it.waitsForDoubleTap }
         }
     }
     Box(modifier.ytAnimTouch(sink)) {

@@ -1,5 +1,7 @@
 package com.github.libretube.ui.yt.mini
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -24,11 +26,12 @@ import com.github.libretube.helpers.YtDesignDark
 
 /**
  * YT: the mini player of "Eigenes", drawn from the active theme document: its measures from the
- * theme's mini player and bar settings (a card stacked on the bar), the body's fill (a vertical
- * gradient of two stops at most), outline and shadow from the mini player component's root, title,
- * channel and progress from its slots. The shared surface of the round 10 players draws it, so
- * docking, the preview and the drop target work as in every design. Nothing is drawn on the video
- * (a SurfaceView, Pitfall P5): the picture is only clipped by its outline.
+ * theme's mini player and bar settings (a card stacked on the bar); behind the picture the mini
+ * player component's whole node tree with its animations (YtMiniCustomUnder), over it only the
+ * picture slot's outline. The look below (the root's fill, outline, shadow, the slots' type) is
+ * the plain body the preview grows into and what the neutral parts take their colours from.
+ * Docking, the preview and the drop target work as in every design. The video (a SurfaceView,
+ * Pitfall P5) is only clipped by its outline.
  */
 object YtMiniCustom : YtMiniLookDesign(YtDesign.CUSTOM) {
     private var specKey: Pair<YtMiniConfig, YtNavConfig>? = null
@@ -76,6 +79,31 @@ object YtMiniCustom : YtMiniLookDesign(YtDesign.CUSTOM) {
 
     override val landing: YtMiniLanding get() = YtMiniLanding.SETTLE
 
+    /** The touches on the docked box are followed only where the mini player has touch animations or a pressed look. */
+    override val followsFinger: Boolean
+        get() = YtBuilderActive.doc?.let { d ->
+            val kind = com.github.libretube.ui.yt.builder.YtComponentKind.MINI
+            com.github.libretube.ui.yt.builder.YtAnimIndex(d.animations, kind).touch ||
+                YtDocOps.all(d.components.mini).any { it.states.containsKey(com.github.libretube.ui.yt.builder.YtStates.PRESSED) }
+        } == true
+
+    @Composable
+    override fun Under(scene: YtMiniScene) {
+        val palette = scene.palette ?: return
+        if (YtBuilderActive.doc == null) {
+            super.Under(scene)
+            return
+        }
+        val miniLook = look(palette)
+        val style = remember(palette, miniLook) { partsStyle(palette, miniLook) }
+        YtMiniCustomUnder(this, scene, miniLook, style)
+    }
+
+    @Composable
+    override fun Over(scene: YtMiniScene) {
+        YtMiniCustomOver(scene, spec)
+    }
+
     private var lookKey: Pair<YtThemeDoc?, Boolean>? = null
     private var lookCache: YtMiniLook? = null
 
@@ -105,9 +133,9 @@ object YtMiniCustom : YtMiniLookDesign(YtDesign.CUSTOM) {
         val nodes = YtDocOps.all(root)
         val fills = root.style.fills.filter { it.enabled }.map { t.resolve(it) }
         val first = fills.firstOrNull()
-        val fill = first?.let { if (it.type == YtPaintType.SOLID) Color(it.color) else Color(it.stops.first().color) } ?: palette.surface
+        val fill = first?.let { YtBuilderPaint.color(it) } ?: palette.surface
         // a gradient runs from its last stop at the top to its first at the bottom
-        val fillTop = first?.takeIf { it.type != YtPaintType.SOLID }?.let { Color(it.stops.last().color) }
+        val fillTop = first?.takeIf { it.type == YtPaintType.LINEAR || it.type == YtPaintType.RADIAL }?.stops?.lastOrNull()?.let { Color(it.color) }
         val stroke = root.style.strokes.firstOrNull { it.enabled }
         val shadow = root.style.shadows.firstOrNull { it.enabled && !it.inner }
         fun text(slot: YtSlot, fallback: YtTextSpec): TextStyle {
