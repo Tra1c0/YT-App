@@ -104,6 +104,12 @@
             app:key="yt_ssi_bench_run"
             app:title="@string/yt_r35_ssi_bench_run" />
 
+        <!-- round 36: sweep the meaning cut-off on the same examples -->
+        <Preference
+            android:icon="@drawable/ic_history"
+            app:key="yt_ssi_bench_calibrate"
+            app:title="@string/yt_r36_ssi_calibrate" />
+
         <Preference
             android:icon="@drawable/ic_info"
             app:key="yt_ssi_bench_format"

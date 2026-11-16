@@ -23,7 +23,8 @@ import java.util.Locale
  * YT: "SSI-Suche" (round 33): the meaning model (download with its size, or delete), what is in
  * the index, background indexing, the Deep budget, the AI switch, "Jetzt indexieren", rebuild
  * and clear. Round 35 (SSI-2): the AI re-rank switch, learning from feedback with its reset,
- * and the benchmark on the user's own examples (import, run, format help).
+ * and the benchmark on the user's own examples (import, run, format help). Round 36: the
+ * meaning cut-off calibrated on the same examples ("Schwelle kalibrieren").
  */
 class YtSsiSettings : BasePreferenceFragment() {
     private val importExamples = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -75,6 +76,10 @@ class YtSsiSettings : BasePreferenceFragment() {
         }
         findPreference<Preference>(KEY_BENCH_RUN)?.setOnPreferenceClickListener {
             runBench()
+            true
+        }
+        findPreference<Preference>(KEY_BENCH_CALIBRATE)?.setOnPreferenceClickListener {
+            calibrate()
             true
         }
         findPreference<Preference>(KEY_BENCH_FORMAT)?.setOnPreferenceClickListener {
@@ -174,6 +179,15 @@ class YtSsiSettings : BasePreferenceFragment() {
                     else -> getString(R.string.yt_r35_ssi_bench_last, YtCrashLog.formatTime(last.current.at), f2(last.current.recall3), f2(last.baseline.recall3))
                 }
             }
+            val (cut, at) = withContext(Dispatchers.IO) { YtSsi.calibratedCut(context) to YtSsi.calibratedAt(context) }
+            findPreference<Preference>(KEY_BENCH_CALIBRATE)?.apply {
+                isEnabled = set != null
+                summary = when {
+                    set == null -> getString(R.string.yt_r35_ssi_bench_run_none)
+                    cut == null -> getString(R.string.yt_r36_ssi_calibrate_default, cutText(YtSsiCalibration.base(null)), YtSsiCalibration.GRID.size)
+                    else -> getString(R.string.yt_r36_ssi_calibrate_set, cutText(cut), YtCrashLog.formatTime(at), YtSsiCalibration.GRID.size)
+                }
+            }
         }
     }
 
@@ -221,6 +235,89 @@ class YtSsiSettings : BasePreferenceFragment() {
         }
         dialog.setOnDismissListener { if (!finished) job.cancel() }
     }
+
+    /**
+     * "Schwelle kalibrieren": the sweep with a progress dialog (cancel stops it), then each
+     * value's Recall@3 and no-match, with "apply the best" and "reset to default".
+     */
+    private fun calibrate() {
+        val context = requireContext()
+        val dialog: AlertDialog = MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.yt_r36_ssi_calibrate)
+            .setMessage(R.string.yt_r35_ssi_bench_running)
+            .setCancelable(false)
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+        var finished = false
+        val job = lifecycleScope.launch {
+            val outcome = runCatching {
+                YtSsiBenchRunner.calibrate(context) { p ->
+                    lifecycleScope.launch {
+                        if (!finished) dialog.setMessage(context.getString(R.string.yt_r36_ssi_calibrate_running, p.done, p.total, YtSsiCalibration.GRID.size))
+                    }
+                }
+            }
+            finished = true
+            dialog.dismiss()
+            outcome.onSuccess { showCalibration(it) }.onFailure { e ->
+                if (e is kotlinx.coroutines.CancellationException) return@onFailure
+                val message = if (e is YtSsiBenchRunner.NotPossible && e.reason == YtSsiBenchRunner.NotPossible.Reason.NO_MODEL) {
+                    getString(R.string.yt_r36_ssi_calibrate_no_model)
+                } else {
+                    getString(R.string.yt_r36_ssi_calibrate_failed, e.message ?: e.javaClass.simpleName)
+                }
+                MaterialAlertDialogBuilder(context)
+                    .setTitle(R.string.yt_r36_ssi_calibrate)
+                    .setMessage(message)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
+            }
+        }
+        dialog.setOnDismissListener { if (!finished) job.cancel() }
+    }
+
+    private fun showCalibration(result: YtSsiCalibration.Result) {
+        val context = context ?: return
+        val calibrated = YtSsi.calibratedCut(context)
+        val now = YtSsiCalibration.base(calibrated)
+        val text = buildString {
+            val examples = result.points.firstOrNull()?.metrics?.examples ?: 0
+            append(getString(R.string.yt_r36_ssi_calibrate_head, examples, "%+.3f".format(Locale.getDefault(), result.learntOffset))).append("\n")
+            if (result.missing > 0) append(getString(R.string.yt_r36_ssi_calibrate_missing, result.missing)).append("\n")
+            append("\n")
+            for (point in result.points) {
+                val m = point.metrics
+                val row = m.emptyRight?.let { getString(R.string.yt_r36_ssi_calibrate_row_none, cutText(point.cut), f2(m.recall3), f2(m.noMatch), f2(it)) }
+                    ?: getString(R.string.yt_r36_ssi_calibrate_row, cutText(point.cut), f2(m.recall3), f2(m.noMatch))
+                append(row)
+                if (point == result.best) append(" ").append(getString(R.string.yt_r36_ssi_calibrate_best))
+                if (kotlin.math.abs(point.cut - now) < 0.0005f) append(" ").append(getString(R.string.yt_r36_ssi_calibrate_now))
+                append("\n")
+            }
+            append("\n").append(getString(R.string.yt_r36_ssi_calibrate_rule, cutText(YtSsiCalibration.MIN), cutText(YtSsiCalibration.MAX)))
+        }
+        val builder = MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.yt_r36_ssi_calibrate_result)
+            .setMessage(text)
+            .setNegativeButton(android.R.string.cancel, null)
+        result.best?.let { best ->
+            builder.setPositiveButton(getString(R.string.yt_r36_ssi_calibrate_apply, cutText(best.cut))) { _, _ ->
+                YtSsi.setCalibratedCut(context, best.cut)
+                Toast.makeText(context, getString(R.string.yt_r36_ssi_calibrate_applied, cutText(YtSsiCalibration.base(YtSsi.calibratedCut(context)))), Toast.LENGTH_SHORT).show()
+                refreshBench()
+            }
+        }
+        if (calibrated != null) {
+            builder.setNeutralButton(R.string.yt_r36_ssi_calibrate_reset) { _, _ ->
+                YtSsi.setCalibratedCut(context, null)
+                Toast.makeText(context, getString(R.string.yt_r36_ssi_calibrate_applied, cutText(YtSsiCalibration.base(null))), Toast.LENGTH_SHORT).show()
+                refreshBench()
+            }
+        }
+        builder.show()
+    }
+
+    private fun cutText(v: Float) = "%.2f".format(Locale.getDefault(), v)
 
     /** The result as the dialog shows it: SSI-2, the SSI-1 way, and the change since the last run. */
     private fun report(outcome: YtSsiBenchRunner.Outcome): String {
@@ -351,5 +448,6 @@ class YtSsiSettings : BasePreferenceFragment() {
         const val KEY_BENCH_IMPORT = "yt_ssi_bench_import"
         const val KEY_BENCH_RUN = "yt_ssi_bench_run"
         const val KEY_BENCH_FORMAT = "yt_ssi_bench_format"
+        const val KEY_BENCH_CALIBRATE = "yt_ssi_bench_calibrate"
     }
 }

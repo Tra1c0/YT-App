@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT Runde 36: SSI-Lücken (Stellensuche aus der klassischen Suchleiste, Schwelle kalibrieren). -->
+<resources>
+    <string name="yt_r36_ssi_classic_action">Stellen suchen (SSI)</string>
+    <string name="yt_r36_ssi_calibrate">Schwelle kalibrieren</string>
+    <string name="yt_r36_ssi_calibrate_default">Bedeutungs-Schwelle %1$s (Standard). Probiert %2$d Werte an deinen Beispielen aus und lässt dich den besten übernehmen.</string>
+    <string name="yt_r36_ssi_calibrate_set">Bedeutungs-Schwelle %1$s (kalibriert am %2$s). Probiert %3$d Werte erneut an deinen Beispielen aus.</string>
+    <string name="yt_r36_ssi_calibrate_no_model">Die Schwelle wirkt nur auf die Bedeutungssuche: zuerst das Bedeutungsmodell laden.</string>
+    <string name="yt_r36_ssi_calibrate_running">Beispiel %1$d von %2$d (je %3$d Werte) …</string>
+    <string name="yt_r36_ssi_calibrate_failed">Die Kalibrierung wurde abgebrochen: %1$s</string>
+    <string name="yt_r36_ssi_calibrate_result">Schwelle je Wert</string>
+    <string name="yt_r36_ssi_calibrate_head">%1$d Beispiele auf dem Index, wie er ist (ohne KI-Nachsortierung). Der gelernte Versatz %2$s kommt auf jeden Wert.</string>
+    <string name="yt_r36_ssi_calibrate_missing">%1$d Beispielvideos sind nicht im Index (einmal den Benchmark ausführen, dann werden sie gelesen).</string>
+    <string name="yt_r36_ssi_calibrate_row">%1$s: Recall@3 %2$s · ohne Treffer %3$s</string>
+    <string name="yt_r36_ssi_calibrate_row_none">%1$s: Recall@3 %2$s · ohne Treffer %3$s · richtig leer %4$s</string>
+    <string name="yt_r36_ssi_calibrate_best">(beste)</string>
+    <string name="yt_r36_ssi_calibrate_now">(jetzt)</string>
+    <string name="yt_r36_ssi_calibrate_rule">Beste = die meisten Beispiele richtig (richtige Stelle unter den ersten 3, oder kein Treffer, wo keiner erwartet ist). Erlaubt ist %1$s bis %2$s.</string>
+    <string name="yt_r36_ssi_calibrate_apply">%1$s übernehmen</string>
+    <string name="yt_r36_ssi_calibrate_reset">Auf Standard zurück</string>
+    <string name="yt_r36_ssi_calibrate_applied">Bedeutungs-Schwelle ist jetzt %1$s</string>
+</resources>

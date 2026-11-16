@@ -23,6 +23,7 @@ import java.time.ZoneId
  * - the SSI-1 way on the same index: the intent's own weights, the fixed cut-off, no AI and the
  *   SSI-1 play start. The passages are the same for both (the index has one cut).
  * The result is stored; the next run shows the change against it (on the same examples).
+ * [calibrate] sweeps the meaning cut-off on the same examples ("Schwelle kalibrieren").
  */
 object YtSsiBenchRunner {
     private const val TAG = "YtSsiBenchRunner"
@@ -148,6 +149,43 @@ object YtSsiBenchRunner {
         )
         withContext(Dispatchers.IO) { runCatching { lastFile(context).writeText(YtSsiBenchmark.encode(run)) } }
         return Outcome(run, previous, blocked)
+    }
+
+    /** Calibration could not run: no model (the cut-off then does nothing) or no examples. */
+    class NotPossible(val reason: Reason) : IllegalStateException(reason.name) {
+        enum class Reason { NO_EXAMPLES, NO_MODEL }
+    }
+
+    /**
+     * "Schwelle kalibrieren": answers every example once per value of [YtSsiCalibration.GRID]
+     * on the index as it is (nothing is fetched; the AI re-rank is left out, it would cost a
+     * request per value), with the learnt weights and the learnt offset on each value, and
+     * measures each value ([YtSsiCalibration.result]). Nothing is applied here.
+     */
+    suspend fun calibrate(context: Context, progress: (Progress) -> Unit): YtSsiCalibration.Result = withContext(Dispatchers.Default) {
+        val set = examples(context) ?: throw NotPossible(NotPossible.Reason.NO_EXAMPLES)
+        YtSsiModels.refresh(context)
+        if (YtSsiModels.state.value != YtSsiModelState.Ready) throw NotPossible(NotPossible.Reason.NO_MODEL)
+        runCatching { YtSsi.indexer.indexArchive(System.currentTimeMillis() + 3_000) }
+        val docs = withContext(Dispatchers.IO) { YtSsi.db.docs() }
+        val channels = docs.values.mapNotNull { it.channelName }.filter { it.isNotBlank() }.distinct()
+        val offset = YtSsi.cutOffset(context)
+        val answers = YtSsiCalibration.GRID.associateWith { ArrayList<YtSsiBenchmark.Answer>() }
+        val zone = ZoneId.systemDefault()
+        for ((i, example) in set.examples.withIndex()) {
+            progress(Progress(i, set.examples.size))
+            val intent = YtSsiIntentParser.parse(example.query, System.currentTimeMillis(), zone, channels)
+            // the same query one value after the other: its vector is made once
+            for (cut in YtSsiCalibration.GRID) {
+                val t = SystemClock.elapsedRealtime()
+                val hits = if (intent.empty) emptyList() else YtSsiSearch.local(context, intent, cutOff = cut + offset).first
+                val latency = SystemClock.elapsedRealtime() - t
+                answers.getValue(cut).add(YtSsiBenchmark.Answer(hits.take(5).map { found(it, YtSsiPlayRules.playStart(it, null), it.span) }, latency))
+            }
+        }
+        progress(Progress(set.examples.size, set.examples.size))
+        val missing = set.examples.mapNotNull { it.videoId }.distinct().count { it !in docs }
+        YtSsiCalibration.result(set, answers, offset, missing, System.currentTimeMillis())
     }
 
     /** A hit as the benchmark measures it: its time, its checked span (or its passage) and its play start. */

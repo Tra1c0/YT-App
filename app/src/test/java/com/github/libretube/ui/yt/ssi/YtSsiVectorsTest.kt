@@ -46,7 +46,7 @@ class YtSsiVectorsTest {
         add(20 until 50)
         assertEquals(50, index.size)
         assertEquals(149L, index.maxId)
-        val found = index.search(vectors[33], 5)
+        val found = kotlinx.coroutines.runBlocking { index.search(vectors[33], 5) }
         assertEquals(133L, found.first().first)
         assertEquals(1f, found.first().second, 0.02f)
         assertEquals(5, found.size)

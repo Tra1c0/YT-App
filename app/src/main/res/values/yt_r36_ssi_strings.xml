@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 36: SSI gaps (moments search from the classic search bar, cut-off calibration). -->
+<resources>
+    <string name="yt_r36_ssi_classic_action">Search for moments (SSI)</string>
+    <string name="yt_r36_ssi_calibrate">Calibrate cut-off</string>
+    <string name="yt_r36_ssi_calibrate_default">Meaning cut-off %1$s (default). Tries %2$d values on your examples and lets you apply the best.</string>
+    <string name="yt_r36_ssi_calibrate_set">Meaning cut-off %1$s (calibrated %2$s). Tries %3$d values on your examples again.</string>
+    <string name="yt_r36_ssi_calibrate_no_model">The cut-off only affects the meaning search: download the meaning model first.</string>
+    <string name="yt_r36_ssi_calibrate_running">Example %1$d of %2$d (%3$d values each) …</string>
+    <string name="yt_r36_ssi_calibrate_failed">Calibration stopped: %1$s</string>
+    <string name="yt_r36_ssi_calibrate_result">Cut-off per value</string>
+    <string name="yt_r36_ssi_calibrate_head">%1$d examples on the index as it is (without AI re-rank). Learnt offset %2$s is added to every value.</string>
+    <string name="yt_r36_ssi_calibrate_missing">%1$d example videos are not in the index (run the benchmark once to read them).</string>
+    <string name="yt_r36_ssi_calibrate_row">%1$s: Recall@3 %2$s · no hit %3$s</string>
+    <string name="yt_r36_ssi_calibrate_row_none">%1$s: Recall@3 %2$s · no hit %3$s · right empty %4$s</string>
+    <string name="yt_r36_ssi_calibrate_best">(best)</string>
+    <string name="yt_r36_ssi_calibrate_now">(now)</string>
+    <string name="yt_r36_ssi_calibrate_rule">Best = most examples right (right spot in the first 3, or no hit where none is expected). Allowed range %1$s to %2$s.</string>
+    <string name="yt_r36_ssi_calibrate_apply">Apply %1$s</string>
+    <string name="yt_r36_ssi_calibrate_reset">Reset to default</string>
+    <string name="yt_r36_ssi_calibrate_applied">Meaning cut-off is now %1$s</string>
+</resources>

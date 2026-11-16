@@ -261,6 +261,11 @@ object YtSsiModels {
         block(loaded)
     }
 
+    /** For Diagnose: the normaliser of the loaded tokenizer (charsmap or NFKC), null before the first load. */
+    @Volatile
+    var tokenizerNormalizer: String? = null
+        private set
+
     private fun load(context: Context): YtSsiEmbedder? {
         if (loadFailed == UNSUPPORTED || !installed(context)) return null
         if (!runtimeAvailable(context)) {
@@ -272,6 +277,7 @@ object YtSsiModels {
             val tokenizer = YtSsiTokenizer.readCache(vocabCache(context)) ?: YtSsiTokenizer.fromJson(tokenizerFile(context).readText()).also {
                 runCatching { YtSsiTokenizer.writeCache(it, vocabCache(context)) }
             }
+            tokenizerNormalizer = tokenizer.normalizer
             YtSsiOnnxEmbedder(modelFile(context), tokenizer, spec).also { embedder = it }
         } catch (e: UnsatisfiedLinkError) {
             // the runtime is packed for 64-bit ARM only (app/build.gradle.kts)

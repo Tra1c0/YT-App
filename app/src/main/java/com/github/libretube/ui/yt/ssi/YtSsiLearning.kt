@@ -148,8 +148,11 @@ object YtSsiLearning {
         return YtSsiWeights(base.lexical * m.lexical, base.semantic * m.semantic, base.title * m.title)
     }
 
-    /** The meaning search's cut-off with the learnt offset. */
-    fun minCosine(state: YtSsiLearnState, now: Long): Float = (YtSsiVectorIndex.MIN_COSINE + decay(state, now).cutOffset).toFloat()
+    /** The meaning search's cut-off: [base] (the default or the calibrated one) with the learnt offset. */
+    fun minCosine(state: YtSsiLearnState, now: Long, base: Float = YtSsiVectorIndex.MIN_COSINE): Float = (base + decay(state, now).cutOffset).toFloat()
+
+    /** The learnt offset of the cut-off now. */
+    fun cutOffset(state: YtSsiLearnState, now: Long): Float = decay(state, now).cutOffset.toFloat()
 
     /** The feedback of [verdict] on [hit] of a search for [intent]. */
     fun feedback(hit: YtSsiHit, intent: YtSsiIntent, verdict: YtSsiVerdict, now: Long, semanticUsed: Boolean): YtSsiFeedback {
@@ -172,7 +175,7 @@ object YtSsiLearning {
     }
 
     /** For Diagnose: counts, the moved weights per kind and the cut-off. */
-    fun summary(state: YtSsiLearnState, now: Long): String {
+    fun summary(state: YtSsiLearnState, now: Long, base: Float = YtSsiVectorIndex.MIN_COSINE): String {
         val s = decay(state, now)
         if (s.events == 0) return "no feedback"
         return buildString {
@@ -182,7 +185,7 @@ object YtSsiLearning {
             for ((kind, m) in s.kinds.toSortedMap()) {
                 append(", ${kind.lowercase()} lex ×%.2f sem ×%.2f title ×%.2f".format(java.util.Locale.ROOT, m.lexical, m.semantic, m.title))
             }
-            append(", cut-off %.3f (%+.3f)".format(java.util.Locale.ROOT, YtSsiVectorIndex.MIN_COSINE + s.cutOffset, s.cutOffset))
+            append(", cut-off %.3f (%+.3f)".format(java.util.Locale.ROOT, base + s.cutOffset, s.cutOffset))
         }
     }
 }
