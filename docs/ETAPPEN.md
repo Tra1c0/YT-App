@@ -23,7 +23,7 @@ Builder“), wie im Chat bewertet und angepasst. Sie sind Ideen, keine Vorgaben:
 | SSI-2 Präzision | abgenommen (Nutzer, 2026-11-16, Build 142; Messwerte nicht gemeldet) |
 | TB-2 Animator | abgenommen (Nutzer, 2026-11-16, Build 142; Messwerte nicht gemeldet) |
 | SSI-3 Belege | in Arbeit (Runde 37) |
-| TB-3 Vektor | Abnahme-Kriterien mit dem Nutzer festlegen, dann Start |
+| TB-3 Vektor | in Arbeit (Runde 37) |
 | SSI-4 Ultra & Bild | wartet auf Etappe 3 |
 | TB-4 Ausweitung | wartet auf Etappe 3 |
 
@@ -99,7 +99,16 @@ Meldung, Diagnose-Zeile der Etappe zeigt plausible Werte.
 ### TB-3 Vektor
 - Zeichenstift, Bézier, Boolesche Operationen, Masken, Morphing (inkompatible Formen als „angenähert“
   markiert), Bewegungspfade, Bewegungsaufnahme.
-- **Abnahme:** wird vor Beginn mit dem Nutzer festgelegt.
+- **Nicht in dieser Etappe:** Videoseite/Player/Shorts gestalten, Komponenten-Bibliothek, Vorschläge (TB-4).
+- **Abnahme** (mit dem Nutzer festgelegt, 2026-11-16):
+  1. Eine Form aus mindestens 6 Punkten mit Bézier-Kurven zeichnen, nachbearbeiten (Punkte, Griffe)
+     und speichern; nach Neustart unverändert.
+  2. Vereinen, Abziehen, Schneiden, Ausschließen liefern bei zwei überlappenden Formen das erwartete Ergebnis.
+  3. Ein Bild mit einer Form maskieren; in der App sieht es aus wie im Editor.
+  4. Morphing zwischen zwei passenden Formen flüssig; bei unpassenden Formen Hinweis „angenähert“, kein Sprung.
+  5. Ein Element folgt einem gezeichneten Bewegungspfad; eine per Finger aufgenommene Bewegung lässt
+     sich glätten und in der Dauer ändern.
+  6. Beim Bearbeiten einer Form mit etwa 100 Punkten bleibt die Bildzeit-Anzeige grün (P95 im Bildbudget).
 
 ### TB-4 Ausweitung
 - Videoseite, Player-Bedienelemente (Funktion bleibt erhalten), Shorts, Komponenten mit Varianten und
