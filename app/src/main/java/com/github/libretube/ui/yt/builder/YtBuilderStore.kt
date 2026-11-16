@@ -94,7 +94,10 @@ object YtBuilderStore {
 
     fun delete(context: Context, id: String) {
         val dir = dir(context, id) ?: return
-        assets(context, id)?.let { YtBuilderFonts.forget(it) }
+        assets(context, id)?.let {
+            YtBuilderFonts.forget(it)
+            YtBuilderImages.forget(it)
+        }
         dir.deleteRecursively()
         if (activeId() == id) PreferenceHelper.putString(PREF_ACTIVE, "")
     }
@@ -171,6 +174,90 @@ object YtBuilderStore {
             return AssetResult.Failed("Android cannot read this font")
         }
         return AssetResult.Ok(doc.copy(assets = doc.assets + YtAsset(name, YtAssetKind.FONT)), name)
+    }
+
+    /** An image imported into a theme: the document with it listed, its file name and stored size. */
+    data class ImageOk(val doc: YtThemeDoc, val file: String, val width: Int, val height: Int)
+
+    /**
+     * Copies an image from [uri] into the theme (YtImageImport's rules: PNG, JPEG or WebP by its
+     * bytes, at most 20 MB, scaled down to 2048 px / 4 MP, stored as PNG with transparency or else
+     * JPEG). Null and [refused] with the reason when it is not taken. Not on the main thread.
+     */
+    fun importImage(context: Context, doc: YtThemeDoc, uri: Uri, displayName: String?, refused: (YtImageImport.Refusal?) -> Unit): ImageOk? {
+        val bytes = try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                val out = java.io.ByteArrayOutputStream()
+                val buf = ByteArray(16 * 1024)
+                var total = 0L
+                while (true) {
+                    val n = input.read(buf)
+                    if (n < 0) break
+                    total += n
+                    if (total > YtImageImport.MAX_SOURCE_BYTES) {
+                        refused(YtImageImport.Refusal.TOO_LARGE_FILE)
+                        return null
+                    }
+                    out.write(buf, 0, n)
+                }
+                out.toByteArray()
+            }
+        } catch (e: Exception) {
+            null
+        } ?: run {
+            refused(null)
+            return null
+        }
+        val head = bytes.copyOfRange(0, minOf(16, bytes.size))
+        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        runCatching { android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds) }
+        YtImageImport.check(bytes.size.toLong(), head, bounds.outWidth, bounds.outHeight)?.let {
+            refused(it)
+            return null
+        }
+        val (tw, th) = YtImageImport.targetSize(bounds.outWidth, bounds.outHeight)
+        val opts = android.graphics.BitmapFactory.Options().apply { inSampleSize = YtImageImport.sampleSize(bounds.outWidth, bounds.outHeight, tw, th) }
+        val decoded = runCatching { android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts) }.getOrNull() ?: run {
+            refused(YtImageImport.Refusal.NOT_AN_IMAGE)
+            return null
+        }
+        val bitmap = if (decoded.width == tw && decoded.height == th) decoded else android.graphics.Bitmap.createScaledBitmap(decoded, tw, th, true)
+        fun encode(format: YtImageImport.Format): ByteArray {
+            val out = java.io.ByteArrayOutputStream()
+            @Suppress("DEPRECATION")
+            val f = when (format) {
+                YtImageImport.Format.PNG -> android.graphics.Bitmap.CompressFormat.PNG
+                YtImageImport.Format.JPEG -> android.graphics.Bitmap.CompressFormat.JPEG
+                YtImageImport.Format.WEBP -> if (android.os.Build.VERSION.SDK_INT >= 30) android.graphics.Bitmap.CompressFormat.WEBP_LOSSY else android.graphics.Bitmap.CompressFormat.WEBP
+            }
+            bitmap.compress(f, if (format == YtImageImport.Format.PNG) 100 else YtImageImport.JPEG_QUALITY, out)
+            return out.toByteArray()
+        }
+        var format = YtImageImport.outputFormat(bitmap.hasAlpha())
+        var data = encode(format)
+        if (!YtImageImport.resultOk(data.size)) {
+            // a large picture with transparency: lossy WebP keeps the transparency and is far smaller
+            YtImageImport.fallback(format)?.let { f ->
+                format = f
+                data = encode(f)
+            }
+        }
+        if (!YtImageImport.resultOk(data.size)) {
+            refused(YtImageImport.Refusal.TOO_LARGE_RESULT)
+            return null
+        }
+        val name = YtImageImport.assetName(displayName, format, doc.assets.map { it.file })
+        if (!YtThemeZip.safeAssetName(name) || !YtThemeZip.signatureOk(name, data)) {
+            refused(YtImageImport.Refusal.NOT_AN_IMAGE)
+            return null
+        }
+        val dir = assets(context, doc.id) ?: run {
+            refused(null)
+            return null
+        }
+        dir.mkdirs()
+        writeAtomic(File(dir, name), data)
+        return ImageOk(doc.copy(assets = doc.assets + YtAsset(name, YtAssetKind.IMAGE)), name, bitmap.width, bitmap.height)
     }
 
     // ---- export / import ----

@@ -134,6 +134,9 @@ class YtMiniHost private constructor(
     private var peekArmed = false
     private var peekBack: OnBackPressedCallback? = null
 
+    /** Whether this page follows the finger on the docked box (the design's choice when it was made). */
+    private val fingers = design.followsFinger
+
     /** How far the docked player reaches above the bar's view, in px (the slab behind it). */
     private val extentPx = if (design.classic) 0f else (design.spec.height - design.spec.navTop).coerceAtLeast(0) * density
 
@@ -155,6 +158,19 @@ class YtMiniHost private constructor(
         hosts[motion] = this
         YtMiniPlayer.keepDock()
         scene.surface = { binding.player.videoSurfaceView }
+        // the picture's place in the box, for what a design draws behind it following it (P5)
+        scene.picture = {
+            val p = binding.player
+            val box = binding.mainContainer
+            if (p.width <= 0 || p.height <= 0) {
+                null
+            } else {
+                val x = p.left - box.left + p.translationX - box.translationX
+                val y = p.top - box.top + p.translationY - box.translationY
+                androidx.compose.ui.geometry.Rect(x, y, x + p.width, y + p.height)
+            }
+        }
+        binding.player.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> scene.pictureMoves++ }
         if (!design.classic) shape()
 
         // behind the picture: inside the box, which draws before the player view
@@ -204,7 +220,7 @@ class YtMiniHost private constructor(
 
         publishBoundsOnLayout()
         listen()
-        if (design.followsFinger) followFinger()
+        if (fingers) followFinger()
 
         fragment.viewLifecycleOwner.lifecycle.addObserver(
             LifecycleEventObserver { _, event ->
@@ -1057,7 +1073,7 @@ class YtMiniHost private constructor(
 
     private fun destroy() {
         unbind()
-        if (design.followsFinger) motion.setOnTouchListener(null)
+        if (fingers) motion.setOnTouchListener(null)
         scene.finger = null
         landing?.cancel()
         reaction?.cancel()

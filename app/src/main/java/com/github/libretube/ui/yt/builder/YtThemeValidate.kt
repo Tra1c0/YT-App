@@ -153,7 +153,14 @@ object YtThemeValidate {
             YtSizeKind.HUG -> s.copy(value = 0f)
         }
 
-        fun paint(path: String, p: YtPaint, depth: Int): YtPaint {
+        fun paint(path: String, p0: YtPaint, depth: Int): YtPaint {
+            // an image fill names a safe image file; anything else is a flat colour
+            val p = if (p0.type == YtPaintType.IMAGE && (p0.image == null || !YtThemeZip.safeAssetName(p0.image) || YtThemeZip.kindOf(p0.image) != YtAssetKind.IMAGE)) {
+                issue(path, "image fill without a usable file")
+                p0.copy(type = YtPaintType.SOLID, image = null)
+            } else {
+                p0
+            }
             val stops = if (p.type == YtPaintType.SOLID) p.stops.take(16) else YtColor.normalizeStops(p.stops, p.color)
             if (p.type != YtPaintType.SOLID && stops.size != p.stops.size) issue(path, "gradient stops repaired")
             return p.copy(

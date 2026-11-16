@@ -45,9 +45,11 @@ object YtBuilderPaint {
             val r = max(1f, p.radius * max(size.width, size.height))
             Brush.radialGradient(*stops, center = Offset(size.width * p.centerX, size.height * p.centerY), radius = r)
         }
+        // the image itself needs the theme's files: the renderer draws it (imageBrush); here its placeholder
+        YtPaintType.IMAGE -> androidx.compose.ui.graphics.SolidColor(Color(p.color))
     }
 
-    fun color(p: YtPaint): Color = Color(if (p.type == YtPaintType.SOLID) p.color else p.stops.firstOrNull()?.color ?: p.color)
+    fun color(p: YtPaint): Color = Color(if (p.type == YtPaintType.SOLID || p.type == YtPaintType.IMAGE) p.color else p.stops.firstOrNull()?.color ?: p.color)
 
     fun weight(w: Int): FontWeight = FontWeight(w.coerceIn(1, 1000))
 

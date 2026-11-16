@@ -66,14 +66,14 @@
     <string name="yt_anim_own_colour">Eigene Farbe</string>
     <string name="yt_anim_note_visibility">Erscheinen: wenn das Element gezeigt wird und wenn die App zurückkommt. Verschwinden senden nur Karten.</string>
     <string name="yt_anim_note_visibility_card">Erscheinen/Verschwinden: wenn die Hälfte der Karte in den sichtbaren Teil des Feeds kommt oder ihn verlässt.</string>
-    <string name="yt_anim_note_touch">Berührungen des Elements; seine eigenen Gesten bleiben. Ein Doppeltipp zählt auch als zwei Tipps.</string>
+    <string name="yt_anim_note_touch">Berührungen des Elements; seine eigenen Gesten bleiben. Wo ein Doppeltipp eine Animation startet, wartet ein Tipp kurz auf einen zweiten (zwei schnelle Tipps spielen nur den Doppeltipp); sonst spielen Tipps sofort.</string>
     <string name="yt_anim_note_scroll">Das Scrollen des Startseiten-Feeds: „Scrollen“ läuft mit der Scroll-Position, die anderen beim Richtungswechsel.</string>
     <string name="yt_anim_note_selection">Ein Chip oder Tab wird (ab)gewählt.</string>
     <string name="yt_anim_note_player">Der Player startet oder pausiert (solange ein Video offen ist).</string>
     <string name="yt_anim_note_loading">Der Startseiten-Feed beginnt oder endet zu laden.</string>
     <string name="yt_anim_note_state">Ein Wechsel des gezeigten Zustands (siehe Zustände).</string>
     <string name="yt_anim_note_manual">Spielt nur im Editor.</string>
-    <string name="yt_anim_note_mini">Miniplayer und Leistenfläche zeichnet die App selbst, nicht aus den Knoten: Ihre Animationen spielen nur im Editor.</string>
+    <string name="yt_anim_note_mini">Miniplayer: Erscheinen, wenn er an der Leiste andockt, Verschwinden, wenn er sich öffnet. Seine Berührungen sind die auf dem angedockten Player neben seinen Knöpfen.</string>
     <string name="yt_anim_states">Zustände</string>
     <string name="yt_anim_states_note">Gezeigt wird der erste, der an ist: Deaktiviert, Lädt, Gedrückt, Aktiv (Player spielt), Ausgewählt, Fokussiert, Ausgeklappt, Eingeklappt, dann eigene. Jeder Wechsel kann eine Animation spielen (Auslöser „Zustandswechsel“).</string>
     <string name="yt_anim_states_test">Tippe einen Zustand, um ihn in der Vorschau an- oder auszuschalten.</string>

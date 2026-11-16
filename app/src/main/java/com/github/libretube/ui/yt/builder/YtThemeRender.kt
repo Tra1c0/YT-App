@@ -11,12 +11,15 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
@@ -110,6 +113,12 @@ interface YtRenderHooks {
 
     /** The animator's playhead and test events (phase 2). */
     val anim: YtAnimLink? get() = null
+
+    /**
+     * Child [child] of container [parent] is placed at [x], [y] (px of the parent, its layout
+     * place); the returned shift is added to the placement (the reorder after a drop settles).
+     */
+    fun placeOffset(parent: String, child: String, x: Float, y: Float): androidx.compose.ui.unit.IntOffset = androidx.compose.ui.unit.IntOffset.Zero
 }
 
 /** Where the renderer takes its theme from (state reads, so changes recompose or redraw). */
@@ -165,12 +174,29 @@ class YtThemeSource(
 
     fun rootId(kind: YtComponentKind): String? = index.value.doc?.components?.get(kind)?.id
 
+    /**
+     * How far the plain press feel of [kind] gives: the pressed patch's scale on its root, else
+     * the motion token; null where the animator owns the press (YtStatePatchRule).
+     */
+    fun pressScale(kind: YtComponentKind): Float? {
+        val doc = index.value.doc ?: return null
+        val root = doc.components[kind]
+        return YtStatePatchRule.pressScale(root.states[YtStates.PRESSED]?.scale, doc.tokens.motion.pressScale, ownsPress(kind))
+    }
+
     /** The node as it is drawn now (responsive overrides and [states] applied), or null if missing. */
     internal fun resolve(kind: YtComponentKind, id: String, states: Int): YtResolved? {
         val raw = index.value.byKind[kind]?.get(id) ?: return null
         return try {
-            val s = YtRenderStates.names(states, index.value.doc?.animations?.customStates.orEmpty())
-            val n = YtResponsive.resolve(raw, envOf(), s)
+            val custom = index.value.doc?.animations?.customStates.orEmpty()
+            val s = YtStatePatchRule.order(YtRenderStates.names(states, custom), custom)
+            // what the animator animates in a state, the state's patch leaves to it
+            val anims = index.value.anims[kind]
+            val n = if (anims == null) {
+                YtResponsive.resolve(raw, envOf(), s)
+            } else {
+                YtResponsive.resolve(raw, envOf(), s) { state, patch -> YtStatePatchRule.effective(patch, anims.statePropsOf(id, state)) }
+            }
             YtResolved(n.copy(children = emptyList()), n.children.map { it.id }, false)
         } catch (e: Exception) {
             YtResolved(raw.copy(children = emptyList()), emptyList(), true)
@@ -230,6 +256,14 @@ class YtSlotData(
     val imageLoader: ImageLoader? = null,
     /** The palette for the watched marks; null in the editor. */
     val palette: YtPalette? = null,
+    /** Title and channel the host shows (the mini player's video); null takes the video's. */
+    val title: String? = null,
+    val channel: String? = null,
+    /**
+     * The host draws the picture itself (the mini player's video surface): a THUMBNAIL slot keeps
+     * its place in the layout but draws nothing (its outline and shadow follow the real picture).
+     */
+    val hostPicture: Boolean = false,
 )
 
 val LocalYtSlots = staticCompositionLocalOf { YtSlotData() }
@@ -244,21 +278,47 @@ fun YtThemeComponent(
     states: Int = 0,
     /** What the host knows for the animations (on screen or not). */
     input: YtAnimInput = YtAnimInput.NONE,
+    /** An instance the host made for this component (it drives the root itself), or null for the component's own. */
+    hostAnim: YtAnimInstance? = null,
+    /** The host draws the root's surface and moves it (the bar): the root draws no style and no animated layer. */
+    bareRoot: Boolean = false,
 ) {
     val root by remember(src, kind) { derivedStateOf { src.rootId(kind) } }
     val id = root ?: return
-    val anim = rememberYtAnimInstance(src, kind, states, input)
+    val own = if (hostAnim == null) rememberYtAnimInstance(src, kind, states, input) else null
+    val anim = hostAnim ?: own
+    val mask = src.patchMask(kind)
+    val app = src.animMode == YtAnimMode.APP
+    // a pressed look is shown at runtime: by the animator's state machine where there is one, else by a watcher.
+    // A host that sends the touches itself (the mini player: the page's views take them) gets no
+    // pointer input here, it would take the touches from the views
+    val pressedLook = app && mask and YtRenderStates.PRESSED != 0
+    val hostTouches = input.events
+    val touch = anim != null && hostAnim == null && app && hostTouches == null && (src.animIndex(kind)?.touch == true || pressedLook)
+    var pressed by remember { mutableStateOf(false) }
+    val watchPress = pressedLook && anim == null && hostTouches == null
+    if (pressedLook && anim == null && hostTouches != null) {
+        LaunchedEffect(hostTouches) {
+            hostTouches.collect { e ->
+                if (e == YtTriggerKind.TOUCH_DOWN) pressed = true else if (e == YtTriggerKind.TOUCH_UP) pressed = false
+            }
+        }
+    }
+    val hostBits = if (app && anim == null) rememberYtHostStateBits(mask) else 0
     // states the animator's state machine set (pressed, loading, custom …) where a node has a look for them
-    val all = if (anim == null) states else states or (anim.stateBits and src.patchMask(kind))
-    val touch = anim != null && src.animMode == YtAnimMode.APP && src.animIndex(kind)?.touch == true
-    val outer = if (touch && anim != null) modifier.ytAnimTouch(anim) else modifier
+    val all = (if (anim == null) states else states or (anim.stateBits and mask)) or hostBits or (if (anim == null && pressed) YtRenderStates.PRESSED else 0)
+    val outer = when {
+        touch && anim != null -> modifier.ytAnimTouch(anim)
+        watchPress -> modifier.ytPressWatch { pressed = it }
+        else -> modifier
+    }.then(if (anim != null && app) Modifier.ytAnimShown(anim) else Modifier)
     CompositionLocalProvider(LocalYtSlots provides slots, LocalYtAnim provides anim) {
-        YtNodeView(src, kind, id, all, outer, root = true)
+        YtNodeView(src, kind, id, all, outer, root = true, bare = bareRoot)
     }
 }
 
 @Composable
-private fun YtNodeView(src: YtThemeSource, kind: YtComponentKind, id: String, states: Int, outer: Modifier = Modifier, root: Boolean = false) {
+private fun YtNodeView(src: YtThemeSource, kind: YtComponentKind, id: String, states: Int, outer: Modifier = Modifier, root: Boolean = false, bare: Boolean = false) {
     val resolved by remember(src, kind, id, states) {
         derivedStateOf(structuralEqualityPolicy()) { src.resolve(kind, id, states) }
     }
@@ -268,7 +328,8 @@ private fun YtNodeView(src: YtThemeSource, kind: YtComponentKind, id: String, st
     val inst = LocalYtAnim.current
     // the instance's index changes when the animations are edited: read its version so this node follows
     val animVersion = inst?.indexVersion ?: 0
-    val anim = remember(inst, id, animVersion) { inst?.nodeAnim(id) }
+    // a bare root (the bar): the host draws its surface and moves it by the root's animation
+    val anim = remember(inst, id, animVersion, bare) { if (bare) null else inst?.nodeAnim(id) }
     val density = LocalDensity.current.density
     var modifier = outer.then(YtNodeDataElement(node))
     if (root) modifier = modifier.ytRootSize(node, density)
@@ -279,9 +340,16 @@ private fun YtNodeView(src: YtThemeSource, kind: YtComponentKind, id: String, st
         Box(modifier.ytPlaceholder())
         return
     }
+    // the host's picture (the mini player's video): its place stays, nothing is drawn there
+    if (node.slot == YtSlot.THUMBNAIL && LocalYtSlots.current.hostPicture) {
+        Box(modifier)
+        return
+    }
     val shape = remember(node.style.corners) { YtCornerShape(node.style.corners) }
     // the progress slot draws its fills as bar and track itself
-    if (node.slot != YtSlot.PROGRESS) {
+    if (bare) {
+        // no style: the host draws it
+    } else if (node.slot != YtSlot.PROGRESS) {
         modifier = if (anim != null && anim.style) modifier.ytAnimStyle(node.style, src, anim) else modifier.ytStyle(node.style, shape, src)
     }
     if (node.layout.clip) modifier = modifier.clip(shape)
@@ -336,7 +404,11 @@ private class YtMeasure(val node: YtNode, val density: Float, val hooks: YtRende
         return layout(w, h) {
             result.places.forEachIndexed { i, p ->
                 val pl = placeables[i]
-                if (p != null && pl != null) pl.placeRelative(p.x.roundToInt(), p.y.roundToInt(), children[i].z.toFloat())
+                if (p != null && pl != null) {
+                    // the editor's reorder settles here: read in placement, a frame only places again
+                    val shift = hooks?.placeOffset(node.id, children[i].id, p.x, p.y) ?: androidx.compose.ui.unit.IntOffset.Zero
+                    pl.placeRelative(p.x.roundToInt() + shift.x, p.y.roundToInt() + shift.y, children[i].z.toFloat())
+                }
             }
         }
     }
@@ -455,7 +527,9 @@ private fun CacheDrawScope.buildStyle(
     val t = src.resolver
     val outline = shape.createOutline(size, layoutDirection, this)
     val brushes = try {
-        fills.map { YtBuilderPaint.brush(t?.resolve(it) ?: it, size) }
+        fills.map { p ->
+            if (p.type == YtPaintType.IMAGE) imageBrush(p, src, size) else YtBuilderPaint.brush(t?.resolve(p) ?: p, size)
+        }
     } catch (e: Exception) {
         emptyList()
     }
@@ -489,6 +563,15 @@ private fun CacheDrawScope.buildStyle(
             // see above
         }
     }
+}
+
+/** An image fill covering [size]; its placeholder colour until the image is loaded (the cache read redraws it then). */
+internal fun imageBrush(p: YtPaint, src: YtThemeSource, size: Size): androidx.compose.ui.graphics.Brush {
+    YtBuilderImages.version
+    val name = p.image
+    val dir = src.assets
+    val bitmap = if (name != null && dir != null && YtThemeZip.safeAssetName(name)) YtBuilderImages.get(File(dir, name)) else null
+    return if (bitmap != null) YtBuilderImages.cover(bitmap, size) else androidx.compose.ui.graphics.SolidColor(Color(p.color))
 }
 
 private fun YtCorners.inset(dp: Float) = copy(
@@ -661,8 +744,8 @@ private fun YtSlotLeaf(src: YtThemeSource, node: YtNode, shape: YtCornerShape, m
                 }
             }
         }
-        YtSlot.TITLE -> YtTextLeaf(src, node, video?.ytTitle ?: stringResource(R.string.yt_builder_sample_title), modifier, anim)
-        YtSlot.CHANNEL -> YtTextLeaf(src, node, video?.uploaderName ?: stringResource(R.string.yt_builder_sample_channel), modifier, anim)
+        YtSlot.TITLE -> YtTextLeaf(src, node, data.title ?: video?.ytTitle ?: stringResource(R.string.yt_builder_sample_title), modifier, anim)
+        YtSlot.CHANNEL -> YtTextLeaf(src, node, data.channel ?: video?.uploaderName ?: stringResource(R.string.yt_builder_sample_channel), modifier, anim)
         YtSlot.DURATION -> {
             val text = when {
                 video == null -> "12:34"

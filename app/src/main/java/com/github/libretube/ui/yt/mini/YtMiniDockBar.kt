@@ -28,7 +28,8 @@ fun ytDockTop(radius: Float, stacks: Boolean): Float =
  * The surface of a navigation bar a mini player may dock on: [fill] behind the content, [border]
  * over it and a shadow of [shadow] elevation, in a rounded rect of [radius] whose top corners
  * square as a stacked player ([stacks]) docks. The progress is read while drawing, so the bar
- * draws again but never composes again while the player moves.
+ * draws again but never composes again while the player moves. [fillOf] and [borderOf], when
+ * given, are read while drawing instead of [fill] and [border] (an animated colour, "Eigenes").
  */
 fun Modifier.ytDockedBar(
     radius: Dp,
@@ -38,6 +39,8 @@ fun Modifier.ytDockedBar(
     borderWidth: Dp = 1.dp,
     shadow: Dp = 0.dp,
     shadowColor: Color = Color.Black,
+    fillOf: (() -> Color)? = null,
+    borderOf: (() -> Color)? = null,
 ): Modifier = this
     .graphicsLayer {
         val r = radius.toPx()
@@ -51,7 +54,7 @@ fun Modifier.ytDockedBar(
         }
     }
     .drawWithContent {
-        drawRect(fill)
+        if (fillOf != null) drawRect(fillOf()) else drawRect(fill)
         drawContent()
         if (border != null) {
             // inside the edge, as the border modifier draws it
@@ -69,6 +72,6 @@ fun Modifier.ytDockedBar(
                 bottomRightCornerRadius = CornerRadius((r - half).coerceAtLeast(0f)),
                 bottomLeftCornerRadius = CornerRadius((r - half).coerceAtLeast(0f)),
             )
-            drawPath(Path().apply { addRoundRect(outline) }, border, style = Stroke(width))
+            drawPath(Path().apply { addRoundRect(outline) }, borderOf?.invoke() ?: border, style = Stroke(width))
         }
     }

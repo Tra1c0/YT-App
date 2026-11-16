@@ -138,6 +138,15 @@ class YtMiniScene(
     /** The video's SurfaceView (the Glas colour bleed copies its frames), or null. */
     var surface: () -> View? = { null }
 
+    /**
+     * Where the picture is now, in px of the box (the composable behind it), or null before it is
+     * laid out. Not snapshot state: read it together with [pictureMoves] in draw lambdas.
+     */
+    var picture: () -> androidx.compose.ui.geometry.Rect? = { null }
+
+    /** Counts the picture's layout changes (minimize, preview), so what follows it draws again. */
+    var pictureMoves by mutableIntStateOf(0)
+
     /** Title, channel and position, polled while the player is shown. */
     var info by mutableStateOf(YtMiniInfo.EMPTY)
 

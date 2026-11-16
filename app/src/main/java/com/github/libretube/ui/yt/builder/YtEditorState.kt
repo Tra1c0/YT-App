@@ -62,8 +62,12 @@ class YtEditorState(app: Application) : AndroidViewModel(app) {
     var night by mutableStateOf(true)
     var advanced by mutableStateOf(false)
 
-    /** Edit the "selected" state of chips and tabs instead of their normal look. */
+    /** Edit the look of a state ([editStateName]: selected, pressed, …) instead of the normal look. */
     var editState by mutableStateOf(false)
+    var editStateName by mutableStateOf(YtStates.SELECTED)
+
+    /** The render bits of the state being edited, for the edited instance of the preview. */
+    val editBits: Int get() = if (editState) YtRenderStates.bitOf(editStateName, doc?.animations?.customStates.orEmpty()) else 0
 
     // canvas transform (screen px): zoom around the top left, then pan
     var zoom by mutableFloatStateOf(1f)
@@ -364,6 +368,32 @@ class YtEditorState(app: Application) : AndroidViewModel(app) {
                 }
             }
         }
+    }
+
+    /** Imports an image into the theme (YtBuilderStore.importImage) and hands its file name to [apply]. */
+    fun importImage(uri: Uri, name: String?, apply: (String) -> Unit) {
+        val d = doc ?: return
+        viewModelScope.launch {
+            var refusal: YtImageImport.Refusal? = null
+            val r = withContext(Dispatchers.IO) { YtBuilderStore.importImage(context, d, uri, name) { refusal = it } }
+            if (r == null) {
+                note = context.getString(com.github.libretube.R.string.yt_builder_image_failed, context.getString(refusalText(refusal)))
+            } else {
+                run("image") { it.copy(assets = r.doc.assets) }
+                apply(r.file)
+                note = context.getString(com.github.libretube.R.string.yt_builder_image_imported, r.width, r.height)
+            }
+        }
+    }
+
+    private fun refusalText(r: YtImageImport.Refusal?): Int = when (r) {
+        null -> com.github.libretube.R.string.yt_builder_image_unreadable
+        YtImageImport.Refusal.EMPTY -> com.github.libretube.R.string.yt_builder_image_empty
+        YtImageImport.Refusal.TOO_LARGE_FILE -> com.github.libretube.R.string.yt_builder_image_too_large
+        YtImageImport.Refusal.NOT_AN_IMAGE -> com.github.libretube.R.string.yt_builder_image_format
+        YtImageImport.Refusal.BAD_SIZE -> com.github.libretube.R.string.yt_builder_image_size
+        YtImageImport.Refusal.TOO_MANY_PIXELS -> com.github.libretube.R.string.yt_builder_image_pixels
+        YtImageImport.Refusal.TOO_LARGE_RESULT -> com.github.libretube.R.string.yt_builder_image_result
     }
 
     fun remember(argb: Int) {

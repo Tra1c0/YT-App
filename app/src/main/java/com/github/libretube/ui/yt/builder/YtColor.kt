@@ -131,7 +131,7 @@ object YtColor {
      * copying between elements; [parseGradient] reads it back.
      */
     fun formatGradient(paint: YtPaint): String = when (paint.type) {
-        YtPaintType.SOLID -> hex(paint.color)
+        YtPaintType.SOLID, YtPaintType.IMAGE -> hex(paint.color)
         YtPaintType.LINEAR -> "linear ${fmt(paint.angle)} " + paint.stops.joinToString(", ") { "${hex(it.color)} ${fmt(it.at)}" }
         YtPaintType.RADIAL -> "radial ${fmt(paint.centerX)} ${fmt(paint.centerY)} ${fmt(paint.radius)} " +
             paint.stops.joinToString(", ") { "${hex(it.color)} ${fmt(it.at)}" }

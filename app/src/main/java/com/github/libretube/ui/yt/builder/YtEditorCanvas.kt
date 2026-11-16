@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -75,6 +76,7 @@ import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * YT: the editor's hooks into the renderer: where each node of the edited instance lies (its
@@ -132,6 +134,86 @@ class YtEditorHooks(private val state: YtEditorState) : YtRenderHooks {
 
     fun forgetAll() = coords.clear()
 
+    /** Whether any of [id]'s box is shown (not scrolled out of the feed or cut off by a parent). */
+    fun shown(kind: YtComponentKind, id: String): Boolean {
+        val f = frame ?: return false
+        val c = coords[kind to id] ?: return false
+        if (!f.isAttached || !c.isAttached) return false
+        return runCatching { !f.localBoundingBoxOf(c, clipBounds = true).isEmpty }.getOrDefault(false)
+    }
+
+    /** The whole-screen preview's scrolling feed, and its box in frame px. */
+    var feed: LayoutCoordinates? = null
+
+    fun feedBox(): Rect? {
+        val f = frame ?: return null
+        val c = feed ?: return null
+        if (!f.isAttached || !c.isAttached) return null
+        return runCatching { f.localBoundingBoxOf(c, clipBounds = false) }.getOrNull()
+    }
+
+    // ---- the reorder after a drop in a flow (YtReorderAnim): shifts added where the layout places ----
+
+    private class Reorder(val parent: String, val old: Map<String, Offset>, val dropped: String, val drop: Offset) {
+        val starts = HashMap<String, Offset>()
+    }
+
+    /** The last layout place of each child (px of its parent), by "parent/child". */
+    private val places = HashMap<String, Offset>()
+    private var reorder: Reorder? = null
+    private var reorderJob: kotlinx.coroutines.Job? = null
+
+    /** 1 at the drop (each moved child drawn at its old place), springing to 0 (its new place). */
+    private var settle by mutableFloatStateOf(0f)
+
+    override fun placeOffset(parent: String, child: String, x: Float, y: Float): androidx.compose.ui.unit.IntOffset {
+        val r = reorder
+        var shift = androidx.compose.ui.unit.IntOffset.Zero
+        if (r != null && r.parent == parent) {
+            // the first placement after the drop is the new order: the start shift is taken once
+            val start = r.starts.getOrPut(child) {
+                val o = r.old[child]
+                YtReorderAnim.start(o?.x, o?.y, x, y, child == r.dropped, r.drop.x, r.drop.y, motion = true)?.let { Offset(it.first, it.second) } ?: Offset.Zero
+            }
+            if (start != Offset.Zero) {
+                val (sx, sy) = YtReorderAnim.at(start.x to start.y, settle)
+                shift = androidx.compose.ui.unit.IntOffset(sx.roundToInt(), sy.roundToInt())
+            }
+        }
+        places["$parent/$child"] = Offset(x, y)
+        return shift
+    }
+
+    /**
+     * Before the children of [parent] are reordered by a drop of [dropped] (left [drop] px off its
+     * place): keeps their places, so the new order starts drawn as the old one and springs into
+     * place ([settleReorder]). Motion off: nothing is kept, the new order shows at once.
+     */
+    fun armReorder(parent: String, children: List<String>, dropped: String, drop: Offset, motion: Boolean) {
+        reorderJob?.cancel()
+        if (!motion) {
+            reorder = null
+            settle = 0f
+            return
+        }
+        reorder = Reorder(parent, children.mapNotNull { c -> places["$parent/$c"]?.let { c to it } }.toMap(), dropped, drop)
+        settle = 1f
+    }
+
+    fun settleReorder(scope: kotlinx.coroutines.CoroutineScope) {
+        val r = reorder ?: return
+        reorderJob = scope.launch {
+            try {
+                animate(1f, 0f, animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f)) { v, _ -> settle = v }
+            } finally {
+                if (reorder === r) {
+                    reorder = null
+                    settle = 0f
+                }
+            }
+        }
+    }
+
     /** The animator's playhead and test events for the edited instances. */
     override val anim: YtAnimLink = object : YtAnimLink {
         override fun preview(kind: YtComponentKind): List<Pair<YtAnim, Int>>? = state.animPreview?.filter { it.first.component == kind }?.ifEmpty { null }
@@ -178,6 +260,9 @@ fun YtEditorCanvas(
     var guides by remember { mutableStateOf<List<YtSnap.Guide>>(emptyList()) }
     var marquee by remember { mutableStateOf<Rect?>(null) }
     val capture = rememberGraphicsLayer()
+    // the whole-screen preview's feed scrolls under a drag that does not move a selected element
+    val feedScroll = androidx.compose.foundation.rememberScrollState()
+    var fling by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
     val src = remember(state, hooks) {
         YtThemeSource({ state.doc }, { YtEnv(state.size.widthDp, state.size.heightDp, state.fontScale, state.night) }, { state.night }, { state.doc?.let { YtBuilderStore.assets(hooksContext(state), it.id) } }, hooks)
@@ -221,6 +306,8 @@ fun YtEditorCanvas(
         for ((kind, id, r) in hooks.all()) {
             val node = YtDocOps.find(current.components[kind], id) ?: continue
             if (node.locked) continue
+            // scrolled out of the whole-screen preview's feed: not under the finger
+            if (state.target == YtEditorTarget.SCREEN && !hooks.shown(kind, id)) continue
             if (state.target.kind != null && state.target.kind != kind) continue
             val grown = Rect(
                 r.left - if (r.width < 2 * slop) slop else 0f, r.top - if (r.height < 2 * slop) slop else 0f,
@@ -280,7 +367,7 @@ fun YtEditorCanvas(
                 CompositionLocalProvider(LocalDensity provides pd) {
                     YtTheme(palette) {
                         CompositionLocalProvider(LocalDensity provides pd) {
-                            YtEditorPreview(state, src, plain, hooks, palette, videos, imageLoader)
+                            YtEditorPreview(state, src, plain, hooks, palette, videos, imageLoader, feedScroll)
                         }
                     }
                 }
@@ -296,7 +383,12 @@ fun YtEditorCanvas(
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         down.consume()
+                        // a touch stops the feed's fling
+                        fling?.cancel()
                         val start = down.position
+                        val velocity = androidx.compose.ui.input.pointer.util.VelocityTracker()
+                        velocity.addPosition(down.uptimeMillis, down.position)
+                        var lastY = start.y
                         val longPressMs = viewConfiguration.longPressTimeoutMillis
                         val slop = viewConfiguration.touchSlop
                         val startHit = hit(toFrame(start))
@@ -398,6 +490,17 @@ fun YtEditorCanvas(
                                             marquee = null
                                         }
                                         Mode.RESIZE, Mode.ROTATE -> state.seal()
+                                        Mode.SCROLL -> {
+                                            velocity.addPosition(change.uptimeMillis, change.position)
+                                            val v = velocity.calculateVelocity().y / state.zoom
+                                            fling = scope.launch {
+                                                var prev = 0f
+                                                androidx.compose.animation.core.animateDecay(0f, -v, androidx.compose.animation.core.FloatExponentialDecaySpec()) { value, _ ->
+                                                    feedScroll.dispatchRawDelta(value - prev)
+                                                    prev = value
+                                                }
+                                            }
+                                        }
                                         else -> Unit
                                     }
                                     change.consume()
@@ -405,12 +508,19 @@ fun YtEditorCanvas(
                                 }
                                 val delta = change.position - start
                                 if (mode == Mode.PENDING && (abs(delta.x) > slop || abs(delta.y) > slop)) {
+                                    val scrolls = state.target == YtEditorTarget.SCREEN && handle == null && YtEditorDrag.scrollsFeed(
+                                        inFeed = hooks.feedBox()?.contains(toFrame(start)) == true,
+                                        onSelected = startHit != null && startHit.second in state.selection,
+                                        dx = delta.x, dy = delta.y,
+                                    )
                                     mode = when {
                                         handle == YtEditorHandles.ROTATE -> Mode.ROTATE
                                         handle != null -> Mode.RESIZE
+                                        scrolls -> Mode.SCROLL
                                         startHit != null -> Mode.DRAG
                                         else -> Mode.MARQUEE
                                     }
+                                    if (mode == Mode.SCROLL) lastY = change.position.y
                                     if (mode == Mode.DRAG) {
                                         val id = startHit!!.second
                                         if (id !in state.selection) state.selection = setOf(id)
@@ -464,6 +574,11 @@ fun YtEditorCanvas(
                                             hooks.dy = raw.y
                                         }
                                     }
+                                    Mode.SCROLL -> {
+                                        velocity.addPosition(change.uptimeMillis, change.position)
+                                        feedScroll.dispatchRawDelta(-(change.position.y - lastY) / state.zoom)
+                                        lastY = change.position.y
+                                    }
                                     Mode.MARQUEE -> marquee = Rect(
                                         Offset(min(start.x, change.position.x), min(start.y, change.position.y)),
                                         Offset(max(start.x, change.position.x), max(start.y, change.position.y)),
@@ -515,7 +630,7 @@ fun YtEditorCanvas(
     }
 }
 
-private enum class Mode { PENDING, DRAG, MARQUEE, TRANSFORM, RESIZE, ROTATE, DONE }
+private enum class Mode { PENDING, DRAG, MARQUEE, TRANSFORM, RESIZE, ROTATE, SCROLL, DONE }
 
 /** For the editor's own zoom buttons. */
 object YtEditorViewActions {
@@ -584,6 +699,7 @@ private fun commitDrag(state: YtEditorState, hooks: YtEditorHooks, ids: Set<Stri
     }
     val horizontal = parent.layout.mode == YtLayoutMode.FLOW_H
     val siblings = parent.children.filter { it.visible }
+    val motion = com.github.libretube.ui.yt.YtMotionPrefs.enabled && android.animation.ValueAnimator.areAnimatorsEnabled()
     val centers = siblings.map { s -> hooks.bounds(s.id)?.let { if (horizontal) it.center.x - if (s.id == first) dx else 0f else it.center.y - if (s.id == first) dy else 0f } ?: 0f }
     val from = siblings.indexOfFirst { it.id == first }
     val at = YtEditorDrag.insertIndex(centers, from, if (horizontal) center.x else center.y)
@@ -591,10 +707,13 @@ private fun commitDrag(state: YtEditorState, hooks: YtEditorHooks, ids: Set<Stri
     val target = siblings.filterIndexed { i, _ -> i != from }.getOrNull(at)?.let { t -> parent.children.indexOfFirst { it.id == t.id } }
         ?: parent.children.size
     val index = if (target > parent.children.indexOfFirst { it.id == first }) target - 1 else target
+    // the siblings move to their new places (and the dropped one from where it was let go) on a spring
+    hooks.armReorder(parent.id, parent.children.map { it.id }, first, Offset(dx, dy), motion)
     state.moveInFlow(first, index.coerceAtLeast(0))
     hooks.dragging = emptySet()
     hooks.dx = 0f
     hooks.dy = 0f
+    hooks.settleReorder(scope)
 }
 
 /** The handles around the selected box (screen px). */
@@ -760,6 +879,7 @@ private fun YtEditorPreview(
     palette: YtPalette,
     videos: List<StreamItem>,
     imageLoader: ImageLoader,
+    feedScroll: androidx.compose.foundation.ScrollState,
 ) {
     val doc = state.doc ?: return
     val target = state.target
@@ -767,7 +887,9 @@ private fun YtEditorPreview(
     // one slot data per card, kept, so an edit does not compose every card again
     val slotList = remember(videos, imageLoader) { List(8) { i -> YtSlotData(video = sample.getOrNull(i % sample.size.coerceAtLeast(1)), progress = { 0.4f }, imageLoader = imageLoader) } }
     fun slots(i: Int) = slotList[i % slotList.size]
-    val selectedState = if (state.editState) YtRenderStates.SELECTED else 0
+    // the edited instance shows the look of the state being edited (selected, pressed, …)
+    val editBits = state.editBits
+    val selectedState = editBits
     val navItems = remember { YtNav.items(com.github.libretube.helpers.YtDesign.CUSTOM) }
     val navState = remember { YtNavState().apply { selected = navItems.firstOrNull()?.id ?: 0 } }
     val chipLabels = listOf(androidx.compose.ui.res.stringResource(R.string.all)) +
@@ -777,7 +899,7 @@ private fun YtEditorPreview(
     fun Chips(modifier: Modifier = Modifier) {
         Row(modifier.padding(horizontal = doc.feed.padding.start.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             chipLabels.forEachIndexed { i, label ->
-                YtThemeComponent(if (i == 0) src else plain, YtComponentKind.CHIP, remember(label) { YtSlotData(label = label) }, states = if (i == 0) YtRenderStates.SELECTED else 0)
+                YtThemeComponent(if (i == 0) src else plain, YtComponentKind.CHIP, remember(label) { YtSlotData(label = label) }, states = if (i == 0) YtRenderStates.SELECTED or editBits else 0)
             }
         }
     }
@@ -792,7 +914,7 @@ private fun YtEditorPreview(
             (0 until count).chunked(columns).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(doc.feed.gap.dp)) {
                     row.forEach { i ->
-                        Box(Modifier.weight(1f)) { YtThemeComponent(if (i == 0) src else plain, YtComponentKind.CARD, slots(i)) }
+                        Box(Modifier.weight(1f)) { YtThemeComponent(if (i == 0) src else plain, YtComponentKind.CARD, slots(i), states = if (i == 0) editBits else 0) }
                     }
                     repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                 }
@@ -805,6 +927,7 @@ private fun YtEditorPreview(
         YtCustomNav(
             palette, navItems, navState, onSelect = {}, src = src,
             tabSource = { if (it == 0) src else plain },
+            tabStates = { if (it == 0) editBits else 0 },
             onBarPlaced = { hooks.placed(YtComponentKind.NAV_BAR, doc.components.navBar.id, it) },
         )
     }
@@ -820,7 +943,7 @@ private fun YtEditorPreview(
                 .height(m.height.dp)
                 .clip(RoundedCornerShape(topStart = m.radius.dp, topEnd = m.radius.dp)),
         ) {
-            YtThemeComponent(src, YtComponentKind.MINI, slots(0), modifier = Modifier.fillMaxSize())
+            YtThemeComponent(src, YtComponentKind.MINI, slots(0), modifier = Modifier.fillMaxSize(), states = editBits)
             // the picture is the player's (a video surface); here a stand-in of its size
             Box(
                 Modifier
@@ -835,16 +958,19 @@ private fun YtEditorPreview(
     when (target) {
         YtEditorTarget.SCREEN -> Column(Modifier.fillMaxSize()) {
             Spacer(Modifier.height(24.dp))
-            YtThemeComponent(src, YtComponentKind.HEADER, remember(doc.meta.wordmark) { YtSlotData(wordmark = doc.meta.wordmark) }, modifier = Modifier.fillMaxWidth())
+            YtThemeComponent(src, YtComponentKind.HEADER, remember(doc.meta.wordmark) { YtSlotData(wordmark = doc.meta.wordmark) }, modifier = Modifier.fillMaxWidth(), states = editBits)
             if (doc.feed.chips) Chips()
-            Box(Modifier.weight(1f).clipToBounds()) { Cards(6) }
+            // the feed scrolls (a drag on it that does not move a selected element, YtEditorDrag.scrollsFeed)
+            Box(Modifier.weight(1f).clipToBounds().onPlaced { hooks.feed = it }) {
+                Column(Modifier.verticalScroll(feedScroll, enabled = false)) { Cards(12) }
+            }
             Mini()
             Nav()
             Spacer(Modifier.height(24.dp))
         }
         YtEditorTarget.CARD -> Box(Modifier.padding(bottom = 16.dp)) { Cards(2) }
         YtEditorTarget.HEADER -> Column(Modifier.padding(vertical = 16.dp)) {
-            YtThemeComponent(src, YtComponentKind.HEADER, remember(doc.meta.wordmark) { YtSlotData(wordmark = doc.meta.wordmark) }, modifier = Modifier.fillMaxWidth())
+            YtThemeComponent(src, YtComponentKind.HEADER, remember(doc.meta.wordmark) { YtSlotData(wordmark = doc.meta.wordmark) }, modifier = Modifier.fillMaxWidth(), states = editBits)
         }
         YtEditorTarget.CHIP -> Column(Modifier.padding(vertical = 16.dp)) {
             Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

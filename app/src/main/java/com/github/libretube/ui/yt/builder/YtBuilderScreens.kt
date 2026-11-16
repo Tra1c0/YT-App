@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -101,16 +102,19 @@ fun rememberYtAppThemeSource(): YtThemeSource {
     }
 }
 
-/** A press that gives a little in the theme's motion feel (a spring), read in the layer. */
+/**
+ * A press that gives a little in the theme's motion feel (a spring), read in the layer: to
+ * [pressScale] (the root's pressed patch, else the motion token; YtThemeSource.pressScale).
+ */
 @Composable
-fun Modifier.ytThemePress(interaction: MutableInteractionSource, motion: YtMotionToken): Modifier {
+fun Modifier.ytThemePress(interaction: MutableInteractionSource, motion: YtMotionToken, pressScale: Float = motion.pressScale): Modifier {
     if (!LocalYtMotion.current) return this
     val scale = remember { Animatable(1f) }
-    LaunchedEffect(interaction, motion) {
+    LaunchedEffect(interaction, motion, pressScale) {
         val spec = spring<Float>(dampingRatio = motion.damping.coerceIn(0.2f, 1.5f), stiffness = motion.stiffness.coerceIn(50f, 5000f))
         interaction.interactions.collect { i ->
             when (i) {
-                is PressInteraction.Press -> scale.animateTo(motion.pressScale, spec)
+                is PressInteraction.Press -> scale.animateTo(pressScale, spec)
                 is PressInteraction.Release, is PressInteraction.Cancel -> scale.animateTo(1f, spec)
             }
         }
@@ -155,7 +159,8 @@ fun YtCustomHomeScreen(
             snapshotFlow { ytHalfVisible(grid) }.distinctUntilChanged().collect { shown.value = it }
         }
     }
-    val ownsPress = src.ownsPress(YtComponentKind.CARD)
+    // the animator may own the press (then no plain feel), else the pressed patch's scale or the token
+    val pressScale = src.pressScale(YtComponentKind.CARD)
 
     YtRefreshBox(
         palette = palette,
@@ -214,7 +219,7 @@ fun YtCustomHomeScreen(
                         // held: lifts and drags onto the mini player; let go unmoved: quick actions
                         .ytHomeCard(palette, video, cardShape, onRelease = { actions.onQuick(video) })
                         // an animated press (theme animator) replaces the plain press feel
-                        .then(if (ownsPress) Modifier else Modifier.ytThemePress(press, motion))
+                        .then(if (pressScale == null) Modifier else Modifier.ytThemePress(press, motion, pressScale))
                         .clickable(interactionSource = press, indication = null) { actions.onOpenVideo(video) },
                     input = input,
                 )
@@ -237,10 +242,11 @@ private fun YtCustomChips(src: YtThemeSource, palette: YtPalette, categories: Li
         }
         items(filters, key = { it.first }) { (key, label) ->
             val press = remember { MutableInteractionSource() }
+            val pressScale = src.pressScale(YtComponentKind.CHIP)
             YtThemeComponent(
                 src, YtComponentKind.CHIP, remember(label) { YtSlotData(label = label) },
                 modifier = Modifier
-                    .then(if (src.ownsPress(YtComponentKind.CHIP)) Modifier else Modifier.ytThemePress(press, motion))
+                    .then(if (pressScale == null) Modifier else Modifier.ytThemePress(press, motion, pressScale))
                     .clickable(interactionSource = press, indication = null) { onSelect(key) },
                 states = if (key == selected) YtRenderStates.SELECTED else 0,
             )
@@ -262,8 +268,10 @@ fun YtCustomHeader(onSearch: () -> Unit, onProfile: () -> Unit) {
 
 /**
  * The bar of "Eigenes": the bar component's surface (its first fill, outline and shadow) shaped
- * so that a docked mini player sits on it as one surface (ytDockedBar), and one tab component per
- * destination, the selected one in its "selected" state.
+ * so that a docked mini player sits on it as one surface (ytDockedBar), the bar component's own
+ * nodes on it, and one tab component per destination, the selected one in its "selected" state.
+ * The bar's animations run here: the root's move, scale, turn and opacity move the whole bar,
+ * its fill and outline colour tint the surface, the nodes inside animate as anywhere else.
  */
 @Composable
 fun YtCustomNav(
@@ -275,6 +283,8 @@ fun YtCustomNav(
     /** The editor: the source of tab [index] (only the first reports its bounds) and the bar's bounds. */
     tabSource: (Int) -> YtThemeSource = { src },
     onBarPlaced: ((androidx.compose.ui.layout.LayoutCoordinates) -> Unit)? = null,
+    /** The editor: the state look shown on tab [index] (the state being edited), as render bits. */
+    tabStates: (Int) -> Int = { 0 },
 ) {
     val doc = src.doc
     val nav = doc?.nav ?: YtNavConfig()
@@ -289,6 +299,13 @@ fun YtCustomNav(
     val shadow = bar.style.shadows.firstOrNull { it.enabled && !it.inner }
     val motion = doc?.tokens?.motion ?: YtMotionToken()
     val floating = nav.floating
+    // the bar's own animations: one instance, its root drawn by the surface here
+    val barAnim = rememberYtAnimInstance(src, YtComponentKind.NAV_BAR, 0, YtAnimInput.NONE)
+    val rootAnim = remember(barAnim, bar.id, barAnim?.indexVersion) { barAnim?.nodeAnim(bar.id) }
+    val fillOf = rootAnim?.takeIf { YtAnimProp.FILL_COLOR in it.props }?.let { a -> { a.inst.frame.intValue; Color(a.node.argb(YtAnimProp.FILL_COLOR, fill.toArgb())) } }
+    val borderOf = if (border != null) rootAnim?.takeIf { YtAnimProp.STROKE_COLOR in it.props }?.let { a -> { a.inst.frame.intValue; Color(a.node.argb(YtAnimProp.STROKE_COLOR, border.toArgb())) } } else null
+    val barTouch = barAnim != null && src.animMode == YtAnimMode.APP && src.animIndex(YtComponentKind.NAV_BAR)?.touch == true
+    val tabPress = src.pressScale(YtComponentKind.NAV_TAB)
     Box(
         Modifier
             .fillMaxWidth()
@@ -297,34 +314,47 @@ fun YtCustomNav(
                 top = if (floating) 6.dp else 0.dp, bottom = if (floating) nav.bottom.dp else 0.dp,
             ),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(nav.height.dp)
+                .then(if (rootAnim != null && rootAnim.layer) Modifier.ytAnimHostLayer(rootAnim) else Modifier)
+                .then(if (barTouch && barAnim != null) Modifier.ytAnimTouch(barAnim) else Modifier)
+                .then(if (barAnim != null && src.animMode == YtAnimMode.APP) Modifier.ytAnimShown(barAnim) else Modifier)
                 .ytDockedBar(
                     if (floating) nav.radius.dp else 0.dp, stacks, SolidColor(fill), border, (stroke?.width ?: 1f).dp,
                     shadow = ((shadow?.blur ?: 0f) / 2f).coerceIn(0f, 24f).dp, shadowColor = shadow?.let { Color(it.color) } ?: Color.Black,
+                    fillOf = fillOf, borderOf = borderOf,
                 )
-                .then(if (onBarPlaced != null) Modifier.onPlaced(onBarPlaced) else Modifier)
-                .padding(start = bar.padding.start.dp, end = bar.padding.end.dp, top = bar.padding.top.dp, bottom = bar.padding.bottom.dp),
+                .then(if (onBarPlaced != null) Modifier.onPlaced(onBarPlaced) else Modifier),
         ) {
-            items.forEachIndexed { index, item ->
-                val press = remember { MutableInteractionSource() }
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .then(if (src.ownsPress(YtComponentKind.NAV_TAB)) Modifier else Modifier.ytThemePress(press, motion))
-                        .clickable(interactionSource = press, indication = null) { onSelect(item.id) }
-                        .ytNavHoldTarget(item.id),
-                ) {
-                    YtThemeComponent(
-                        tabSource(index), YtComponentKind.NAV_TAB, remember(item) { YtSlotData(navItem = item) },
-                        modifier = Modifier.fillMaxSize(),
-                        states = if (item.id == state.selected) YtRenderStates.SELECTED else 0,
-                    )
-                    Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopCenter).offset(12.dp, 8.dp))
+            // the bar component's nodes on the surface (the root's style is the surface itself)
+            if (bar.children.isNotEmpty()) {
+                YtThemeComponent(src, YtComponentKind.NAV_BAR, YtSlotData(), Modifier.matchParentSize(), hostAnim = barAnim, bareRoot = true)
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = bar.padding.start.dp, end = bar.padding.end.dp, top = bar.padding.top.dp, bottom = bar.padding.bottom.dp),
+            ) {
+                items.forEachIndexed { index, item ->
+                    val press = remember { MutableInteractionSource() }
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .then(if (tabPress == null) Modifier else Modifier.ytThemePress(press, motion, tabPress))
+                            .clickable(interactionSource = press, indication = null) { onSelect(item.id) }
+                            .ytNavHoldTarget(item.id),
+                    ) {
+                        YtThemeComponent(
+                            tabSource(index), YtComponentKind.NAV_TAB, remember(item) { YtSlotData(navItem = item) },
+                            modifier = Modifier.fillMaxSize(),
+                            states = (if (item.id == state.selected) YtRenderStates.SELECTED else 0) or tabStates(index),
+                        )
+                        Badge(palette, (state.badges[item.id] ?: 0) > 0, Modifier.align(Alignment.TopCenter).offset(12.dp, 8.dp))
+                    }
                 }
             }
         }
