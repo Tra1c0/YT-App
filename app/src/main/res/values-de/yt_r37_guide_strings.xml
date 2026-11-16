@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_r37_guide_ssi_evidence_t">SSI: Belege und Vergleich</string>
+    <string name="yt_r37_guide_ssi_evidence_b">Frag nach Gegenargumenten, einem Vergleich oder wie sich die Sicht eines Kanals verändert hat: SSI öffnet Belege, Vergleich oder Zeitleiste. Jede Einordnung zeigt ein wörtlich geprüftes Zitat, sonst „nicht belegt“; SSI sagt nie, wer recht hat. Bericht exportieren oder Recherche speichern.</string>
+    <string name="yt_r37_guide_vector_t">Eigene Formen zeichnen</string>
+    <string name="yt_r37_guide_vector_b">Im Editor von „Eigenes“: Der Zeichenstift zeichnet Bézier-Formen, der Reiter Form verbindet Formen (vereinen, abziehen, schneiden, ausschließen) und maskiert Bilder; im Reiter Animation wandeln sich Formen und Elemente folgen einem gezeichneten oder aufgenommenen Pfad.</string>
+</resources>

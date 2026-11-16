@@ -1,10 +1,6 @@
 ## Neu
-- Standard-Design: Stellensuche (SSI) direkt aus der Suchleiste öffnen.
-- SSI-Benchmark: „Schwelle kalibrieren“ probiert mehrere Bedeutungs-Schwellen an deinen Beispielen aus und übernimmt auf Wunsch die beste (zurücksetzbar).
-- Eigenes Design: Der Miniplayer zeigt das ganze im Editor gestaltete Element (Formen, Texte, Bilder, Verläufe); ein Bild-Platzhalter folgt dem Video mit Rahmen und Schatten.
-- Eigenes Design: Bilder importieren, für Bild-Elemente und als Füllung; große Bilder werden verkleinert.
-- Eigenes Design: Aussehen je Zustand (gedrückt, ausgewählt, spielt, lädt) unter Farbe → „Aussehen für“, auch in der App sichtbar.
+- SSI-Suche (Etappe 3, Belege): neue Reiter Belege, Vergleich, Zeitleiste, Bericht und Recherchen. Die KI ordnet jede Stelle ein (stützt, widerspricht, widerlegt mit Begründung, schränkt ein, zitiert, bespricht, unklar) – nur mit wörtlich geprüftem Zitat, sonst „nicht belegt“. Widerspruch ist keine Widerlegung; SSI sagt nie, wer recht hat. Gleiche Quelle zählt einmal („3 Videos, 1 Ursprung“). Belegbericht als Markdown oder JSON exportieren, Recherchen speichern. Fragen nach Gegenargumenten, Vergleichen oder Verläufen öffnen die passende Ansicht.
+- Eigenes Design (Etappe 3, Vektor): Zeichenstift mit Bézier-Kurven, neue Formen (Dreieck, Polygon, Stern, Squircle), Vereinen/Abziehen/Schneiden/Ausschließen, Masken, Formwandel als Animation, Bewegungspfade und Bewegung per Finger aufnehmen. Bildzeit-Anzeige grün/gelb/rot; Diagnose-Zeile „Vektor“.
 
-## Behoben
-- Eigenes Design: Animationen von Miniplayer und Leiste laufen jetzt auch in der App; zwei schnelle Tipps zählen nur noch als Doppeltipp; Endlos-Animationen pausieren, solange sie nicht zu sehen sind; nach dem Umsortieren gleiten die Elemente an ihren Platz; die Ganzbild-Vorschau lässt sich scrollen.
-- SSI: Text wird genau wie vom Modell vorgesehen normalisiert; leere Untertitel mit Wortzeiten werden erkannt und eine Weile übersprungen; „Sofort“ rechnet auf zwei Kernen und bricht bei neuer Eingabe sofort ab, die Diagnose zeigt die letzte Antwortzeit.
+## Geändert
+- Theme-Dateien sind jetzt Version 3; ältere Builds können Themes mit den neuen Spuren ablehnen.

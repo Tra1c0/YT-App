@@ -145,6 +145,15 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
     editor tab `YtAnimPanel` and `YtAnimTimelineView` (timeline + curve editor). Mini player
     (`scene.finger` → `YtAnimInput.events`, docked/playing signals) and bar (`ytAnimHostLayer`,
     `bareRoot`) animate in the app too; loops pause while hidden (`YtAnimInput.shown`).
+  - Vector (stage TB-3, theme schema 3): pure `YtVector` (points, subpaths, fill rule, shape spec,
+    mask, motion path, morph target), `YtPathGeom` (+ `YtPathCache`), `YtPathOps` (point ops, RDP,
+    smooth, join/split, reverse), `YtPathBoolean` (union/subtract/intersect/exclude by planar
+    overlay, outline stroke), `YtShapeGeom` (parametric shapes, RoundedPolygon), `YtMorph`
+    (graphics-shapes morph or arc-length resampling, "angenähert" flag), `YtMotionPathEval`
+    (+ `YtMotionRecord`), `YtPenModel`. Android: `YtVectorRender` (style, mask clip, morph/motion
+    cache; render hooks `livePath`/`reduced`), `YtVectorEditor` (+ `YtVectorStats`, Diagnose
+    "Vektor"), `YtPenTool`, `YtVectorPanel` (pen/point/recording panels, Form tab). Animator props
+    PATH and MORPH.
   - Stage 1/2 gap fixes: pure `YtTapArbiter` (tap waits for the double-tap window only where a
     double-tap trigger exists), `YtReorderAnim` (spring from old places after a flow drop, via
     `YtRenderHooks.placeOffset`), `YtImageImport` (format by bytes, limits, downscale to 2048 px /
@@ -683,6 +692,13 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   back-off for the next videos, Diagnose counters); classic entry `YtSsiClassicEntry` (menu icon in
   STANDARD's search toolbar via `YtHeader.onMenuCreated`); vector scan suspend, 2 threads from
   8,000 rows, cancellable; Diagnose shows the last Instant latency.
+  Stage SSI-3 (evidence): pure `YtSsiQuoteCheck`, `YtSsiStance` (`YtSsiStanceRules`: relations,
+  strict JSON, hard rule: no verified quote ⇒ UNCERTAIN; "widerlegt mit Begründung" only with a
+  separate verified reason sentence), `YtSsiSources` (origin clusters: vectors ≥ 0.93 or shingles,
+  shared description links, linked videos, reuploads), `YtSsiChronology`, `YtSsiRoute` (intent →
+  view), `YtSsiReport` (Markdown/JSON, links with &t=), `YtSsiResearch` (`filesDir/yt_ssi/research/`);
+  Android `YtSsiStances` (batches of 6, cached in `ai` key `st|`, budgets per search/day) and views
+  `YtSsiEvidenceUi` (Belege, Vergleich, Zeitleiste, Bericht, Recherchen).
   Benchmark harness `T/ui/yt/ssi/YtSsiBench.kt` (fixtures `app/src/test/resources/ssi/`, synthetic).
 - Security: notes `docs/SICHERHEIT.md`; emulator-only switches guarded by `J/helpers/YtGuard.kt`.
 
@@ -767,7 +783,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (515 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (536 files; generated, do not edit)</summary>
 
 - `J/helpers/` (26): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtBuilderMode, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDeadSubs,
@@ -816,14 +832,16 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtRiskText
 - `Y/archive/script/` (10): YtArchiveScript, YtArchiveScripts, YtScriptAudio, YtScriptAudioAis,
   YtScriptCheck, YtScriptDialogue, YtScriptInput, YtScriptLedger, YtScriptMaker, YtScriptTextAis
-- `Y/builder/` (44): YtAnimControl, YtAnimEngine, YtAnimMath, YtAnimModel, YtAnimPanel,
+- `Y/builder/` (56): YtAnimControl, YtAnimEngine, YtAnimMath, YtAnimModel, YtAnimPanel,
   YtAnimPresets, YtAnimRuntime, YtAnimTimeline, YtAnimTimelineView, YtAnimValidate, YtBuilderActive,
   YtBuilderFonts, YtBuilderImages, YtBuilderInks, YtBuilderPaint, YtBuilderSafeMode,
   YtBuilderScreens, YtBuilderStore, YtColor, YtDocOps, YtEditorCanvas, YtEditorChecks, YtEditorDrag,
   YtEditorMetrics, YtEditorPanels, YtEditorState, YtFrameStats, YtHistory, YtImageImport,
-  YtLayoutEngine, YtReorderAnim, YtResponsive, YtSnap, YtStatePatchRule, YtTapArbiter, YtThemeCodec,
-  YtThemeEditorActivity, YtThemeEditorPreference, YtThemeModel, YtThemeRender, YtThemeSeeds,
-  YtThemeValidate, YtThemeZip, YtTokensResolver
+  YtLayoutEngine, YtMorph, YtMotionPathEval, YtPathBoolean, YtPathGeom, YtPathOps, YtPenModel,
+  YtPenTool, YtReorderAnim, YtResponsive, YtShapeGeom, YtSnap, YtStatePatchRule, YtTapArbiter,
+  YtThemeCodec, YtThemeEditorActivity, YtThemeEditorPreference, YtThemeModel, YtThemeRender,
+  YtThemeSeeds, YtThemeValidate, YtThemeZip, YtTokensResolver, YtVector, YtVectorEditor,
+  YtVectorPanel, YtVectorRender
 - `Y/feed/` (24): YtDeadSubsPreference, YtDeadSubsRules, YtDragRules, YtFeed, YtFeedEngine,
   YtFeedFresh, YtFeedRules, YtFeedTopics, YtFeedTopicsSession, YtFeedTopicsWords, YtHideRules,
   YtHomePreferences, YtHomeTestHooks, YtQueueRule, YtSeenHide, YtSeenMark, YtSession, YtSubsOrder,
@@ -865,12 +883,13 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - `Y/shorts/` (10): YtShortsLook, YtShortsMath, YtShortsPlayer, YtShortsPrefs, YtShortsScreen,
   YtShortsSource, YtShortsStyle, YtShortsTestHooks, YtShortsTimeline, YtShortsView
 - `Y/sound/` (3): YtSound, YtSoundEngine, YtSoundShaping
-- `Y/ssi/` (34): YtSsi, YtSsiAiPlan, YtSsiBenchRunner, YtSsiBenchmark, YtSsiBoundary,
-  YtSsiCalibration, YtSsiCaptions, YtSsiCharsMap, YtSsiClassicEntry, YtSsiClipModule, YtSsiDb,
-  YtSsiEmbedder, YtSsiFusion, YtSsiHfChecksum, YtSsiIndexer, YtSsiIntent, YtSsiJson3Gate,
-  YtSsiLayer, YtSsiLearning, YtSsiModel, YtSsiModels, YtSsiPlayRules, YtSsiPrefs, YtSsiRanker,
-  YtSsiRerank, YtSsiScores, YtSsiSearch, YtSsiSegmenter, YtSsiSemanticSegmenter, YtSsiSettings,
-  YtSsiText, YtSsiTokenizer, YtSsiVectors, YtSsiVoice
+- `Y/ssi/` (43): YtSsi, YtSsiAiPlan, YtSsiBenchRunner, YtSsiBenchmark, YtSsiBoundary,
+  YtSsiCalibration, YtSsiCaptions, YtSsiCharsMap, YtSsiChronology, YtSsiClassicEntry,
+  YtSsiClipModule, YtSsiDb, YtSsiEmbedder, YtSsiEvidenceUi, YtSsiFusion, YtSsiHfChecksum,
+  YtSsiIndexer, YtSsiIntent, YtSsiJson3Gate, YtSsiLayer, YtSsiLearning, YtSsiModel, YtSsiModels,
+  YtSsiPlayRules, YtSsiPrefs, YtSsiQuoteCheck, YtSsiRanker, YtSsiReport, YtSsiRerank, YtSsiResearch,
+  YtSsiRoute, YtSsiScores, YtSsiSearch, YtSsiSegmenter, YtSsiSemanticSegmenter, YtSsiSettings,
+  YtSsiSources, YtSsiStance, YtSsiStances, YtSsiText, YtSsiTokenizer, YtSsiVectors, YtSsiVoice
 - `app/src/main/java/androidx/constraintlayout/motion/widget/` (1): YtMotionAccess
 
 </details>

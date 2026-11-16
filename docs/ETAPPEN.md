@@ -22,8 +22,8 @@ Builder“), wie im Chat bewertet und angepasst. Sie sind Ideen, keine Vorgaben:
 | TB-1 Fundament | abgenommen (Nutzer, 2026-11-15, Build 140; Messwerte nicht gemeldet) |
 | SSI-2 Präzision | abgenommen (Nutzer, 2026-11-16, Build 142; Messwerte nicht gemeldet) |
 | TB-2 Animator | abgenommen (Nutzer, 2026-11-16, Build 142; Messwerte nicht gemeldet) |
-| SSI-3 Belege | in Arbeit (Runde 37) |
-| TB-3 Vektor | in Arbeit (Runde 37) |
+| SSI-3 Belege | gebaut (Build nach 142), wartet auf Prüfung und Abnahme durch den Nutzer |
+| TB-3 Vektor | gebaut (Build nach 142), wartet auf Prüfung und Abnahme durch den Nutzer |
 | SSI-4 Ultra & Bild | wartet auf Etappe 3 |
 | TB-4 Ausweitung | wartet auf Etappe 3 |
 

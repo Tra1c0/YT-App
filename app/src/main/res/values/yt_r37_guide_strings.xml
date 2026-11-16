@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_r37_guide_ssi_evidence_t">SSI: evidence and comparison</string>
+    <string name="yt_r37_guide_ssi_evidence_b">Ask for counter-arguments, a comparison or how a channel\'s view changed: SSI opens Belege, Vergleich or Zeitleiste. Every classification shows a word-for-word checked quote, else "nicht belegt"; SSI never says who is right. Export the report or save the research.</string>
+    <string name="yt_r37_guide_vector_t">Draw your own shapes</string>
+    <string name="yt_r37_guide_vector_b">In the editor of "Eigenes": the pen draws Bézier shapes, the Form tab combines shapes (union, subtract, intersect, exclude) and masks images; in the Animation tab shapes can morph and elements can follow a drawn or recorded path.</string>
+</resources>
