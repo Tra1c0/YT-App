@@ -8,7 +8,7 @@ not here.
 
 ## Current state
 
-- Latest release: build 142 on `main` (per-build details: Build log below). Recent rounds built:
+- Latest release: build 143 on `main` (per-build details: Build log below). Recent rounds built:
   News overlay (pinch on the home; stories; cited summaries with a provider choice: OpenAI,
   Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
@@ -33,7 +33,7 @@ not here.
 
 ## Open points
 
-- Round 37 (SSI-3, TB-3), untested on the phone and against live AI. SSI-3: providers may reject the enum schema (lenient parser); acceptance = user confirms 5 researches. TB-3: theme schema 3 (older builds may refuse); booleans of big paths take ms; free transform origin not built. SSI-4 and TB-4 acceptance criteria must be agreed with the user before they start.
+- Round 37 (SSI-3, TB-3, build 143), untested on the phone and against live AI. SSI-3: providers may reject the enum schema (lenient parser); acceptance = user confirms 5 researches. TB-3: theme schema 3 (older builds may refuse); booleans of big paths take ms; free transform origin not built. SSI-4 and TB-4 acceptance criteria must be agreed with the user before they start.
 - Round 35 (SSI-2, TB-2), untested on the phone and against a live AI. SSI-2 acceptance needs the user's 10 examples as JSON (format under Settings → SSI-Suche → "Format der Testbeispiele") and the in-app benchmark (Recall@3 ≥ 0.90). TB-2 acceptance: Diagnose "Animator" planned vs. ran at 60/120 Hz, interrupt without jump, same after restart. TB-2 limits left: gradient stop colours and icon tint not animatable; the editor's mini preview draws a THUMBNAIL slot at its layout place. Round 36 closed the other stage 1/2 gaps (both stages). The SSI charsmap test uses an XLM-R snippet written from memory (hub blocked); check Diagnose "tokenizer charsmap" on the phone. `git commit` is often refused for agents by the permission check; the user gave standing permission (2026-11-16) for the lead to commit agents' staged work without asking.
 - Round 33 (SSI-1, TB-1, Ambilight), untested on the phone. SSI: json3 caption URLs through NewPipe, ORT speed, semantic cut-off 0.78/0.08 untuned, model SHA-256 not pinned (huggingface.co is now allowed in the environment, but direct fetches were refused by this session's permission check; the build-140 fix reads the checksum from the hub's file listing), no entry in STANDARD, APK +13 MB (ORT arm64 only; emulator = words only). TB: mini player draws only part of the mini component, no animated reorder in flows, no image import UI, pressed-state patch not drawn. Ambilight: PixelCopy on the phone, Glas docked copies frames twice. For SSI-1 acceptance the user must give 10 test queries with expected moments.
 - APK clean-up (round 32, build 137, untested on the phone): all-files access return + rescan, `createDeleteRequest`, uninstall dialogs, install from `local.apk`, the quiet start-of-build clean-up. Next asked by the user: theme builder ("Eigenes Design"; ask what "fluent in YouTube" means), Ambilight, then SSI (search framework; user's requirement file was assessed in chat: phase 1 = local index from archive + fetched captions with word timings from YouTube's ASR json3, FTS + on-device ONNX embeddings + RRF, intent rules + AI, moments with context, clip collection; WhisperX/PySceneDetect/Qdrant/ML Kit/Data API/IFrame replaced; visual search only via Gemini later).
@@ -176,6 +176,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 143: SSI-3 (evidence: relations with verified quotes, comparison, timeline, report, saved research), TB-3 (vector: pen, booleans, masks, morph, motion paths, recording).
 - 142: SSI/TB stage 1/2 gap fixes (classic SSI entry, charsmap, calibration, json3 gate, parallel scan; mini player node tree, in-app mini/bar animations, state looks, image import, reorder spring).
 - 141: SSI-2 (AI re-rank, meaning-based passages, checked spans, feedback learning, in-app benchmark), TB-2 (animator).
 - 140: SSI model checksum from the hub's file listing (139 failed: stale generated docs block; 140 started by hand).
