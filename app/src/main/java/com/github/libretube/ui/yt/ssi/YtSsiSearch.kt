@@ -65,6 +65,9 @@ enum class YtSsiRunNote {
     SEARCH_FAILED,
     EMPTY_INDEX,
 
+    /** SSI-3: the hits of a saved research, as they were saved (nothing was searched). */
+    RESTORED,
+
     /** SSI-2: the AI graded the top passages (now, or the same ones earlier). */
     RERANK_USED,
     RERANK_CACHED,
@@ -108,7 +111,8 @@ object YtSsiSearch {
     private var job: Job? = null
     private var counter = 0L
 
-    fun start(context: Context, query: String, depth: YtSsiDepth) {
+    /** Starts a search; returns its id (the [YtSsiRun.id] its results carry). */
+    fun start(context: Context, query: String, depth: YtSsiDepth): Long {
         val app = context.applicationContext
         job?.cancel()
         val id = ++counter
@@ -123,6 +127,7 @@ object YtSsiSearch {
                 set(id) { it.copy(phase = YtSsiPhase.DONE, notes = it.notes + YtSsiRunNote.SEARCH_FAILED) }
             }
         }
+        return id
     }
 
     fun cancel() {
@@ -133,6 +138,29 @@ object YtSsiSearch {
     fun clear() {
         job?.cancel()
         _run.value = YtSsiRun()
+    }
+
+    /** SSI-3: the query as SSI reads it, with the index's channel names known (off the main thread). */
+    fun intentOf(query: String): YtSsiIntent {
+        val known = YtSsi.db.docs().values.mapNotNull { it.channelName }.filter { it.isNotBlank() }.distinct()
+        return YtSsiIntentParser.parse(query, System.currentTimeMillis(), ZoneId.systemDefault(), known)
+    }
+
+    /** SSI-3: shows a saved research's [hits] as a finished search of [query]; returns its id. */
+    fun restore(query: String, intent: YtSsiIntent, hits: List<YtSsiHit>): Long {
+        job?.cancel()
+        val id = ++counter
+        _run.value = YtSsiRun(
+            id = id,
+            query = query,
+            depth = YtSsiDepth.INSTANT,
+            intent = intent,
+            phase = YtSsiPhase.DONE,
+            hits = hits,
+            notes = setOf(YtSsiRunNote.RESTORED),
+            indexedVideos = runCatching { YtSsi.db.docs().size }.getOrDefault(0),
+        )
+        return id
     }
 
     private fun set(id: Long, change: (YtSsiRun) -> YtSsiRun) {

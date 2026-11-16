@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT Runde 37: SSI-3 „Belege“ (Einordnung mit geprüftem Zitat, Vergleich, Zeitleiste, Bericht, gespeicherte Recherchen). -->
+<resources>
+    <!-- Ansichten -->
+    <string name="yt_r37_ssi_view_hits">Treffer</string>
+    <string name="yt_r37_ssi_view_evidence">Belege</string>
+    <string name="yt_r37_ssi_view_compare">Vergleich</string>
+    <string name="yt_r37_ssi_view_timeline">Zeitleiste</string>
+    <string name="yt_r37_ssi_view_report">Bericht</string>
+    <string name="yt_r37_ssi_view_saved">Recherchen</string>
+    <string name="yt_r37_ssi_chip_routed">Gegenargumente, Vergleiche, Widersprüche und Verläufe ordnet SSI in den Ansichten oben ein, jeweils mit geprüftem Zitat</string>
+    <string name="yt_r37_ssi_reason_routed">Wie diese Stelle zur Behauptung steht, zeigt die Ansicht „Belege“ (nur mit geprüftem Zitat)</string>
+    <string name="yt_r37_ssi_note_restored">Gespeicherte Recherche: Treffer wie gespeichert</string>
+    <string name="yt_r37_ssi_empty">Noch keine Stellen zum Zeigen.</string>
+    <string name="yt_r37_ssi_no_ai">Einordnungen brauchen die KI: in den SSI-Einstellungen „KI erlauben“ und „Belege einordnen“ einschalten und bei den Kurzfassungen einen Anbieter einrichten. Ohne KI zeigt SSI die Treffer ohne Einordnung.</string>
+    <string name="yt_r37_ssi_neutral">SSI beschreibt nur, was die Stellen sagen: es prüft nicht, wer recht hat. Ein Widerspruch ist keine Widerlegung, und viele Videos mit derselben Aussage sind kein Beweis.</string>
+
+    <!-- Einordnungen -->
+    <string name="yt_r37_ssi_rel_supports">stützt</string>
+    <string name="yt_r37_ssi_rel_contradicts">widerspricht</string>
+    <string name="yt_r37_ssi_rel_refutes_reasoned">widerlegt mit Begründung</string>
+    <string name="yt_r37_ssi_rel_qualifies">schränkt ein</string>
+    <string name="yt_r37_ssi_rel_quotes">zitiert</string>
+    <string name="yt_r37_ssi_rel_discusses">bespricht</string>
+    <string name="yt_r37_ssi_rel_uncertain">unklar</string>
+    <string name="yt_r37_ssi_not_evidenced">nicht belegt</string>
+    <string name="yt_r37_ssi_cached">gespeicherte Antwort</string>
+    <string name="yt_r37_ssi_unsure_not_found">Die KI sagte „%1$s“, aber ihr Zitat steht nicht in dieser Stelle: als unklar gezeigt.</string>
+    <string name="yt_r37_ssi_unsure_no_quote">Die KI sagte „%1$s“ ohne Zitat: als unklar gezeigt.</string>
+    <string name="yt_r37_ssi_unsure_ai">Die KI konnte die Haltung aus dieser Stelle nicht erkennen.</string>
+    <string name="yt_r37_ssi_reason">Begründung: „%1$s“</string>
+    <string name="yt_r37_ssi_contradicts_note">Sagt das Gegenteil, ohne selbst einen Grund zu nennen; wer recht hat, bleibt offen.</string>
+    <string name="yt_r37_ssi_flag_ironic">ironisch</string>
+    <string name="yt_r37_ssi_flag_hypothetical">hypothetisch</string>
+    <string name="yt_r37_ssi_flag_quoting">zitiert jemand anderen</string>
+    <string name="yt_r37_ssi_flag_critical">kritisch</string>
+    <string name="yt_r37_ssi_stance_pending">Wird eingeordnet …</string>
+
+    <!-- Gruppen -->
+    <string name="yt_r37_ssi_group_supports">Stützt die Behauptung</string>
+    <string name="yt_r37_ssi_group_refutes_reasoned">Widerlegt sie mit Begründung</string>
+    <string name="yt_r37_ssi_group_contradicts">Widerspricht ihr</string>
+    <string name="yt_r37_ssi_group_qualifies">Schränkt sie ein</string>
+    <string name="yt_r37_ssi_group_quotes">Zitiert sie</string>
+    <string name="yt_r37_ssi_group_discusses">Bespricht das Thema</string>
+    <string name="yt_r37_ssi_group_uncertain">Unklar oder nicht belegt</string>
+    <string name="yt_r37_ssi_group_unchecked">Nicht geprüft</string>
+
+    <!-- Einordnung -->
+    <string name="yt_r37_ssi_claim">Behauptung</string>
+    <string name="yt_r37_ssi_stance_start">Belege einordnen</string>
+    <string name="yt_r37_ssi_stance_again">Neu einordnen</string>
+    <string name="yt_r37_ssi_stance_stop">Stopp</string>
+    <string name="yt_r37_ssi_stance_nothing">Nur Treffer im Titel: keine Stelle zum Einordnen.</string>
+    <string name="yt_r37_ssi_stance_running">Ordne ein … %1$d eingeordnet, Anfrage %2$d</string>
+    <string name="yt_r37_ssi_budget_line">Bis zu %1$d Stellen je Einordnung, %2$d Anfragen am Tag</string>
+    <string name="yt_r37_ssi_note_no_ai">KI aus oder nicht eingerichtet: keine Einordnung</string>
+    <string name="yt_r37_ssi_note_used">Die KI hat die Stellen eingeordnet; jedes Zitat wurde in der Stelle nachgeprüft</string>
+    <string name="yt_r37_ssi_note_cached">Manche Einordnungen stammen aus früheren Antworten zur selben Behauptung (erneut geprüft)</string>
+    <string name="yt_r37_ssi_note_failed">Eine Anfrage hat nicht geklappt: diese Stellen bleiben ungeprüft</string>
+    <string name="yt_r37_ssi_note_budget_search">Das Budget dieser Einordnung ist aufgebraucht: der Rest bleibt ungeprüft</string>
+    <string name="yt_r37_ssi_note_budget_day">Das heutige Budget für Einordnungen ist aufgebraucht</string>
+    <string name="yt_r37_ssi_note_nothing">Keine Stelle zum Einordnen</string>
+    <string name="yt_r37_ssi_play">Abspielen</string>
+    <string name="yt_r37_ssi_play_before">Ab −30 s</string>
+    <string name="yt_r37_ssi_choose">Vergleichen</string>
+    <string name="yt_r37_ssi_choose_full">Höchstens %1$d Stellen lassen sich vergleichen</string>
+
+    <!-- Ursprünge -->
+    <string name="yt_r37_ssi_origins">%1$d Videos, %2$d Ursprünge</string>
+    <string name="yt_r37_ssi_origin_first">Frühestes von %1$d weiteren Videos mit demselben Ursprung</string>
+    <string name="yt_r37_ssi_origin_same">Gleicher Ursprung wie „%1$s“ (zählt einmal)</string>
+    <string name="yt_r37_ssi_origin_title">Zählt einmal</string>
+    <string name="yt_r37_ssi_origin_row">%1$d Videos, 1 Ursprung: %2$s</string>
+    <string name="yt_r37_ssi_origin_text">fast dieselben Worte</string>
+    <string name="yt_r37_ssi_origin_link">dieselbe Quelle verlinkt</string>
+    <string name="yt_r37_ssi_origin_links_video">eines verlinkt das andere</string>
+    <string name="yt_r37_ssi_origin_reupload">Re-Upload</string>
+
+    <!-- Vergleich -->
+    <string name="yt_r37_ssi_compare_chosen">Deine gewählten Stellen nebeneinander (bis zu %1$d)</string>
+    <string name="yt_r37_ssi_compare_auto">Wähle 2 bis %1$d Stellen mit „Vergleichen“; bis dahin zeigt SSI je Einordnung eine</string>
+    <string name="yt_r37_ssi_compare_few">Weniger als 2 Stellen: noch nichts zu vergleichen.</string>
+    <string name="yt_r37_ssi_passage">Stelle</string>
+    <string name="yt_r37_ssi_before30">30 s davor</string>
+    <string name="yt_r37_ssi_after30">30 s danach</string>
+
+    <!-- Zeitleiste -->
+    <string name="yt_r37_ssi_timeline_all">Alle</string>
+    <string name="yt_r37_ssi_timeline_hint">Nach Upload-Datum, älteste zuerst. Wähle einen Kanal, um einer Person zu folgen.</string>
+    <string name="yt_r37_ssi_person_note">Ein Kanal nach Upload-Datum. Fakten und Fragestellung können sich dazwischen geändert haben: eine frühere Aussage ist nicht falsch, weil eine spätere anders lautet.</string>
+    <string name="yt_r37_ssi_undated">Ohne Datum</string>
+    <string name="yt_r37_ssi_shift_changed">Änderte Position? %1$s: %2$s → %3$s: %4$s</string>
+    <string name="yt_r37_ssi_shift_narrowed">Position eingeschränkt? %1$s: %2$s → %3$s: %4$s</string>
+    <string name="yt_r37_ssi_shift_note">Nur ein Hinweis aus zwei geprüften Zitaten; Fakten und Zusammenhang können sich geändert haben.</string>
+
+    <!-- Bericht -->
+    <string name="yt_r37_ssi_report_title">Belegbericht</string>
+    <string name="yt_r37_ssi_report_question">Frage</string>
+    <string name="yt_r37_ssi_report_created">Erstellt</string>
+    <string name="yt_r37_ssi_report_reason">Begründung</string>
+    <string name="yt_r37_ssi_report_passage">Stelle, nicht eingeordnet</string>
+    <string name="yt_r37_ssi_report_same_origin">Gleicher Ursprung</string>
+    <string name="yt_r37_ssi_report_uncertain">Unsicherheiten</string>
+    <string name="yt_r37_ssi_report_u_not_verified">%1$d Einordnungen der KI hatten kein Zitat, das in der Stelle steht: als unklar gezeigt</string>
+    <string name="yt_r37_ssi_report_u_ai">%1$d Stellen konnte die KI nicht einordnen</string>
+    <string name="yt_r37_ssi_report_u_unchecked">%1$d Stellen wurden nicht geprüft</string>
+    <string name="yt_r37_ssi_report_u_no_ai">Ohne KI: der Bericht nennt die Treffer ohne Einordnung</string>
+    <string name="yt_r37_ssi_report_u_approx">%1$d Zeiten sind nicht wortgenau (≈)</string>
+    <string name="yt_r37_ssi_report_u_undated">%1$d Videos ohne Upload-Datum</string>
+    <string name="yt_r37_ssi_report_shift">%1$s: mögliche Positionsänderung zwischen %2$s und %3$s.</string>
+    <string name="yt_r37_ssi_report_none">Keine vermerkt</string>
+    <string name="yt_r37_ssi_export_md">Als Markdown exportieren</string>
+    <string name="yt_r37_ssi_export_json">Als JSON exportieren</string>
+    <string name="yt_r37_ssi_export_done">Bericht gespeichert</string>
+    <string name="yt_r37_ssi_export_failed">Der Bericht konnte nicht gespeichert werden</string>
+
+    <!-- gespeicherte Recherchen -->
+    <string name="yt_r37_ssi_notes">Notizen</string>
+    <string name="yt_r37_ssi_notes_hint">Deine Notizen zu dieser Recherche</string>
+    <string name="yt_r37_ssi_save">Recherche speichern</string>
+    <string name="yt_r37_ssi_save_update">Recherche aktualisieren</string>
+    <string name="yt_r37_ssi_save_hint">Speichert Suchanfrage, Behauptung, die gewählten Stellen (oder alle eingeordneten), ihre Einordnungen mit Zitat und deine Notizen, nur auf diesem Handy.</string>
+    <string name="yt_r37_ssi_saved_done">Recherche gespeichert</string>
+    <string name="yt_r37_ssi_saved_failed">Die Recherche konnte nicht gespeichert werden</string>
+    <string name="yt_r37_ssi_saved_title">Gespeicherte Recherchen (%1$d)</string>
+    <string name="yt_r37_ssi_saved_none">Noch keine Recherche gespeichert.</string>
+    <string name="yt_r37_ssi_saved_meta">%1$s · %2$d Stellen · %3$d belegt · %4$d unklar</string>
+    <string name="yt_r37_ssi_saved_open">Öffnen</string>
+    <string name="yt_r37_ssi_saved_continue">Fortsetzen</string>
+    <string name="yt_r37_ssi_saved_delete">Löschen</string>
+    <string name="yt_r37_ssi_saved_delete_sure">Wirklich löschen?</string>
+
+    <!-- Einstellungen -->
+    <string name="yt_r37_ssi_settings_title">Belege (Einordnung)</string>
+    <string name="yt_r37_ssi_stance">Belege einordnen</string>
+    <string name="yt_r37_ssi_stance_summary">Die KI sagt je Stelle, ob sie die Behauptung stützt, ihr widerspricht, sie einschränkt, zitiert oder bespricht. Eine Einordnung zählt nur mit einem Zitat, das wörtlich in der Stelle gefunden wird.</string>
+    <string name="yt_r37_ssi_per_search">Anfragen je Einordnung</string>
+    <string name="yt_r37_ssi_per_day">Anfragen pro Tag</string>
+    <string name="yt_r37_ssi_stance_info">Einordnungen heute</string>
+    <string name="yt_r37_ssi_stance_info_summary">Heute %1$d von %2$d Anfragen genutzt (je 6 Stellen) · %3$d gespeicherte Recherchen</string>
+</resources>

@@ -45,7 +45,6 @@
     <string name="yt_r33_ssi_chip_without">Ohne: %1$s</string>
     <string name="yt_r33_ssi_chip_not_channel">Nicht von: %1$s</string>
     <string name="yt_r33_ssi_chip_language">Sprache: %1$s</string>
-    <string name="yt_r33_ssi_chip_later">Gegenargumente, Vergleiche und Widersprüche prüft eine spätere Stufe; jetzt findet SSI das Thema</string>
     <string name="yt_r33_ssi_play_all">Alle als Clip-Folge abspielen (%1$d)</string>
     <string name="yt_r33_ssi_before">−30 s</string>
     <string name="yt_r33_ssi_after">+30 s</string>
@@ -69,7 +68,6 @@
     <string name="yt_r33_ssi_reason_vanished">Das Original ist weg; das ist die Kopie aus dem Archiv</string>
     <string name="yt_r33_ssi_reason_ai">Gefunden mit Wörtern, die die KI vorgeschlagen hat</string>
     <string name="yt_r33_ssi_reason_youtube">Bei der YouTube-Suche von „Tief“ gefunden und eben gelesen</string>
-    <string name="yt_r33_ssi_reason_later">Ob es zustimmt oder widerlegt, wird noch nicht geprüft</string>
     <string name="yt_r33_ssi_reason_timing_word">Zeit aus den Wortzeitstempeln der Spracherkennung</string>
     <string name="yt_r33_ssi_reason_timing_line">Zeit aus Untertitelzeilen: ein paar Sekunden Abweichung möglich</string>
     <string name="yt_r33_ssi_reason_timing_span">Kein gesprochener Moment: ein Kapitel, der Titel oder die Beschreibung</string>

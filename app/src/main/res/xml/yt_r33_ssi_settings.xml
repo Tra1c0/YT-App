@@ -89,6 +89,47 @@
 
     </PreferenceCategory>
 
+    <!-- SSI-3 (round 37): relations with verified quotes ("Belege") -->
+    <PreferenceCategory
+        app:key="yt_ssi_evidence"
+        app:title="@string/yt_r37_ssi_settings_title">
+
+        <SwitchPreferenceCompat
+            android:icon="@drawable/ic_info"
+            app:defaultValue="true"
+            app:dependency="yt_ssi_allow_ai"
+            app:key="yt_ssi_stance"
+            app:summary="@string/yt_r37_ssi_stance_summary"
+            app:title="@string/yt_r37_ssi_stance" />
+
+        <ListPreference
+            android:icon="@drawable/ic_movie"
+            app:defaultValue="3"
+            app:dependency="yt_ssi_stance"
+            app:entries="@array/yt_ssi_stance_per_search_values"
+            app:entryValues="@array/yt_ssi_stance_per_search_values"
+            app:key="yt_ssi_stance_per_search"
+            app:title="@string/yt_r37_ssi_per_search"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:icon="@drawable/ic_history"
+            app:defaultValue="30"
+            app:dependency="yt_ssi_stance"
+            app:entries="@array/yt_ssi_stance_per_day_values"
+            app:entryValues="@array/yt_ssi_stance_per_day_values"
+            app:key="yt_ssi_stance_per_day"
+            app:title="@string/yt_r37_ssi_per_day"
+            app:useSimpleSummaryProvider="true" />
+
+        <Preference
+            android:icon="@drawable/ic_save"
+            app:key="yt_ssi_stance_info"
+            app:selectable="false"
+            app:title="@string/yt_r37_ssi_stance_info" />
+
+    </PreferenceCategory>
+
     <!-- SSI-2 (round 35): the benchmark on the user's own verified examples -->
     <PreferenceCategory
         app:key="yt_ssi_bench"
