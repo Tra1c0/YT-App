@@ -95,7 +95,13 @@ class YtThemeEditorActivity : ComponentActivity() {
         val m = YtEditorMetrics(window)
         metrics = m
         onBackPressedDispatcher.addCallback(this) {
-            if (state.selection.isNotEmpty()) state.selection = emptySet() else finish()
+            when {
+                // the pen or a recording ends first (a new path is kept, as with "Fertig")
+                state.vector.pen != null -> state.vector.finish()
+                state.vector.record != null -> state.vector.record = null
+                state.selection.isNotEmpty() -> state.selection = emptySet()
+                else -> finish()
+            }
         }
         setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Color(0xFF8AB4FF), surface = Color(0xFF17181C), background = Color(0xFF0F1013))) {
@@ -155,6 +161,8 @@ private fun YtEditorScreen(
     val doc = state.doc
     val hooks = remember(state) { YtEditorHooks(state) }
     state.boundsOf = { id -> hooks.bounds(id) }
+    state.vector.hooks = hooks
+    state.vector.frameLine = { metrics.line }
     val imageLoader = remember { ImageHelper.loader() }
     val videos by produceState(emptyList<StreamItem>()) {
         value = withContext(Dispatchers.IO) {
@@ -177,19 +185,23 @@ private fun YtEditorScreen(
         val touch = YtEditorChecks.touch(d, { k, id -> hooks.bounds(k, id)?.let { YtSnap.Rect(it.left, it.top, it.right, it.bottom) } }, hooks.themeDensity)
         state.warnings = contrast + touch
     }
-    LaunchedEffect(state.showStats) {
-        while (state.showStats) {
+    // the frame figures: for the overlay, and while the pen runs for its reduced preview over budget
+    val penOn = state.vector.pen != null
+    LaunchedEffect(state.showStats, penOn) {
+        while (state.showStats || penOn) {
             metrics.refresh()
-            delay(500)
+            state.vector.overBudget = metrics.rating.let { it != null && it != YtFrameStats.Rating.GREEN }
+            delay(if (penOn) 300 else 500)
         }
+        state.vector.overBudget = false
     }
 
     Column(Modifier.fillMaxSize().background(Color(0xFF0F1013)).systemBarsPadding().imePadding()) {
         YtEditorTopBar(state, onBack, onThemes = { themesOpen = true; state.reloadList() })
-        if (state.selection.isNotEmpty()) YtEditorSelectionBar(state)
+        if (state.vector.pen != null || state.vector.record != null) YtPenBar(state) else if (state.selection.isNotEmpty()) YtEditorSelectionBar(state)
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (doc != null && palette != null) {
-                YtEditorCanvas(state, hooks, palette, videos, imageLoader, metrics.line, Modifier.fillMaxSize())
+                YtEditorCanvas(state, hooks, palette, videos, imageLoader, metrics.line, Modifier.fillMaxSize(), metrics.rating)
                 // the animator's test: touches go to the animations, not to the tools
                 if (state.animTest) YtAnimTestOverlay(state, Modifier.matchParentSize())
             }
@@ -294,6 +306,8 @@ private fun YtEditorSelectionBar(state: YtEditorState) {
         TextButton(onClick = { state.reorderSelection(-1) }) { Text(stringResource(R.string.yt_builder_backward)) }
         TextButton(onClick = state::duplicateSelection) { Text(stringResource(R.string.yt_builder_duplicate)) }
         TextButton(onClick = state::deleteSelection) { Text(stringResource(R.string.yt_builder_delete)) }
+        // the pen: a new path in the free container of the selection (phase 3)
+        if (state.vector.drawContainer() != null) TextButton(onClick = { state.vector.startDraw() }) { Text("✎ " + stringResource(R.string.yt_vec_pen)) }
         val free = state.selection.firstOrNull()?.let(state::parentOf)?.layout?.mode == YtLayoutMode.FREE
         if (free) {
             for ((label, dx, dy) in listOf(Triple("◀", -1f, 0f), Triple("▲", 0f, -1f), Triple("▼", 0f, 1f), Triple("▶", 1f, 0f))) {

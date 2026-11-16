@@ -80,6 +80,9 @@ object YtAnimValidate {
             tracks = tracks,
             group = a.group?.takeIf { it in groups },
             strength = fin(a.strength, 1f).coerceIn(YtAnimPresets.MIN_STRENGTH, YtAnimPresets.MAX_STRENGTH),
+            // a PATH or MORPH track always has its path or target (an empty path moves nothing)
+            motion = a.motion?.let { YtVectorValidate.motion(it) { why -> issue("$path.motion", why) } } ?: if (tracks.any { it.prop == YtAnimProp.PATH }) YtMotionPath() else null,
+            morph = a.morph?.let { YtVectorValidate.morph(it) { why -> issue("$path.morph", why) } } ?: if (tracks.any { it.prop == YtAnimProp.MORPH }) YtMorphTarget() else null,
         )
     }
 

@@ -147,6 +147,10 @@ class YtAnimChannel internal constructor(val prop: YtAnimProp) {
 
     val running: Boolean get() = run != null
 
+    /** The animation that last drove this channel (motion paths and morphs take its path or target). */
+    var owner: String? = null
+        internal set
+
     fun float(): Float = if (set) value[0] else prop.rest
 
     fun argb(own: Int): Int = if (set) YtOklab.toArgb(value, 0) else own
@@ -388,6 +392,7 @@ class YtAnimEngine(private val rest: YtAnimRest = YtAnimRest { _, _ -> null }) {
             val ch = n.take(track.prop)
             val interrupting = ch.run != null
             val run = build(anim, track, ch, play, offsetMs, driven, interrupting)
+            ch.owner = anim.id
             // the last started wins
             ch.run?.let { old -> runs.remove(old); drivenRuns.remove(old) }
             if (snap && !driven) {
@@ -530,6 +535,7 @@ class YtAnimEngine(private val rest: YtAnimRest = YtAnimRest { _, _ -> null }) {
                 ch.run?.let { runs.remove(it) }
                 ch.run = r
             }
+            ch.owner = r.animId
             r.at(tMs, scratch)
             write(ch, scratch)
         }
@@ -551,6 +557,7 @@ class YtAnimEngine(private val rest: YtAnimRest = YtAnimRest { _, _ -> null }) {
             for (track in a.playing()) {
                 val ch = n.take(track.prop)
                 val run = build(a, track, ch, play, offset, driven = true, interrupting = false)
+                ch.owner = a.id
                 run.at(tMs, scratch)
                 write(ch, scratch)
             }

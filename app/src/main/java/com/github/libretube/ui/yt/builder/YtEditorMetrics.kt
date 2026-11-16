@@ -24,8 +24,19 @@ class YtEditorMetrics(window: Window) {
     var line by mutableStateOf<String?>(null)
         private set
 
+    /** The frame budget of the display (one refresh, ms) and how P95 compares with it. */
+    val budgetMs: Double = runCatching {
+        @Suppress("DEPRECATION")
+        val hz = window.windowManager.defaultDisplay.refreshRate
+        1000.0 / hz.coerceIn(30f, 240f)
+    }.getOrDefault(1000.0 / 60.0)
+    var rating by mutableStateOf<YtFrameStats.Rating?>(null)
+        private set
+
     fun refresh() {
-        line = stats.summary()?.line()
+        val s = stats.summary()
+        line = s?.line()?.let { "$it · budget %.1f ms".format(java.util.Locale.ROOT, budgetMs) }
+        rating = s?.rating(budgetMs)
     }
 
     fun resume() {

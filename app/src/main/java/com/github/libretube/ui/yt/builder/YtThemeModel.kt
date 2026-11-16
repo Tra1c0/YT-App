@@ -18,7 +18,7 @@ import kotlinx.serialization.json.JsonElement
  */
 
 /** The schema of this build. A newer file is read as far as it is understood (YtThemeCodec). */
-const val YT_THEME_SCHEMA = 2
+const val YT_THEME_SCHEMA = 3
 
 @Serializable
 data class YtThemeDoc(
@@ -35,7 +35,7 @@ data class YtThemeDoc(
     val mini: YtMiniConfig = YtMiniConfig(),
     /** Fonts and images that came with the theme (files in its assets folder). */
     val assets: List<YtAsset> = emptyList(),
-    /** The animator (phase 2, schema 2): animations, groups, state rules, easing presets (YtAnimModel). */
+    /** The animator (phase 2, schema 2; motion paths and morphs since schema 3): animations, groups, state rules, easing presets (YtAnimModel). */
     val animations: YtAnimations = YtAnimations(),
     /**
      * What a schema 1 file had in its reserved `animations` field (never written by a build, but
@@ -276,8 +276,18 @@ enum class YtAnchor { START, CENTER, END }
 @Serializable
 enum class YtNodeType { CONTAINER, TEXT, IMAGE, ICON, SHAPE, SLOT }
 
+/**
+ * The shape of a SHAPE node. RECT, ELLIPSE, PILL and LINE are drawn from the corners (phase 1);
+ * TRIANGLE, POLYGON, STAR and SQUIRCLE from [YtNode.shapeSpec] (phase 3, parametric until turned
+ * into a path); PATH from [YtNode.path] (YtVector).
+ */
 @Serializable
-enum class YtShapeKind { RECT, ELLIPSE, PILL, LINE }
+enum class YtShapeKind {
+    RECT, ELLIPSE, PILL, LINE, TRIANGLE, POLYGON, STAR, SQUIRCLE, PATH;
+
+    /** Drawn from the corners (YtCornerShape) rather than a vector outline. */
+    val cornered: Boolean get() = this == RECT || this == ELLIPSE || this == PILL || this == LINE
+}
 
 /** Real data a SLOT node shows: the card's video, the header's actions, the nav tab's parts. */
 @Serializable
@@ -333,6 +343,12 @@ data class YtNode(
     /** ICON: a glyph of YtIcons. */
     val icon: String? = null,
     val shape: YtShapeKind = YtShapeKind.RECT,
+    /** The parameters of a TRIANGLE, POLYGON, STAR or SQUIRCLE shape (phase 3). */
+    val shapeSpec: YtShapeSpec = YtShapeSpec(),
+    /** The outline of a PATH shape, in its own box (phase 3, YtVector). */
+    val path: YtPath? = null,
+    /** Only what lies inside this shape is drawn (phase 3): fills, content and images alike. */
+    val mask: YtMask? = null,
     /** Changes for a screen size, orientation or font scale (YtResponsive). */
     val overrides: List<YtOverride> = emptyList(),
     /** Changes in a state of the component: "selected" (chip, nav tab), "pressed". */

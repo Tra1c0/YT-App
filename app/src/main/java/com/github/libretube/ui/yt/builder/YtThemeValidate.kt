@@ -245,7 +245,14 @@ object YtThemeValidate {
             if (minW != null && maxW != null && minW > maxW) maxW = minW
             if (minH != null && maxH != null && minH > maxH) maxH = minH
             val aspect = n.aspect?.let { a -> if (a.isNaN() || a <= 0f) null else a.coerceIn(0.05f, 20f) }
+            // vector data (phase 3): a PATH shape without a usable path draws as a rectangle
+            val path = n.path?.let { YtVectorValidate.path(it) { why -> issue("$p.path", why) } }?.takeIf { !it.isEmpty }
+            val shape = if (n.shape == YtShapeKind.PATH && path == null) YtShapeKind.RECT.also { issue("$p.shape", "path shape without a path") } else n.shape
             return n.copy(
+                shape = shape,
+                shapeSpec = YtVectorValidate.spec(n.shapeSpec),
+                path = path,
+                mask = n.mask?.let { YtVectorValidate.mask(it) { why -> issue("$p.mask", why) } },
                 id = id,
                 name = n.name.take(60),
                 layout = n.layout.copy(

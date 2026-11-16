@@ -103,6 +103,9 @@ class YtEditorState(app: Application) : AndroidViewModel(app) {
     /** Where a node is drawn on the canvas (frame px), set by the canvas. */
     var boundsOf: (String) -> androidx.compose.ui.geometry.Rect? = { null }
 
+    /** The vector tools (phase 3): pen, recording, booleans, masks. */
+    val vector = YtVectorEditor(this)
+
     /** The last check's findings (contrast, touch size, layout), drawn on the canvas and listed. */
     var warnings by mutableStateOf<List<YtEditorChecks.Warning>>(emptyList())
 

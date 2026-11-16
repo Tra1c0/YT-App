@@ -287,6 +287,7 @@ private enum class Tab(val label: Int, val simple: Boolean) {
     COLOR(R.string.yt_builder_tab_color, true),
     SIZE(R.string.yt_builder_tab_size, true),
     CORNERS(R.string.yt_builder_tab_corners, true),
+    FORM(R.string.yt_vec_tab, true),
     TEXT(R.string.yt_builder_tab_text, true),
     ANIM(R.string.yt_anim_tab, true),
     SHADOW(R.string.yt_builder_tab_shadow, false),
@@ -299,6 +300,15 @@ private enum class Tab(val label: Int, val simple: Boolean) {
 fun YtEditorPanel(state: YtEditorState, onImportFont: ((String) -> Unit) -> Unit, modifier: Modifier = Modifier, onImportImage: ((String) -> Unit) -> Unit = {}) {
     val node = state.primary
     Column(modifier.verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 6.dp)) {
+        // the pen and the recording have their own panels (phase 3)
+        if (state.vector.pen != null) {
+            YtPenPanel(state)
+            return@Column
+        }
+        if (state.vector.record != null) {
+            YtRecordPanel(state)
+            return@Column
+        }
         if (node == null) {
             YtThemePanel(state)
             return@Column
@@ -322,6 +332,7 @@ fun YtEditorPanel(state: YtEditorState, onImportFont: ((String) -> Unit) -> Unit
             Tab.COLOR -> ColorTab(state, node, onImportImage)
             Tab.SIZE -> SizeTab(state, node)
             Tab.CORNERS -> CornersTab(state, node)
+            Tab.FORM -> YtFormTab(state, node)
             Tab.TEXT -> TextTab(state, node, onImportFont)
             Tab.ANIM -> YtAnimTab(state, node)
             Tab.SHADOW -> ShadowTab(state, node)

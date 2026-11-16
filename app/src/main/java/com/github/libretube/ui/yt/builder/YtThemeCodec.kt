@@ -53,6 +53,10 @@ object YtThemeCodec {
             if (old != null && old !is kotlinx.serialization.json.JsonNull) m["animationsLegacy"] = old
             JsonObject(m)
         },
+        // schema 2: vector shapes, masks, motion paths and morphs (phase 3) are new optional fields
+        // with defaults; nothing of a schema 2 file moves (an older build may refuse a file that uses
+        // the new tracks, as it does not know their properties).
+        2 to { o -> o },
     )
 
     fun encode(doc: YtThemeDoc): String = json.encodeToString(YtThemeDoc.serializer(), doc)

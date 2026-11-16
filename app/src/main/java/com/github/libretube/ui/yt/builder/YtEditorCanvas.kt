@@ -134,6 +134,34 @@ class YtEditorHooks(private val state: YtEditorState) : YtRenderHooks {
 
     fun forgetAll() = coords.clear()
 
+    /** The box of [id] before turning: centre x, y and width, height in frame px (phase 3, vector tools). */
+    fun nodeBox(id: String): FloatArray? {
+        val f = frame ?: return null
+        val c = YtComponentKind.entries.firstNotNullOfOrNull { coords[it to id] } ?: return null
+        if (!f.isAttached || !c.isAttached) return null
+        val w = c.size.width.toFloat()
+        val h = c.size.height.toFloat()
+        val centre = runCatching { f.localPositionOf(c, Offset(w / 2f, h / 2f)) }.getOrNull() ?: return null
+        return floatArrayOf(centre.x, centre.y, w, h)
+    }
+
+    /** The box of [id] in its parent's layout: centre x, y and width, height in theme dp (booleans, masks). */
+    fun boxInParent(id: String, state: YtEditorState): FloatArray? {
+        val parent = state.parentOf(id) ?: return null
+        val c = YtComponentKind.entries.firstNotNullOfOrNull { coords[it to id] } ?: return null
+        val p = YtComponentKind.entries.firstNotNullOfOrNull { coords[it to parent.id] } ?: return null
+        if (!c.isAttached || !p.isAttached) return null
+        val w = c.size.width.toFloat()
+        val h = c.size.height.toFloat()
+        val centre = runCatching { p.localPositionOf(c, Offset(w / 2f, h / 2f)) }.getOrNull() ?: return null
+        val d = themeDensity.coerceAtLeast(0.01f)
+        return floatArrayOf(centre.x / d, centre.y / d, w / d, h / d)
+    }
+
+    override fun livePath(id: String): YtPath? = state.vector.livePath(id)
+
+    override fun reduced(): Boolean = state.vector.reduced()
+
     /** Whether any of [id]'s box is shown (not scrolled out of the feed or cut off by a parent). */
     fun shown(kind: YtComponentKind, id: String): Boolean {
         val f = frame ?: return false
@@ -249,6 +277,8 @@ fun YtEditorCanvas(
     imageLoader: ImageLoader,
     stats: String?,
     modifier: Modifier = Modifier,
+    /** How the frame times compare with the display's budget: the stats line's colour. */
+    statsRating: YtFrameStats.Rating? = null,
 ) {
     val doc = state.doc ?: return
     val base = LocalDensity.current
@@ -376,10 +406,13 @@ fun YtEditorCanvas(
 
         // the editing layer: gestures and everything drawn over the preview
         val measurer = rememberTextMeasurer()
+        // the pen and the recording take the single-finger touches (phase 3)
+        val penInput = state.vector.pen != null || state.vector.record?.armed == true
+        val reducedLabel = androidx.compose.ui.res.stringResource(R.string.yt_vec_reduced)
         Canvas(
             Modifier
                 .fillMaxSize()
-                .pointerInput(state, hooks) {
+                .then(if (penInput) Modifier.ytPenInput(state, hooks, base.density, haptics, scope) else Modifier.pointerInput(state, hooks) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         down.consume()
@@ -615,16 +648,24 @@ fun YtEditorCanvas(
                             if (marquee != null && mode != Mode.MARQUEE) marquee = null
                         }
                     }
-                },
+                }),
         ) {
             // read here so the layer draws again while a node moves (its box follows the finger)
             hooks.placements
             hooks.dx
             hooks.dy
             drawOverlay(state, hooks, ::toScreen, guides, marquee, base.density)
+            drawPenOverlay(state, measurer, reducedLabel, base.density)
             if (state.showRulers) drawRulers(state, hooks.themeDensity, measurer)
             if (stats != null && state.showStats) {
-                drawText(measurer, stats, Offset(12f, size.height - 34f * base.density), TextStyle(color = Color.White, fontSize = 11.sp, background = Color(0xB3000000)))
+                // green while P95 stays within the display's frame budget
+                val color = when (statsRating) {
+                    YtFrameStats.Rating.GREEN -> Color(0xFF7CFC9A)
+                    YtFrameStats.Rating.AMBER -> Color(0xFFFFC46B)
+                    YtFrameStats.Rating.RED -> Color(0xFFFF8A80)
+                    null -> Color.White
+                }
+                drawText(measurer, stats, Offset(12f, size.height - 34f * base.density), TextStyle(color = color, fontSize = 11.sp, background = Color(0xB3000000)))
             }
         }
     }

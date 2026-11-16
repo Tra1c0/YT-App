@@ -272,7 +272,7 @@ class YtAnimInstance internal constructor(val kind: YtComponentKind, private val
     internal fun nodeAnim(id: String): YtNodeAnim? {
         val idx = controller.index
         if (id !in idx.targets) return null
-        return nodes.getOrPut(id) { YtNodeAnim(this, engine.node(id), idx.props(id)) }
+        return nodes.getOrPut(id) { YtNodeAnim(this, engine.node(id), idx.props(id), YtVectorAnims(id, idx.items)) }
     }
 
     override fun event(t: YtTriggerKind) {
@@ -334,8 +334,15 @@ class YtAnimInstance internal constructor(val kind: YtComponentKind, private val
 
 /** One node's channels and which drawing phases it needs. */
 @Stable
-internal class YtNodeAnim(val inst: YtAnimInstance, val node: YtAnimNode, val props: Set<YtAnimProp>) {
+internal class YtNodeAnim(val inst: YtAnimInstance, val node: YtAnimNode, val props: Set<YtAnimProp>, val vector: YtVectorAnims = YtVectorAnims(node.id, emptyList())) {
     val layer = props.any { it.phase == YtPropPhase.LAYER }
+
+    /** Moves along a motion path (phase 3); [motionOut] is the layer's scratch for it. */
+    val motion = YtAnimProp.PATH in props && vector.hasMotion
+    val motionOut = FloatArray(3)
+
+    /** Changes its shape (phase 3). */
+    val morph = YtAnimProp.MORPH in props && vector.hasMorph
     val size = props.any { it.phase == YtPropPhase.LAYOUT }
     val style = props.any { it.phase == YtPropPhase.STYLE || it.phase == YtPropPhase.OVERLAY }
     val text = YtAnimProp.TEXT_COLOR in props
@@ -678,17 +685,17 @@ private object YtBlurCache {
  * the native canvas with paints, shaders, matrices and paths made once per size; a frame only
  * changes their numbers.
  */
-internal fun Modifier.ytAnimStyle(style: YtStyle, src: YtThemeSource, a: YtNodeAnim): Modifier =
+internal fun Modifier.ytAnimStyle(style: YtStyle, src: YtThemeSource, a: YtNodeAnim, node: YtNode? = null): Modifier =
     drawWithCache {
         try {
-            buildAnimStyle(style, src, a)
+            buildAnimStyle(style, src, a, node)
         } catch (e: Exception) {
             // a style the native canvas cannot build: the node draws its content only
             onDrawWithContent { drawContent() }
         }
     }
 
-private fun CacheDrawScope.buildAnimStyle(style: YtStyle, src: YtThemeSource, a: YtNodeAnim): DrawResult {
+private fun CacheDrawScope.buildAnimStyle(style: YtStyle, src: YtThemeSource, a: YtNodeAnim, node: YtNode? = null): DrawResult {
     val t = src.resolver
     val d = density
     val w = size.width
@@ -787,7 +794,33 @@ private fun CacheDrawScope.buildAnimStyle(style: YtStyle, src: YtThemeSource, a:
     var lastInset = Float.NaN
     var lastInsetCorner = Float.NaN
 
+    // phase 3: a vector node's outline (its corners do not apply), and the morph of a shape node
+    val vectorNode = node?.takeIf { ytIsVector(it) }
+    val vectorBase = vectorNode?.let { vn ->
+        val cache = YtPathCache()
+        ytVectorOutline(YtShapeGeom.targetOf(vn), src.hooks?.livePath(vn.id), w, h, d, cache)
+        android.graphics.Path().also { p ->
+            cache.into(p)
+            p.fillType = if (vn.path?.fillRule == YtFillRule.EVEN_ODD) android.graphics.Path.FillType.EVEN_ODD else android.graphics.Path.FillType.WINDING
+        }
+    }
+    val morphFrom = if (a.morph && node != null && node.type == YtNodeType.SHAPE) YtShapeGeom.targetOf(node) else null
+    val morphSink = YtNativeSink(shape)
+    var morphEnd: android.graphics.Path? = null
+    var lastMorph = 0f
+    // strokes of vector and morphing outlines run along the outline (as YtVectorStyle draws them)
+    val centred = vectorBase != null || morphFrom != null
+    if (centred) for (st in strokes) {
+        st.paint.strokeJoin = android.graphics.Paint.Join.ROUND
+        st.paint.strokeCap = android.graphics.Paint.Cap.ROUND
+    }
+
     fun build(path: android.graphics.Path, grow: Float, extra: Float) {
+        if (vectorBase != null) {
+            // grown or inset copies of a free outline would need an offset path: the outline itself stands in
+            path.set(vectorBase)
+            return
+        }
         // grow > 0: outward by grow px (shadow spread), < 0: inward (stroke inset)
         val x0 = -grow
         val y0 = -grow
@@ -799,7 +832,37 @@ private fun CacheDrawScope.buildAnimStyle(style: YtStyle, src: YtThemeSource, a:
     fun DrawScope.behind() {
         val n = a.node
         val extra = n.float(YtAnimProp.CORNERS)
-        if (extra != lastCorner) {
+        val mp = if (morphFrom != null && n.animated(YtAnimProp.MORPH)) n.float(YtAnimProp.MORPH).coerceIn(0f, 1f) else 0f
+        if (morphFrom != null && (mp > 0f || lastMorph > 0f)) {
+            // the morph's frame: written into the reused outline (the start and the end exactly)
+            val owner = n.channel(YtAnimProp.MORPH)?.owner
+            when {
+                mp <= 0f -> build(shape, 0f, extra)
+                mp >= 1f -> {
+                    val end = morphEnd ?: a.vector.morphTarget(owner)?.let { tg ->
+                        val cache = YtPathCache()
+                        ytVectorOutline(tg, null, w, h, d, cache)
+                        android.graphics.Path().also { cache.into(it) }
+                    }?.also { morphEnd = it }
+                    if (end != null) shape.set(end) else build(shape, 0f, extra)
+                }
+                else -> {
+                    val plan = a.vector.plan(owner, morphFrom, w / d, h / d)
+                    shape.rewind()
+                    if (plan != null) {
+                        shape.fillType = if (plan.rule == YtFillRule.EVEN_ODD) android.graphics.Path.FillType.EVEN_ODD else android.graphics.Path.FillType.WINDING
+                        plan.write(mp, d, d, morphSink)
+                    } else {
+                        build(shape, 0f, extra)
+                    }
+                }
+            }
+            lastMorph = mp
+            // the grown and inset copies follow the frame's outline
+            lastCorner = Float.NaN
+            lastSpread = Float.NaN
+            lastInset = Float.NaN
+        } else if (extra != lastCorner) {
             build(shape, 0f, extra)
             for (i in inners) {
                 // the frame around the moved, shrunk outline; drawn clipped to the element
@@ -878,6 +941,13 @@ private fun CacheDrawScope.buildAnimStyle(style: YtStyle, src: YtThemeSource, a:
                 val width = ((s.width + n.float(YtAnimProp.STROKE_WIDTH)).coerceAtLeast(0f)) * d
                 if (width <= 0f) continue
                 val extra = n.float(YtAnimProp.CORNERS)
+                if (centred) {
+                    s.paint.strokeWidth = width
+                    s.paint.color = if (s.solid && firstSolid) n.argb(YtAnimProp.STROKE_COLOR, s.own) else s.own
+                    if (s.solid) firstSolid = false
+                    nc.drawPath(shape, s.paint)
+                    continue
+                }
                 if (width != lastInset || extra != lastInsetCorner) {
                     // inside the edge: the outline inset by half the width
                     build(inset, -width / 2f, extra)
