@@ -48,4 +48,12 @@ class YtBloomMathTest {
         YtBloomMath.saturate(r, g, b, 3f)
         assertTrue(r.all { it in 0f..1f } && g.all { it in 0f..1f })
     }
+
+    /** A light page keeps its detail: only what stands out from the frame glows. */
+    @Test
+    fun lightPageDoesNotWashOut() {
+        val page = IntArray(w * h) { i -> if (i % w < w / 2) 0xFFE6E6E6.toInt() else 0xFF262626.toInt() }
+        val out = YtBloomMath.bloom(page, w, h)
+        assertTrue(grey(out[15 * w + 1]) - grey(out[15 * w + w - 2]) > 100)
+    }
 }

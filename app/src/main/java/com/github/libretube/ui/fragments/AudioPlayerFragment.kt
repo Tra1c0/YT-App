@@ -85,9 +85,6 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
         private set
     private var playerController: MediaController? = null
 
-    /** YT: the connected controller, for the update dialog's pause. */
-    val ytController: MediaController? get() = playerController
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -106,6 +103,7 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
             }
 
             playerController = it
+            com.github.libretube.ui.yt.bloom.YtUpdateBloom.attach(it) // YT: the update dialog pauses playback
             handleServiceConnection()
         }
     }

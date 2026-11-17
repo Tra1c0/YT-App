@@ -35,7 +35,7 @@ object YtSsiEviction {
                 indexedAt = d.indexedAt,
                 passages = counts[d.videoId] ?: 0,
                 protected = d.vanished || d.videoId in keep || runCatching { YtArchive.store[d.videoId]?.protected == true }.getOrDefault(false),
-                watched = com.github.libretube.util.YtSeenLedger.isSeen(d.videoId, positions[d.videoId], d.durationSec),
+                watched = d.videoId in positions || com.github.libretube.util.YtSeenLedger.contains(d.videoId),
             )
         }
         val victims = YtSsiIndexRules.evictions(candidates, now, windowDays())

@@ -132,7 +132,7 @@ class YtPositionLedger(
         if (!enabled()) return
         val value = YtPositionRules.toPersist(snap, stored[snap.videoId], forced, explicitSeek)
         // the seen ledger sees every snapshot, also those whose position is not written
-        YtSeenLedger.note(snap.videoId, snap.positionMs, snap.durationMs, ended, snap.isLive, stored[snap.videoId], value)
+        YtSeenLedger.note(snap.videoId, snap.positionMs, snap.durationMs, ended, snap.isLive, explicitSeek, stored[snap.videoId], value)
         if (value == null) return
         stored[snap.videoId] = value
         YtTestHooks.log("YtPositions") { "save ${snap.videoId} $value/${snap.durationMs} forced=$forced seek=$explicitSeek" }

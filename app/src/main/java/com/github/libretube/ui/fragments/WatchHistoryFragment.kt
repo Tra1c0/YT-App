@@ -119,6 +119,11 @@ class WatchHistoryFragment : DynamicLayoutManagerFragment(R.layout.fragment_watc
                     lifecycleScope.launch(Dispatchers.IO) {
                         try {
                             UserDataRepositoryHelper.userDataRepository.clearWatchHistory()
+                            // YT: the box above had no effect; it clears the positions and the seen marks
+                            if (selected[0]) {
+                                com.github.libretube.db.DatabaseHolder.Database.watchPositionDao().deleteAll()
+                                com.github.libretube.util.YtSeenLedger.clear()
+                            }
                         } catch (e: Exception) {
                             context?.toastFromMainDispatcher(e.message.orEmpty())
                         }

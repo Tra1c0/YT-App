@@ -2,18 +2,20 @@ package com.github.libretube.ui.yt.bloom
 
 /**
  * YT: the maths of the update dialog's bloom (pure, no Android): a small ARGB frame becomes a soft,
- * blurred, glowing still picture. Steps: saturation, blur, glow (bright parts blurred wider and
- * screen-blended back), a slight dim and a hint of the design's accent as a multiplicative tint
- * (so a black frame stays black). Channels are worked on as floats in 0..1.
+ * blurred, glowing still picture. Steps: saturation, blur, glow (what is brighter than the frame
+ * around it, blurred wider and screen-blended back), a slight dim and a hint of the design's
+ * accent as a multiplicative tint (so a black frame stays black). Channels are floats in 0..1.
  */
 object YtBloomMath {
     data class Params(
-        val blurRadius: Int = 2,
-        val glowRadius: Int = 5,
-        val threshold: Float = 0.6f,
-        val glowGain: Float = 0.9f,
-        val saturation: Float = 1.25f,
-        val dim: Float = 0.25f,
+        val blurRadius: Int = 3,
+        val glowRadius: Int = 10,
+        /** What glows: brighter than this, and than the frame's mean brightness plus [lift]. */
+        val threshold: Float = 0.45f,
+        val lift: Float = 0.25f,
+        val glowGain: Float = 1.6f,
+        val saturation: Float = 1.4f,
+        val dim: Float = 0.18f,
         /** Accent as ARGB (alpha ignored), or null: no tint. */
         val accent: Int? = null,
         val tint: Float = 0.12f,
@@ -39,7 +41,11 @@ object YtBloomMath {
         val gr = FloatArray(size)
         val gg = FloatArray(size)
         val gb = FloatArray(size)
-        val t = params.threshold.coerceIn(0f, 0.99f)
+        // on a light page only what stands out glows, or the whole frame would wash out to white
+        var mean = 0.0
+        for (i in 0 until size) mean += 0.299 * r[i] + 0.587 * g[i] + 0.114 * b[i]
+        mean /= size
+        val t = maxOf(params.threshold, mean.toFloat() + params.lift).coerceIn(0f, 0.95f)
         for (i in 0 until size) {
             gr[i] = ((r[i] - t) / (1f - t)).coerceAtLeast(0f)
             gg[i] = ((g[i] - t) / (1f - t)).coerceAtLeast(0f)

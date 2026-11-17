@@ -122,7 +122,7 @@ fun rememberYtVisible(videos: List<StreamItem>?): List<StreamItem>? {
             visible,
             position = { video -> video.url?.toID()?.let { positions[it] } },
             duration = { video -> video.duration.takeUnless { video.isLive } },
-            ledgerSeen = { video -> video.url?.toID() in ledger },
+            ledgerSeen = { video -> video.url?.toID()?.let { ledger[it] }?.let(com.github.libretube.util.YtSeenRules::finished) == true },
         )
     }
 }

@@ -1,5 +1,6 @@
 package com.github.libretube.util
 
+import android.os.SystemClock
 import android.util.Log
 import com.github.libretube.LibreTubeApp
 import com.github.libretube.api.JsonHelper
@@ -24,6 +25,7 @@ import java.util.concurrent.Executors
 object YtSeenLedger {
     private const val TAG = "YtSeenLedger"
     private const val FILE = "yt_seen.json"
+    private const val TRACKS = 24
 
     @Serializable
     private data class Stored(
@@ -38,6 +40,11 @@ object YtSeenLedger {
 
     private var seeded = false
     private var prevented = 0
+
+    /** How the last few videos were played in this process (YtSeenRules.Track); guarded by [lock]. */
+    private val tracks = object : LinkedHashMap<String, YtSeenRules.Track>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, YtSeenRules.Track>?): Boolean = size > TRACKS
+    }
 
     private val flow: MutableStateFlow<Map<String, YtSeenRules.Entry>> by lazy {
         val stored = load()
@@ -57,9 +64,13 @@ object YtSeenLedger {
     fun isSeen(videoId: String, positionMs: Long?, durationSec: Long?, strict: Boolean = false): Boolean =
         YtSeenRules.isSeen(flow.value[videoId], positionMs, durationSec, strict)
 
+    /** Whether the entry of [videoId] also counts for "Gesehenes ausblenden" (YtSeenRules.finished). */
+    fun finished(videoId: String): Boolean = flow.value[videoId]?.let(YtSeenRules::finished) == true
+
     /**
-     * A player snapshot of [videoId]: marks it when the rules say so; counts a position write
-     * ([previousMs] before, [valueMs] now) that the old rule would have turned into "unseen".
+     * A player snapshot of [videoId] ([seek]: taken after a seek): marks it when the rules say so;
+     * counts a position write ([previousMs] before, [valueMs] now) that the old rule would have
+     * turned into "unseen".
      */
     fun note(
         videoId: String,
@@ -67,6 +78,7 @@ object YtSeenLedger {
         durationMs: Long,
         ended: Boolean,
         isLive: Boolean,
+        seek: Boolean,
         previousMs: Long? = null,
         valueMs: Long? = null,
     ) {
@@ -75,16 +87,26 @@ object YtSeenLedger {
             synchronized(lock) { prevented++ }
             save()
         }
-        if (!YtSeenRules.shouldMark(positionMs, durationMs, ended, isLive)) return
+        if (isLive) return
+        val track = synchronized(lock) {
+            YtSeenRules.track(tracks[videoId], positionMs, durationMs, SystemClock.elapsedRealtime(), seek)
+                .also { tracks[videoId] = it }
+        }
         val old = flow.value[videoId]
-        // a mark that stands only moves its best share and time on when something changed
+        val marks = if (old != null) {
+            // a mark that stands only moves its best share on
+            ended || YtSeenRules.reached(positionMs, durationMs)
+        } else {
+            YtSeenRules.shouldMark(positionMs, durationMs, ended, isLive, track)
+        }
+        if (!marks) return
         val next = YtSeenRules.mark(old, videoId, positionMs, durationMs, ended, System.currentTimeMillis())
         if (old != null && old.share >= next.share && old.durationSec == next.durationSec) return
         put(next)
-        YtTestHooks.log("YtSeen") { "mark $videoId share=${next.share} ended=$ended" }
+        YtTestHooks.log("YtSeen") { "mark $videoId share=${next.share} ended=$ended run=${track.runMs}" }
     }
 
-    /** Manual "Als gesehen markieren" from the card's hold menu. */
+    /** Manual "Als gesehen markieren" (the card's hold menu, LibreTube's "mark as watched"). */
     fun markSeen(videoId: String, durationSec: Long?) {
         put(YtSeenRules.Entry(videoId, System.currentTimeMillis(), 1f, durationSec?.takeIf { it > 0 }))
     }
@@ -94,9 +116,35 @@ object YtSeenLedger {
      * rule would show the video as seen again.
      */
     fun markUnseen(videoId: String) {
-        synchronized(lock) { flow.value = flow.value - videoId }
-        save()
+        forget(videoId)
         scope.launch { runCatching { Database.watchPositionDao().deleteByVideoId(videoId) } }
+    }
+
+    /**
+     * The user took [videoId] out of the watch history (LibreTube's "mark as unwatched", the
+     * history page): its mark goes with it.
+     */
+    fun forget(videoId: String) {
+        synchronized(lock) {
+            tracks.remove(videoId)
+            if (videoId !in flow.value) return
+            flow.value = flow.value - videoId
+        }
+        save()
+    }
+
+    /** The user cleared the watch history together with the watch positions: all marks go. */
+    fun clear() {
+        synchronized(lock) {
+            tracks.clear()
+            flow.value = emptyMap()
+        }
+        save()
+    }
+
+    /** Reads the file off the main thread (app start), so the first card does not wait for it. */
+    fun warm() {
+        io.execute { runCatching { flow } }
     }
 
     /** From a backup: entries are added, a newer one for the same video wins. */
@@ -122,21 +170,29 @@ object YtSeenLedger {
         return "${list.size} entries, last mark $last, $prevented automatic un-marks prevented, seeded=$seeded"
     }
 
-    /** First run: what the position tables say was watched to 90 % (history and feed durations). */
+    /**
+     * Takes over what stored positions call watched (YtSeenRules.seed): the first run and the
+     * account import. Marks that stand stay. Returns how many were found.
+     */
+    fun adopt(positionsMs: Map<String, Long>, durationsSec: Map<String, Long>): Int {
+        val found = YtSeenRules.seed(positionsMs, durationsSec, System.currentTimeMillis())
+        if (found.isEmpty()) return 0
+        synchronized(lock) { flow.value = found.associateBy { it.id } + flow.value }
+        save()
+        return found.size
+    }
+
+    /** First run: what the position tables call watched (durations from the history and the feed). */
     private suspend fun seed() {
         try {
             val positions = Database.watchPositionDao().getAll().associate { it.videoId to it.position }
             val durations = HashMap<String, Long>()
             runCatching { Database.feedDao().getAll().forEach { f -> f.duration?.let { durations[f.videoId] = it } } }
             runCatching { Database.watchHistoryDao().getAll().forEach { h -> h.duration?.let { durations[h.videoId] = it } } }
-            val found = YtSeenRules.seed(positions, durations, System.currentTimeMillis())
-            synchronized(lock) {
-                // what was marked meanwhile stays
-                flow.value = found.associateBy { it.id } + flow.value
-                seeded = true
-            }
+            val found = adopt(positions, durations)
+            synchronized(lock) { seeded = true }
             save()
-            YtTestHooks.log("YtSeen") { "seeded ${found.size} of ${positions.size} positions" }
+            YtTestHooks.log("YtSeen") { "seeded $found of ${positions.size} positions" }
         } catch (e: Exception) {
             Log.e(TAG, "seeding failed", e)
         }

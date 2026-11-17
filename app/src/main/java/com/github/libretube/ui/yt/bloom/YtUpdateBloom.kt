@@ -16,11 +16,13 @@ import android.widget.ImageView
 import androidx.compose.ui.graphics.toArgb
 import androidx.fragment.app.FragmentActivity
 import androidx.media3.session.MediaController
-import com.github.libretube.ui.fragments.AudioPlayerFragment
 import com.github.libretube.ui.fragments.PlayerFragment
 import com.github.libretube.helpers.YtDesign
 import com.github.libretube.ui.yt.YtMotionPrefs
 import com.github.libretube.ui.yt.palette
+import com.github.libretube.ui.yt.player.YtPlayerHost
+import com.github.libretube.ui.yt.player.YtPlayerModule
+import java.lang.ref.WeakReference
 
 /**
  * YT: while the update dialog is up, playback is paused (and resumed on a plain dismiss, only if
@@ -35,6 +37,7 @@ object YtUpdateBloom {
     private const val DIALOG_DIM = 0.05f
 
     private val main = Handler(Looper.getMainLooper())
+    private val worker = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "yt-bloom").apply { isDaemon = true } }
 
     private var overlay: ImageView? = null
     private var generation = 0
@@ -42,6 +45,7 @@ object YtUpdateBloom {
     // process-wide so that a dialog created again after a rotation keeps the ownership
     private var pausedId: String? = null
     private var owns = false
+    private var known: WeakReference<MediaController>? = null
 
     /** The dialog is on screen (onStart): pause and capture. */
     fun onShow(activity: Activity?, dialog: Dialog?) {
@@ -90,10 +94,19 @@ object YtUpdateBloom {
 
     // --- pause / resume ---
 
+    /**
+     * The player page's or the audio player's controller connected (YtBloomModule,
+     * AudioPlayerFragment). Held weakly: the dialog also opens in the settings (manual update
+     * check), where the playing page belongs to another activity.
+     */
+    fun attach(controller: MediaController) {
+        known = WeakReference(controller)
+    }
+
     private fun controller(activity: Activity): MediaController? {
+        known?.get()?.takeIf { it.isConnected }?.let { return it }
         val fragments = (activity as? FragmentActivity)?.supportFragmentManager?.fragments.orEmpty()
-        fragments.filterIsInstance<PlayerFragment>().firstOrNull()?.controller()?.let { return it }
-        return fragments.filterIsInstance<AudioPlayerFragment>().firstOrNull()?.ytController
+        return fragments.filterIsInstance<PlayerFragment>().firstOrNull()?.controller()
     }
 
     private fun pause(activity: Activity) {
@@ -172,7 +185,16 @@ object YtUpdateBloom {
         val pixels = IntArray(w * h)
         frame.getPixels(pixels, 0, w, 0, 0, w, h)
         val accent = runCatching { YtDesign.current().palette?.accent?.toArgb() }.getOrNull()
-        val out = YtBloomMath.bloom(pixels, w, h, YtBloomMath.Params(accent = accent))
+        // the maths take a few ten milliseconds: off the main thread, the dialog is animating in
+        worker.execute {
+            val out = runCatching { YtBloomMath.bloom(pixels, w, h, YtBloomMath.Params(accent = accent)) }.getOrNull()
+                ?: return@execute
+            main.post { runCatching { show(activity, dialog, out, w, h, token) } }
+        }
+    }
+
+    private fun show(activity: Activity, dialog: Dialog?, out: IntArray, w: Int, h: Int, token: Int) {
+        if (token != generation || activity.isFinishing || activity.isDestroyed) return
         val result = Bitmap.createBitmap(out, w, h, Bitmap.Config.ARGB_8888)
         val decor = activity.window?.decorView as? ViewGroup ?: return
         removeNow()
@@ -215,4 +237,9 @@ object YtUpdateBloom {
         (view.parent as? ViewGroup)?.removeView(view)
         view.setImageDrawable(null)
     }
+}
+
+/** YT: tells [YtUpdateBloom] the player page's controller (YtPlayerModules). */
+object YtBloomModule : YtPlayerModule {
+    override fun onController(host: YtPlayerHost, controller: MediaController) = YtUpdateBloom.attach(controller)
 }

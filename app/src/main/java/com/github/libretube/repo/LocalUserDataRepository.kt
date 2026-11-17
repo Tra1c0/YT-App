@@ -240,12 +240,15 @@ class LocalUserDataRepository : UserDataRepository {
     override suspend fun updateWatchHistoryEntry(metadata: WatchHistoryEntryMetadata) {
         metadata.positionMillis?.let {
             Database.watchPositionDao().insert(WatchPosition(videoId = metadata.videoId, position = it))
+            // YT: the manual "mark as watched" also enters the seen ledger
+            if (it == com.github.libretube.util.YtSeenRules.MANUAL_POSITION) com.github.libretube.util.YtSeenLedger.markSeen(metadata.videoId, null)
         }
     }
 
     override suspend fun removeFromWatchHistory(videoId: String) {
         Database.watchHistoryDao().deleteByVideoId(videoId)
         Database.watchPositionDao().deleteByVideoId(videoId)
+        com.github.libretube.util.YtSeenLedger.forget(videoId) // YT: the seen mark goes with it
     }
 
     override suspend fun getWatchHistory(

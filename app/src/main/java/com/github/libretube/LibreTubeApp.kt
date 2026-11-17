@@ -66,6 +66,7 @@ class LibreTubeApp : Application() {
 
         // YT: the playing queue is saved on every change and put back after a restart
         com.github.libretube.util.ytStart("queue store") { com.github.libretube.util.YtQueueStore.start(this) }
+        com.github.libretube.util.ytStart("seen ledger") { com.github.libretube.util.YtSeenLedger.warm() } // YT: seen marks (round 39)
 
         // YT: the archive's risk estimator (learns from vanished videos; reads its file on first use)
         com.github.libretube.util.ytStart("archive risk") { com.github.libretube.ui.yt.archive.risk.YtArchiveRisk.install() }

@@ -190,6 +190,15 @@ object YtImport {
                     WatchPosition(video.id, seconds * 1000L * percent.coerceIn(0, 100) / 100)
                 },
             )
+            // the seen ledger takes over what YouTube calls watched (YtSeenLedger)
+            com.github.libretube.util.YtSeenLedger.adopt(
+                newestFirst.mapNotNull { video ->
+                    val percent = video.watchedPercent ?: return@mapNotNull null
+                    val seconds = video.seconds ?: return@mapNotNull null
+                    video.id to seconds * 1000L * percent.coerceIn(0, 100) / 100
+                }.toMap(),
+                newestFirst.mapNotNull { video -> video.seconds?.let { video.id to it.toLong() } }.toMap(),
+            )
             counter.history += newestFirst.size
         }
     }

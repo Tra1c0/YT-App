@@ -370,12 +370,15 @@ class LibreTubeSyncServerUserDataRepository : UserDataRepository {
         tryHttpOrRaiseError {
             api.updateWatchHistoryEntry(metadata.videoId, metadata.toWatchHistoryItem())
         }
+        // YT: the manual "mark as watched" also enters the seen ledger
+        if (metadata.positionMillis == com.github.libretube.util.YtSeenRules.MANUAL_POSITION) com.github.libretube.util.YtSeenLedger.markSeen(metadata.videoId, null)
     }
 
     override suspend fun removeFromWatchHistory(videoId: String) {
         tryHttpOrRaiseError {
             api.removeFromWatchHistory(videoId)
         }
+        com.github.libretube.util.YtSeenLedger.forget(videoId) // YT: the seen mark goes with it
     }
 
     override suspend fun getPlaylistBookmarks(): List<PlaylistBookmark> {
