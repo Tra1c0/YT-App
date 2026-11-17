@@ -40,7 +40,7 @@ object YtWatch {
             setContent {
                 YtTheme(palette) {
                     // round 29: timestamps of the description's link overview seek the player
-                    CompositionLocalProvider(LocalYtDescriptionSeek provides actions.onSeek) {
+                    CompositionLocalProvider(LocalYtDescriptionSeek provides actions.onSeek, com.github.libretube.ui.yt.news.LocalYtKurzVideo provides controller.videoId) {
                     // YT: a keyword for the user's topic, offered while a topic video plays
                     val videoId = controller.videoId
                     val streams = controller.streams

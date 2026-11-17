@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -153,6 +155,34 @@ fun YtQuickSheet(
                             maxLines = 1,
                             style = TextStyle(fontFamily = palette.font, fontSize = 12.sp),
                         )
+                    }
+                }
+                // YT (round 39): the on-demand "Kurzfassung" of this video; a statement opens it at that time
+                val kurzId = remember(item) { item.url?.toID() }
+                if (kurzId != null) {
+                    var kurz by remember(item) { mutableStateOf(false) }
+                    val kurzContext = androidx.compose.ui.platform.LocalContext.current
+                    QuickRow(palette, R.drawable.ic_info, stringResource(R.string.yt_r39_kurz_row)) { kurz = !kurz }
+                    AnimatedVisibility(
+                        visible = kurz,
+                        enter = ytEnterTransition(expandVertically(spring(dampingRatio = 0.85f, stiffness = 420f)) + fadeIn(tween(160))),
+                        exit = ytExitTransition(shrinkVertically(tween(180, easing = YtEaseOut)) + fadeOut(tween(120))),
+                    ) {
+                        com.github.libretube.ui.yt.news.YtKurzBlock(
+                            videoId = kurzId,
+                            title = item.ytTitle,
+                            channel = item.uploaderName,
+                            color = sheetText.first,
+                            accent = palette.accent,
+                            font = palette.font,
+                            modifier = Modifier
+                                .heightIn(max = 280.dp)
+                                .verticalScroll(androidx.compose.foundation.rememberScrollState())
+                                .padding(horizontal = 6.dp),
+                        ) { seconds ->
+                            YtQueue.playKeepingQueue(kurzContext, item, seconds = seconds, audio = com.github.libretube.ui.yt.feed.YtFeed.audioNow())
+                            onDismiss()
+                        }
                     }
                 }
                 QuickRow(palette, R.drawable.ic_playlist_add, stringResource(R.string.save)) { onSave(item); onDismiss() }

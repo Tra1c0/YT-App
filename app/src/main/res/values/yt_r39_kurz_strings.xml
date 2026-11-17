@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 39: the on-demand "Kurzfassung" of any video (watch page, card menu). Same keys in values-de. -->
+<resources>
+    <string name="yt_r39_kurz_button">Create summary</string>
+    <string name="yt_r39_kurz_loading">Reading the subtitles…</string>
+    <string name="yt_r39_kurz_no_key">No AI key set up yet. Enter one in the settings under \"Summaries with sources\".</string>
+    <string name="yt_r39_kurz_open_settings">Open settings</string>
+    <string name="yt_r39_kurz_no_captions">This video has no subtitles, so no summary is possible.</string>
+    <string name="yt_r39_kurz_row">Summary</string>
+    <plurals name="yt_r39_kurz_parts">
+        <item quantity="one">from %d part</item>
+        <item quantity="other">from %d parts</item>
+    </plurals>
+</resources>

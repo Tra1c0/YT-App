@@ -276,7 +276,7 @@ internal fun WatchDescription(
         modifier = Modifier.fillMaxWidth(),
     )
     if (expanded && overview != null) {
-        YtDescriptionLinks(overview, onLink, color, linkColor, remember(font) { FontFamily(Font(font)) }, sizeSp = sizeSp)
+        YtDescriptionLinks(overview, onLink, color, linkColor, remember(font) { FontFamily(Font(font)) }, sizeSp = sizeSp, kurzTitle = streams.title, kurzChannel = streams.uploader)
     }
     }
 }
