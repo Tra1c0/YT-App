@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 38: storage page rows. -->
+<resources>
+    <string name="yt_r38_storage_archive">Archive (vanished videos)</string>
+    <string name="yt_r38_storage_ssi_model">Semantic model (SSI)</string>
+    <string name="yt_r38_storage_ssi_index">Moment index (SSI)</string>
+    <string name="yt_r38_storage_themes">Own designs (size only)</string>
+    <string name="yt_r38_storage_ssi_model_confirm">Delete the semantic model? The search then works on keywords only until it is downloaded again.</string>
+    <string name="yt_r38_storage_ssi_index_confirm">Empty the moment index? It is rebuilt in the background.</string>
+</resources>

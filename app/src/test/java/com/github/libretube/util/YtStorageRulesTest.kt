@@ -65,4 +65,23 @@ class YtStorageRulesTest {
         assertEquals("3,2 GB", YtStorageRules.formatSize(3_200_000_000, de))
         assertEquals("1.5 MB", YtStorageRules.formatSize(1_500_000, Locale.US))
     }
+
+    @Test
+    fun bigStoresAreOutsideClearAll() {
+        val stores = setOf(Row.ARCHIVE, Row.SSI_MODEL, Row.SSI_INDEX, Row.THEMES)
+        assertTrue(YtStorageRules.clearAllRows.none { it in stores })
+        assertEquals(YtStorageRules.Action.OPEN, YtStorageRules.action(Row.ARCHIVE))
+        assertEquals(YtStorageRules.Action.NONE, YtStorageRules.action(Row.THEMES))
+        assertTrue(YtStorageRules.clearable(Row.SSI_MODEL))
+        assertTrue(YtStorageRules.clearable(Row.SSI_INDEX))
+        assertTrue(YtStorageRules.confirms(Row.SSI_INDEX))
+        assertFalse(YtStorageRules.confirms(Row.IMAGES))
+    }
+
+    @Test
+    fun storeFoldersDoNotOverlap() {
+        val dirs = listOf(YtStorageRules.ARCHIVE_DIR, YtStorageRules.SSI_MODEL_DIR, YtStorageRules.THEMES_DIR, YtStorageRules.CRASH_DIR)
+        for (a in dirs) for (b in dirs) if (a != b) assertFalse("$a/$b", b.startsWith("$a/"))
+        assertEquals(4, YtStorageRules.SSI_DB_FILES.size)
+    }
 }

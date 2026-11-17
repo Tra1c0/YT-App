@@ -11,4 +11,12 @@
     <!-- the archive of vanished videos: large media, rebuilt from the feed (YtArchive) -->
     <exclude domain="file" path="yt_archive/" />
     <exclude domain="sharedpref" path="yt_archive.xml" />
+    <!-- SSI: the semantic model (about 135 MB), the benchmark files and the index (rebuilt from the feed) would break the backup quota; saved researches stay -->
+    <exclude domain="file" path="yt_ssi/model/" />
+    <exclude domain="file" path="yt_ssi/bench/" />
+    <exclude domain="database" path="yt_ssi.db" />
+    <exclude domain="database" path="yt_ssi.db-wal" />
+    <exclude domain="database" path="yt_ssi.db-shm" />
+    <exclude domain="database" path="yt_ssi.db-journal" />
+    <exclude domain="file" path="yt_crash/" />
 </full-backup-content>

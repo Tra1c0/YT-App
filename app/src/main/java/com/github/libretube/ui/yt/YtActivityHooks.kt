@@ -12,31 +12,31 @@ object YtActivityHooks {
     /** At the end of onCreate, once the screens are set up (not when it finished early). */
     fun onCreate(activity: MainActivity, savedInstanceState: Bundle?) {
         // the time box's end card, over every screen
-        YtTimeUpLayer.attach(activity)
+        com.github.libretube.util.ytStart("time-up layer") { YtTimeUpLayer.attach(activity) }
         // the ambilight around the docked mini player and on the screens' edges
-        com.github.libretube.ui.yt.ambilight.YtAmbilightLayer.attach(activity)
+        com.github.libretube.util.ytStart("ambilight layer") { com.github.libretube.ui.yt.ambilight.YtAmbilightLayer.attach(activity) }
         // the own design was turned off after a crash: say so, with repair and reset
-        com.github.libretube.ui.yt.builder.YtBuilderSafeMode.showNotice(activity)
+        com.github.libretube.util.ytStart("builder notice") { com.github.libretube.ui.yt.builder.YtBuilderSafeMode.showNotice(activity) }
         // the queue kept over a restart goes back (with its resume pill) if nothing else plays
-        YtQueueResume.onActivityCreated(activity, savedInstanceState)
+        com.github.libretube.util.ytStart("queue resume") { YtQueueResume.onActivityCreated(activity, savedInstanceState) }
         // first start of a new build: old YT APKs YT may delete without asking go quietly
-        com.github.libretube.util.YtApkClean.onAppStart(activity)
+        com.github.libretube.util.ytStart("apk clean") { com.github.libretube.util.YtApkClean.onAppStart(activity) }
         // SSI: its screen over every screen, and its background indexing (kept as scheduled)
-        com.github.libretube.ui.yt.ssi.YtSsiLayer.attach(activity)
-        com.github.libretube.ui.yt.ssi.YtSsi.schedule(activity)
+        com.github.libretube.util.ytStart("ssi layer") { com.github.libretube.ui.yt.ssi.YtSsiLayer.attach(activity) }
+        com.github.libretube.util.ytStart("ssi schedule") { com.github.libretube.ui.yt.ssi.YtSsi.schedule(activity) }
     }
 
     fun onStart(activity: MainActivity) {
         // "Worauf hast du Lust?" on a cold start and after 30 minutes away
-        YtIntentTrigger.onStart(activity)
+        com.github.libretube.util.ytStart("intent trigger start") { YtIntentTrigger.onStart(activity) }
         // a topic set to "Nur diese Sitzung" ends after half an hour away
-        YtTopicSession.onStart()
+        com.github.libretube.util.ytStart("topic session start") { YtTopicSession.onStart() }
     }
 
     fun onStop(activity: MainActivity) {
-        YtIntentTrigger.onStop(activity)
+        com.github.libretube.util.ytStart("intent trigger stop") { YtIntentTrigger.onStop(activity) }
         // the app may be killed in the background from now on: the queue goes to disk at once
-        com.github.libretube.util.YtQueueStore.flush()
-        if (!activity.isChangingConfigurations) YtTopicSession.onStop()
+        com.github.libretube.util.ytStart("queue flush") { com.github.libretube.util.YtQueueStore.flush() }
+        com.github.libretube.util.ytStart("topic session stop") { if (!activity.isChangingConfigurations) YtTopicSession.onStop() }
     }
 }

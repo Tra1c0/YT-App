@@ -30,6 +30,8 @@ object YtDiagnosis {
         val rows = buildList<Pair<String, String?>> {
             add("Time" to YtCrashLog.formatTime(System.currentTimeMillis()))
             addAll(YtCrashLog.buildLines())
+            // the YT parts of the start that threw and were skipped (YtStartGuard)
+            add("Start" to runCatching { YtStartGuard.diagnosis() }.getOrNull())
             add("Dark now" to if (YtDesignDark.active) "yes" else "no")
             add("Streams" to "NewPipe (on device)")
             add("Sync" to sync())
