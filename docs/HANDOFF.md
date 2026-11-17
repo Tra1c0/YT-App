@@ -51,6 +51,13 @@ not here.
   player page, the mini player, audio-only and with the dialog opened in the settings; resume only
   when the dialog paused it and no update was started; the video frame inside the bloom; no leftover
   overlay). The bloom's look was only judged on emulator screenshots run through the maths.
+  Emulator runs 62 and 63 (build 145): no crash in shapes, frequency, custom and synthwave; start,
+  player page and mini player look normal. In run 62 the emulator itself crashed twice during the
+  synthwave leg (segmentation fault of the emulator process), yet `scripts/crash-check.sh` printed
+  "No crash in any of the designs" and the run was green: a design whose emulator went away has no
+  verdict, so check the log for "the emulator went during the run" and the screenshots release for
+  missing designs (run 63, synthwave alone, passed). The script should report such a leg as
+  undecided (proposal A in the roadmap).
 - Seen rule, known limits: a video left more than 60 s before its end (long credits) gets no mark
   (the user can mark it by hand; a more lenient rule is one of the open questions); a mark needs
   playing in the same process (a stretch of min(60 s, 10 %) without a jump, or half of the video),
