@@ -34,6 +34,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -340,9 +342,13 @@ private fun Filters(
 /** A section title on a small plate of night glass, with a neon tube before it. */
 @Composable
 private fun SectionTitle(palette: YtPalette, title: String, onShowAll: (() -> Unit)? = null) {
+    // 0: full spacing, 1: tighter, 2: tighter and a little smaller; only then it may ellipsize
+    var fit by remember(title) { mutableIntStateOf(0) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 18.dp, bottom = 10.dp),
+        // the title plate takes the room "Alle anzeigen" leaves (weight, no fill); the rest sits between
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 18.dp, bottom = 10.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -362,11 +368,15 @@ private fun SectionTitle(palette: YtPalette, title: String, onShowAll: (() -> Un
                 text = title.uppercase(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                style = synthwaveDisplay(15.sp, palette.text, spacing = 1.2.sp),
+                style = synthwaveDisplay(
+                    size = if (fit >= 2) 13.sp else 15.sp,
+                    color = palette.text,
+                    spacing = when (fit) { 0 -> 1.2.sp; 1 -> 0.4.sp; else -> 0.sp },
+                ),
+                onTextLayout = { if (it.hasVisualOverflow && fit < 2) fit++ },
                 modifier = Modifier.padding(start = 10.dp),
             )
         }
-        Spacer(Modifier.weight(1f))
         if (onShowAll != null) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
