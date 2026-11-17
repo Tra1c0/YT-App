@@ -8,7 +8,7 @@ not here.
 
 ## Current state
 
-- Latest release: build 143 on `main` (per-build details: Build log below). Recent rounds built:
+- Latest release: build 144 on `main` (per-build details: Build log below). Recent rounds built:
   News overlay (pinch on the home; stories; cited summaries with a provider choice: OpenAI,
   Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
@@ -41,7 +41,9 @@ not here.
   ambilight layers, fetch gate (Diagnose "Abruf-Gate"), SSI index health (follow-up runs while
   charging, window + cap + tombstones with DB v3, vector release; check that the backlog in the
   Diagnose "SSI" text shrinks), storage rows, archive text retry and "Mehr laden", Synthwave section
-  headers, the own design's page background.
+  headers, the own design's page background. Emulator runs 60 (build 143) and 61 (build 144):
+  no crash in shapes, frequency, synthwave and custom; the screenshots of run 61 confirm the Synthwave
+  header and the own design's home.
 - What the user's phone proved (Diagnose of 2026-11-17, build 143): archive downloads against live
   YouTube, AI risk and script with the user's provider, SSI model download (hub-listed checksum),
   word timings (json3), the model's charsmap. Never used on the phone so far: animator, vector pen,
@@ -54,16 +56,17 @@ not here.
 - Theme builder leftovers: gradient stop colours and icon tint cannot animate; the editor's mini
   preview draws a THUMBNAIL slot at its layout place; no free transform origin; booleans of big paths
   take milliseconds.
-- Lint: `app/lint.xml` ignores MissingTranslation for yt_ files. Left on purpose: StringFormatInvalid
-  (9 strings with a literal % that are never formatted), StaticFieldLeak (6 singletons that dispose
-  their references), PluralsCandidate, UseKtx.
+- Lint after round 38: 170 findings in YT files (2295 before; app/lint.xml ignores MissingTranslation
+  for the yt_ files). Errors left: UnsafeOptInUsageError 16 (media3: lint wants
+  `androidx.annotation.OptIn`, the Kotlin `@OptIn` added in round 38 does not count), NewApi 10 in
+  `FrequencyVisuals.kt` (10) (check the SDK_INT guards; harmless on the user's Android 16),
+  StringFormatInvalid 9 (a literal % that is never formatted). Left on purpose: StaticFieldLeak (6
+  singletons that dispose their references), PluralsCandidate, UseKtx.
 - APK size 29 MB: 12.9 MB is the ONNX runtime (arm64 only). Ideas in ROADMAP "Eventuell": load the
   runtime on demand; replace the Anthropic Java SDK by a plain HTTP call (needs a live key to test).
 - Commit trailers: CLAUDE.md forbids model names and AI identifiers in commits, yet commits up to
   2026-11-16 carry Co-Authored-By and session lines. Since round 38 commits have none; history is not
   rewritten. The user was asked to confirm this reading.
-- `docs/BUTTONS.md` names `ui/yt/YouTubeWatch.kt` for the watch-page rows; the page code is in
-  `YtWatchDesigns.kt` (the dead `YouTubeWatchDetails` was removed in round 38).
 - Archive, untested paths: oEmbed answers for private/deleted videos, export and player UI, the three
   audio AI paths (endpoints from search summaries; OpenAI's diarize model reportedly retires
   2027-02-26).
@@ -206,6 +209,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 144: quality pass (round 38): start guards, fetch gate, SSI index health (backlog first, window + cap, vector release), storage rows, backup rules, lint fixes, Synthwave header fit, own design page background.
 - 143: SSI-3 (evidence: relations with verified quotes, comparison, timeline, report, saved research), TB-3 (vector: pen, booleans, masks, morph, motion paths, recording).
 - 142: SSI/TB stage 1/2 gap fixes (classic SSI entry, charsmap, calibration, json3 gate, parallel scan; mini player node tree, in-app mini/bar animations, state looks, image import, reorder spring).
 - 141: SSI-2 (AI re-rank, meaning-based passages, checked spans, feedback learning, in-app benchmark), TB-2 (animator).

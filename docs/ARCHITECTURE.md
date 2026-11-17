@@ -761,7 +761,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - Cheap audit (no model tokens): `bash scripts/audit.sh <out-dir>` runs Android Lint (release) and an
   R8 usage report in the current checkout and writes `summary.txt` through `scripts/audit_summary.py`
   (lint ids in YT files, unused YT resources, classes R8 dropped with many inlining false positives,
-  preference keys nobody names). `app/lint.xml` ignores MissingTranslation for the yt_ string files
+  preference keys nobody names). app/lint.xml ignores MissingTranslation for the yt_ string files
   (YT ships English and German only). Run it and an emulator check before reviewing code by hand.
 - Docs system: `scripts/docs_sync.py` (stdlib Python; config `scripts/docs_sync.json`),
   `scripts/check-strings.sh`, git hook installer `scripts/install-hooks.sh`, session-start hook
