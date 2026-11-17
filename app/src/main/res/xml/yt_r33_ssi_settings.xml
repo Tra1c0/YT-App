@@ -33,6 +33,15 @@
             app:title="@string/yt_r33_ssi_feed" />
 
         <ListPreference
+            android:icon="@drawable/ic_history"
+            app:defaultValue="30"
+            app:entries="@array/yt_r38_ssi_window_entries"
+            app:entryValues="@array/yt_r38_ssi_window_values"
+            app:key="yt_ssi_window_days"
+            app:title="@string/yt_r38_ssi_window"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
             android:icon="@drawable/ic_movie"
             app:defaultValue="6"
             app:entries="@array/yt_ssi_budget_values"

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- round 38: bounded SSI index -->
+    <string name="yt_r38_ssi_window">Zeitraum im Index</string>
+    <string-array name="yt_r38_ssi_window_entries">
+        <item>14 Tage</item>
+        <item>30 Tage</item>
+        <item>60 Tage</item>
+        <item>90 Tage</item>
+        <item>Unbegrenzt</item>
+    </string-array>
+</resources>

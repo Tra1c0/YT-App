@@ -45,10 +45,12 @@ class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
     suspend fun indexArchive(deadline: Long = Long.MAX_VALUE): Int = withContext(Dispatchers.IO) {
         if (!YtArchive.enabled() && YtArchive.store.all().isEmpty()) return@withContext 0
         val docs = db.docs()
+        val tombstones = db.tombstones()
         var count = 0
         for (meta in YtArchive.store.all()) {
             currentCoroutineContext().ensureActive()
             if (System.currentTimeMillis() > deadline) break
+            if (!YtSsiIndexRules.mayIndex(meta.videoId, tombstones)) continue
             val doc = docs[meta.videoId]
             if (doc != null && doc.version >= YtSsiVersions.MIN_KEPT) {
                 // already indexed (from the archive or from captions): only the vanish mark follows
@@ -174,7 +176,7 @@ class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
     }
 
     /** What [migrate] did: videos raised to the new analysis as they were, re-cut, unchanged, failed. */
-    data class Migration(val raised: Int = 0, val recut: Int = 0, val kept: Int = 0, val failed: Int = 0)
+    data class Migration(val raised: Int = 0, val recut: Int = 0, val kept: Int = 0, val failed: Int = 0, val embedded: Int = 0)
 
     /**
      * SSI-2's re-index, incremental: every video of an older analysis is raised to
@@ -185,18 +187,22 @@ class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
      * keeps them and their vectors; otherwise its new passages replace the old (their vectors
      * are made again by [embedPending]).
      */
-    suspend fun migrate(deadline: Long): Migration {
+    suspend fun migrate(deadline: Long, embedAfter: Boolean = false): Migration {
         val raised = withContext(Dispatchers.IO) { db.raiseVersion(YtSsiVersions.MIN_KEPT, YtSsiVersions.ANALYSIS) }
         if (!YtSsiModels.installed(context) || YtSsiModels.state.value == YtSsiModelState.Unsupported) return Migration(raised = raised)
         val todo = withContext(Dispatchers.IO) { db.docs().values }.filter { it.segmentation == YtSsiSegmentation.RULES }.sortedByDescending { it.indexedAt }
         var recut = 0
         var kept = 0
         var failed = 0
+        var migratedEmbedded = 0
         for (doc in todo) {
             currentCoroutineContext().ensureActive()
             if (System.currentTimeMillis() > deadline) break
             when (recut(doc, deadline)) {
-                true -> recut++
+                true -> {
+                    recut++
+                    if (embedAfter) migratedEmbedded += embedPending(deadline, only = setOf(doc.videoId), background = true)
+                }
                 false -> kept++
                 null -> {
                     failed++
@@ -204,11 +210,11 @@ class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
                 }
             }
         }
-        return Migration(raised, recut, kept, failed)
+        return Migration(raised, recut, kept, failed, migratedEmbedded)
     }
 
     /** Re-cuts [doc] by meaning: true when its passages changed, false when they stayed, null when the model or the deadline stopped it. */
-    private suspend fun recut(doc: YtSsiDoc, deadline: Long): Boolean? {
+    suspend fun recut(doc: YtSsiDoc, deadline: Long, background: Boolean = true): Boolean? {
         val stored = withContext(Dispatchers.IO) { db.segments(doc.videoId) }
         val speech = stored.filter { it.kind == YtSsiSegmentKind.SPEECH }.sortedBy { it.ord }
         if (speech.isEmpty()) {
@@ -222,7 +228,7 @@ class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
         for (batch in sentences.chunked(SENTENCE_BATCH)) {
             currentCoroutineContext().ensureActive()
             if (System.currentTimeMillis() > deadline) return null
-            val got = withContext(Dispatchers.Default) { YtSsiModels.use(context) { it.embed(batch.map { s -> s.text }, query = false) } } ?: return null
+            val got = withContext(Dispatchers.Default) { lowered(background) { YtSsiModels.use(context) { it.embed(batch.map { s -> s.text }, query = false) } } } ?: return null
             if (got.size != batch.size) return null
             vectors += got
         }
@@ -246,17 +252,25 @@ class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
         YtSsiCaptions.archiveLines(YtArchiveText.read(files.transcript).map { Triple(it.start, it.end, it.text) })
     }.getOrNull()
 
-    /** Embeds passages without a vector, [batch] at a time, until [deadline]; returns how many. */
-    suspend fun embedPending(deadline: Long, batch: Int = 16, only: Set<String>? = null): Int {
+    /** Milliseconds spent in the model by [embedPending] (for the speed in Diagnose). */
+    val embedMs = java.util.concurrent.atomic.AtomicLong()
+
+    /**
+     * Embeds passages without a vector, [batch] at a time, until [deadline]; returns how many.
+     * With [background] the calling thread runs at background priority, so the phone stays smooth.
+     */
+    suspend fun embedPending(deadline: Long, batch: Int = 16, only: Set<String>? = null, background: Boolean = only == null): Int {
         var done = 0
         val model = YtSsiModels.spec.version
         while (System.currentTimeMillis() < deadline) {
             currentCoroutineContext().ensureActive()
             val rows = withContext(Dispatchers.IO) { if (only == null) db.unembedded(model, batch) else db.unembeddedOf(model, only, batch) }
             if (rows.isEmpty()) break
+            val t0 = System.currentTimeMillis()
             val vectors = withContext(Dispatchers.Default) {
-                YtSsiModels.use(context) { it.embed(rows.map { (_, text) -> text }, query = false) }
+                lowered(background) { YtSsiModels.use(context) { it.embed(rows.map { (_, text) -> text }, query = false) } }
             } ?: break
+            embedMs.addAndGet(System.currentTimeMillis() - t0)
             withContext(Dispatchers.IO) {
                 db.putVectors(model, rows.mapIndexed { i, (id, _) ->
                     val (q, scale) = YtSsiVectors.quantize(vectors[i])
@@ -266,6 +280,64 @@ class YtSsiIndexer(private val context: Context, private val db: YtSsiDb) {
             done += rows.size
         }
         return done
+    }
+
+    private inline fun <T> lowered(on: Boolean, block: () -> T): T {
+        if (!on) return block()
+        val before = runCatching { android.os.Process.getThreadPriority(android.os.Process.myTid()) }.getOrNull()
+        runCatching { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND) }
+        try {
+            return block()
+        } finally {
+            if (before != null) runCatching { android.os.Process.setThreadPriority(before) }
+        }
+    }
+
+    /** What [processLocal] did. */
+    data class Local(val recut: Int = 0, val kept: Int = 0, val embedded: Int = 0)
+
+    /**
+     * A run's local work until [deadline], in this order (see [YtSsiIndexRules.plan]): (1) videos
+     * without any vector, newest first: cut by meaning when still rule-cut and embed their
+     * passages in the same pass; (2) the remaining passages without a vector; (3) old rule-cut
+     * videos that already have vectors. Needs the model.
+     */
+    suspend fun processLocal(deadline: Long): Local {
+        val model = YtSsiModels.spec.version
+        val ready = YtSsiModels.installed(context) && YtSsiModels.state.value != YtSsiModelState.Unsupported
+        var recut = 0
+        var kept = 0
+        var embedded = 0
+        if (!ready) return Local()
+        withContext(Dispatchers.IO) { db.raiseVersion(YtSsiVersions.MIN_KEPT, YtSsiVersions.ANALYSIS) }
+        val vectorless = withContext(Dispatchers.IO) { db.vectorlessVideos(model) }
+        val rulesCut = withContext(Dispatchers.IO) { db.docs().values.count { it.segmentation == YtSsiSegmentation.RULES } }
+        for (step in YtSsiIndexRules.plan(vectorless.size, withContext(Dispatchers.IO) { db.unembeddedCount(model) }, rulesCut, ready)) {
+            if (System.currentTimeMillis() >= deadline) break
+            when (step) {
+                YtSsiIndexRules.Step.CUT_AND_EMBED -> for (id in vectorless) {
+                    currentCoroutineContext().ensureActive()
+                    if (System.currentTimeMillis() >= deadline) break
+                    val doc = withContext(Dispatchers.IO) { db.docs()[id] } ?: continue
+                    if (doc.segmentation == YtSsiSegmentation.RULES) {
+                        when (recut(doc, deadline)) {
+                            true -> recut++
+                            false -> kept++
+                            null -> break
+                        }
+                    }
+                    embedded += embedPending(deadline, only = setOf(id), background = true)
+                }
+                YtSsiIndexRules.Step.EMBED -> embedded += embedPending(deadline, background = true)
+                YtSsiIndexRules.Step.RECUT -> {
+                    val m = migrate(deadline, embedAfter = true)
+                    recut += m.recut
+                    kept += m.kept
+                    embedded += m.embedded
+                }
+            }
+        }
+        return Local(recut, kept, embedded)
     }
 
     private companion object {
