@@ -13,8 +13,10 @@ import android.widget.Toast
 import com.github.libretube.R
 import com.github.libretube.constants.IntentData
 import com.github.libretube.ui.activities.MainActivity
+import com.github.libretube.ui.activities.SettingsActivity
 import com.github.libretube.util.YtStorage
 import com.github.libretube.util.YtStorageRules
+import com.github.libretube.util.YtStorageRules.Action
 import com.github.libretube.util.YtStorageRules.Row
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
@@ -32,7 +34,10 @@ import kotlinx.coroutines.launch
  */
 object YtStorageUi {
 
-    private val order = listOf(Row.IMAGES, Row.WEB, Row.UPDATE, Row.OTHER, Row.CRASH, Row.DOWNLOADS)
+    private val order = listOf(
+        Row.IMAGES, Row.WEB, Row.UPDATE, Row.OTHER, Row.CRASH, Row.ARCHIVE, Row.SSI_MODEL, Row.SSI_INDEX, Row.THEMES,
+        Row.DOWNLOADS,
+    )
 
     fun show(context: Context) {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -105,17 +110,18 @@ object YtStorageUi {
                 )
                 for (row in order) content.addView(rowView(themed, context, now, row) { action ->
                     when (action) {
-                        Action.CLEAR -> if (row == Row.CRASH) {
-                            confirm(themed, context.getString(R.string.yt_storage_crash_confirm)) {
-                                clear(setOf(Row.CRASH), render)
+                        Action.CLEAR -> if (YtStorageRules.confirms(row)) {
+                            confirm(themed, context.getString(confirmText(row))) {
+                                clear(setOf(row), render)
                             }
                         } else {
                             clear(setOf(row), render)
                         }
                         Action.OPEN -> {
                             dialog.dismiss()
-                            openDownloads(context)
+                            if (row == Row.ARCHIVE) openArchive(context) else openDownloads(context)
                         }
+                        Action.NONE -> Unit
                     }
                 })
             }
@@ -144,8 +150,7 @@ object YtStorageUi {
         }
     }
 
-    private enum class Action { CLEAR, OPEN }
-
+    
     private fun rowView(
         themed: Context,
         context: Context,
@@ -163,6 +168,10 @@ object YtStorageUi {
                 Row.OTHER -> R.string.yt_storage_other
                 Row.CRASH -> R.string.yt_storage_crash
                 Row.DOWNLOADS -> R.string.yt_storage_downloads
+                Row.ARCHIVE -> R.string.yt_r38_storage_archive
+                Row.SSI_MODEL -> R.string.yt_r38_storage_ssi_model
+                Row.SSI_INDEX -> R.string.yt_r38_storage_ssi_index
+                Row.THEMES -> R.string.yt_r38_storage_themes
             }
         )
         val detail = when {
@@ -177,13 +186,14 @@ object YtStorageUi {
             addView(text(themed, title, primary = true))
             addView(text(themed, detail, primary = false))
         }
-        val clearable = YtStorageRules.clearable(row)
+        val action = YtStorageRules.action(row)
         val button = MaterialButton(
             themed, null, androidx.appcompat.R.attr.borderlessButtonStyle
         ).apply {
-            setText(if (clearable) R.string.yt_storage_clear else R.string.yt_storage_open)
-            isEnabled = if (clearable) usage.clearableBytes > 0 else true
-            setOnClickListener { onAction(if (clearable) Action.CLEAR else Action.OPEN) }
+            setText(if (action == Action.OPEN) R.string.yt_storage_open else R.string.yt_storage_clear)
+            isEnabled = if (action == Action.CLEAR) usage.clearableBytes > 0 else true
+            visibility = if (action == Action.NONE) View.GONE else View.VISIBLE
+            setOnClickListener { onAction(action) }
         }
         return LinearLayout(themed).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -217,6 +227,19 @@ object YtStorageUi {
             .setPositiveButton(R.string.yt_storage_delete) { _, _ -> onYes() }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun confirmText(row: Row) = when (row) {
+        Row.SSI_MODEL -> R.string.yt_r38_storage_ssi_model_confirm
+        Row.SSI_INDEX -> R.string.yt_r38_storage_ssi_index_confirm
+        else -> R.string.yt_storage_crash_confirm
+    }
+
+    /** The archive's settings screen (Settings → Archiv). */
+    private fun openArchive(context: Context) {
+        val intent = Intent(context, SettingsActivity::class.java)
+            .putExtra(SettingsActivity.REDIRECT_KEY, SettingsActivity.REDIRECT_TO_YT_ARCHIVE)
+        runCatching { context.startActivity(intent) }
     }
 
     private fun openDownloads(context: Context) {

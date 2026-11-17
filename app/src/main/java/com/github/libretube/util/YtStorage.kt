@@ -54,6 +54,13 @@ object YtStorage {
             if (apk.isFile) rows[Row.UPDATE] = rows.getValue(Row.UPDATE).copy(kept = apk.length())
         }
         rows[Row.CRASH] = measure(crashDir(app))
+        // the big stores of filesDir and databases, each measured once (no folder lies inside another)
+        rows[Row.ARCHIVE] = measure(File(app.filesDir, YtStorageRules.ARCHIVE_DIR))
+        rows[Row.SSI_MODEL] = measure(File(app.filesDir, YtStorageRules.SSI_MODEL_DIR))
+        rows[Row.SSI_INDEX] = YtStorageRules.SSI_DB_FILES.fold(Usage()) { sum, name ->
+            sum + measure(app.getDatabasePath(name))
+        }
+        rows[Row.THEMES] = measure(File(app.filesDir, YtStorageRules.THEMES_DIR))
         rows[Row.DOWNLOADS] = downloadDirs(app).fold(Usage()) { sum, dir -> sum + measure(dir) }
         val crashNames = crashDir(app).list()?.toList().orEmpty()
 
@@ -79,7 +86,15 @@ object YtStorage {
                     Row.CRASH -> withContext(Dispatchers.IO) {
                         crashDir(app).listFiles()?.forEach { it.deleteRecursively() }
                     }
-                    Row.DOWNLOADS -> Unit
+                    Row.SSI_MODEL -> com.github.libretube.ui.yt.ssi.YtSsiModels.delete(app)
+                    Row.SSI_INDEX -> withContext(Dispatchers.IO) {
+                        com.github.libretube.ui.yt.ssi.YtSsi.db.clear()
+                        // DELETE alone keeps the file's size; give the space back
+                        runCatching { com.github.libretube.ui.yt.ssi.YtSsi.db.writableDatabase.execSQL("VACUUM") }
+                        com.github.libretube.ui.yt.ssi.YtSsi.dropVectors()
+                        com.github.libretube.ui.yt.ssi.YtSsiSearch.clear()
+                    }
+                    Row.DOWNLOADS, Row.ARCHIVE, Row.THEMES -> Unit
                 }
             }.onFailure { Log.w(TAG, "could not clear $row", it) }
         }

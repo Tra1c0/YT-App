@@ -13,7 +13,22 @@ import java.util.Locale
 object YtStorageRules {
 
     /** The rows of the storage page, in display order. */
-    enum class Row { IMAGES, WEB, UPDATE, OTHER, CRASH, DOWNLOADS }
+    enum class Row { IMAGES, WEB, UPDATE, OTHER, CRASH, DOWNLOADS, ARCHIVE, SSI_MODEL, SSI_INDEX, THEMES }
+
+    /** What a row's button does. */
+    enum class Action { CLEAR, OPEN, NONE }
+
+    /** filesDir folders of the big stores (each one is measured by exactly one row). */
+    const val ARCHIVE_DIR = "yt_archive"
+    const val SSI_MODEL_DIR = "yt_ssi/model"
+    const val THEMES_DIR = "yt_themes"
+
+    /** The index database and the side files SQLite keeps next to it. */
+    const val SSI_DB = "yt_ssi.db"
+    val SSI_DB_FILES = listOf(SSI_DB, "$SSI_DB-wal", "$SSI_DB-shm", "$SSI_DB-journal")
+
+    /** The cache rows: what "clear everything unneeded" empties. The stores below are never part of it. */
+    private val CACHE_ROWS = setOf(Row.IMAGES, Row.WEB, Row.UPDATE, Row.OTHER)
 
     /** Coil's disk cache folder in cacheDir (ImageHelper). */
     const val IMAGE_DIR = "coil"
@@ -46,10 +61,20 @@ object YtStorageRules {
     }
 
     /** Rows that have a "clear" button; downloads are only shown. */
-    fun clearable(row: Row): Boolean = row != Row.DOWNLOADS
+    fun clearable(row: Row): Boolean = action(row) == Action.CLEAR
+
+    /** Downloads and the archive open their own screen; the own themes are shown only. */
+    fun action(row: Row): Action = when (row) {
+        Row.DOWNLOADS, Row.ARCHIVE -> Action.OPEN
+        Row.THEMES -> Action.NONE
+        else -> Action.CLEAR
+    }
+
+    /** Rows whose clearing deletes something that is slow to get back: asked first. */
+    fun confirms(row: Row): Boolean = row == Row.CRASH || row == Row.SSI_MODEL || row == Row.SSI_INDEX
 
     /** Rows that "clear everything unneeded" empties: not downloads, not the crash reports. */
-    fun inClearAll(row: Row): Boolean = row != Row.DOWNLOADS && row != Row.CRASH
+    fun inClearAll(row: Row): Boolean = row in CACHE_ROWS
 
     val clearAllRows: Set<Row> get() = Row.entries.filter(::inClearAll).toSet()
 

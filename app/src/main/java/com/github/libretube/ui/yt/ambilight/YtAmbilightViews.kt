@@ -177,12 +177,38 @@ internal class YtAmbilightLayer(private val activity: Activity) : View(activity)
     companion object {
         private const val TAG = "yt_ambilight_layer"
 
-        /** Adds the layer to [activity]'s content; once per activity, only for the designs. */
+        /**
+         * Keeps the layer in step with the setting: only the designs get one, only while
+         * "yt_ambilight" is on (nothing is built while it is off), and a switch at runtime adds or
+         * removes it.
+         */
         fun attach(activity: Activity) {
-            // the classic look glows behind the player only (the page draws that)
-            if (YtDesign.current().palette == null) return
+            sync(activity)
+            val owner = activity as? androidx.lifecycle.LifecycleOwner ?: return
+            val prefs = runCatching { com.github.libretube.helpers.PreferenceHelper.settings }.getOrNull() ?: return
+            val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                if (key == YtAmbilightPrefs.ENABLED) sync(activity)
+            }
+            prefs.registerOnSharedPreferenceChangeListener(listener)
+            // the preferences hold a listener weakly: the observer below keeps it alive
+            owner.lifecycle.addObserver(object : androidx.lifecycle.DefaultLifecycleObserver {
+                @Suppress("unused") private val keep = listener
+                override fun onDestroy(owner: androidx.lifecycle.LifecycleOwner) {
+                    prefs.unregisterOnSharedPreferenceChangeListener(listener)
+                }
+            })
+        }
+
+        private fun sync(activity: Activity) {
             val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
-            if (content.findViewWithTag<View>(TAG) != null) return
+            val existing = content.findViewWithTag<View>(TAG)
+            // the classic look glows behind the player only (the page draws that)
+            val wanted = YtAmbilightPrefs.read().enabled && YtDesign.current().palette != null
+            if (!wanted) {
+                if (existing != null) content.removeView(existing)
+                return
+            }
+            if (existing != null) return
             val layer = YtAmbilightLayer(activity).apply { tag = TAG }
             content.addView(layer, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         }

@@ -16,7 +16,7 @@ class LibreTubeApp : Application() {
         super.onCreate()
         instance = this
         // YT: the archive's script part (dialogue script, audio analysis) registers itself
-        com.github.libretube.ui.yt.archive.script.YtArchiveScripts.register()
+        com.github.libretube.util.ytStart("archive scripts") { com.github.libretube.ui.yt.archive.script.YtArchiveScripts.register() }
 
         /**
          * Initialize the needed notification channels for DownloadService and BackgroundMode
@@ -29,7 +29,7 @@ class LibreTubeApp : Application() {
         PreferenceHelper.initialize(applicationContext)
         PreferenceHelper.migrate()
         // YT: the own design's theme (or, after a crash in it, back to the design before)
-        com.github.libretube.ui.yt.builder.YtBuilderSafeMode.onAppStart(this)
+        com.github.libretube.util.ytStart("builder safe mode") { com.github.libretube.ui.yt.builder.YtBuilderSafeMode.onAppStart(this) }
 
         /**
          * Set the api and the auth api url
@@ -45,7 +45,7 @@ class LibreTubeApp : Application() {
         )
 
         // YT: the background check for a new YT build (kept as scheduled; off cancels it)
-        com.github.libretube.util.YtUpdateNotifier.schedule(this)
+        com.github.libretube.util.ytStart("update notifier") { com.github.libretube.util.YtUpdateNotifier.schedule(this) }
 
         /**
          * Handler for uncaught exceptions
@@ -65,11 +65,11 @@ class LibreTubeApp : Application() {
         runCatching { com.github.libretube.ui.yt.account.YtAccount.wipeLeftovers() }
 
         // YT: the playing queue is saved on every change and put back after a restart
-        com.github.libretube.util.YtQueueStore.start(this)
+        com.github.libretube.util.ytStart("queue store") { com.github.libretube.util.YtQueueStore.start(this) }
 
         // YT: the archive's risk estimator (learns from vanished videos; reads its file on first use)
-        com.github.libretube.ui.yt.archive.risk.YtArchiveRisk.install()
-        com.github.libretube.ui.yt.archive.YtArchive.schedule(this) // YT: archive jobs (round 31), only while switched on
+        com.github.libretube.util.ytStart("archive risk") { com.github.libretube.ui.yt.archive.risk.YtArchiveRisk.install() }
+        com.github.libretube.util.ytStart("archive schedule") { com.github.libretube.ui.yt.archive.YtArchive.schedule(this) } // YT: archive jobs (round 31), only while switched on
     }
 
     /**

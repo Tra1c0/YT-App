@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 38: storage page rows. -->
+<resources>
+    <string name="yt_r38_storage_archive">Archiv (verschwundene Videos)</string>
+    <string name="yt_r38_storage_ssi_model">Semantisches Modell (SSI)</string>
+    <string name="yt_r38_storage_ssi_index">Momente-Index (SSI)</string>
+    <string name="yt_r38_storage_themes">Eigene Designs (nur Größe)</string>
+    <string name="yt_r38_storage_ssi_model_confirm">Das semantische Modell löschen? Die Suche arbeitet dann nur mit Stichwörtern, bis es wieder geladen ist.</string>
+    <string name="yt_r38_storage_ssi_index_confirm">Den Momente-Index leeren? Er wird im Hintergrund neu aufgebaut.</string>
+</resources>

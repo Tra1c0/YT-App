@@ -136,6 +136,7 @@ object YtSsiUi {
 
     /** Opens SSI; a non-empty [query] goes into the field and is searched at once (Instant). */
     fun open(context: Context, query: String = "") {
+        YtSsiLayer.ensure(context)
         val text = query.trim()
         if (text.isNotEmpty() && text != field.text) {
             field = TextFieldValue(text, TextRange(text.length))
@@ -183,8 +184,27 @@ object YtSsiUi {
 object YtSsiLayer {
     private const val TAG = "yt_ssi_layer"
 
-    /** Adds the layer to [activity]'s content, once per activity (every design, Standard too). */
+    /**
+     * Lazy: nothing is built at start. The screen is created on the first [YtSsiUi.open] (through
+     * [ensure]); an activity re-created while the screen was open builds it at once.
+     */
     fun attach(activity: ComponentActivity) {
+        if (YtSsiUi.shown) build(activity)
+    }
+
+    /** Builds the layer for the activity [context] belongs to, if it has none yet. */
+    internal fun ensure(context: Context) {
+        var c: Context? = context
+        while (c is android.content.ContextWrapper) {
+            if (c is ComponentActivity) {
+                build(c)
+                return
+            }
+            c = c.baseContext
+        }
+    }
+
+    private fun build(activity: ComponentActivity) {
         val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
         if (content.findViewWithTag<View>(TAG) != null) return
         val palette = YtDesign.current().palette ?: YtPalettes.YouTube

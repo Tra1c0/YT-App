@@ -35,6 +35,10 @@ class SettingsActivity : BaseActivity() {
         if (intent.extras?.getString(REDIRECT_KEY) == REDIRECT_TO_INTENT_SETTINGS) {
             navController.navigate(R.id.action_global_instanceSettings)
         }
+        // YT: the storage page's "Archiv" row opens the archive settings
+        if (savedInstanceState == null && intent.extras?.getString(REDIRECT_KEY) == REDIRECT_TO_YT_ARCHIVE) {
+            navController.navigate(R.id.action_global_ytArchiveSettings)
+        }
         // YT: emulator test of the sound wave's switch (crash-check.sh): straight to the player settings
         if (savedInstanceState == null && com.github.libretube.helpers.YtGuard.isEmulator &&
             intent.extras?.getString(REDIRECT_KEY) == "yt_player"
@@ -75,5 +79,6 @@ class SettingsActivity : BaseActivity() {
     companion object {
         const val REDIRECT_KEY = "redirect"
         const val REDIRECT_TO_INTENT_SETTINGS = "intent_settings"
+        const val REDIRECT_TO_YT_ARCHIVE = "yt_archive"
     }
 }
