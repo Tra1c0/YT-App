@@ -67,7 +67,7 @@
     <string name="yt_guide_hold_menu_t">Halte-Menü auf Karten</string>
     <string name="yt_guide_hold_menu_b">Langer Druck auf eine Karte öffnet ein Menü: Speichern, Teilen, Kanal, Ans Ende, Ausblenden, Kanal pausieren, Warum sehe ich das.</string>
     <string name="yt_guide_seen_t">Gesehenes markieren und ausblenden</string>
-    <string name="yt_guide_seen_b">Angefangene Videos bekommen einen dünnen Fortschrittsbalken, gesehene werden abgedunkelt und bekommen ein „Gesehen“-Abzeichen. Ganz ausblenden: Feed-Regler → Gesehene Videos.</string>
+    <string name="yt_guide_seen_b">Angefangene Videos bekommen einen dünnen Fortschrittsbalken, gesehene werden abgedunkelt und bekommen ein „Gesehen“-Abzeichen. Einmal gesehen bleibt gesehen, auch wenn du das Video erneut öffnest. Karte gedrückt halten: von Hand als gesehen oder ungesehen markieren. Ganz ausblenden: Feed-Regler → Gesehene Videos.</string>
     <string name="yt_guide_calm_t">Ruhigere Titel</string>
     <string name="yt_guide_calm_b">Titel in Großbuchstaben erscheinen in normaler Schreibung, „!!!“ wird zu „!“, Emoji-Ketten zu einem Emoji. Nur die Anzeige ändert sich.</string>
     <string name="yt_guide_s_search">Suche</string>
@@ -131,5 +131,5 @@
     <string name="yt_guide_storage_t">Speicher</string>
     <string name="yt_guide_storage_b">Zeigt, was Platz belegt, und leert Vorschaubilder, Caches und alte Update-Dateien. Abos, Verlauf, Einstellungen und Anmeldung bleiben immer.</string>
     <string name="yt_guide_updates_t">Updates mit Neuigkeiten</string>
-    <string name="yt_guide_updates_b">YT lädt Updates in der App, prüft sie und zeigt vorher, was seit deiner Version neu, behoben und geändert ist.</string>
+    <string name="yt_guide_updates_b">YT lädt Updates in der App, prüft sie und zeigt vorher, was seit deiner Version neu, behoben und geändert ist. Solange das Fenster offen ist, pausiert die Wiedergabe und die App dahinter leuchtet weich.</string>
 </resources>

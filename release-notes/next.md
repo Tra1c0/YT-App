@@ -1,18 +1,12 @@
 ## Behoben
-- Eigenes Design: Hinter der Startseite schien die klassische Seite durch (die Karten wirkten überlappt); sie hat jetzt einen deckenden Hintergrund.
-- Synthwave: Abschnitts-Überschriften werden nicht mehr abgeschnitten („GERADE LIVE“ statt „GERADE…“).
-- SSI: Der Hintergrundlauf holt fehlende Vektoren zuerst nach und läuft beim Laden in Folge weiter, bis der Rückstand weg ist; „Sofort“ wartet nicht mehr auf den Archiv-Abgleich.
-- Backup: SSI-Modell, SSI-Index und Absturzberichte sind ausgenommen, damit das Android-Backup unter 25 MB bleibt.
-- Mehrere Stellen, an denen die Oberfläche ihren Zustand verlor oder sich nicht aktualisierte; Frequency-Effekte sind auf älteren Android-Versionen abgesichert.
-- Archiv: unvollständige Text-Sicherungen werden nachgeholt.
+- Gesehene Videos wurden manchmal wieder als ungesehen angezeigt. Gefundene Ursachen: Ein fertiges Video erneut anzutippen überschrieb die gemerkte Stelle; Karten ohne Längenangabe konnten nie „Gesehen“ zeigen; ohne Verlaufseintrag fehlte die Markierung in Suche und Abos. Jetzt gilt: einmal gesehen bleibt gesehen.
+- „Verlauf löschen“ → „auch Wiedergabepositionen löschen“ hatte keine Wirkung; das Häkchen löscht jetzt die Positionen und die Gesehen-Markierungen.
 
 ## Neu
-- SSI: „Zeitraum im Index“ (14/30/60/90 Tage oder unbegrenzt, Standard 30) und Obergrenze von 250.000 Abschnitten; bewertete, gespeicherte, gesehene und verschwundene Videos bleiben.
-- Speicher-Seite zeigt Archiv, SSI-Modell, SSI-Index und eigene Designs; Modell und Index lassen sich dort leeren.
-- Archiv-Listen: „Mehr laden“ zeigt alle Einträge.
-- Diagnose: neue Zeilen „Start“ und „Abruf-Gate“; SSI zeigt Rückstand, Rechentempo, Zeitraum und Speicher.
+- Halte-Menü auf Karten: „Als gesehen markieren“ / „Als ungesehen markieren“.
+- Update-Fenster: Die Wiedergabe pausiert, solange es offen ist, und die App dahinter wird zu einem weichen, leuchtenden Standbild. Nach dem Schließen läuft das Video weiter (nicht, wenn du das Update gestartet hast).
+- Diagnose: neue Zeile „Gesehen“.
 
 ## Geändert
-- Ein fehlerhafter Baustein kann den App-Start nicht mehr zum Absturz bringen; SSI- und Ambilight-Ebene entstehen erst bei Bedarf.
-- Archiv, SSI und Abo-Scan rufen im Hintergrund nacheinander ab (gemeinsame Pause nach einer Bot-Prüfung).
-- Die SSI-Datenbank wird auf Version 3 gehoben; ein älterer Build kann sie danach nicht mehr öffnen.
+- „Gesehen“ wird dauerhaft gemerkt, wenn ein Video bis zum Ende lief oder höchstens 60 Sekunden übrig waren und es wirklich abgespielt wurde; bloßes Vorspulen ans Ende zählt nicht.
+- Die Gesehen-Markierungen sind Teil des Backups (bei „Wiedergabepositionen“); beim ersten Start werden die bisherigen übernommen.

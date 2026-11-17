@@ -23,9 +23,16 @@ not here.
   run, the user's Diagnose dump). Waiting for the user: SSI-3 and TB-3 acceptance, then the criteria
   for SSI-4 and TB-4. Start a NEW session for the next round: the long session cost the user most of
   a weekly quota (context over 600k tokens; every step re-reads it).
-- Focus (user, 2026-11-15): the SSI/TB stages only; roadmap items are paused. Unfinished, unpushed
-  agent branches exist for items 1 (Rest), 8/9, 12, 18 (`r34/miniresume`, `r34/introoutro`,
-  `r34/edgemargin`, `r34/hiddenpage`, local worktrees only; restart them fresh when resumed).
+- Focus (user, 2026-11-15): the SSI/TB stages only; roadmap items are paused. Nothing usable exists
+  for items 1 (Rest), 8/9, 12, 18 (the `r34/*` worktrees held no changes); only the seamless
+  minimize follow-up had uncommitted work in a local worktree. Restart all of them fresh.
+- Round 39 (2026-11-17): the user asked for two things (seen marks that vanish; update dialog pauses
+  and blooms) and gave a broad mandate ("Versetzt dich in die Rolle eines Software engineers … Meine
+  Basis ist nur der Anfang"), then narrowed it: "Aber bitte mit Absprache". Reading (the lead's):
+  propose freely, build only after the user's yes. The proposals and four open questions are in
+  `docs/ROADMAP.md` → "Vorschläge vom 17.11.2026". One proposal was built before the narrowing and
+  is NOT released: "Kurzfassung" for any video (branch `r39/kurz`, kept on the session branch, see
+  Open points); merge it only when the user says yes.
 - Next work: `docs/ROADMAP.md` → "Beschlossen", top to bottom. The music mode for the designs
   that do not react to sound yet is in that list but NOT released by the user: ask before
   starting it.
@@ -37,6 +44,19 @@ not here.
 
 ## Open points
 
+- Round 39, untested on the phone: the seen ledger (a finished video keeps its mark after it is
+  opened again; marks on cards without a duration; the hold menu rows; LibreTube's "mark as
+  watched/unwatched"; the history's "also clear watch positions" box; seeding on the first start:
+  Diagnose "Gesehen" shows the entries) and the update dialog's pause and bloom (pause from the
+  player page, the mini player, audio-only and with the dialog opened in the settings; resume only
+  when the dialog paused it and no update was started; the video frame inside the bloom; no leftover
+  overlay). The bloom's look was only judged on emulator screenshots run through the maths.
+- Seen rule, known limits: a video left more than 60 s before its end (long credits) gets no mark
+  (the user can mark it by hand; a more lenient rule is one of the open questions); a mark needs
+  playing in the same process (a stretch of min(60 s, 10 %) without a jump, or half of the video),
+  so a skip over long credits right after a restart falls back to the old position rule.
+- "Kurzfassung" for any video (round 39): built by an agent, compiles and its tests pass, not
+  reviewed by the lead, not merged. It waits for the user's decision.
 - Round 38 (quality pass), untested on the phone: start guards (Diagnose "Start"), lazy SSI and
   ambilight layers, fetch gate (Diagnose "Abruf-Gate"), SSI index health (follow-up runs while
   charging, window + cap + tombstones with DB v3, vector release; check that the backlog in the

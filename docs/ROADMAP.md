@@ -25,6 +25,36 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
   eigener „Tanz-Sprache“ je Design. Klang-Motor ist fertig (mit Frequency gebaut); offen: noch nicht
   freigegeben (L)
 
+## Vorschläge vom 17.11.2026 (warten auf deine Entscheidung)
+
+Du hast um Vorschläge gebeten, mit Absprache: Gebaut wird davon nur, was du freigibst.
+
+- **Kurzfassung für jedes Video** (fertig gebaut, noch nicht in der App): auf der Videoseite in der
+  aufgeklappten Beschreibung und im Halte-Menü, erst nach Tipp (kostet KI-Abrufe), 4–8 Aussagen mit
+  Zeit zum Anspringen, nutzt den Anbieter der News-Kurzfassungen. Wartet auf dein Ja.
+- **A – Vertrauen:** Prüfrunde in der App (pro Build eine kurze Liste mit „zur Funktion“ und
+  OK/Problem, Ergebnis in der Diagnose); der Emulator öffnet mehr Bildschirme (SSI, Theme-Builder,
+  Einstellungen, Update-Fenster); wöchentliches Auto-Backup (71); feste Routine, den Abruf-Baustein
+  (NewPipeExtractor) aktuell zu halten (je S–M)
+- **B – Zeit sparen:** Intro/Outro je Kanal (8/9), Stille am Ende überspringen (53),
+  SponsorBlock-Hinweis mit Rückgängig (28), Kapitel aus Kommentaren (23)
+- **C – Wiedergabe:** am Ende der Warteschlange anhalten (11), Einschlaf-Timer „Ende des Videos“ (4),
+  Rücksprung nach langer Pause (2), Untertitel/Qualität/Lautstärke je Kanal (5/6/52)
+- **D – Üben:** Erklärschleife mit Tempo-Rampe, Transponieren in Halbtönen, Einzähler, gespeicherte
+  und benannte Schleifen je Video (S–M)
+- **E – Sprachen lernen:** zwei Untertitelzeilen (Original und Deutsch), Satz-Schleife, Wort antippen
+  → Übersetzung, Anzeige „langsam gesprochen“ (M–L; Übersetzung ohne KI-Kosten erst prüfen)
+- **F – Feed:** 16, 21, 61, 65, 46 · **G – Komfort:** 36, 40, 42, 69, 68, 39
+- **H – Ordnung:** Einstellungen neu sortieren mit Suche; KI-Übersicht mit Tageslimit;
+  Nutzungszähler nur auf dem Gerät (welche Funktionen du wirklich benutzt)
+- **I – Technik:** Lint-Reste, App etwa 13 MB kleiner, Vektoren kompakter
+- **Offene Fragen:** (1) Kurzfassung in die App? (2) Welche Pakete, in welcher Reihenfolge?
+  (3) Nur für dich oder auch für andere veröffentlichen (dann: Android 8–12, Startbildschirm,
+  Barrierefreiheit, Rechtslage des Archivs recherchieren)? (4) Kern-Designs-Regel: Formen,
+  Frequency, Synthwave und Eigenes bekommen Design-Arbeit, die übrigen nur gemeinsame Funktionen?
+  (5) Soll „Gesehen“ großzügiger werden (z. B. ab 85 % abgespielt, auch wenn noch über eine Minute
+  Abspann übrig ist)?
+
 ## Eventuell / später (noch nicht entschieden)
 
 - **Aus der Qualitätsrunde (Runde 38), noch nicht entschieden:** eine KI-Übersicht (Anbieter, Schlüssel,
@@ -53,7 +83,7 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
 - **4** Einschlaf-Timer „Am Ende dieses Videos“ und sanftes Ausblenden (S)
 - **5** Untertitel-Sprache je Kanal merken (S)
 - **6** Qualität je Kanal merken (S)
-- **7** Pause bei Kopfhörer-/Bluetooth-Trennung, optional Fortsetzen beim Verbinden (S)
+- **7** Fortsetzen beim Wieder-Verbinden von Kopfhörern/Bluetooth, optional (die Pause beim Trennen macht die App schon) (S)
 - **11** Ende der Warteschlange: anhalten statt Autoplay (S)
 - **49** Weiterschauen über Geräte: Position aus dem YouTube-Verlauf übernehmen (M)
 - **52** Lautstärke-Korrektur je Kanal in dB (S)

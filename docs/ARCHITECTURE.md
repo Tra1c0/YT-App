@@ -351,6 +351,19 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   `updateWatchHistoryEntry`), pure `J/services/YtPositionRules.kt` (persist decision, < 5 s only
   after a seek, finished = DatabaseHelper rule or ≥ 95 %, switch/transition snapshot choice).
   The video id comes from the media item's extras, a snapshot only after that item was READY.
+- Seen ledger: `J/util/YtSeenLedger.kt` (file `yt_seen.json`; `entries` flow; `note()` is called by
+  `YtPositionLedger.persist` for every snapshot and keeps an in-memory `Track` per video; `isSeen`,
+  `finished`, `contains`; `markSeen`, `markUnseen`, `forget`, `clear`, `adopt`, `warm`; backup field
+  `BackupFile.ytSeen`; Diagnose "Gesehen"), pure `J/util/YtSeenRules.kt`: finished = playback ended
+  or at most 60 s left after 75 % of the PLAYER's duration; played = a stretch without a jump led
+  there or half of the video was played (`track`, `played`); `finished(entry)` keeps the hide
+  filter's stricter rule. Every "seen" decision reads it: `Modifier.ytSeen`/`ytSeenTop`,
+  `YtTopicChip`, `YtSeenRow`, the Abos order in `YtSubscriptions`, `rememberYtVisible`, `YtFeed`,
+  `YtArchiveRunner`, `YtSsiEviction`, `DatabaseHelper.isVideoWatched`, the hold menu row in
+  `YtQuickSheet`. Hooks in LibreTube: `LocalUserDataRepository` and
+  `LibreTubeSyncServerUserDataRepository` (manual "watched" = position `Long.MAX_VALUE` →
+  `markSeen`; `removeFromWatchHistory` → `forget`), `WatchHistoryFragment` (the box "also clear
+  watch positions" → positions and `clear()`), `YtImport` (`adopt`), `LibreTubeApp` (`warm`).
   Triggers: tick, pause, seek, `navigateVideo` (`beforeSwitch`), media item transition, ended,
   error, soft close, onDestroy (immediate), onTrimMemory. `saveWatchPosition()` flushes the ledger;
   `PlayerHelper.saveWatchPosition` is unused. With a sync server every write is an HTTP call.
@@ -447,7 +460,8 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   alive; others via RSS, 3 at a time with 200–600 ms jitter, channel page only if RSS fails; cache
   pref `yt_dead_subs_checks`; unsubscribe/undo through `SubscriptionHelper`), settings row and
   dialogs `Y/feed/YtDeadSubsPreference.kt` (key `yt_dead_subs` in `R/xml/yt_r12_d_prefs.xml`).
-- Watched marks: `Y/YtSeen.kt` (one shared `WatchPositionDao.observeAll()` flow, `Modifier.ytSeen`
+- Watched marks: `Y/YtSeen.kt` (one shared `WatchPositionDao.observeAll()` flow plus the seen
+  ledger's entries, the mark is `YtSeenRules.markOf`; `Modifier.ytSeen`
   dim + badge, pref `yt_seen_marks`; `ytSeenTop` = bar + time-left pill, a Modifier.Node placed on
   the thumbnail Box AFTER its children, grow animated in the node, read in draw only; Pitfall P12),
   rules `Y/feed/YtSeenMark.kt` (`left`, `pickFit` for small thumbnails). Held cards `Y/YtHeld.kt`:
@@ -575,7 +589,12 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   `R/xml/yt_data_extraction_rules.xml`). Details `docs/KONTO.md`.
 - In-app update: `J/util/UpdateChecker.kt` (offers only a higher build number), `J/util/YtSelfUpdater.kt`
   (download to cache, size + SHA-256 + signer check, PackageInstaller session; `holdsApk()`),
-  dialog `R/layout/dialog_yt_update.xml`, rules `J/util/YtUpdateRules.kt`:
+  dialog `R/layout/dialog_yt_update.xml` (while it is up: playback paused and the app behind
+  bloomed, `Y/bloom/YtUpdateBloom.kt`: hooks in `UpdateAvailableDialog` onStart/onStop/onDismiss/
+  onDestroy; the controller comes from `YtBloomModule` and `AudioPlayerFragment` through `attach`,
+  held weakly; PixelCopy of the window plus the video SurfaceView at 1/8 scale, maths
+  `Y/bloom/YtBloomMath.kt` on a worker thread, an ImageView on the decor view under the dialog
+  window), rules `J/util/YtUpdateRules.kt`:
   `installVerdict` treats FAILURE/BLOCKED/TIMEOUT as unsure ("Wird installiert…"); `nextStep`
   decides done / confirm / retry (`MAX_AUTO_RETRIES` = 2, fresh session with the kept, verified
   `cache/update/update.apk`) / system installer (`ACTION_VIEW` via `${applicationId}.fileprovider`,
@@ -806,13 +825,17 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - **P14** Every YT home paints an opaque page background: the classic LibreTube screen stays
   underneath the Compose home (the own design had none, so the Trends grid and its toolbar showed
   through between the cards; emulator run of build 143).
+- **P15** "Seen" is decided by `YtSeenLedger` / `YtSeenRules`, never by a card's duration or the
+  watch position alone: the position falls back when a video is opened again, cards may carry no
+  duration, and `DatabaseHelper.getWatchPosition` reads through the history row. A durable mark
+  needs proof of playing (`YtSeenRules.played`), or a drag to the end marks a video for good.
 
 ## File inventory
 
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (544 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (548 files; generated, do not edit)</summary>
 
 - `J/helpers/` (26): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtBuilderMode, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDeadSubs,
@@ -830,11 +853,11 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - `J/ui/preferences/` (5): YtArchiveCapacityPreference, YtArchiveSettings,
   YtChannelSpeedsPreference, YtInteractionSettings, YtUpdateNotifyPrefs
 - `J/ui/views/` (2): YtBottomNavigationView, YtEdgeScrollView
-- `J/util/` (26): YtApkClean, YtApkCleanRules, YtCrashLog, YtCrashText, YtDiagnosis, YtFetchGate,
+- `J/util/` (28): YtApkClean, YtApkCleanRules, YtCrashLog, YtCrashText, YtDiagnosis, YtFetchGate,
   YtFetchGateRules, YtMusicRules, YtNotifyChannels, YtPush, YtPushRules, YtQueueEdit,
-  YtQueuePersist, YtQueueStore, YtReleaseNotes, YtSelfUpdater, YtStartGuard, YtStorage,
-  YtStorageRules, YtStreamError, YtTitleCalm, YtUpdateNotifier, YtUpdateNotifyRules, YtUpdateRules,
-  YtUpdateWatch, YtUpdateWatchRules
+  YtQueuePersist, YtQueueStore, YtReleaseNotes, YtSeenLedger, YtSeenRules, YtSelfUpdater,
+  YtStartGuard, YtStorage, YtStorageRules, YtStreamError, YtTitleCalm, YtUpdateNotifier,
+  YtUpdateNotifyRules, YtUpdateRules, YtUpdateWatch, YtUpdateWatchRules
 - `J/workers/` (2): YtArchiveWorker, YtUpdateCheckWorker
 - `Y/` (117): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
   FrequencyMotion, FrequencyPillBars, FrequencyPulse, FrequencyPulseMath, FrequencyTimeBar,
@@ -863,6 +886,7 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   YtRiskText
 - `Y/archive/script/` (10): YtArchiveScript, YtArchiveScripts, YtScriptAudio, YtScriptAudioAis,
   YtScriptCheck, YtScriptDialogue, YtScriptInput, YtScriptLedger, YtScriptMaker, YtScriptTextAis
+- `Y/bloom/` (2): YtBloomMath, YtUpdateBloom
 - `Y/builder/` (56): YtAnimControl, YtAnimEngine, YtAnimMath, YtAnimModel, YtAnimPanel,
   YtAnimPresets, YtAnimRuntime, YtAnimTimeline, YtAnimTimelineView, YtAnimValidate, YtBuilderActive,
   YtBuilderFonts, YtBuilderImages, YtBuilderInks, YtBuilderPaint, YtBuilderSafeMode,

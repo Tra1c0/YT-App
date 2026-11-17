@@ -67,7 +67,7 @@
     <string name="yt_guide_hold_menu_t">Hold menu on cards</string>
     <string name="yt_guide_hold_menu_b">A long press on a card opens a menu: save, share, channel, add to the end, hide, pause channel, why am I seeing this.</string>
     <string name="yt_guide_seen_t">Mark or hide watched videos</string>
-    <string name="yt_guide_seen_b">Started videos get a thin progress bar, watched ones are dimmed with a “Watched” badge. To hide them altogether: feed controls → Watched videos.</string>
+    <string name="yt_guide_seen_b">Started videos get a thin progress bar, watched ones are dimmed with a “Watched” badge. Once watched stays watched, even when you open the video again. Hold a card to mark it as watched or unwatched by hand. To hide them altogether: feed controls → Watched videos.</string>
     <string name="yt_guide_calm_t">Calmer titles</string>
     <string name="yt_guide_calm_b">All-caps titles appear in normal case, “!!!” becomes “!”, chains of emoji become one. Only the display changes.</string>
     <string name="yt_guide_s_search">Search</string>
@@ -131,5 +131,5 @@
     <string name="yt_guide_storage_t">Storage</string>
     <string name="yt_guide_storage_b">Shows what takes space and clears thumbnails, caches and old update files. Subscriptions, history, settings and sign-in always stay.</string>
     <string name="yt_guide_updates_t">Updates with release notes</string>
-    <string name="yt_guide_updates_b">YT downloads updates in the app, checks them and first shows what is new, fixed and changed since your version.</string>
+    <string name="yt_guide_updates_b">YT downloads updates in the app, checks them and first shows what is new, fixed and changed since your version. While that window is open, playback pauses and the app behind it glows softly.</string>
 </resources>
