@@ -19,6 +19,10 @@ not here.
   (not a copy of Formen). The user uses Formen, Frequency, Synthwave most.
 - SSI and theme builder (TB) follow `docs/ETAPPEN.md` strictly: stage N+1 of either starts only after
   the user wrote "SSI-N abgenommen" AND "TB-N abgenommen"; no report is NOT acceptance there.
+- Round 38 (2026-11-17) was a quality pass over the whole app (tool-driven: lint, R8 report, emulator
+  run, the user's Diagnose dump). Waiting for the user: SSI-3 and TB-3 acceptance, then the criteria
+  for SSI-4 and TB-4. Start a NEW session for the next round: the long session cost the user most of
+  a weekly quota (context over 600k tokens; every step re-reads it).
 - Focus (user, 2026-11-15): the SSI/TB stages only; roadmap items are paused. Unfinished, unpushed
   agent branches exist for items 1 (Rest), 8/9, 12, 18 (`r34/miniresume`, `r34/introoutro`,
   `r34/edgemargin`, `r34/hiddenpage`, local worktrees only; restart them fresh when resumed).
@@ -33,26 +37,46 @@ not here.
 
 ## Open points
 
-- Round 37 (SSI-3, TB-3, build 143), untested on the phone and against live AI. SSI-3: providers may reject the enum schema (lenient parser); acceptance = user confirms 5 researches. TB-3: theme schema 3 (older builds may refuse); booleans of big paths take ms; free transform origin not built. SSI-4 and TB-4 acceptance criteria must be agreed with the user before they start.
-- Round 35 (SSI-2, TB-2), untested on the phone and against a live AI. SSI-2 acceptance needs the user's 10 examples as JSON (format under Settings → SSI-Suche → "Format der Testbeispiele") and the in-app benchmark (Recall@3 ≥ 0.90). TB-2 acceptance: Diagnose "Animator" planned vs. ran at 60/120 Hz, interrupt without jump, same after restart. TB-2 limits left: gradient stop colours and icon tint not animatable; the editor's mini preview draws a THUMBNAIL slot at its layout place. Round 36 closed the other stage 1/2 gaps (both stages). The SSI charsmap test uses an XLM-R snippet written from memory (hub blocked); check Diagnose "tokenizer charsmap" on the phone. `git commit` is often refused for agents by the permission check; the user gave standing permission (2026-11-16) for the lead to commit agents' staged work without asking.
-- Round 33 (SSI-1, TB-1, Ambilight), untested on the phone. SSI: json3 caption URLs through NewPipe, ORT speed, semantic cut-off 0.78/0.08 untuned, model SHA-256 not pinned (huggingface.co is now allowed in the environment, but direct fetches were refused by this session's permission check; the build-140 fix reads the checksum from the hub's file listing), no entry in STANDARD, APK +13 MB (ORT arm64 only; emulator = words only). TB: mini player draws only part of the mini component, no animated reorder in flows, no image import UI, pressed-state patch not drawn. Ambilight: PixelCopy on the phone, Glas docked copies frames twice. For SSI-1 acceptance the user must give 10 test queries with expected moments.
-- APK clean-up (round 32, build 137, untested on the phone): all-files access return + rescan, `createDeleteRequest`, uninstall dialogs, install from `local.apk`, the quiet start-of-build clean-up. Next asked by the user: theme builder ("Eigenes Design"; ask what "fluent in YouTube" means), Ambilight, then SSI (search framework; user's requirement file was assessed in chat: phase 1 = local index from archive + fetched captions with word timings from YouTube's ASR json3, FTS + on-device ONNX embeddings + RRF, intent rules + AI, moments with context, clip collection; WhisperX/PySceneDetect/Qdrant/ML Kit/Data API/IFrame replaced; visual search only via Gemini later).
-- Archive (round 31, build 136, untested on the phone and against live YouTube/AI): oEmbed codes for private/deleted, raw stream and SABR downloads, storyboard fetch, player/export/badge/slider UI, all three audio AI paths (endpoints from search summaries; OpenAI's diarize model reportedly retires 2027-02-26), risk weights hand-set. Known gaps: two jobs at once may fetch twice; a half-failed text save is not retried; the list shows the newest 150.
-- Stream error card (build 135, untested on the phone): look per design, open-in-YouTube intent, toast vs card. YouTube answers private videos with LOGIN_REQUIRED "Please sign in" (seen with KyUjsUuM8Gk).
-- Round 29 (untested on the phone): Formen minimize (window shape/colour during the drag, picture
-  corners inside the window, overshoot over the bar without cut, page fade timing: constants
-  `FADE_*`, `APPROACH_TO`, `NARROW_FROM` in `YtMiniMerge.kt`); description overview layout per
-  design and the ad detection on real descriptions (false positives); dead subs scan duration on
-  big lists and in account mode; `@handle` channel opening via NewPipe.
-- Update push (build 133): the user must add the GitHub secret `YT_PUSH_URL` (steps in FEATURES
-  "Sofort-Push bei Updates"); until then CI skips both push steps. No real push has run yet.
-- News (builds 129–131): untested on the phone. Check first: the card picture during the grow
-  (shared GraphicsLayer, API 29+), summary key test with a dummy key (R8 runtime), caption
-  download on the phone, default models per provider (from web search only).
+- Round 38 (quality pass), untested on the phone: start guards (Diagnose "Start"), lazy SSI and
+  ambilight layers, fetch gate (Diagnose "Abruf-Gate"), SSI index health (follow-up runs while
+  charging, window + cap + tombstones with DB v3, vector release; check that the backlog in the
+  Diagnose "SSI" text shrinks), storage rows, archive text retry and "Mehr laden", Synthwave section
+  headers, the own design's page background.
+- What the user's phone proved (Diagnose of 2026-11-17, build 143): archive downloads against live
+  YouTube, AI risk and script with the user's provider, SSI model download (hub-listed checksum),
+  word timings (json3), the model's charsmap. Never used on the phone so far: animator, vector pen,
+  SSI evidence views, hit feedback, benchmark. SSI-1..2 and TB-1..2 were accepted on the user's word
+  without measured values; SSI-3 and TB-3 wait for acceptance (docs/ETAPPEN.md).
+- SSI leftovers: model checksum not pinned in code (the hub's listing is used); the semantic cut-off
+  stays untuned until the user imports benchmark examples; AI providers may reject the stance enum
+  schema (lenient parser); if the 250,000-passage cap gets tight, binary vectors with rescoring would
+  cut vector memory about 8 times.
+- Theme builder leftovers: gradient stop colours and icon tint cannot animate; the editor's mini
+  preview draws a THUMBNAIL slot at its layout place; no free transform origin; booleans of big paths
+  take milliseconds.
+- Lint: `app/lint.xml` ignores MissingTranslation for yt_ files. Left on purpose: StringFormatInvalid
+  (9 strings with a literal % that are never formatted), StaticFieldLeak (6 singletons that dispose
+  their references), PluralsCandidate, UseKtx.
+- APK size 29 MB: 12.9 MB is the ONNX runtime (arm64 only). Ideas in ROADMAP "Eventuell": load the
+  runtime on demand; replace the Anthropic Java SDK by a plain HTTP call (needs a live key to test).
+- Commit trailers: CLAUDE.md forbids model names and AI identifiers in commits, yet commits up to
+  2026-11-16 carry Co-Authored-By and session lines. Since round 38 commits have none; history is not
+  rewritten. The user was asked to confirm this reading.
+- `docs/BUTTONS.md` names `ui/yt/YouTubeWatch.kt` for the watch-page rows; the page code is in
+  `YtWatchDesigns.kt` (the dead `YouTubeWatchDetails` was removed in round 38).
+- Archive, untested paths: oEmbed answers for private/deleted videos, export and player UI, the three
+  audio AI paths (endpoints from search summaries; OpenAI's diarize model reportedly retires
+  2027-02-26).
+- Untested on the phone from earlier rounds: APK clean-up (build 137), stream error card (135; YouTube
+  answers private videos with LOGIN_REQUIRED "Please sign in"), round 29 (Formen minimize constants in
+  `YtMiniMerge.kt`, description ad detection, dead subs in account mode, `@handle` channels), News
+  (129–131: card picture during the grow, caption download, default models per provider), most
+  features of rounds 12–15 (FEATURES.md status column).
+- Update push (build 133): the user must add the GitHub secret `YT_PUSH_URL`; the app is registered
+  with ntfy but no push has arrived yet (Diagnose 2026-11-17).
 - Keyboard integration (YT command interface, deep links, PROCESS_TEXT, summary for pasted links)
   is only an idea in ROADMAP "Unsortiert"; ask the user what their keyboard app can call and
   whether it is signed with the same key (signature permission) before building.
-- Not verified on a real phone: most features of rounds 12–15 (FEATURES.md status column).
 - Shorts: swiping to the next short did not react in the emulator.
 - Like/dislike InnerTube calls are untested against YouTube.
 - Live streams: if errors remain, a missing User-Agent on segment requests is the main suspect.
@@ -173,6 +197,12 @@ release `screens-<run>`.
   branch (`rNN/round`) and back it up to the session branch instead; `main` only gets merged work.
 - A fresh container has no Android SDK: install it first (ARCHITECTURE.md → Build) and write
   `local.properties` per worktree.
+- Accepting a stage on the user's word alone: ask for the Diagnose dump first; it shows what was really
+  used and it revealed two real SSI problems in round 38 (vector backlog, unbounded index).
+- Auditing by reading code: run `bash scripts/audit.sh` and the emulator check first; they cost no
+  model tokens and found what reviews had missed (own design without a page background, Synthwave
+  header cut off).
+- One endless session: use a new session per round (CLAUDE.md) and give agents tight briefs.
 
 ## Build log (one line per build, newest first; older builds in git)
 

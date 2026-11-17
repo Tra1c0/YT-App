@@ -27,6 +27,10 @@ Gebautes steht in [FEATURES.md](FEATURES.md).
 
 ## Eventuell / später (noch nicht entschieden)
 
+- **Aus der Qualitätsrunde (Runde 38), noch nicht entschieden:** eine KI-Übersicht (Anbieter, Schlüssel,
+  alle KI-Schalter und der Tagesverbrauch an einem Ort); SSI-Oberfläche mit Bewegung und Haptik im Stil
+  des Designs; kleinere App (ONNX-Laufzeit erst bei Bedarf laden, Anthropic-SDK durch einen schlanken
+  Abruf ersetzen); Vektoren etwa 8-fach kompakter speichern, für größere Indizes (je S–M)
 - **Startbildschirm beim ersten Öffnen** (optional, überspringbar): was anders ist als bei YouTube,
   mit Designs und Animationen nach deinen Entwürfen; nutzt die Inhalte der Anleitung (M–L)
 - **Browser-Erweiterung** für Firefox/Chrome mit den übertragbaren Funktionen (Titel, Gesehenes,

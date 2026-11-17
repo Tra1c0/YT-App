@@ -54,6 +54,13 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   `YtBatteryQualityModule`, `YtSoundModule` (details in their areas).
 - Activity hooks: `Y/YtActivityHooks.kt` (main activity lifecycle for round-12 features; package D
   opens the intent chooser on a cold start and after 30 min away; empty, it changes nothing).
+- Start guard: every YT call at app start (`LibreTubeApp.onCreate`) and in the activity hooks runs
+  inside `ytStart(part) { }` (`J/util/YtStartGuard.kt`): a failing part is logged and listed in the
+  Diagnose line "Start" instead of crashing every launch. Overlays are lazy: `YtSsiLayer` builds its
+  view on the first open, `YtAmbilightLayer` is attached only while `yt_ambilight` is on.
+- Background fetch gate: `J/util/YtFetchGate.kt` (+ pure `YtFetchGateRules.kt`): one background
+  fetcher at a time (archive runs, SSI feed phase, Deep, dead-subs scan) and ONE shared pause after a
+  bot check or 429 (the archive's throttle state); Diagnose line "Abruf-Gate". Playback is never gated.
 - Shared state: `Y/YtDock.kt` (dock progress, peek, slab, hover, drops), `Y/YtDrag.kt` (drag
   sessions, `miniBounds`, drop cards, `YtDragLayer` overlay that never takes touches),
   `Y/YtPlaybackClock.kt` (position flow + tagged seeks), `Y/YtOverlays.kt` (open-overlay counter).
@@ -603,6 +610,10 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   start-of-build clean-up from `YtActivityHooks.onCreate`), View section `Y/YtApkCleanUi.kt`.
   Manifest: storage permissions ≤ API 29, `MANAGE_EXTERNAL_STORAGE` (asked only on tap),
   `REQUEST_DELETE_PACKAGES`, `<queries>` (LibreTube packages + youtube.com VIEW intent).
+- Storage rows for the big stores (round 38): Archiv (opens its settings through
+  `SettingsActivity.REDIRECT_TO_YT_ARCHIVE`), SSI-Modell, SSI-Index (clear + VACUUM), Eigene Designs.
+  The backup rules exclude `yt_ssi/model/`, `yt_ssi/bench/`, `yt_ssi.db*` and `yt_crash/` (Android's
+  25 MB backup quota); researches, themes and the risk file stay in the backup.
 - Storage page: pure `J/util/YtStorageRules.kt`, `J/util/YtStorage.kt`, dialog `Y/YtStorageUi.kt`.
   Image cache via Coil's `diskCache.clear()`, WebView via `clearCache(true)` (cookies and
   `app_webview` never touched); `YtSelfUpdater.holdsApk()` protects a running update. LibreTube has
@@ -652,6 +663,9 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
     `J/ui/preferences/YtArchiveCapacityPreference.kt`, player `J/ui/activities/YtArchivePlayerActivity.kt`
     (144p + audio merged, or storyboard stills). Badge in `YtStreamErrorModule`; hold-menu row in
     `YtQuickSheet`.
+  - Round 38: runs are single-flight through `YtFetchGate`, throttle updates are atomic
+    (`YtArchive.updateThrottle`); pure `Y/archive/YtArchiveRetryRules.kt` retries half-saved text
+    entries (at most 3 times, a day apart); the lists load 150 entries at a time ("Mehr laden").
   - Risk estimator `Y/archive/risk/`: pure `YtRiskText` (tokens, cold-start keywords), `YtRiskModel`
     (global Beta 0.5/30, channel Beta-Binomial strength 20, shrunk word rates, keyword weights
     fading with labels, optional AI term, high ≥ 0.35, reason text, decay half-life 180 d, caps),
@@ -699,6 +713,13 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   view), `YtSsiReport` (Markdown/JSON, links with &t=), `YtSsiResearch` (`filesDir/yt_ssi/research/`);
   Android `YtSsiStances` (batches of 6, cached in `ai` key `st|`, budgets per search/day) and views
   `YtSsiEvidenceUi` (Belege, Vergleich, Zeitleiste, Bericht, Recherchen).
+  Round 38 (index health): `YtSsiArchiveCheck` (Instant no longer waits for the archive check; it runs
+  afterwards, at most every 10 min), pure `YtSsiIndexRules` + `YtSsiEviction` (window
+  `yt_ssi_window_days`, default 30; hard cap 250,000 passages; protected: rated, saved, benchmark,
+  vanished, watched; DB v3 `docs.state` tombstones so evicted videos are not indexed again),
+  `YtSsiChain` (follow-up runs `YtSsiChain0/1` while charging, cool and a backlog remains). Local work
+  per run: eviction, vectorless videos newest first (cut by meaning + embed in one pass), remaining
+  passages, old re-cuts last; 9 min budget. Vectors are released after 5 min idle and on onTrimMemory.
   Benchmark harness `T/ui/yt/ssi/YtSsiBench.kt` (fixtures `app/src/test/resources/ssi/`, synthetic).
 - Security: notes `docs/SICHERHEIT.md`; emulator-only switches guarded by `J/helpers/YtGuard.kt`.
 
@@ -737,6 +758,11 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - Emulator behaviour: Glas/Frost compile GPU programs over the slow GL pipe on a cold start → ANR;
   the script keeps error dialogs on and presses "Wait" (reported as a warning). Online videos do
   not play there, use the test video. uiautomator dumps can hang on never-idle screens.
+- Cheap audit (no model tokens): `bash scripts/audit.sh <out-dir>` runs Android Lint (release) and an
+  R8 usage report in the current checkout and writes `summary.txt` through `scripts/audit_summary.py`
+  (lint ids in YT files, unused YT resources, classes R8 dropped with many inlining false positives,
+  preference keys nobody names). `app/lint.xml` ignores MissingTranslation for the yt_ string files
+  (YT ships English and German only). Run it and an emulator check before reviewing code by hand.
 - Docs system: `scripts/docs_sync.py` (stdlib Python; config `scripts/docs_sync.json`),
   `scripts/check-strings.sh`, git hook installer `scripts/install-hooks.sh`, session-start hook
   `.claude/hooks/session-start.sh` (registered in `.claude/settings.json`). Reusable,
@@ -777,13 +803,16 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
   in a node placed after them.
 - **P13** A `pointerInput` inside a mini player's `Under` composable takes the page's touches
   (tap, drag, minimize). Route touches through the host's finger signal (`scene.finger`) instead.
+- **P14** Every YT home paints an opaque page background: the classic LibreTube screen stays
+  underneath the Compose home (the own design had none, so the Trends grid and its toolbar showed
+  through between the cards; emulator run of build 143).
 
 ## File inventory
 
 > Generated list of every YT Kotlin file by package.
 
 <!-- gen:inventory -->
-<details><summary>All YT Kotlin files by package (536 files; generated, do not edit)</summary>
+<details><summary>All YT Kotlin files by package (544 files; generated, do not edit)</summary>
 
 - `J/helpers/` (26): YtAppearanceOptions, YtAudioTap, YtBattery, YtBatteryPreviewRules,
   YtBatteryRules, YtBuilderMode, YtChannelPause, YtChannelSpeed, YtCommentMoments, YtDeadSubs,
@@ -801,10 +830,11 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - `J/ui/preferences/` (5): YtArchiveCapacityPreference, YtArchiveSettings,
   YtChannelSpeedsPreference, YtInteractionSettings, YtUpdateNotifyPrefs
 - `J/ui/views/` (2): YtBottomNavigationView, YtEdgeScrollView
-- `J/util/` (23): YtApkClean, YtApkCleanRules, YtCrashLog, YtCrashText, YtDiagnosis, YtMusicRules,
-  YtNotifyChannels, YtPush, YtPushRules, YtQueueEdit, YtQueuePersist, YtQueueStore, YtReleaseNotes,
-  YtSelfUpdater, YtStorage, YtStorageRules, YtStreamError, YtTitleCalm, YtUpdateNotifier,
-  YtUpdateNotifyRules, YtUpdateRules, YtUpdateWatch, YtUpdateWatchRules
+- `J/util/` (26): YtApkClean, YtApkCleanRules, YtCrashLog, YtCrashText, YtDiagnosis, YtFetchGate,
+  YtFetchGateRules, YtMusicRules, YtNotifyChannels, YtPush, YtPushRules, YtQueueEdit,
+  YtQueuePersist, YtQueueStore, YtReleaseNotes, YtSelfUpdater, YtStartGuard, YtStorage,
+  YtStorageRules, YtStreamError, YtTitleCalm, YtUpdateNotifier, YtUpdateNotifyRules, YtUpdateRules,
+  YtUpdateWatch, YtUpdateWatchRules
 - `J/workers/` (2): YtArchiveWorker, YtUpdateCheckWorker
 - `Y/` (117): AfterHome, AfterRooms, ClayHome, EditorialHome, FrequencyChrome, FrequencyHome,
   FrequencyMotion, FrequencyPillBars, FrequencyPulse, FrequencyPulseMath, FrequencyTimeBar,
@@ -826,8 +856,9 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - `Y/account/` (4): YtAccount, YtAccountSheet, YtImport, YtInnerTube
 - `Y/ambilight/` (9): YtAmbilight, YtAmbilightFallback, YtAmbilightMath, YtAmbilightModule,
   YtAmbilightPaint, YtAmbilightPrefs, YtAmbilightRules, YtAmbilightSampler, YtAmbilightViews
-- `Y/archive/` (11): YtArchive, YtArchiveContract, YtArchiveFetcher, YtArchiveMeta, YtArchivePrefs,
-  YtArchiveRules, YtArchiveRunner, YtArchiveStore, YtArchiveText, YtArchiveThrottle, YtArchiveUi
+- `Y/archive/` (12): YtArchive, YtArchiveContract, YtArchiveFetcher, YtArchiveMeta, YtArchivePrefs,
+  YtArchiveRetryRules, YtArchiveRules, YtArchiveRunner, YtArchiveStore, YtArchiveText,
+  YtArchiveThrottle, YtArchiveUi
 - `Y/archive/risk/` (6): YtArchiveRisk, YtRiskAiClient, YtRiskAiRules, YtRiskEngine, YtRiskModel,
   YtRiskText
 - `Y/archive/script/` (10): YtArchiveScript, YtArchiveScripts, YtScriptAudio, YtScriptAudioAis,
@@ -883,13 +914,14 @@ files: A mini player, B minimize drag, C player gestures, D home and feed, E com
 - `Y/shorts/` (10): YtShortsLook, YtShortsMath, YtShortsPlayer, YtShortsPrefs, YtShortsScreen,
   YtShortsSource, YtShortsStyle, YtShortsTestHooks, YtShortsTimeline, YtShortsView
 - `Y/sound/` (3): YtSound, YtSoundEngine, YtSoundShaping
-- `Y/ssi/` (43): YtSsi, YtSsiAiPlan, YtSsiBenchRunner, YtSsiBenchmark, YtSsiBoundary,
-  YtSsiCalibration, YtSsiCaptions, YtSsiCharsMap, YtSsiChronology, YtSsiClassicEntry,
-  YtSsiClipModule, YtSsiDb, YtSsiEmbedder, YtSsiEvidenceUi, YtSsiFusion, YtSsiHfChecksum,
-  YtSsiIndexer, YtSsiIntent, YtSsiJson3Gate, YtSsiLayer, YtSsiLearning, YtSsiModel, YtSsiModels,
-  YtSsiPlayRules, YtSsiPrefs, YtSsiQuoteCheck, YtSsiRanker, YtSsiReport, YtSsiRerank, YtSsiResearch,
-  YtSsiRoute, YtSsiScores, YtSsiSearch, YtSsiSegmenter, YtSsiSemanticSegmenter, YtSsiSettings,
-  YtSsiSources, YtSsiStance, YtSsiStances, YtSsiText, YtSsiTokenizer, YtSsiVectors, YtSsiVoice
+- `Y/ssi/` (47): YtSsi, YtSsiAiPlan, YtSsiArchiveCheck, YtSsiBenchRunner, YtSsiBenchmark,
+  YtSsiBoundary, YtSsiCalibration, YtSsiCaptions, YtSsiChain, YtSsiCharsMap, YtSsiChronology,
+  YtSsiClassicEntry, YtSsiClipModule, YtSsiDb, YtSsiEmbedder, YtSsiEviction, YtSsiEvidenceUi,
+  YtSsiFusion, YtSsiHfChecksum, YtSsiIndexRules, YtSsiIndexer, YtSsiIntent, YtSsiJson3Gate,
+  YtSsiLayer, YtSsiLearning, YtSsiModel, YtSsiModels, YtSsiPlayRules, YtSsiPrefs, YtSsiQuoteCheck,
+  YtSsiRanker, YtSsiReport, YtSsiRerank, YtSsiResearch, YtSsiRoute, YtSsiScores, YtSsiSearch,
+  YtSsiSegmenter, YtSsiSemanticSegmenter, YtSsiSettings, YtSsiSources, YtSsiStance, YtSsiStances,
+  YtSsiText, YtSsiTokenizer, YtSsiVectors, YtSsiVoice
 - `app/src/main/java/androidx/constraintlayout/motion/widget/` (1): YtMotionAccess
 
 </details>
