@@ -98,6 +98,12 @@ object YtArchive {
         prefs(context).getString(KEY_THROTTLE, null)?.let { json.decodeFromString(YtArchiveThrottle.State.serializer(), it) }
     }.getOrNull() ?: YtArchiveThrottle.State()
 
+    private val throttleLock = Any()
+
+    /** Reads, changes and saves the throttle state in one step, so concurrent writers never overwrite each other. */
+    fun updateThrottle(context: Context, change: (YtArchiveThrottle.State) -> YtArchiveThrottle.State): YtArchiveThrottle.State =
+        synchronized(throttleLock) { change(throttle(context)).also { saveThrottle(context, it) } }
+
     fun saveThrottle(context: Context, state: YtArchiveThrottle.State) =
         prefs(context).edit { putString(KEY_THROTTLE, json.encodeToString(YtArchiveThrottle.State.serializer(), state)) }
 

@@ -238,8 +238,8 @@ object YtSsi {
         listOf(throttle(context).backoffUntil, YtArchive.throttle(context).backoffUntil).filter { it > now }.maxOrNull()
 
     fun blocked(context: Context, reason: String) {
-        val now = System.currentTimeMillis()
-        saveThrottle(context, YtArchiveThrottle.afterBlock(throttle(context), now, reason))
+        // one pause for all background fetching: the archive's stored state
+        com.github.libretube.util.YtFetchGate.reportBlock(context, "SSI: $reason")
     }
 
     fun ranOk(context: Context, kind: String) {
@@ -313,24 +313,27 @@ object YtSsi {
         val archive = runCatching { indexer.indexArchive(deadline) }.onFailure { if (it is CancellationException) throw it }.getOrDefault(0)
         var online = 0
         if (feed() && mayAsk(context) && !stopped()) {
-            val known = db.docs()
-            val since = start - YtSsiPrefs.FEED_MAX_AGE_MS
-            val videos = withContext(Dispatchers.IO) {
-                runCatching { DatabaseHolder.Database.feedDao().getAll() }.getOrDefault(emptyList())
-            }.filter { !it.isShort && (it.duration ?: 0) > 0 && it.uploaded >= since && it.videoId !in known }
-                .take(YtSsiPrefs.FEED_PER_RUN)
-            for ((i, item) in videos.withIndex()) {
-                if (stopped() || System.currentTimeMillis() > deadline) break
-                if (i > 0) delay(YtArchiveThrottle.jitterMs())
-                try {
-                    if (indexer.indexOnline(item.videoId) == YtSsiIndexer.Outcome.INDEXED) online++
-                } catch (e: YtSsiIndexer.Blocked) {
-                    blocked(context, e.message ?: "blocked")
-                    note = "blocked"
-                    break
+            val ran = com.github.libretube.util.YtFetchGate.background("SSI") {
+                val known = db.docs()
+                val since = start - YtSsiPrefs.FEED_MAX_AGE_MS
+                val videos = withContext(Dispatchers.IO) {
+                    runCatching { DatabaseHolder.Database.feedDao().getAll() }.getOrDefault(emptyList())
+                }.filter { !it.isShort && (it.duration ?: 0) > 0 && it.uploaded >= since && it.videoId !in known }
+                    .take(YtSsiPrefs.FEED_PER_RUN)
+                for ((i, item) in videos.withIndex()) {
+                    if (stopped() || System.currentTimeMillis() > deadline) break
+                    if (i > 0) delay(YtArchiveThrottle.jitterMs())
+                    try {
+                        if (indexer.indexOnline(item.videoId) == YtSsiIndexer.Outcome.INDEXED) online++
+                    } catch (e: YtSsiIndexer.Blocked) {
+                        blocked(context, e.message ?: "blocked")
+                        note = "blocked"
+                        break
+                    }
                 }
+                if (note == null) ranOk(context, "background")
             }
-            if (note == null) ranOk(context, "background")
+            if (!ran) note = "skipped: another fetch is running"
         }
         var migration = YtSsiIndexer.Migration()
         if (!stopped()) {

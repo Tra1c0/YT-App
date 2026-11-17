@@ -9,6 +9,7 @@ import com.github.libretube.extensions.toID
 import com.github.libretube.ui.yt.archive.script.YtScriptTextAis
 import com.github.libretube.ui.yt.news.YtNewsProviderSetup
 import com.github.libretube.ui.yt.news.YtNewsSummaryKey
+import com.github.libretube.util.YtFetchGate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,8 +26,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.time.ZoneId
 
 /**
- * How long the last Instant search took: [totalMs] from the query to its hits (the archive's
- * new transcripts, the parse and the local search), [localMs] the local search alone, [scan]
+ * How long the last Instant search took: [totalMs] from the query to its hits (the parse and the local
+ * search; the archive check runs after it), [localMs] the local search alone, [scan]
  * the vector scan in it (null without the model).
  */
 data class YtSsiLatency(val at: Long, val totalMs: Long, val localMs: Long, val scan: YtSsiSearch.Scan?) {
@@ -170,8 +171,9 @@ object YtSsiSearch {
     private suspend fun search(context: Context, id: Long, query: String, depth: YtSsiDepth) {
         val started = SystemClock.elapsedRealtime()
         val db = YtSsi.db
-        // the archive's new transcripts first (local and quick when nothing changed)
-        runCatching { YtSsi.indexer.indexArchive(System.currentTimeMillis() + 3_000) }
+        // Deep: the archive's new transcripts first (local and quick when nothing changed).
+        // Instant answers from the index as it is; its archive check runs afterwards in the background.
+        if (depth == YtSsiDepth.DEEP) runCatching { YtSsiArchiveCheck.check(3_000, force = true) }
         val docs = withContext(Dispatchers.IO) { db.docs() }
         val known = docs.values.mapNotNull { it.channelName }.filter { it.isNotBlank() }.distinct()
         val intent = YtSsiIntentParser.parse(query, System.currentTimeMillis(), ZoneId.systemDefault(), known)
@@ -210,6 +212,7 @@ object YtSsiSearch {
         if (depth == YtSsiDepth.INSTANT) {
             val now = SystemClock.elapsedRealtime()
             lastInstant = YtSsiLatency(System.currentTimeMillis(), now - started, now - localStart, lastScan)
+            archiveCheckLater(context, id)
             return
         }
 
@@ -250,34 +253,70 @@ object YtSsiSearch {
             finish(context, id, intent, setup)
             return
         }
-        set(id) { it.copy(phase = YtSsiPhase.DISCOVER) }
-        val budget = YtSsi.deepBudget()
-        val candidates = discover(intent, plan, docs.keys)
-        val todo = candidates.take(budget)
-        set(id) { it.copy(phase = YtSsiPhase.FETCH, budget = todo.size) }
         var fetched = 0
-        for ((i, video) in todo.withIndex()) {
-            if (i > 0) delay(YtSsiPrefs.deepJitterMs())
-            val videoId = video.url?.toID() ?: continue
-            try {
-                YtSsi.indexer.indexOnline(videoId)
-            } catch (e: YtSsiIndexer.Blocked) {
-                YtSsi.blocked(context, e.message ?: "blocked")
-                set(id) { it.copy(notes = it.notes + YtSsiRunNote.BLOCKED) }
-                break
+        var total = 0
+        // a user-started Deep waits for the gate of background fetching, it is never skipped
+        YtFetchGate.user("SSI Deep") {
+            set(id) { it.copy(phase = YtSsiPhase.DISCOVER) }
+            val budget = YtSsi.deepBudget()
+            val candidates = discover(intent, plan, docs.keys)
+            val todo = candidates.take(budget)
+            total = todo.size
+            set(id) { it.copy(phase = YtSsiPhase.FETCH, budget = todo.size) }
+            for ((i, video) in todo.withIndex()) {
+                if (i > 0) delay(YtSsiPrefs.deepJitterMs())
+                val videoId = video.url?.toID() ?: continue
+                try {
+                    YtSsi.indexer.indexOnline(videoId)
+                } catch (e: YtSsiIndexer.Blocked) {
+                    YtSsi.blocked(context, e.message ?: "blocked")
+                    set(id) { it.copy(notes = it.notes + YtSsiRunNote.BLOCKED) }
+                    break
+                }
+                fetched++
+                fromYouTube += videoId
+                // the new passages get their vectors now (a few seconds per video), then everything is searched again
+                if (YtSsiModels.state.value == YtSsiModelState.Ready) {
+                    runCatching { YtSsi.indexer.embedPending(System.currentTimeMillis() + EMBED_PER_VIDEO_MS, only = setOf(videoId)) }
+                        .onFailure { if (it is CancellationException) throw it }
+                }
+                emit(YtSsiPhase.FETCH, fetched, todo.size)
             }
-            fetched++
-            fromYouTube += videoId
-            // the new passages get their vectors now (a few seconds per video), then everything is searched again
-            if (YtSsiModels.state.value == YtSsiModelState.Ready) {
-                runCatching { YtSsi.indexer.embedPending(System.currentTimeMillis() + EMBED_PER_VIDEO_MS, only = setOf(videoId)) }
-                    .onFailure { if (it is CancellationException) throw it }
-            }
-            emit(YtSsiPhase.FETCH, fetched, todo.size)
         }
         if (YtSsiRunNote.BLOCKED !in _run.value.notes) YtSsi.ranOk(context, "deep")
-        emit(if (setup != null && YtSsi.aiRerank()) YtSsiPhase.RERANK else YtSsiPhase.DONE, fetched, todo.size)
+        emit(if (setup != null && YtSsi.aiRerank()) YtSsiPhase.RERANK else YtSsiPhase.DONE, fetched, total)
         finish(context, id, intent, setup)
+    }
+
+    private val checking = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    /**
+     * Instant: the archive check (when due) runs after the hits are shown; when it added passages
+     * and this search is still the one on screen, its hits are refreshed once.
+     */
+    private fun archiveCheckLater(context: Context, id: Long) {
+        if (!checking.compareAndSet(false, true)) return
+        scope.launch {
+            try {
+                val added = YtSsiArchiveCheck.check(ARCHIVE_CHECK_MS)
+                if (added > 0) refreshInstant(context, id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.i(TAG, "archive check failed: $e")
+            } finally {
+                checking.set(false)
+            }
+        }
+    }
+
+    private suspend fun refreshInstant(context: Context, id: Long) {
+        val current = _run.value
+        val intent = current.intent
+        if (current.id != id || current.depth != YtSsiDepth.INSTANT || current.phase != YtSsiPhase.DONE || intent == null) return
+        val (hits, semanticNotes) = local(context, intent)
+        val size = withContext(Dispatchers.IO) { YtSsi.db.docs().size }
+        set(id) { it.copy(hits = hits, notes = it.notes + semanticNotes - YtSsiRunNote.EMPTY_INDEX, indexedVideos = size) }
     }
 
     /** Deep's last step: the AI re-rank of the hits that are there (when on), then done. */
@@ -440,6 +479,7 @@ object YtSsiSearch {
         private set
 
     private const val SEMANTIC_K = 200
+    private const val ARCHIVE_CHECK_MS = 30_000L
     private const val AI_TIMEOUT_MS = 25_000L
     private const val RERANK_TIMEOUT_MS = 40_000L
     private const val EMBED_PER_VIDEO_MS = 20_000L
