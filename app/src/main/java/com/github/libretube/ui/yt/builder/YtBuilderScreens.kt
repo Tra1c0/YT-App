@@ -1,5 +1,6 @@
 package com.github.libretube.ui.yt.builder
 
+import androidx.compose.foundation.background
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -166,7 +167,8 @@ fun YtCustomHomeScreen(
         palette = palette,
         isRefreshing = data.isLoading && data.forYou != null,
         onRefresh = actions.onRefresh,
-        modifier = Modifier.fillMaxSize(),
+        // opaque like every YT home: the classic screen stays underneath (Pitfall P14)
+        modifier = Modifier.fillMaxSize().background(palette.background),
     ) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(columns),
