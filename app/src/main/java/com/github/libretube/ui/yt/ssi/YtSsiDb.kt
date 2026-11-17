@@ -37,7 +37,8 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
             """CREATE TABLE docs (id INTEGER PRIMARY KEY AUTOINCREMENT, video_id TEXT NOT NULL UNIQUE, title TEXT NOT NULL,
                channel_id TEXT, channel_name TEXT, description TEXT, uploaded INTEGER, duration_sec INTEGER, language TEXT,
                auto INTEGER, timing TEXT NOT NULL, source TEXT NOT NULL, vanished INTEGER NOT NULL DEFAULT 0, chapters TEXT,
-               indexed_at INTEGER NOT NULL, version INTEGER NOT NULL, seg TEXT NOT NULL DEFAULT 'RULES')""",
+               indexed_at INTEGER NOT NULL, version INTEGER NOT NULL, seg TEXT NOT NULL DEFAULT 'RULES',
+               state INTEGER NOT NULL DEFAULT 0)""",
         )
         db.execSQL(
             """CREATE TABLE segs (id INTEGER PRIMARY KEY AUTOINCREMENT, video_id TEXT NOT NULL, ord INTEGER NOT NULL,
@@ -70,10 +71,14 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        if (oldVersion == 1) {
-            // SSI-2: the passages stay (re-cut one video at a time in the background, see YtSsiIndexer.migrate)
-            db.execSQL("ALTER TABLE docs ADD COLUMN seg TEXT NOT NULL DEFAULT 'RULES'")
-            createFeedback(db)
+        if (oldVersion in 1..2) {
+            if (oldVersion == 1) {
+                // SSI-2: the passages stay (re-cut one video at a time in the background, see YtSsiIndexer.migrate)
+                db.execSQL("ALTER TABLE docs ADD COLUMN seg TEXT NOT NULL DEFAULT 'RULES'")
+                createFeedback(db)
+            }
+            // round 38: `docs.state` 1 = evicted (a tombstone without passages); the index stays
+            db.execSQL("ALTER TABLE docs ADD COLUMN state INTEGER NOT NULL DEFAULT 0")
             return
         }
         // the index can always be built again from its sources
@@ -193,18 +198,18 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
 
     /** Raises every video of analysis [from] ..< [to] to [to] without touching its passages; returns how many. */
     fun raiseVersion(from: Int, to: Int): Int {
-        val count = readableDatabase.rawQuery("SELECT COUNT(*) FROM docs WHERE version >= ? AND version < ?", arrayOf(from.toString(), to.toString())).use {
+        val count = readableDatabase.rawQuery("SELECT COUNT(*) FROM docs WHERE state = 0 AND version >= ? AND version < ?", arrayOf(from.toString(), to.toString())).use {
             if (it.moveToFirst()) it.getInt(0) else 0
         }
         if (count > 0) {
-            writableDatabase.execSQL("UPDATE docs SET version = ? WHERE version >= ? AND version < ?", arrayOf<Any>(to, from, to))
+            writableDatabase.execSQL("UPDATE docs SET version = ? WHERE state = 0 AND version >= ? AND version < ?", arrayOf<Any>(to, from, to))
             changed()
         }
         return count
     }
 
     /** Videos per segmentation (for Diagnose). */
-    fun segmentationCounts(): Map<YtSsiSegmentation, Int> = readableDatabase.rawQuery("SELECT seg, COUNT(*) FROM docs GROUP BY seg", null).use { c ->
+    fun segmentationCounts(): Map<YtSsiSegmentation, Int> = readableDatabase.rawQuery("SELECT seg, COUNT(*) FROM docs WHERE state = 0 GROUP BY seg", null).use { c ->
         buildMap { while (c.moveToNext()) put(enumOr(c.getString(0), YtSsiSegmentation.RULES), c.getInt(1)) }
     }
 
@@ -221,6 +226,54 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
         changed()
     }
 
+    // ---- eviction (round 38) ----
+
+    /** Videos that were evicted: they keep a tombstone, so the archive and the feed pass do not index them again. */
+    fun tombstones(): Set<String> = readableDatabase.rawQuery("SELECT video_id FROM docs WHERE state = 1", null).use { c ->
+        buildSet { while (c.moveToNext()) add(c.getString(0)) }
+    }
+
+    /** Passages per video. */
+    fun passageCounts(): Map<String, Int> = readableDatabase.rawQuery("SELECT video_id, COUNT(*) FROM segs GROUP BY video_id", null).use { c ->
+        buildMap { while (c.moveToNext()) put(c.getString(0), c.getInt(1)) }
+    }
+
+    /** Videos with a verdict of the user (rated results). */
+    fun feedbackVideoIds(): Set<String> = readableDatabase.rawQuery("SELECT DISTINCT video_id FROM feedback", null).use { c ->
+        buildSet { while (c.moveToNext()) add(c.getString(0)) }
+    }
+
+    /**
+     * Evicts [videoId] in one transaction: passages, their FTS rows and vectors go, the title row
+     * too; the video's row stays as a tombstone (state 1, same `indexed_at`).
+     */
+    fun evict(videoId: String) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            db.execSQL("DELETE FROM vecs WHERE seg_id IN (SELECT id FROM segs WHERE video_id = ?)", arrayOf(videoId))
+            db.execSQL("DELETE FROM segs_fts WHERE docid IN (SELECT id FROM segs WHERE video_id = ?)", arrayOf(videoId))
+            db.execSQL("DELETE FROM segs WHERE video_id = ?", arrayOf(videoId))
+            db.execSQL("DELETE FROM docs_fts WHERE docid IN (SELECT id FROM docs WHERE video_id = ?)", arrayOf(videoId))
+            db.execSQL("UPDATE docs SET state = 1, description = NULL, chapters = NULL WHERE video_id = ?", arrayOf(videoId))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+        changed()
+    }
+
+    fun evictedCount(): Int = readableDatabase.rawQuery("SELECT COUNT(*) FROM docs WHERE state = 1", null).use { if (it.moveToFirst()) it.getInt(0) else 0 }
+
+    /** Videos with passages but no vector of [model] at all, newest first: the first thing a background run embeds. */
+    fun vectorlessVideos(model: String): List<String> = readableDatabase.rawQuery(
+        """SELECT d.video_id FROM docs d WHERE d.state = 0
+           AND EXISTS (SELECT 1 FROM segs s WHERE s.video_id = d.video_id)
+           AND NOT EXISTS (SELECT 1 FROM segs s JOIN vecs v ON v.seg_id = s.id AND v.model = ? WHERE s.video_id = d.video_id)
+           ORDER BY COALESCE(d.uploaded, d.indexed_at) DESC""",
+        arrayOf(model),
+    ).use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
+
     // ---- reading ----
 
     /** Every video in the index by id (kept in memory until the next change). */
@@ -228,7 +281,7 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
         synchronized(lock) { docCache?.let { return it } }
         val map = HashMap<String, YtSsiDoc>()
         readableDatabase.rawQuery(
-            "SELECT video_id, title, channel_id, channel_name, description, uploaded, duration_sec, language, auto, timing, source, vanished, chapters, indexed_at, version, seg FROM docs",
+            "SELECT video_id, title, channel_id, channel_name, description, uploaded, duration_sec, language, auto, timing, source, vanished, chapters, indexed_at, version, seg FROM docs WHERE state = 0",
             null,
         ).use { c ->
             while (c.moveToNext()) {
@@ -509,7 +562,7 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
         val file = context.getDatabasePath(NAME)
         val bytes = listOf(file, java.io.File(file.path + "-wal")).sumOf { if (it.isFile) it.length() else 0L }
         return Stats(
-            videos = count("SELECT COUNT(*) FROM docs"),
+            videos = count("SELECT COUNT(*) FROM docs WHERE state = 0"),
             segments = count("SELECT COUNT(*) FROM segs"),
             vectors = if (model == null) 0 else count("SELECT COUNT(*) FROM vecs WHERE model = ?", arrayOf(model)),
             bytes = bytes,
@@ -518,8 +571,8 @@ class YtSsiDb(context: Context) : SQLiteOpenHelper(context.applicationContext, N
 
     companion object {
         const val NAME = "yt_ssi.db"
-        /** 2 (SSI-2): `docs.seg`, table `feedback`. */
-        private const val VERSION = 2
+        /** 2 (SSI-2): `docs.seg`, table `feedback`; 3 (round 38): `docs.state` (tombstones). */
+        private const val VERSION = 3
         private const val TAG = "YtSsiDb"
         private const val SEG_COLUMNS = "id, video_id, ord, start_ms, end_ms, text, kind, timing, marks"
 

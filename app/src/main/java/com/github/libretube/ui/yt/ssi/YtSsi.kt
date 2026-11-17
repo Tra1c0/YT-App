@@ -22,6 +22,7 @@ import com.github.libretube.util.YtCrashLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -53,18 +54,58 @@ object YtSsi {
 
     private val vectorLock = Mutex()
     private var vectors: YtSsiVectorIndex? = null
+    @Volatile private var lastUse = 0L
+    private var watcher: kotlinx.coroutines.Job? = null
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Default)
 
-    /** The passage vectors of the current model, loaded on first use, topped up with new ones. */
+    /** Vectors in memory in bytes (0 when not loaded); for Diagnose. */
+    fun vectorBytes(): Long = vectors?.let { it.size.toLong() * (it.dim + 4 + 8) } ?: 0L
+
+    /**
+     * The passage vectors of the current model, loaded on the first meaning search (not before),
+     * topped up with new ones; released after 5 minutes without use and when memory runs low.
+     */
     suspend fun vectors(): YtSsiVectorIndex? = vectorLock.withLock {
         val spec = YtSsiModels.spec
         val index = vectors?.takeIf { it.model == spec.version } ?: YtSsiVectorIndex(spec.version, spec.dim)
         withContext(Dispatchers.IO) { db.loadVectors(index) }
         vectors = index
+        lastUse = System.currentTimeMillis()
+        watch()
         index.takeIf { it.size > 0 }
     }
 
-    /** Forgets the vectors in memory (after clearing the index or the model). */
-    suspend fun dropVectors() = vectorLock.withLock { vectors = null }
+    private val trimCallbacks = object : android.content.ComponentCallbacks2 {
+        override fun onTrimMemory(level: Int) {
+            if (YtSsiIndexRules.releaseVectors(vectors != null, lastUse, System.currentTimeMillis(), level)) scope.launch { dropVectors() }
+        }
+        override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {}
+        @Suppress("OVERRIDE_DEPRECATION")
+        override fun onLowMemory() { scope.launch { dropVectors() } }
+    }
+
+    private fun watch() {
+        if (watcher?.isActive == true) return
+        runCatching { LibreTubeApp.instance.registerComponentCallbacks(trimCallbacks) }
+        watcher = scope.launch {
+            while (true) {
+                delay(30_000)
+                if (YtSsiIndexRules.releaseVectors(vectors != null, lastUse, System.currentTimeMillis())) {
+                    dropVectors()
+                    break
+                }
+            }
+        }
+    }
+
+    /** Forgets the vectors in memory (after clearing the index or the model, an eviction, idle time or low memory). */
+    suspend fun dropVectors(): Unit = vectorLock.withLock {
+        vectors = null
+        watcher?.cancel()
+        watcher = null
+        runCatching { LibreTubeApp.instance.unregisterComponentCallbacks(trimCallbacks) }
+        Unit
+    }
 
     fun background(): Boolean = PreferenceHelper.getBoolean(YtSsiPrefs.KEY_BACKGROUND, YtSsiPrefs.DEFAULT_BACKGROUND)
     fun feed(): Boolean = PreferenceHelper.getBoolean(YtSsiPrefs.KEY_FEED, YtSsiPrefs.DEFAULT_FEED)
@@ -291,6 +332,10 @@ object YtSsi {
         /** SSI-2: videos re-cut by meaning and checked unchanged in this run. */
         val recut: Int = 0,
         val unchanged: Int = 0,
+        /** Round 38: time spent in the model by this run's embedding, passages without vectors after it, videos evicted. */
+        val embedMs: Long = 0,
+        val backlog: Int = -1,
+        val evicted: Int = 0,
     )
 
     fun lastRun(context: Context): LastRun? = runCatching {
@@ -300,28 +345,30 @@ object YtSsi {
     fun saveLastRun(context: Context, run: LastRun) = prefs(context).edit { putString(KEY_LAST, json.encodeToString(LastRun.serializer(), run)) }
 
     /**
-     * One background run: the archive's transcripts (local), then captions of recent feed videos
-     * (at most [YtSsiPrefs.FEED_PER_RUN], 2–8 s apart like the archive, stops at a bot check),
-     * then the SSI-2 re-cut by meaning ([YtSsiIndexer.migrate], at most half of what is left of
-     * the budget, so vectors still get made), then vectors for passages without one, until
-     * [YtSsiPrefs.RUN_BUDGET_MS].
+     * One background run. First the throttled fetch part (unchanged limits): the archive's
+     * transcripts (local), then captions of recent feed videos (at most [YtSsiPrefs.FEED_PER_RUN],
+     * 2-8 s apart like the archive, stops at a bot check; skipped while the gate is busy or
+     * fetching is paused). Then, always and until [YtSsiIndexRules.localDeadline], the local work:
+     * eviction, then [YtSsiIndexer.processLocal] (vectorless videos first, then the remaining
+     * passages, then old re-cuts). At the end a follow-up run is enqueued while a backlog remains.
      */
-    suspend fun run(context: Context, stopped: () -> Boolean): LastRun {
+    suspend fun run(context: Context, stopped: () -> Boolean, slot: Int = -1, idleBefore: Int = 0): LastRun {
         val start = System.currentTimeMillis()
-        val deadline = start + YtSsiPrefs.RUN_BUDGET_MS
+        val fetchDeadline = start + YtSsiPrefs.RUN_BUDGET_MS
+        val deadline = YtSsiIndexRules.localDeadline(start)
         var note: String? = null
-        val archive = runCatching { indexer.indexArchive(deadline) }.onFailure { if (it is CancellationException) throw it }.getOrDefault(0)
+        val archive = runCatching { indexer.indexArchive(fetchDeadline) }.onFailure { if (it is CancellationException) throw it }.getOrDefault(0)
         var online = 0
         if (feed() && mayAsk(context) && !stopped()) {
             val ran = com.github.libretube.util.YtFetchGate.background("SSI") {
-                val known = db.docs()
+                val known = db.docs().keys + db.tombstones()
                 val since = start - YtSsiPrefs.FEED_MAX_AGE_MS
                 val videos = withContext(Dispatchers.IO) {
                     runCatching { DatabaseHolder.Database.feedDao().getAll() }.getOrDefault(emptyList())
                 }.filter { !it.isShort && (it.duration ?: 0) > 0 && it.uploaded >= since && it.videoId !in known }
                     .take(YtSsiPrefs.FEED_PER_RUN)
                 for ((i, item) in videos.withIndex()) {
-                    if (stopped() || System.currentTimeMillis() > deadline) break
+                    if (stopped() || System.currentTimeMillis() > fetchDeadline) break
                     if (i > 0) delay(YtArchiveThrottle.jitterMs())
                     try {
                         if (indexer.indexOnline(item.videoId) == YtSsiIndexer.Outcome.INDEXED) online++
@@ -335,17 +382,23 @@ object YtSsi {
             }
             if (!ran) note = "skipped: another fetch is running"
         }
-        var migration = YtSsiIndexer.Migration()
-        if (!stopped()) {
-            val now = System.currentTimeMillis()
-            val until = now + (deadline - now).coerceAtLeast(0) / 2
-            migration = runCatching { indexer.migrate(until) }.onFailure { if (it is CancellationException) throw it }.getOrDefault(migration)
-        }
-        var embedded = 0
+        var evicted = 0
+        if (!stopped()) evicted = runCatching { YtSsiEviction.run(context) }.onFailure { if (it is CancellationException) throw it }.getOrDefault(0)
+        var local = YtSsiIndexer.Local()
+        val embedBefore = indexer.embedMs.get()
+        val model = YtSsiModels.spec.version
+        val backlogBefore = runCatching { db.unembeddedCount(model) }.getOrDefault(0)
         if (!stopped() && YtSsiModels.installed(context)) {
-            embedded = runCatching { indexer.embedPending(deadline) }.onFailure { if (it is CancellationException) throw it }.getOrDefault(0)
+            local = runCatching { indexer.processLocal(deadline) }.onFailure { if (it is CancellationException) throw it }.getOrDefault(local)
         }
-        return LastRun(System.currentTimeMillis(), archive, online, embedded, note, migration.recut, migration.kept).also { saveLastRun(context, it) }
+        val backlog = if (YtSsiModels.installed(context)) runCatching { db.unembeddedCount(model) }.getOrDefault(0) else 0
+        val run = LastRun(System.currentTimeMillis(), archive, online, local.embedded, note, local.recut, local.kept, indexer.embedMs.get() - embedBefore, backlog, evicted)
+        saveLastRun(context, run)
+        if (!stopped()) {
+            val progress = local.embedded > 0 || backlog < backlogBefore || local.recut > 0
+            YtSsiChain.follow(context, slot, idleBefore, backlog, progress)
+        }
+        return run
     }
 
     // ---- diagnosis ----
@@ -375,6 +428,14 @@ object YtSsi {
                 append(")")
             }
             paused?.let { append(", paused until ${YtCrashLog.formatTime(it)}") }
+            // round 38: backlog, speed, window and cap, memory
+            val backlog = runCatching { db.unembeddedCount(spec.version) }.getOrNull()
+            backlog?.let { append(", backlog $it passages without vectors") }
+            last?.takeIf { it.embedMs > 0 && it.embedded > 0 }?.let { append(", embedding %.1f passages/s".format(java.util.Locale.ROOT, it.embedded * 1000.0 / it.embedMs)) }
+            val days = YtSsiEviction.windowDays()
+            append(", window ").append(if (days == 0) "unlimited" else "$days days")
+            append(", cap ${stats?.segments ?: 0}/${YtSsiIndexRules.CAP_PASSAGES} passages, ${runCatching { db.evictedCount() }.getOrDefault(0)} videos evicted")
+            append(", vectors in memory ").append(vectorBytes().let { if (it == 0L) "no" else "${it / 1_000_000} MB" })
             // SSI-2
             runCatching { db.segmentationCounts() }.getOrNull()?.let { counts ->
                 append(", segmentation meaning ${counts[YtSsiSegmentation.SEMANTIC] ?: 0} / rules ${counts[YtSsiSegmentation.RULES] ?: 0}")
@@ -411,7 +472,7 @@ object YtSsi {
 /** YT: SSI's background indexing (periodic, charging; or once from the settings). */
 class YtSsiWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = try {
-        YtSsi.run(applicationContext) { isStopped }
+        YtSsi.run(applicationContext, { isStopped }, inputData.getInt(YtSsiChain.KEY_SLOT, -1), inputData.getInt(YtSsiChain.KEY_IDLE, 0))
         Result.success()
     } catch (e: CancellationException) {
         throw e

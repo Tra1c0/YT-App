@@ -45,6 +45,9 @@ object YtSsiPrefs {
 
     fun stancePerDay(raw: String?): Int = raw?.toIntOrNull()?.takeIf { it in STANCE_PER_DAY } ?: DEFAULT_STANCE_PER_DAY
 
+    /** Round 38: days a video stays in the index, counted from when it entered (0 = unlimited). */
+    const val KEY_WINDOW_DAYS = "yt_ssi_window_days"
+
     /** Per Deep search: at most this many YouTube searches. */
     const val MAX_SEARCHES = 3
 
