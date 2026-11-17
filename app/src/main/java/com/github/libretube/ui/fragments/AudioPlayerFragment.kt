@@ -85,6 +85,9 @@ class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player), AudioPlaye
         private set
     private var playerController: MediaController? = null
 
+    /** YT: the connected controller, for the update dialog's pause. */
+    val ytController: MediaController? get() = playerController
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

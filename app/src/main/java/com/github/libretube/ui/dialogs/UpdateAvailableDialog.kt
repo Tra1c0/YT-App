@@ -19,6 +19,7 @@ import com.github.libretube.constants.IntentData.appUpdateURL
 import com.github.libretube.databinding.DialogYtUpdateBinding
 import com.github.libretube.obj.update.UpdateAsset
 import com.github.libretube.ui.yt.YtNotesText
+import com.github.libretube.ui.yt.bloom.YtUpdateBloom
 import com.github.libretube.util.YtReleaseNotes
 import com.github.libretube.util.YtSelfUpdater
 import com.github.libretube.util.YtSelfUpdater.State
@@ -95,6 +96,26 @@ class UpdateAvailableDialog : DialogFragment() {
         }
         dialog.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener { dismiss() }
         render(YtSelfUpdater.state.value)
+        YtUpdateBloom.onShow(activity, dialog)
+    }
+
+    override fun onStop() {
+        YtUpdateBloom.onHide()
+        super.onStop()
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        val started = YtSelfUpdater.state.value.let { it !is State.Idle && it !is State.Failed }
+        YtUpdateBloom.onDismiss(activity, activity?.isChangingConfigurations == true, started)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (activity?.isChangingConfigurations != true) {
+            YtUpdateBloom.onDestroy()
+            YtUpdateBloom.forget()
+        }
     }
 
     override fun onResume() {
