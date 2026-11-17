@@ -8,7 +8,7 @@ not here.
 
 ## Current state
 
-- Latest release: build 144 on `main` (per-build details: Build log below). Recent rounds built:
+- Latest release: build 145 on `main` (per-build details: Build log below). Recent rounds built:
   News overlay (pinch on the home; stories; cited summaries with a provider choice: OpenAI,
   Anthropic, Gemini, Mistral, OpenAI-compatible), update notification + UnifiedPush/ntfy push +
   watch mode, notification split (app updates vs new videos), queue survives restarts, Synthwave.
@@ -229,6 +229,7 @@ release `screens-<run>`.
 
 ## Build log (one line per build, newest first; older builds in git)
 
+- 145: seen ledger (marks stay after a video is opened again, manual mark, backup, the history's "also clear watch positions" box works), update dialog pauses playback and blooms the app behind it. "Kurzfassung" for any video is built but NOT in this build (session branch, waits for the user).
 - 144: quality pass (round 38): start guards, fetch gate, SSI index health (backlog first, window + cap, vector release), storage rows, backup rules, lint fixes, Synthwave header fit, own design page background.
 - 143: SSI-3 (evidence: relations with verified quotes, comparison, timeline, report, saved research), TB-3 (vector: pen, booleans, masks, morph, motion paths, recording).
 - 142: SSI/TB stage 1/2 gap fixes (classic SSI entry, charsmap, calibration, json3 gate, parallel scan; mini player node tree, in-app mini/bar animations, state looks, image import, reorder spring).
