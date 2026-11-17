@@ -517,7 +517,7 @@ fun Modifier.ytShimmer(base: Color): Modifier {
 /** After: a slow zoom over a poster, back and forth. */
 @Composable
 fun rememberKenBurns(durationMillis: Int = 18000, zoom: Float = 0.08f): State<Float> {
-    if (!LocalYtMotion.current) return YtStill(1f)
+    if (!LocalYtMotion.current) return remember { YtStill(1f) }
     val transition = rememberInfiniteTransition(label = "kenBurns")
     return transition.animateFloat(
         initialValue = 1f,
@@ -530,7 +530,7 @@ fun rememberKenBurns(durationMillis: Int = 18000, zoom: Float = 0.08f): State<Fl
 /** A soft pulse between [min] and 1, e.g. for live dots. */
 @Composable
 fun rememberPulse(min: Float = 0.35f, durationMillis: Int = 900): State<Float> {
-    if (!LocalYtMotion.current) return YtStill(1f)
+    if (!LocalYtMotion.current) return remember { YtStill(1f) }
     val transition = rememberInfiniteTransition(label = "pulse")
     return transition.animateFloat(
         initialValue = 1f,
@@ -543,7 +543,7 @@ fun rememberPulse(min: Float = 0.35f, durationMillis: Int = 900): State<Float> {
 /** Clay: a slow breath of a puffy button. */
 @Composable
 fun rememberBreath(amount: Float = 0.04f, durationMillis: Int = 2400): State<Float> {
-    if (!LocalYtMotion.current) return YtStill(1f)
+    if (!LocalYtMotion.current) return remember { YtStill(1f) }
     val transition = rememberInfiniteTransition(label = "breath")
     return transition.animateFloat(
         initialValue = 1f,
@@ -556,7 +556,7 @@ fun rememberBreath(amount: Float = 0.04f, durationMillis: Int = 2400): State<Flo
 /** Formen: a slow full turn, in degrees. */
 @Composable
 fun rememberSpin(durationMillis: Int = 20000): State<Float> {
-    if (!LocalYtMotion.current) return YtStill(0f)
+    if (!LocalYtMotion.current) return remember { YtStill(0f) }
     val transition = rememberInfiniteTransition(label = "spin")
     return transition.animateFloat(
         initialValue = 0f,
@@ -569,7 +569,7 @@ fun rememberSpin(durationMillis: Int = 20000): State<Float> {
 /** Formen: the phase of a travelling wave, 0 to 1. */
 @Composable
 fun rememberWavePhase(durationMillis: Int = 1600): State<Float> {
-    if (!LocalYtMotion.current) return YtStill(0f)
+    if (!LocalYtMotion.current) return remember { YtStill(0f) }
     val transition = rememberInfiniteTransition(label = "wave")
     return transition.animateFloat(
         initialValue = 0f,

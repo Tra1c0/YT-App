@@ -1,6 +1,7 @@
 package com.github.libretube.helpers
 
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.GradientDrawable
@@ -42,6 +43,8 @@ object YtVideoColors {
         animateTo(target, glow, background)
     }
 
+    // Material's colour utilities are @RestrictedApi but stable and have no public equivalent; compile-checked on updates.
+    @SuppressLint("RestrictedApi")
     private fun seedColor(source: Bitmap): Int? = runCatching {
         // Hardware bitmaps do not allow reading pixels.
         val readable = if (source.config == Bitmap.Config.HARDWARE) {
@@ -58,6 +61,7 @@ object YtVideoColors {
     }.getOrNull()
 
     /** A deep, calm version of the seed in dark mode and a pale one in light mode. */
+    @SuppressLint("RestrictedApi")
     private fun glowColor(seed: Int, dark: Boolean): Int {
         val hct = Hct.fromInt(seed)
         return if (dark) {

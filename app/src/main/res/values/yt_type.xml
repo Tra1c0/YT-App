@@ -85,9 +85,4 @@
         <item name="android:letterSpacing">0.04</item>
     </style>
 
-    <style name="TextAppearance.YT.Numeric" parent="">
-        <item name="fontFamily">@font/geist_mono</item>
-        <item name="android:fontFamily">@font/geist_mono</item>
-    </style>
-
 </resources>

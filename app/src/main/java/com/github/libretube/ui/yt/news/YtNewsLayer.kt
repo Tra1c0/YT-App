@@ -68,6 +68,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -708,7 +709,7 @@ object YtNewsLayer {
         val shape = look.cardShape
         // the card lifted by a swipe up (to the queue)
         val lift = remember { Animatable(0f) }
-        var height by remember { mutableStateOf(1f) }
+        var height by remember { mutableFloatStateOf(1f) }
         val queuePx = with(LocalDensity.current) { QUEUE_DP.dp.toPx() }
         val text = remember(lead.description) { YtNewsText.clean(lead.description) }
         val queueLabel = stringResource(R.string.yt_r27_news_queue)

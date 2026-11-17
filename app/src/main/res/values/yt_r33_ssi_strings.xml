@@ -99,5 +99,4 @@
     <string name="yt_r33_ssi_budget">Deep: videos per search</string>
     <string name="yt_r33_ssi_allow_ai">Allow AI in Deep</string>
     <string name="yt_r33_ssi_allow_ai_summary">Sends only the query to the AI service set up for news summaries, for search phrases and synonyms; answers are kept per query for 30 days. Hits always come from captions SSI has read.</string>
-    <string name="yt_r33_ssi_open_search">Open SSI search</string>
 </resources>

@@ -24,7 +24,7 @@ case "$WAIT" in *[!0-9]*) echo "::warning::YT_WAIT=$WAIT is no number of seconds
 # the id goes into a device shell command line: only what a video id holds
 case "${YT_VIDEO:-}" in *[!A-Za-z0-9_-]*) echo "::warning::YT_VIDEO=$YT_VIDEO is no video id; the default instead"; YT_VIDEO="" ;; esac
 DESIGNS="${YT_DESIGN:-standard}"
-[ "$DESIGNS" = "all" ] && DESIGNS="standard youtube movo after side clay editorial glass pop shapes frost kiesel"
+[ "$DESIGNS" = "all" ] && DESIGNS="standard youtube movo after side clay editorial glass pop shapes frost kiesel frequency synthwave custom"
 DESIGNS="${DESIGNS//,/ }"
 echo "APK: $APK, designs: $DESIGNS, night: ${YT_NIGHT:-no}, locale: ${YT_LOCALE:-device}"
 adb wait-for-device

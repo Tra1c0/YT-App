@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -559,7 +560,7 @@ fun YtAnimTestOverlay(state: YtEditorState, modifier: Modifier = Modifier) {
 /** The test mode's bar: the triggers YT sends by itself (appear, scroll, player, loading), a scroll slider, the end. */
 @Composable
 fun YtAnimTestBar(state: YtEditorState) {
-    var scroll by remember { mutableStateOf(0f) }
+    var scroll by remember { mutableFloatStateOf(0f) }
     Column(Modifier.fillMaxWidth().background(Color(0xFF1D1F24)).padding(horizontal = 8.dp)) {
         Row(Modifier.horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
             for (t in listOf(YtTriggerKind.APPEAR, YtTriggerKind.DISAPPEAR, YtTriggerKind.SCROLL_DOWN, YtTriggerKind.SCROLL_UP, YtTriggerKind.PLAYING, YtTriggerKind.PAUSED, YtTriggerKind.LOADING_START, YtTriggerKind.LOADING_END, YtTriggerKind.MANUAL)) {

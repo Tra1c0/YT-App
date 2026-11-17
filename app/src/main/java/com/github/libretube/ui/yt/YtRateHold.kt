@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -121,7 +122,7 @@ internal class YtRateState(val videoId: String?, private val context: Context, p
         internal set
 
     /** The Return YouTube Dislike count of the video, negative when there is none. */
-    var dislikes by mutableStateOf(-1L)
+    var dislikes by mutableLongStateOf(-1L)
         internal set
 
     /** The dislike count was revealed by a hover; it then shows at once on every later hold. */

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- YT ships English and German only: its strings are not translated into the other upstream languages -->
+    <issue id="MissingTranslation">
+        <ignore path="**/values/yt_*.xml" />
+    </issue>
+</lint>

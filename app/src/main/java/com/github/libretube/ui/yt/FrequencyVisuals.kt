@@ -130,7 +130,7 @@ fun FrequencyBackdrop(palette: YtPalette, modifier: Modifier = Modifier) {
                         center = Offset.Zero, radius = 100f,
                     )
                 }
-                blobShader?.colors(blobColors)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) blobShader?.colors(blobColors)
                 val wave = Path()
                 val waveFill = Brush.verticalGradient(
                     listOf(palette.accent.copy(alpha = M.WAVE_FILL), palette.lavender.copy(alpha = M.WAVE_FILL / 2f), palette.background.copy(alpha = 0f)),
@@ -160,10 +160,10 @@ fun FrequencyBackdrop(palette: YtPalette, modifier: Modifier = Modifier) {
                         val cx = w * 0.5f
                         val cy = h * 0.34f
                         val light = M.blobAlpha(FrequencyPulse.glow.floatValue)
-                        val useShader = blobShader != null && FrequencyPulse.choice.shader
-                        for (i in 0 until FrequencyBlobShader.MAX) {
+                        val useShader = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && blobShader != null && FrequencyPulse.choice.shader
+                        for (i in 0 until BLOB_MAX) {
                             if (i >= n) {
-                                if (useShader) blobShader!!.blob(i, 0f, 0f, 0f)
+                                if (useShader && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) blobShader!!.blob(i, 0f, 0f, 0f)
                                 continue
                             }
                             val turn = flow * (0.35f + 0.06f * i) * (if (i % 2 == 0) 1f else -1f) + i * M.TAU / n
@@ -173,7 +173,7 @@ fun FrequencyBackdrop(palette: YtPalette, modifier: Modifier = Modifier) {
                             val band = FrequencyPulse.bands[(i * 3).coerceAtMost(FrequencyPulse.bands.size - 1)]
                             val r = short * (0.12f + 0.03f * (i % 2)) * (1f + (0.25f * FrequencyPulse.bounce(i) + 0.2f * band) * amp)
                             if (useShader) {
-                                blobShader!!.blob(i, x, y, r)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) blobShader!!.blob(i, x, y, r)
                             } else {
                                 translate(x, y) {
                                     scale(r / 100f, Offset.Zero) {
@@ -183,7 +183,7 @@ fun FrequencyBackdrop(palette: YtPalette, modifier: Modifier = Modifier) {
                                 }
                             }
                         }
-                        if (useShader) blobShader!!.draw(this, light)
+                        if (useShader && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) blobShader!!.draw(this, light)
                     }
 
                     if (tier.backgroundWave) {
@@ -202,6 +202,8 @@ fun FrequencyBackdrop(palette: YtPalette, modifier: Modifier = Modifier) {
  * (so close blobs flow into one) and a faint halo. Uniforms are set in place; the paint is kept.
  */
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private const val BLOB_MAX = 5
+
 private class FrequencyBlobShader private constructor(private val shader: RuntimeShader) {
     private val paint = android.graphics.Paint().apply { this.shader = this@FrequencyBlobShader.shader }
 
@@ -224,7 +226,7 @@ private class FrequencyBlobShader private constructor(private val shader: Runtim
     }
 
     companion object {
-        const val MAX = 5
+        const val MAX = BLOB_MAX
         private val BLOB_NAMES = Array(MAX) { "uB$it" }
         private val COLOR_NAMES = Array(MAX) { "uC$it" }
 

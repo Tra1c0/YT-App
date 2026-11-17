@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -423,7 +424,7 @@ private fun setFills(n: YtNode, fills: List<YtPaint>, inState: Boolean, state: S
 private fun SizeTab(state: YtEditorState, node: YtNode) {
     val parent = state.parentOf(node.id)
     val free = parent?.layout?.mode == YtLayoutMode.FREE
-    var step by remember { mutableStateOf(1f) }
+    var step by remember { mutableFloatStateOf(1f) }
     Choice(listOf(1f to "1 dp", 4f to "4 dp", 8f to "8 dp"), step) { step = it }
     if (free) {
         YtNumberRow("X", node.x, step, { v -> state.edit("x", "x") { it.copy(x = v) } })

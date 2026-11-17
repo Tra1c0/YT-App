@@ -40,6 +40,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -991,7 +992,7 @@ private fun PanePage(
     frost: Boolean,
 ) {
     val streams = b.streams
-    var tab by remember(streams.title) { mutableStateOf(0) }
+    var tab by remember(streams.title) { mutableIntStateOf(0) }
     val font: FontFamily = if (frost) YtFonts.jakarta else YtFonts.googleSans
     val ink = if (frost) Color.White else palette.text
     val dim = if (frost) Color(0xB3FFFFFF) else palette.text.copy(alpha = 0.62f)
@@ -1192,7 +1193,7 @@ private fun PopPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics
 @Composable
 private fun ShapesPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics, controller: YtWatchController, actions: YtWatchActions) {
     val streams = b.streams
-    var tab by remember(streams.title) { mutableStateOf(0) }
+    var tab by remember(streams.title) { mutableIntStateOf(0) }
     val shapes: List<Shape> = listOf(
         CookieShape(9, 0.07f),
         RoundedCornerShape(50),
@@ -1268,7 +1269,7 @@ private val PebbleGrey: Color get() = ytDayNight(Color(0xFF7A7672), Color(0xFFAB
 @Composable
 private fun KieselPage(palette: YtPalette, imageLoader: ImageLoader, b: WatchBasics, controller: YtWatchController, actions: YtWatchActions) {
     val streams = b.streams
-    var tab by remember(streams.title) { mutableStateOf(0) }
+    var tab by remember(streams.title) { mutableIntStateOf(0) }
     Column(Modifier.fillMaxWidth()) {
         Text(ytTitle(streams.title), color = KieselInk, style = TextStyle(fontFamily = YtFonts.jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 21.sp, lineHeight = 26.sp), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp))
         // three stat pebbles, as on the start page

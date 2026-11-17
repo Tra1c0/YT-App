@@ -28,7 +28,7 @@ object YtNewsCaptions {
 
     /** The cues of a caption file; the format is recognised from the text itself. */
     fun parse(body: String): List<YtNewsCue> {
-        val text = body.removePrefix("﻿")
+        val text = body.removePrefix("\uFEFF")
         val head = text.trimStart()
         val raw = when {
             head.startsWith("WEBVTT") -> parseArrowed(text)

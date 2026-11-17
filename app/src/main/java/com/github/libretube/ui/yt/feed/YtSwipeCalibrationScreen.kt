@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -113,7 +114,7 @@ private fun Calibration(palette: YtPalette, onClose: () -> Unit, onApply: (YtSwi
     var step by remember { mutableStateOf(Step.SCROLL) }
     val scrolls = remember { mutableStateListOf<List<YtSwipeCalibration.Point>>() }
     val swipes = remember { mutableStateListOf<List<YtSwipeCalibration.Point>>() }
-    var slop by remember { mutableStateOf(YtSwipeCalibration.SLOP_DP) }
+    var slop by remember { mutableFloatStateOf(YtSwipeCalibration.SLOP_DP) }
     val haptics = rememberYtHaptics()
     val current = remember { YtSwipeTuningPrefs.current() }
     val proposal = remember(step) {
@@ -233,7 +234,7 @@ private fun Recorder(
     onMove: (Float) -> Unit = {},
     content: @Composable (Float) -> Unit,
 ) {
-    var pxPerDp by remember { mutableStateOf(1f) }
+    var pxPerDp by remember { mutableFloatStateOf(1f) }
     Box(
         Modifier.fillMaxSize().pointerInput(Unit) {
             pxPerDp = density

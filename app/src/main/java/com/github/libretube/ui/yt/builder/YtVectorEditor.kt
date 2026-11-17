@@ -2,6 +2,7 @@ package com.github.libretube.ui.yt.builder
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
@@ -44,8 +45,8 @@ class YtPenSession(val kind: YtPenKind, val nodeId: String, val animId: String? 
 class YtRecordSession(val nodeId: String, val animId: String) {
     var armed by mutableStateOf(true)
     var samples: List<YtMotionRecord.Sample> = emptyList()
-    var simplify by mutableStateOf(1.5f)
-    var smooth by mutableStateOf(0.4f)
+    var simplify by mutableFloatStateOf(1.5f)
+    var smooth by mutableFloatStateOf(0.4f)
 }
 
 /**

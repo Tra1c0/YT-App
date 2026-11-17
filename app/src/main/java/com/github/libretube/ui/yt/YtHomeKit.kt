@@ -110,8 +110,8 @@ fun ytVisible(videos: List<StreamItem>?, hidden: Map<String, Int>, paused: List<
 fun rememberYtVisible(videos: List<StreamItem>?): List<StreamItem>? {
     val hidden by YtHidden.hidden.collectAsState()
     val paused by YtChannelPause.paused.collectAsState()
-    val hideSeenFlow = remember { YtFeed.profile.map { it.personal.hideSeen }.distinctUntilChanged() }
-    val hideSeen by hideSeenFlow.collectAsState(initial = YtFeed.profile.value.personal.hideSeen)
+    val profile by YtFeed.profile.collectAsState()
+    val hideSeen = profile.personal.hideSeen
     val visible = remember(videos, hidden, paused) { ytVisible(videos, hidden, paused, System.currentTimeMillis()) }
     if (!hideSeen || visible == null) return visible
     // only read while the switch is on: the positions change each time the player pauses
