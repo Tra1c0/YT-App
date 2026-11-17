@@ -632,9 +632,8 @@ internal fun rememberYtHostStateBits(mask: Int): Int {
     val active = YtRenderStates.bitOf(YtStateNames.ACTIVE)
     if (mask and loading != 0 && YtAnimSignals.feedLoading) bits = bits or loading
     if (mask and active != 0) {
-        val flow = remember { YtPlaybackClock.clock.map { it.playing }.distinctUntilChanged() }
-        val playing by flow.collectAsState(YtPlaybackClock.clock.value.playing)
-        if (playing) bits = bits or active
+        val clock by YtPlaybackClock.clock.collectAsState()
+        if (clock.playing) bits = bits or active
     }
     return bits
 }

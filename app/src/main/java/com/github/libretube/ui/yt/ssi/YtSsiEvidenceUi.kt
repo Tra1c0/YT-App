@@ -32,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -947,7 +948,7 @@ private fun Report(
 
 /** Bumped when the saved list changes, so the list reads it again. */
 internal object YtSsiResearchList {
-    var changed by mutableStateOf(0)
+    var changed by mutableIntStateOf(0)
 }
 
 /** Opens a saved research: its hits as a finished search, its relations, notes and choice. */

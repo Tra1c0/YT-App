@@ -249,7 +249,7 @@ object YtImport {
             when {
                 lower.endsWith(".csv") -> {
                     val bytes = readLimited(input, MAX_CSV_BYTES) ?: return@readTakeout
-                    val rows = String(bytes, Charsets.UTF_8).removePrefix("﻿")
+                    val rows = String(bytes, Charsets.UTF_8).removePrefix("\uFEFF")
                         .lineSequence().map { csvCells(it) }.filter { it.isNotEmpty() }.toList()
                     val channelRows = rows.filter { YtInnerTube.CHANNEL_ID.matches(it[0]) }
                     val videoIds = rows.asSequence().map { it[0] }.filter { VIDEO_ID.matches(it) }

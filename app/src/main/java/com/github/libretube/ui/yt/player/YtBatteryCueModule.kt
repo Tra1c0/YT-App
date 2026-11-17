@@ -94,7 +94,7 @@ object YtBatteryCueModule : YtPlayerModule {
             val fragment = host.fragment()
             if (!fragment.isAdded || !fragment.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return false
             val activity = fragment.activity ?: return false
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && activity.isInPictureInPictureMode) return false
+            if (activity.isInPictureInPictureMode) return false
             val player = host.pageBinding()?.player ?: return false
             return player.isShown && player.width > 0 && player.height > 0
         }

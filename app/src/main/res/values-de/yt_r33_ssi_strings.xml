@@ -99,5 +99,4 @@
     <string name="yt_r33_ssi_budget">Tief: Videos pro Suche</string>
     <string name="yt_r33_ssi_allow_ai">KI bei „Tief“ erlauben</string>
     <string name="yt_r33_ssi_allow_ai_summary">Schickt nur die Anfrage an den KI-Dienst der Nachrichten-Kurzfassungen, für Suchbegriffe und Synonyme; Antworten werden je Anfrage 30 Tage behalten. Treffer stammen immer aus Untertiteln, die SSI gelesen hat.</string>
-    <string name="yt_r33_ssi_open_search">SSI-Suche öffnen</string>
 </resources>

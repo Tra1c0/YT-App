@@ -1,3 +1,5 @@
+@file:OptIn(androidx.media3.common.util.UnstableApi::class)
+
 package com.github.libretube.ui.yt.player
 
 import android.os.Handler

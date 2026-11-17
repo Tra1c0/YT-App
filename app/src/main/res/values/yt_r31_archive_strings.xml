@@ -34,7 +34,6 @@
     <string name="yt_r31_archive_vanished_on">vanished %1$s</string>
     <string name="yt_r31_archive_saved_on">saved %1$s</string>
     <string name="yt_r31_archive_play">Play</string>
-    <string name="yt_r31_archive_play_download">Play the download</string>
     <string name="yt_r31_archive_read_script">Read the script</string>
     <string name="yt_r31_archive_read_transcript">Read the transcript</string>
     <string name="yt_r31_archive_make_script">Make the script (AI)</string>

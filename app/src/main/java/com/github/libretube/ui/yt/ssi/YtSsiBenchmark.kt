@@ -71,7 +71,7 @@ object YtSsiBenchmark {
 
     /** The examples in [text]; throws [Invalid] when it is no JSON or holds no usable example. */
     fun parse(text: String): Examples {
-        val root = runCatching { json.parseToJsonElement(text.trim().removePrefix("﻿")) }.getOrElse { throw Invalid("not JSON: ${it.message?.take(80)}") }
+        val root = runCatching { json.parseToJsonElement(text.trim().removePrefix("\uFEFF")) }.getOrElse { throw Invalid("not JSON: ${it.message?.take(80)}") }
         val obj = root as? JsonObject
         val list = when (root) {
             is JsonArray -> root

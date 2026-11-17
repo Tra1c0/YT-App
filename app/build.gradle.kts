@@ -125,6 +125,7 @@ android {
         // YT: native libraries compressed in the APK (13 instead of 34 MB for ONNX Runtime),
         // unpacked once at install
         jniLibs.useLegacyPackaging = true
+        resources.excludes.add("META-INF/native-image/**")
     }
 
     tasks.register("testClasses")

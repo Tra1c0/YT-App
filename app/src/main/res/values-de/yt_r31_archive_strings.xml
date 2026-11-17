@@ -34,7 +34,6 @@
     <string name="yt_r31_archive_vanished_on">verschwunden %1$s</string>
     <string name="yt_r31_archive_saved_on">gesichert %1$s</string>
     <string name="yt_r31_archive_play">Abspielen</string>
-    <string name="yt_r31_archive_play_download">Download abspielen</string>
     <string name="yt_r31_archive_read_script">Skript lesen</string>
     <string name="yt_r31_archive_read_transcript">Transkript lesen</string>
     <string name="yt_r31_archive_make_script">Skript erstellen (KI)</string>
