@@ -49,6 +49,7 @@ object YtDiagnosis {
             add("Archiv-Risiko" to runCatching { com.github.libretube.ui.yt.archive.risk.YtArchiveRisk.describe() }.getOrNull())
             add("Archiv-Skript" to runCatching { com.github.libretube.ui.yt.archive.script.YtArchiveScripts.diagnosis() }.getOrNull())
             // SSI: index size, vectors, model state, last background run
+            add("Abruf-Gate" to runCatching { YtFetchGate.describe() }.getOrNull())
             add("SSI" to runCatching { com.github.libretube.ui.yt.ssi.YtSsi.diagnosis(context) }.getOrNull())
             add("YouTube account" to if (runCatching { YtAccount.signedIn }.getOrDefault(false)) "yes" else "no")
             add("Queue" to runCatching { PlayingQueue.size().toString() }.getOrNull())

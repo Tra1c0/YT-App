@@ -11,6 +11,7 @@ import com.github.libretube.ui.yt.feed.YtDeadSubsResult
 import com.github.libretube.ui.yt.feed.YtDeadSubsRules
 import com.github.libretube.ui.yt.feed.YtSubCheck
 import com.github.libretube.ui.yt.feed.YtSubState
+import com.github.libretube.util.YtFetchGate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -72,15 +73,18 @@ object YtDeadSubs {
             val permits = Semaphore(CONCURRENCY)
             withContext(Dispatchers.Main) { onProgress(0, pending.size) }
             try {
-                coroutineScope {
-                    pending.forEach { id ->
-                        launch {
-                            permits.withPermit {
-                                delay(PAUSE_MILLIS.random())
-                                check(id)?.let(found::add)
+                // user-started: waits for the gate of background fetching, never skipped
+                YtFetchGate.user("dead subs") {
+                    coroutineScope {
+                        pending.forEach { id ->
+                            launch {
+                                permits.withPermit {
+                                    delay(PAUSE_MILLIS.random())
+                                    check(id)?.let(found::add)
+                                }
+                                val count = done.incrementAndGet()
+                                withContext(Dispatchers.Main) { onProgress(count, pending.size) }
                             }
-                            val count = done.incrementAndGet()
-                            withContext(Dispatchers.Main) { onProgress(count, pending.size) }
                         }
                     }
                 }

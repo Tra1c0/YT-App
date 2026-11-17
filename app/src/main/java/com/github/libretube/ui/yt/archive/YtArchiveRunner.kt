@@ -6,6 +6,7 @@ import com.github.libretube.db.DatabaseHelper
 import com.github.libretube.db.DatabaseHolder
 import com.github.libretube.extensions.toID
 import com.github.libretube.ui.yt.archive.YtArchiveRules.PlanItem
+import com.github.libretube.util.YtFetchGate
 import com.github.libretube.util.YtStreamError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -26,7 +27,7 @@ class YtArchiveRunner(private val context: Context) {
     private val store = YtArchive.store
     private val fetcher = YtArchiveFetcher(store)
     private var throttle = YtArchive.throttle(context)
-    private val started = now()
+    private var started = now()
     private var errorsInRow = 0
     private var blocked = false
     private var requests = 0
@@ -45,7 +46,21 @@ class YtArchiveRunner(private val context: Context) {
         if (requests++ > 0) delay(YtArchiveThrottle.jitterMs())
     }
 
+    /**
+     * One run at a time per process ([YtFetchGate]). By-hand saves and urgent audio wait for their
+     * turn; the others skip this run when the gate stays busy (the next one comes soon enough).
+     */
     suspend fun run(mode: String, videoId: String?) {
+        if (mode == MODE_NOW || mode == MODE_URGENT) {
+            YtFetchGate.user("archive $mode") { runLocked(mode, videoId) }
+        } else if (!YtFetchGate.background("archive $mode") { runLocked(mode, videoId) }) {
+            Log.i(TAG, "$mode skipped: another background fetch is running")
+        }
+    }
+
+    private suspend fun runLocked(mode: String, videoId: String?) {
+        started = now()
+        throttle = YtArchive.throttle(context)
         if (YtArchiveThrottle.paused(throttle, now())) {
             Log.i(TAG, "paused until ${throttle.backoffUntil}, $mode skipped")
             return
@@ -54,12 +69,14 @@ class YtArchiveRunner(private val context: Context) {
             when (mode) {
                 MODE_TEXT -> {
                     textPass()
+                    retryPass()
                     checkPass()
                     labelPass()
                     enforceBudget()
                 }
                 MODE_MEDIA -> {
                     textPass()
+                    retryPass()
                     labelPass()
                     mediaPass()
                     enforceBudget()
@@ -69,8 +86,7 @@ class YtArchiveRunner(private val context: Context) {
                 MODE_NOW -> videoId?.let { saveByHand(it) }
             }
         } finally {
-            throttle = YtArchiveThrottle.afterRun(throttle, now(), mode, blocked)
-            YtArchive.saveThrottle(context, throttle)
+            throttle = YtArchive.updateThrottle(context) { YtArchiveThrottle.afterRun(it, now(), mode, blocked) }
         }
     }
 
@@ -86,13 +102,13 @@ class YtArchiveRunner(private val context: Context) {
         when (val typed = fetcher.typed(e)) {
             is YtArchiveFetcher.Blocked -> {
                 blocked = true
-                throttle = YtArchiveThrottle.afterBlock(throttle, now(), "$what: ${typed.message}")
+                throttle = YtArchive.updateThrottle(context) { YtArchiveThrottle.afterBlock(it, now(), "$what: ${typed.message}") }
                 Log.w(TAG, "blocked ($what): ${typed.message}")
             }
             is YtArchiveFetcher.Gone -> onGone(typed.kind)
             else -> {
                 errorsInRow++
-                throttle = YtArchiveThrottle.afterError(throttle, now(), "$what: ${typed.javaClass.simpleName} ${typed.message.orEmpty().take(60)}")
+                throttle = YtArchive.updateThrottle(context) { YtArchiveThrottle.afterError(it, now(), "$what: ${typed.javaClass.simpleName} ${typed.message.orEmpty().take(60)}") }
                 Log.i(TAG, "$what failed: $typed")
             }
         }
@@ -166,12 +182,43 @@ class YtArchiveRunner(private val context: Context) {
                     riskReason = score?.reason,
                     high = score?.high == true,
                 )
-                store.put(meta)
-                fetcher.saveText(meta, streams, now())
+                // marked incomplete until the text part is whole ([retryPass] tries a failed one again)
+                store.put(meta.copy(textIncomplete = true, textRetryAt = now()))
+                fetcher.saveText(meta.copy(textIncomplete = true, textRetryAt = now()), streams, now())
+                markText(candidate.videoId, retried = false)
                 if (meta.high) urgent = true
             }
         }
         if (urgent) YtArchive.runUrgent(context)
+    }
+
+    /** Clears or keeps the incomplete mark of [videoId] after a text save, counting a retry. */
+    private fun markText(videoId: String, retried: Boolean) {
+        val files = store.files(videoId) ?: return
+        store.update(videoId) { meta ->
+            val whole = YtArchiveRetryRules.complete(files.thumbnail.isFile, files.transcript.isFile, meta.transcriptLanguage)
+            meta.copy(
+                textIncomplete = !whole,
+                textRetries = if (retried) meta.textRetries + 1 else meta.textRetries,
+                textRetryAt = now(),
+            )
+        }
+    }
+
+    /** Text saves that did not finish: tried again, at most 3 times, a day apart, a few per run. */
+    private suspend fun retryPass() {
+        val due = store.all()
+            .filter { YtArchiveRetryRules.due(it.textIncomplete, it.textRetries, it.textRetryAt, now()) }
+            .take(RETRIES_PER_RUN)
+        for (meta in due) {
+            if (!goOn()) break
+            pace()
+            guarded("text retry") {
+                val streams = fetcher.streams(meta.videoId)
+                fetcher.saveText(store[meta.videoId] ?: return@guarded, streams, now())
+                markText(meta.videoId, retried = true)
+            } ?: store.update(meta.videoId) { it.copy(textRetries = it.textRetries + 1, textRetryAt = now()) }
+        }
     }
 
     /** Audio and 144p by the plan, best ranked first, at most the run's and the day's count. */
@@ -230,7 +277,7 @@ class YtArchiveRunner(private val context: Context) {
             }
             true
         } == true
-        if (counted) throttle = YtArchiveThrottle.countMedia(throttle, now(), offset())
+        if (counted) throttle = YtArchive.updateThrottle(context) { YtArchiveThrottle.countMedia(it, now(), offset()) }
         if (ok) {
             store.update(id) { it.copy(mediaFailures = 0, mediaFailedAt = null) }
         } else {
@@ -357,12 +404,13 @@ class YtArchiveRunner(private val context: Context) {
             if (streams.livestream || streams.duration !in 1..YtArchiveRules.MAX_MEDIA_DURATION_SEC) return@guarded
             if (meta.tier.level < YtArchiveTier.AUDIO.level) meta = fetcher.saveAudio(meta, streams, now())
             if (YtArchive.top() == YtArchiveTier.VIDEO && meta.tier.level < YtArchiveTier.VIDEO.level) fetcher.saveVideo(meta, streams, now())
-            throttle = YtArchiveThrottle.countMedia(throttle, now(), offset())
+            throttle = YtArchive.updateThrottle(context) { YtArchiveThrottle.countMedia(it, now(), offset()) }
         }
     }
 
     companion object {
         private const val TAG = "YtArchiveRunner"
+        private const val RETRIES_PER_RUN = 3
         const val MODE_TEXT = "text"
         const val MODE_MEDIA = "media"
         const val MODE_URGENT = "urgent"

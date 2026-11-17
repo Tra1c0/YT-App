@@ -110,6 +110,9 @@ class YtArchiveSettings : BasePreferenceFragment() {
         }
     }
 
+    /** Rows shown per list ([MAX_ROWS] more with each "Mehr laden"). */
+    private val shownRows = HashMap<String, Int>()
+
     private fun fill(key: String, metas: List<YtArchiveMeta>) {
         val category = findPreference<PreferenceCategory>(key) ?: return
         val context = category.context
@@ -131,7 +134,8 @@ class YtArchiveSettings : BasePreferenceFragment() {
             }
             return
         }
-        for (meta in metas.take(MAX_ROWS)) {
+        val shown = shownRows[key] ?: MAX_ROWS
+        for (meta in metas.take(shown)) {
             row {
                 title = meta.title.ifBlank { meta.videoId }
                 summary = YtArchiveUi.summary(context, meta)
@@ -141,10 +145,14 @@ class YtArchiveSettings : BasePreferenceFragment() {
                 }
             }
         }
-        if (metas.size > MAX_ROWS) {
+        if (metas.size > shown) {
             row {
-                title = getString(R.string.yt_r31_archive_more, metas.size - MAX_ROWS)
-                isSelectable = false
+                title = getString(R.string.yt_r38_archive_load_more, metas.size - shown)
+                setOnPreferenceClickListener {
+                    shownRows[key] = shown + MAX_ROWS
+                    fill(key, metas)
+                    true
+                }
             }
         }
     }

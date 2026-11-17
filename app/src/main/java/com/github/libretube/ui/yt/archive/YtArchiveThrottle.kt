@@ -65,7 +65,7 @@ object YtArchiveThrottle {
     /** A bot check or 429: pause 6 h, doubling per strike in a row, at most 48 h. */
     fun afterBlock(state: State, now: Long, reason: String): State {
         val strikes = state.strikes + 1
-        val pause = (BACKOFF_FIRST_MS shl (strikes - 1).coerceIn(0, 4)).coerceAtMost(BACKOFF_MAX_MS)
+        val pause = com.github.libretube.util.YtFetchGateRules.pauseMs(strikes, BACKOFF_FIRST_MS, BACKOFF_MAX_MS)
         return state.copy(backoffUntil = now + pause, strikes = strikes, lastError = reason, lastErrorAt = now)
     }
 

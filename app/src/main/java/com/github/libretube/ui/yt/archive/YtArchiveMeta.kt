@@ -56,6 +56,10 @@ data class YtArchiveMeta(
     /** Script state: null none, [SCRIPT_DONE], [SCRIPT_FAILED]; set by the core after asking the script part. */
     val scriptState: String? = null,
     val scriptAt: Long? = null,
+    /** The text save did not finish (no thumbnail or transcript); retried by [YtArchiveRetryRules]. */
+    val textIncomplete: Boolean = false,
+    val textRetries: Int = 0,
+    val textRetryAt: Long? = null,
 ) {
     val tier: YtArchiveTier get() = YtArchiveTier.entries.firstOrNull { it.level == tierLevel } ?: YtArchiveTier.TEXT
     val vanished: Boolean get() = vanishedAt != null
