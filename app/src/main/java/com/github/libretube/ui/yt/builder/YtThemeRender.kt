@@ -55,6 +55,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ParentDataModifierNode
+import androidx.compose.ui.node.invalidateParentData
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -476,7 +477,11 @@ internal class YtNodeData(var theme: YtNode) : ParentDataModifierNode, Modifier.
 private data class YtNodeDataElement(val node: YtNode) : ModifierNodeElement<YtNodeData>() {
     override fun create() = YtNodeData(node)
     override fun update(node: YtNodeData) {
+        if (node.theme == this.node) return
         node.theme = this.node
+        // the parent's measure reads the node's rules from its parent data: it must measure again, else
+        // the parent keeps the sizes of the old node (items too small, siblings that overlap)
+        node.invalidateParentData()
     }
 }
 
