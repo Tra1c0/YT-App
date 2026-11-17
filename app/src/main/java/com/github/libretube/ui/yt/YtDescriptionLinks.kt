@@ -47,6 +47,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.text.method.LinkMovementMethodCompat
 import com.github.libretube.NavDirections
 import com.github.libretube.R
+import com.github.libretube.ui.yt.news.LocalYtKurzVideo
+import com.github.libretube.ui.yt.news.YtKurzBlock
 import com.github.libretube.api.obj.Streams
 import com.github.libretube.enums.PlaylistType
 import com.github.libretube.helpers.ContextHelper
@@ -168,9 +170,16 @@ fun YtDescriptionLinks(
     font: FontFamily,
     modifier: Modifier = Modifier,
     sizeSp: Float = 14f,
+    kurzTitle: String? = null,
+    kurzChannel: String? = null,
 ) {
     val seek = LocalYtDescriptionSeek.current
     val timestamps = if (seek != null) overview.timestamps else emptyList()
+    // YT (round 39): the on-demand "Kurzfassung" above the link overview (YtKurzUi.kt)
+    val kurzVideo = if (kurzTitle != null) LocalYtKurzVideo.current else null
+    if (kurzVideo != null) {
+        YtKurzBlock(kurzVideo, kurzTitle.orEmpty(), kurzChannel, color, accent, font, modifier, sizeSp) { seconds -> seek?.invoke(seconds * 1000) }
+    }
     if (timestamps.isEmpty() && overview.channels.isEmpty() && overview.videos.isEmpty() &&
         overview.external.isEmpty() && overview.sponsored.isEmpty()
     ) {
@@ -312,7 +321,7 @@ internal fun clock(seconds: Long): String {
 object YtDescriptionClassic {
     private const val TAG = "yt_description_links"
 
-    fun bind(layout: DescriptionLayout, streams: Streams, onSeek: (Long) -> Unit) {
+    fun bind(layout: DescriptionLayout, streams: Streams, videoId: String? = null, onSeek: (Long) -> Unit) {
         val textView = layout.binding.playerDescription
         val context = layout.context
         val overview = runCatching { YtDescriptionLinkRules.overview(streams.description, streams.duration) }
@@ -349,7 +358,7 @@ object YtDescriptionClassic {
         val metrics = textView.resources
         val sizeSp = textView.textSize / (metrics.displayMetrics.density * metrics.configuration.fontScale)
         compose.setContent {
-            CompositionLocalProvider(LocalYtDescriptionSeek provides onSeek) {
+            CompositionLocalProvider(LocalYtDescriptionSeek provides onSeek, LocalYtKurzVideo provides videoId) {
                 YtDescriptionLinks(
                     overview = overview,
                     onLink = { link -> layout.handleLink(link) },
@@ -359,6 +368,8 @@ object YtDescriptionClassic {
                     // the description's own side margin
                     modifier = Modifier.padding(horizontal = 12.dp),
                     sizeSp = sizeSp,
+                    kurzTitle = streams.title,
+                    kurzChannel = streams.uploader,
                 )
             }
         }

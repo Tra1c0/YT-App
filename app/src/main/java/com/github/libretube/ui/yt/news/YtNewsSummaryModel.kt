@@ -23,6 +23,8 @@ data class YtNewsDigest(
     val statements: List<YtNewsStatement>,
     val createdMs: Long,
     val cut: Boolean = false,
+    /** How many slices of a long transcript were summarised and merged (1 = the whole transcript at once). */
+    val parts: Int = 1,
 )
 
 /** Why there is no summary. */

@@ -1393,7 +1393,7 @@ class PlayerFragment : Fragment(R.layout.fragment_player), CustomPlayerCallback,
 
         binding.descriptionLayout.setStreams(streams)
         // YT: classic page: link overview and folded ads under the description
-        if (ytWatch == null) com.github.libretube.ui.yt.YtDescriptionClassic.bind(binding.descriptionLayout, streams) { millis ->
+        if (ytWatch == null) com.github.libretube.ui.yt.YtDescriptionClassic.bind(binding.descriptionLayout, streams, videoId) { millis ->
             if (::playerController.isInitialized) playerController.seekTo(millis)
         }
 

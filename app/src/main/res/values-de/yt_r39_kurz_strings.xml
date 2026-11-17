@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- YT round 39: the on-demand "Kurzfassung" of any video (watch page, card menu). Same keys in values. -->
+<resources>
+    <string name="yt_r39_kurz_button">Kurzfassung erstellen</string>
+    <string name="yt_r39_kurz_loading">Lese die Untertitel…</string>
+    <string name="yt_r39_kurz_no_key">Noch kein KI-Schlüssel eingerichtet. Trage ihn in den Einstellungen unter \"Belegte Kurzfassungen\" ein.</string>
+    <string name="yt_r39_kurz_open_settings">Einstellungen öffnen</string>
+    <string name="yt_r39_kurz_no_captions">Dieses Video hat keine Untertitel, eine Kurzfassung ist nicht möglich.</string>
+    <string name="yt_r39_kurz_row">Kurzfassung</string>
+    <plurals name="yt_r39_kurz_parts">
+        <item quantity="one">aus %d Teil</item>
+        <item quantity="other">aus %d Teilen</item>
+    </plurals>
+</resources>
