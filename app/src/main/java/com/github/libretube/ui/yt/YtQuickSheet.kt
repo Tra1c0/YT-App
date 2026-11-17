@@ -195,6 +195,22 @@ fun YtQuickSheet(
                 ) {
                     YtWhyList(palette, item, Modifier.padding(start = 6.dp, end = 6.dp, top = 12.dp))
                 }
+                // YT: the seen mark by hand (YtSeenLedger), the row that applies
+                run {
+                    val id = item.url?.toID() ?: return@run
+                    val ledger by com.github.libretube.util.YtSeenLedger.entries.collectAsState()
+                    val positions by YtSeenStore.positions.collectAsState()
+                    val seen = com.github.libretube.util.YtSeenRules.isSeen(ledger[id], positions[id], item.duration)
+                    val label = stringResource(if (seen) R.string.yt_r39_mark_unseen else R.string.yt_r39_mark_seen)
+                    QuickRow(palette, R.drawable.ic_history, label) {
+                        if (seen) {
+                            com.github.libretube.util.YtSeenLedger.markUnseen(id)
+                        } else {
+                            com.github.libretube.util.YtSeenLedger.markSeen(id, item.duration)
+                        }
+                        onDismiss()
+                    }
+                }
             }
             }
         }

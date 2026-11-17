@@ -69,7 +69,9 @@ fun Modifier.ytTopicChip(video: StreamItem, palette: YtPalette, shape: Shape = R
     val id = remember(video.url) { video.url?.toID() } ?: return this
     val mark = focus[id] ?: return this
     val positions by YtSeenStore.positions.collectAsState()
-    val badged = remember { YtSeenPrefs.enabled } && !video.isLive && YtSeenMark.of(positions[id], video.duration)?.watched == true
+    val ledger by com.github.libretube.util.YtSeenLedger.entries.collectAsState()
+    val badged = remember { YtSeenPrefs.enabled } && !video.isLive &&
+        com.github.libretube.util.YtSeenRules.markOf(ledger[id], positions[id], video.duration)?.watched == true
     val measurer = rememberTextMeasurer()
     val look = remember(palette) { topicChipLook(palette) }
     val name = if (look.uppercase) mark.name.uppercase() else mark.name

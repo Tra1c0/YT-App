@@ -68,6 +68,7 @@ object BackupHelper {
         Database.watchHistoryDao().insertAll(backupFile.watchHistory.orEmpty())
         Database.searchHistoryDao().insertAll(backupFile.searchHistory.orEmpty())
         Database.watchPositionDao().insertAll(backupFile.watchPositions.orEmpty())
+        com.github.libretube.util.YtSeenLedger.restore(backupFile.ytSeen.orEmpty())
         Database.localSubscriptionDao().insertAll(backupFile.subscriptions.orEmpty())
         Database.customInstanceDao().insertAll(backupFile.customInstances.orEmpty())
         Database.playlistBookmarkDao().insertAll(backupFile.playlistBookmarks.orEmpty())

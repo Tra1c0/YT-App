@@ -52,6 +52,7 @@ object YtDiagnosis {
             add("Abruf-Gate" to runCatching { YtFetchGate.describe() }.getOrNull())
             add("SSI" to runCatching { com.github.libretube.ui.yt.ssi.YtSsi.diagnosis(context) }.getOrNull())
             add("YouTube account" to if (runCatching { YtAccount.signedIn }.getOrDefault(false)) "yes" else "no")
+            add("Gesehen" to runCatching { YtSeenLedger.diagnosis() }.getOrNull())
             add("Queue" to runCatching { PlayingQueue.size().toString() }.getOrNull())
             add("Saved queue" to runCatching { savedQueue() }.getOrNull())
             add("Sound" to sound())

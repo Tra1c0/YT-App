@@ -49,6 +49,8 @@ import com.github.libretube.db.DatabaseHolder.Database
 import com.github.libretube.extensions.toID
 import com.github.libretube.helpers.PreferenceHelper
 import com.github.libretube.ui.yt.feed.YtSeenMark
+import com.github.libretube.util.YtSeenLedger
+import com.github.libretube.util.YtSeenRules
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -115,7 +117,8 @@ fun Modifier.ytSeen(video: StreamItem, palette: YtPalette): Modifier {
     if (video.isLive || !remember { YtSeenPrefs.enabled }) return this
     val id = remember(video.url) { video.url?.toID() } ?: return this
     val positions by YtSeenStore.positions.collectAsState()
-    val mark = YtSeenMark.of(positions[id], video.duration) ?: return this
+    val ledger by YtSeenLedger.entries.collectAsState()
+    val mark = YtSeenRules.markOf(ledger[id], positions[id], video.duration) ?: return this
     if (!mark.watched) return this
     val measurer = rememberTextMeasurer()
     val badge = remember(palette) { seenBadge(palette) }
@@ -192,7 +195,8 @@ private fun Modifier.seenTopBar(
     val id = remember(video.url) { video.url?.toID() } ?: return this
     val positions by YtSeenStore.positions.collectAsState()
     val position = positions[id]
-    val mark = YtSeenMark.of(position, video.duration) ?: return this
+    val ledger by YtSeenLedger.entries.collectAsState()
+    val mark = YtSeenRules.markOf(ledger[id], position, video.duration) ?: return this
     // a finished video has its badge (ytSeen), no bar
     if (mark.watched) return this
     val progress = mark.progress ?: return this

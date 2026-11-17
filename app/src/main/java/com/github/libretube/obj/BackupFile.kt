@@ -26,6 +26,8 @@ data class BackupFile(
     //
     var watchHistory: List<WatchHistoryItem>? = emptyList(),
     var watchPositions: List<WatchPosition>? = emptyList(),
+    // YT: the seen ledger (YtSeenLedger)
+    var ytSeen: List<com.github.libretube.util.YtSeenRules.Entry>? = emptyList(),
     var searchHistory: List<SearchHistoryItem>? = emptyList(),
     var customInstances: List<CustomInstance>? = emptyList(),
     var playlistBookmarks: List<PlaylistBookmark>? = emptyList(),

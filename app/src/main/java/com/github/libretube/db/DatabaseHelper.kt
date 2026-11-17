@@ -28,6 +28,8 @@ object DatabaseHelper {
 
     suspend fun isVideoWatched(videoId: String, duration: Long): Boolean =
         withContext(Dispatchers.IO) {
+            // YT: the seen ledger first (YtSeenLedger)
+            if (com.github.libretube.util.YtSeenLedger.contains(videoId)) return@withContext true
             val position = getWatchPosition(videoId) ?: return@withContext false
 
             return@withContext isVideoWatched(position, duration)

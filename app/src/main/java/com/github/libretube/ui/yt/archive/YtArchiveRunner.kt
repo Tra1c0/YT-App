@@ -132,7 +132,7 @@ class YtArchiveRunner(private val context: Context) {
                     durationSec = item.duration,
                 ),
                 isShort = item.isShort,
-                watched = positions[item.videoId]?.let { DatabaseHelper.isVideoWatched(it, item.duration) } == true,
+                watched = com.github.libretube.util.YtSeenLedger.isSeen(item.videoId, positions[item.videoId], item.duration),
             )
         }
         return YtArchiveRules.candidates(videos, now())

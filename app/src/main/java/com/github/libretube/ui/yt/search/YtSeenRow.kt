@@ -48,7 +48,7 @@ object YtSeenRow {
             val position = DatabaseHelper.getWatchPosition(videoId)
             withContext(Dispatchers.Main) {
                 if (thumbnail.getTag(R.id.yt_seen_row) != videoId) return@withContext
-                val mark = YtSeenMark.of(position, durationSeconds)
+                val mark = com.github.libretube.util.YtSeenRules.markOf(com.github.libretube.util.YtSeenLedger.entries.value[videoId], position, durationSeconds)
                 when {
                     mark == null -> Unit
                     mark.watched -> {

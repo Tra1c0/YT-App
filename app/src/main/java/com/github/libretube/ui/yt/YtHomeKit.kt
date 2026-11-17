@@ -116,11 +116,13 @@ fun rememberYtVisible(videos: List<StreamItem>?): List<StreamItem>? {
     if (!hideSeen || visible == null) return visible
     // only read while the switch is on: the positions change each time the player pauses
     val positions by YtSeenStore.positions.collectAsState()
-    return remember(visible, positions) {
+    val ledger by com.github.libretube.util.YtSeenLedger.entries.collectAsState()
+    return remember(visible, positions, ledger) {
         YtSeenHide.visible(
             visible,
             position = { video -> video.url?.toID()?.let { positions[it] } },
             duration = { video -> video.duration.takeUnless { video.isLive } },
+            ledgerSeen = { video -> video.url?.toID() in ledger },
         )
     }
 }

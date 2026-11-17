@@ -28,14 +28,14 @@ object YtSsiEviction {
         runCatching { keep += db.feedbackVideoIds() }
         runCatching { YtSsi.research.list().forEach { r -> r.hits.forEach { keep += it.videoId } } }
         runCatching { YtSsiBenchRunner.examples(context)?.examples?.forEach { e -> e.videoId?.let { keep += it } } }
-        val watched = runCatching { DatabaseHolder.Database.watchPositionDao().getAll().map { it.videoId }.toHashSet() }.getOrDefault(hashSetOf())
+        val positions = runCatching { DatabaseHolder.Database.watchPositionDao().getAll().associate { it.videoId to it.position } }.getOrDefault(emptyMap())
         val candidates = docs.values.map { d ->
             YtSsiIndexRules.Candidate(
                 videoId = d.videoId,
                 indexedAt = d.indexedAt,
                 passages = counts[d.videoId] ?: 0,
                 protected = d.vanished || d.videoId in keep || runCatching { YtArchive.store[d.videoId]?.protected == true }.getOrDefault(false),
-                watched = d.videoId in watched,
+                watched = com.github.libretube.util.YtSeenLedger.isSeen(d.videoId, positions[d.videoId], d.durationSec),
             )
         }
         val victims = YtSsiIndexRules.evictions(candidates, now, windowDays())

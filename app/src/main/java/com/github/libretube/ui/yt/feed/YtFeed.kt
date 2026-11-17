@@ -560,9 +560,11 @@ object YtFeed {
         val watched = HashMap<String, Float>()
         val finished = HashSet<String>()
         for (item in items + topicPools.flatMap { pool -> pool.candidates.map { it.item } }) {
-            val position = local.positionsMs[item.id] ?: continue
-            if (item.durationSec > 0) watched[item.id] = (position / 1000f / item.durationSec).coerceIn(0f, 1f)
-            if (YtSeenHide.finished(position, item.durationSec)) finished += item.id
+            val position = local.positionsMs[item.id]
+            val ledgerSeen = com.github.libretube.util.YtSeenLedger.contains(item.id)
+            if (position == null && !ledgerSeen) continue
+            if (position != null && item.durationSec > 0) watched[item.id] = (position / 1000f / item.durationSec).coerceIn(0f, 1f)
+            if (YtSeenHide.finished(position, item.durationSec, ledgerSeen)) finished += item.id
         }
         val groupChannels = rules.groups.takeIf { it.isNotEmpty() }?.let { names ->
             names.flatMap { local.groups[it].orEmpty() }.toSet()

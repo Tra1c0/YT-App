@@ -12,7 +12,9 @@ object YtSeenHide {
     const val LEFT_SECONDS = 30L
     const val MIN_SHARE_NEAR_END = 0.5f
 
-    fun finished(positionMillis: Long?, durationSeconds: Long?): Boolean {
+    /** [ledgerSeen]: the seen ledger (YtSeenLedger) already marked it; that wins over the position. */
+    fun finished(positionMillis: Long?, durationSeconds: Long?, ledgerSeen: Boolean = false): Boolean {
+        if (ledgerSeen) return true
         if (positionMillis == null || positionMillis <= 0) return false
         val duration = durationSeconds?.takeIf { it > 0 } ?: return false
         val seconds = positionMillis / 1000f
@@ -22,8 +24,13 @@ object YtSeenHide {
     }
 
     /** [items] without the finished ones; the same list when nothing goes. */
-    fun <T> visible(items: List<T>, position: (T) -> Long?, duration: (T) -> Long?): List<T> {
-        val kept = items.filterNot { finished(position(it), duration(it)) }
+    fun <T> visible(
+        items: List<T>,
+        position: (T) -> Long?,
+        duration: (T) -> Long?,
+        ledgerSeen: (T) -> Boolean = { false },
+    ): List<T> {
+        val kept = items.filterNot { finished(position(it), duration(it), ledgerSeen(it)) }
         return if (kept.size == items.size) items else kept
     }
 }
