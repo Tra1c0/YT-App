@@ -10,6 +10,7 @@ import com.github.libretube.constants.IntentData
 import com.github.libretube.repo.UserDataRepositoryHelper
 import com.github.libretube.services.YtPositionRules.Snapshot
 import com.github.libretube.ui.yt.YtTestHooks
+import com.github.libretube.util.YtSeenLedger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -62,6 +63,8 @@ class YtPositionLedger(
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_READY) readyId = player()?.let(::itemId)
+            // the video played to its end: seen, whatever the card's duration said
+            if (playbackState == Player.STATE_ENDED) take()?.let { persist(it, forced = true, explicitSeek = false, ended = true) }
         }
 
         override fun onPositionDiscontinuity(
@@ -78,7 +81,11 @@ class YtPositionLedger(
             // the player holds the next item already: the one left behind is saved from its
             // last snapshot, never from the player
             val newId = mediaItem?.mediaMetadata?.extras?.getString(IntentData.videoId)
-            YtPositionRules.leftBehind(last, newId)?.let { persist(it, forced = true, explicitSeek = false) }
+            YtPositionRules.leftBehind(last, newId)?.let {
+                // the queue went on by itself: the old video ended
+                val ended = reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO
+                persist(it, forced = true, explicitSeek = false, ended = ended)
+            }
             readyId = null
         }
 
@@ -121,9 +128,12 @@ class YtPositionLedger(
         return Snapshot(id, p.currentPosition, duration, p.isCurrentMediaItemLive).also { last = it }
     }
 
-    private fun persist(snap: Snapshot, forced: Boolean, explicitSeek: Boolean) {
+    private fun persist(snap: Snapshot, forced: Boolean, explicitSeek: Boolean, ended: Boolean = false) {
         if (!enabled()) return
-        val value = YtPositionRules.toPersist(snap, stored[snap.videoId], forced, explicitSeek) ?: return
+        val value = YtPositionRules.toPersist(snap, stored[snap.videoId], forced, explicitSeek)
+        // the seen ledger sees every snapshot, also those whose position is not written
+        YtSeenLedger.note(snap.videoId, snap.positionMs, snap.durationMs, ended, snap.isLive, stored[snap.videoId], value)
+        if (value == null) return
         stored[snap.videoId] = value
         YtTestHooks.log("YtPositions") { "save ${snap.videoId} $value/${snap.durationMs} forced=$forced seek=$explicitSeek" }
         Writer.enqueue(

@@ -34,6 +34,7 @@ class BackupDialog : DialogFragment() {
 
         data object WatchPositions : BackupOption(R.string.watch_positions, onSelected = {
             it.watchPositions = Database.watchPositionDao().getAll()
+            it.ytSeen = com.github.libretube.util.YtSeenLedger.all()
         })
 
         data object SearchHistory : BackupOption(R.string.search_history, onSelected = {

@@ -191,7 +191,11 @@ private const val DAY = 24L * 60 * 60 * 1000
 private suspend fun ytSubsSeen(feed: List<StreamItem>): Map<String, YtSubsOrder.Seen> =
     feed.filter { it.url != null && !it.isShort && !it.isLive }.associate { video ->
         val id = video.url!!.toID()
-        id to YtSubsOrder.seen(DatabaseHelper.getWatchPosition(id), video.duration)
+        id to if (com.github.libretube.util.YtSeenLedger.contains(id)) {
+            YtSubsOrder.Seen.WATCHED
+        } else {
+            YtSubsOrder.seen(DatabaseHelper.getWatchPosition(id), video.duration)
+        }
     }
 
 private val ClayShadow: Color get() = ytDayNight(Color(0x80B07A66), Color(0x80000000))
